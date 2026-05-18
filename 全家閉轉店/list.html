@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>全家閉轉店 — 後台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
+<script src="https://unpkg.com/antd@5.20.0/dist/antd.min.js"></script>
+<script src="https://unpkg.com/@ant-design/icons@5/dist/index.umd.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<style>
+  html, body, #root { margin: 0; height: 100%; }
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .brand-logo {
+    color: #fff;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+  const {
+    Layout, Menu, Card, Table, Button, Tag, Input, Space, Typography,
+    DatePicker, Breadcrumb, ConfigProvider, App: AntApp, Divider, Form, Checkbox
+  } = antd;
+  const { Sider, Header, Content } = Layout;
+  const { Title, Text } = Typography;
+  const Icons = window.icons || {};
+  const {
+    SearchOutlined, UserOutlined, LogoutOutlined, EyeOutlined,
+    ExperimentOutlined, CloseOutlined, BellOutlined
+  } = Icons;
+  const { useState, useMemo } = React;
+  const { RangePicker } = DatePicker;
+
+  // ====== 模擬資料池（mock 全家通知用） ======
+  const MOCK_NAMES = ['陳*華', '林*傑', '王*雯', '張*俊', '李*萱', '吳*淇', '黃*豪', '蔡*欣'];
+  const MOCK_STORES = [
+    '001234 大同門市', '002345 信義二店', '003456 西門門市',
+    '004567 中山門市', '005678 北投門市', '006789 士林門市',
+    '007890 板橋門市', '008901 三重門市',
+  ];
+  const randPick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const randPhone = () => '09' + Math.floor(10 + Math.random() * 89) + '-xxx-' + String(Math.floor(Math.random() * 900) + 100);
+  const genFamiOrderNo = () => '049' + String(Math.floor(10000000 + Math.random() * 89999999));
+
+  const INITIAL_ORDERS = [
+    { id: '04901154451', customerName: '王*明', phone: '09xx-xxx-123', originStore: '001850 信義門市', receivedAt: '2026-05-15 09:47', status: 'received' },
+    { id: '04901155016', customerName: '蔡*豪', phone: '09xx-xxx-891', originStore: '002893 內湖門市', receivedAt: '2026-05-15 08:23', status: 'received' },
+    { id: '04901155127', customerName: '陳*雯', phone: '09xx-xxx-345', originStore: '005102 南港門市', receivedAt: '2026-05-14 17:12', status: 'received' },
+    { id: '04901154662', customerName: '林*華', phone: '09xx-xxx-456', originStore: '002100 大安門市', receivedAt: '2026-05-14 11:08', status: 'contacting' },
+    { id: '04901154783', customerName: '張*芳', phone: '09xx-xxx-789', originStore: '003245 永康門市', receivedAt: '2026-05-13 16:45', status: 'submitted' },
+    { id: '04901154894', customerName: '李*偉', phone: '09xx-xxx-234', originStore: '001563 復興門市', receivedAt: '2026-05-13 09:22', status: 'done' },
+    { id: '04901155238', customerName: '吳*成', phone: '09xx-xxx-678', originStore: '001904 松山門市', receivedAt: '2026-05-12 15:55', status: 'done' },
+    { id: '04901155349', customerName: '周*萱', phone: '09xx-xxx-012', originStore: '003876 中山門市', receivedAt: '2026-05-12 11:38', status: 'done' },
+    { id: '04901154905', customerName: '黃*君', phone: '09xx-xxx-567', originStore: '004721 民生門市', receivedAt: '2026-05-11 14:15', status: 'failed' },
+    { id: '04901155450', customerName: '鄭*翔', phone: '09xx-xxx-456', originStore: '002564 大同門市', receivedAt: '2026-05-10 17:09', status: 'returned' },
+  ];
+
+  const STATUS_OPTIONS = [
+    { value: 'received',      label: '收到通知',      color: 'orange'  },
+    { value: 'contacting',    label: '聯絡客人中',    color: 'blue'    },
+    { value: 'submitted',     label: '已申請轉店',    color: 'purple'  },
+    { value: 'done',          label: '轉店完成',      color: 'green'   },
+    { value: 'failed',        label: '轉店失敗',      color: 'red'     },
+    { value: 'cannot_change', label: '無法轉店',      color: 'red'     },
+    { value: 'returned',      label: '已退貨',        color: 'default' },
+  ];
+  const statusMap = Object.fromEntries(STATUS_OPTIONS.map(s => [s.value, s]));
+
+  const SIDE_MENU = [
+    { key: 'account',     label: '帳號管理', disabled: true },
+    { key: 'member',      label: '會員管理', disabled: true },
+    { key: 'todo',        label: '客服待辦', disabled: true },
+    {
+      key: 'orders', label: '訂單管理',
+      children: [
+        { key: 'order-list',   label: '訂單列表' },
+        { key: 'fami-orders',  label: '全家訂單' },
+        { key: 'switch-store', label: '全家閉轉店' },
+      ],
+    },
+    { key: 'product', label: '商品管理', disabled: true },
+    { key: 'web',     label: '網頁管理', disabled: true },
+    { key: 'report',  label: '報表查詢', disabled: true },
+  ];
+
+  function ListPage() {
+    const { message } = AntApp.useApp();
+    const [orders, setOrders] = useState(INITIAL_ORDERS);
+    const [mockOpen, setMockOpen] = useState(true);
+
+    const simulateNewNotification = () => {
+      const newOrder = {
+        id: genFamiOrderNo(),
+        customerName: randPick(MOCK_NAMES),
+        phone: randPhone(),
+        originStore: randPick(MOCK_STORES),
+        receivedAt: dayjs().format('YYYY-MM-DD HH:mm'),
+        status: 'received',
+      };
+      setOrders(prev => [newOrder, ...prev]);
+      message.success({
+        content: `全家發來新閉店通知（訂單 ${newOrder.id}）`,
+        icon: <BellOutlined style={{ color: '#1677ff' }} />,
+      });
+    };
+
+    // draft = 表單上的條件（即時跟著 UI 變化）
+    const [draftText,    setDraftText]    = useState('');
+    const [draftDate,    setDraftDate]    = useState(null);
+    const [draftStatuses, setDraftStatuses] = useState([]);
+
+    // applied = 真正用來過濾的條件（按「查詢」才更新）
+    const [appliedText,    setAppliedText]    = useState('');
+    const [appliedDate,    setAppliedDate]    = useState(null);
+    const [appliedStatuses, setAppliedStatuses] = useState([]);
+
+    const list = useMemo(() => {
+      return orders.filter(o => {
+        const q = appliedText.trim();
+        const matchText = !q || o.id.includes(q) || o.customerName.includes(q);
+        const matchStatus = appliedStatuses.length === 0 || appliedStatuses.includes(o.status);
+        let matchDate = true;
+        if (appliedDate && appliedDate[0] && appliedDate[1]) {
+          const d = dayjs(o.receivedAt);
+          matchDate = d.isAfter(appliedDate[0].startOf('day').subtract(1, 'ms'))
+            && d.isBefore(appliedDate[1].endOf('day').add(1, 'ms'));
+        }
+        return matchText && matchStatus && matchDate;
+      });
+    }, [orders, appliedText, appliedDate, appliedStatuses]);
+
+    const toggleStatus = (key, checked) => {
+      if (checked) setDraftStatuses(prev => [...prev, key]);
+      else         setDraftStatuses(prev => prev.filter(s => s !== key));
+    };
+
+    const onSearch = () => {
+      setAppliedText(draftText);
+      setAppliedDate(draftDate);
+      setAppliedStatuses(draftStatuses);
+    };
+
+    const onReset = () => {
+      setDraftText(''); setDraftDate(null); setDraftStatuses([]);
+      setAppliedText(''); setAppliedDate(null); setAppliedStatuses([]);
+    };
+
+    const columns = [
+      { title: '訂單編號',     dataIndex: 'id',           width: 130 },
+      { title: '客人',         dataIndex: 'customerName', width: 80  },
+      { title: '電話',         dataIndex: 'phone',        width: 130 },
+      { title: '原始店',       dataIndex: 'originStore',  width: 170 },
+      { title: '收到通知時間', dataIndex: 'receivedAt',   width: 150 },
+      {
+        title: '狀態', dataIndex: 'status', width: 110,
+        render: (v) => {
+          const s = statusMap[v];
+          return <Tag color={s.color} style={{ margin: 0 }}>{s.label}</Tag>;
+        },
+      },
+      {
+        title: '操作', width: 80, align: 'center',
+        render: (_, r) => (
+          <Button size="small" icon={<EyeOutlined />}
+            onClick={() => { window.location.href = 'detail.html?id=' + r.id; }}>
+            查看
+          </Button>
+        ),
+      },
+    ];
+
+    return (
+      <Content style={{ padding: 24, background: '#f5f5f5' }}>
+        <Title level={3} style={{ margin: '0 0 16px 0' }}>全家閉轉店</Title>
+
+        <Card title="查詢條件" style={{ marginBottom: 16 }}>
+          <Form layout="horizontal" labelCol={{ flex: '0 0 64px' }} labelAlign="left">
+            <Form.Item label="關鍵字" style={{ marginBottom: 12 }}>
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="訂單編號 / 客人姓名"
+                value={draftText}
+                onChange={e => setDraftText(e.target.value)}
+                onPressEnter={onSearch}
+                allowClear
+                style={{ width: 320 }}
+              />
+            </Form.Item>
+            <Form.Item label="日期" style={{ marginBottom: 12 }}>
+              <RangePicker
+                value={draftDate}
+                onChange={setDraftDate}
+                allowClear
+                style={{ width: 320 }}
+              />
+            </Form.Item>
+            <Form.Item label="狀態" style={{ marginBottom: 12 }}>
+              <Space size="large" wrap align="center">
+                <Button
+                  size="small"
+                  type={(draftStatuses.length === 0 || draftStatuses.length === STATUS_OPTIONS.length) ? 'primary' : 'default'}
+                  onClick={() => setDraftStatuses([])}
+                >
+                  全部
+                </Button>
+                <Space size={8} wrap>
+                  {STATUS_OPTIONS.map(s => (
+                    <Checkbox
+                      key={s.value}
+                      checked={draftStatuses.includes(s.value)}
+                      onChange={e => toggleStatus(s.value, e.target.checked)}
+                    >
+                      {s.label}
+                    </Checkbox>
+                  ))}
+                </Space>
+              </Space>
+            </Form.Item>
+            <Form.Item label=" " colon={false} style={{ marginBottom: 0 }}>
+              <Space>
+                <Button type="primary" onClick={onSearch}>查詢</Button>
+                <Button onClick={onReset}>重設</Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Card>
+
+        <Card bodyStyle={{ padding: 0 }}>
+          <Table
+            dataSource={list}
+            columns={columns}
+            rowKey="id"
+            size="middle"
+            pagination={{ pageSize: 20, showSizeChanger: false }}
+          />
+        </Card>
+
+        {/* === 模擬全家通知（demo 工具，非正式 UI） === */}
+        {!mockOpen && (
+          <Button
+            type="primary" icon={<ExperimentOutlined />}
+            style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+            onClick={() => setMockOpen(true)}
+          >
+            打開模擬工具
+          </Button>
+        )}
+        {mockOpen && (
+          <Card
+            size="small"
+            title={
+              <Space size={4}>
+                <ExperimentOutlined style={{ color: '#722ed1', fontSize: 12 }} />
+                <Text strong style={{ fontSize: 12 }}>模擬全家通知</Text>
+                <Tag color="purple" style={{ margin: 0, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>demo</Tag>
+              </Space>
+            }
+            extra={
+              <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => setMockOpen(false)} />
+            }
+            style={{
+              position: 'fixed', bottom: 24, left: 24, width: 180, zIndex: 1000,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              border: '1px solid #d3adf7',
+              fontSize: 12,
+            }}
+            headStyle={{ background: '#f9f0ff', borderBottom: '1px solid #efdbff', minHeight: 32, padding: '4px 10px' }}
+            bodyStyle={{ padding: 10 }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }} size={6}>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                模擬全家送 SEND 通知過來
+              </Text>
+              <Button
+                block size="small" icon={<BellOutlined />}
+                onClick={simulateNewNotification}
+                style={{ fontSize: 12 }}
+              >
+                收到新閉店通知
+              </Button>
+            </Space>
+          </Card>
+        )}
+      </Content>
+    );
+  }
+
+  function App() {
+    return (
+      <ConfigProvider theme={{
+        token: {
+          colorPrimary: '#1677ff',
+          borderRadius: 6,
+          fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', sans-serif",
+        },
+      }}>
+        <AntApp>
+          <Layout style={{ minHeight: '100vh' }}>
+            <Sider theme="dark" width={160} style={{ background: '#32323a' }}>
+              <div style={{
+                height: 48, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', borderBottom: '1px solid #1f2937'
+              }}>
+                <span className="brand-logo">無毒農</span>
+              </div>
+              <Menu theme="dark" mode="inline"
+                defaultOpenKeys={['orders']}
+                selectedKeys={['switch-store']}
+                items={SIDE_MENU}
+                style={{ background: '#32323a', borderRight: 0 }} />
+            </Sider>
+            <Layout>
+              <Header style={{
+                background: '#D7F4DA', padding: '0 24px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                borderBottom: '1px solid #c2dfc4', height: 48, lineHeight: '48px',
+              }}>
+                <Breadcrumb items={[
+                  { title: <span style={{ color: '#555' }}>訂單管理</span> },
+                  { title: <strong>全家閉轉店</strong> },
+                ]} />
+                <Space size={16}>
+                  <Space size={6}><UserOutlined style={{ color: '#666' }} /><Text style={{ color: '#666' }}>Glen Wen</Text></Space>
+                  <Button type="text" size="small" icon={<LogoutOutlined />} style={{ color: '#666' }}>登出</Button>
+                </Space>
+              </Header>
+              <ListPage />
+            </Layout>
+          </Layout>
+        </AntApp>
+      </ConfigProvider>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

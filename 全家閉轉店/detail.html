@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>全家閉轉店訂單處理 — 後台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
+<script src="https://unpkg.com/antd@5.20.0/dist/antd.min.js"></script>
+<script src="https://unpkg.com/@ant-design/icons@5/dist/index.umd.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<style>
+  html, body, #root { margin: 0; height: 100%; }
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .brand-logo { color: #fff; font-weight: 700; font-size: 18px; letter-spacing: 1px; }
+  .notes-display {
+    white-space: pre-wrap;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+    padding: 12px;
+    min-height: 80px;
+    line-height: 1.7;
+    color: rgba(0,0,0,0.88);
+    font-size: 14px;
+  }
+  .notes-display.empty {
+    color: rgba(0,0,0,0.25);
+    font-style: italic;
+  }
+  .items-list {
+    line-height: 1.9;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+  const {
+    Layout, Menu, Card, Button, Tag, Input, Space, Typography,
+    Breadcrumb, ConfigProvider, App: AntApp, Steps, Alert,
+    Descriptions, Divider, Form, Dropdown, Row, Col, Modal
+  } = antd;
+  const { Sider, Header, Content } = Layout;
+  const { Title, Text, Paragraph } = Typography;
+  const { TextArea } = Input;
+  const Icons = window.icons || {};
+  const {
+    UserOutlined, LogoutOutlined, EditOutlined, SaveOutlined, CloseOutlined,
+    ShopOutlined, SendOutlined, ReloadOutlined, ArrowLeftOutlined, DownOutlined,
+    ExperimentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, RollbackOutlined
+  } = Icons;
+  const { useState, useMemo, useEffect } = React;
+
+  // ====== 訂單假資料 ======
+  const ORDER = {
+    id: '04901154451',
+    customerName: '王*明',
+    phone: '09xx-xxx-123',
+    originStoreId: '001850',
+    originStoreName: '信義門市',
+    receivedAt: '2026-05-14 14:32',
+    amount: 1580,
+    items: [
+      '台灣鮮選蘋果 6 入禮盒 × 1',
+      '有機鳳梨乾 200g × 2',
+      '冷凍藍莓 500g × 1',
+    ],
+  };
+
+  const INITIAL_NOTES =
+`2026-05-14 15:00 陳小姐 電話聯絡：客人未接，留言請回電
+2026-05-14 16:20 陳小姐 寄送 Email 通知轉店，附上附近全家清單
+2026-05-15 09:30 陳小姐 電話聯絡:客人回覆要改去 002100 大安門市`;
+
+  // ====== 狀態定義 ======
+  const STATUS_OPTIONS = [
+    { value: 'received',      label: '收到通知',     color: 'orange',  alertType: 'warning',
+      desc: '已收到全家閉店通知，並回報全家 ACK 收到，正在等待客服處理。',
+      next: '下一步：聯絡客人，確認新門市；填寫聯絡備註後系統會自動切到「聯絡客人中」' },
+    { value: 'contacting',    label: '聯絡客人中',   color: 'blue',    alertType: 'info',
+      desc: '正在跟客人聯絡確認新門市。',
+      next: '下一步：客人決定後到下方「轉店操作」選擇新門市並送出給全家。' },
+    { value: 'submitted',     label: '已申請轉店',   color: 'purple',  alertType: 'info',
+      desc: '新門市資訊已送給全家，等待全家系統確認。',
+      next: '下一步：等全家回應。若 ErrorCode=000 系統會自動切到「轉店完成」；若回失敗會自動切到「轉店失敗」。' },
+    { value: 'done',          label: '轉店完成',     color: 'green',   alertType: 'success',
+      desc: '全家已確認轉店成功，訂單已轉至新門市，後續配送將送往新門市。',
+      next: '下一步：本案可結案。' },
+    { value: 'failed',        label: '轉店失敗',     color: 'red',     alertType: 'error',
+      desc: 'API 回失敗（已交寄 / 已作廢 / 超時等），轉店無法完成。',
+      next: '下一步：跟客人說明走退貨流程，等收到 RS9 退貨確認後切到「已退貨」。' },
+    { value: 'cannot_change', label: '無法轉店',     color: 'red',     alertType: 'error',
+      desc: '人工判定本案無法轉店（例如：客人聯絡不上、客人拒絕轉店、超過全家時限）。',
+      next: '下一步：跟客人協調退貨；本狀態需客服手動切換。' },
+    { value: 'returned',      label: '已退貨',       color: 'default', alertType: 'info',
+      desc: '商品已實際退回，本案結束。本狀態通常由 RS9 通知自動切換，也可人工切換。',
+      next: '本案已結案。' },
+  ];
+  const statusMap = Object.fromEntries(STATUS_OPTIONS.map(s => [s.value, s]));
+
+  // Dropdown items（分主流程 / 異常狀態 兩 group）
+  const STATUS_DROPDOWN_ITEMS = [
+    {
+      type: 'group',
+      label: '主流程',
+      children: ['received', 'contacting', 'submitted', 'done'].map(k => ({
+        key: k,
+        label: statusMap[k].label,
+      })),
+    },
+    {
+      type: 'group',
+      label: '異常狀態',
+      children: ['failed', 'cannot_change', 'returned'].map(k => ({
+        key: k,
+        label: statusMap[k].label,
+      })),
+    },
+  ];
+
+  // Steps 視覺化（主流程 4 步；returned 不在主流程裡，stepper 用退貨前的進度顯示）
+  const STEP_MAP = {
+    received:      { current: 0, status: 'process' },
+    contacting:    { current: 1, status: 'process' },
+    submitted:     { current: 2, status: 'process' },
+    done:          { current: 3, status: 'finish' },
+    failed:        { current: 2, status: 'error'   },
+    cannot_change: { current: 1, status: 'error'   },
+  };
+
+  const SIDE_MENU = [
+    { key: 'account',     label: '帳號管理', disabled: true },
+    { key: 'member',      label: '會員管理', disabled: true },
+    { key: 'todo',        label: '客服待辦', disabled: true },
+    {
+      key: 'orders', label: '訂單管理',
+      children: [
+        { key: 'order-list',   label: '訂單列表' },
+        { key: 'fami-orders',  label: '全家訂單' },
+        { key: 'switch-store', label: '全家閉轉店' },
+      ],
+    },
+    { key: 'product', label: '商品管理', disabled: true },
+    { key: 'web',     label: '網頁管理', disabled: true },
+    { key: 'report',  label: '報表查詢', disabled: true },
+  ];
+
+  // ====== 轉店進度（只反映「轉店操作」本身的進度，跟 returned 獨立）======
+  function calcStoreProgress(pickedStore, storeSubmitted, status) {
+    if (status === 'done')          return { label: '全家已確認轉店',     color: 'green'   };
+    if (status === 'failed')        return { label: '全家回覆轉店失敗',   color: 'red'     };
+    if (status === 'cannot_change') return { label: '無法轉店',           color: 'red'     };
+    // returned 不在這裡 — 進度落回實際操作狀態（可能是「尚未選店」/「已請全家轉店」等）
+    if (storeSubmitted)             return { label: '已請全家轉店',       color: 'purple'  };
+    if (pickedStore)                return { label: '尚未送出給全家',     color: 'blue'    };
+    return { label: '尚未選店', color: 'default' };
+  }
+
+  // ====== 主元件 ======
+  function DetailPage() {
+    const { message } = AntApp.useApp();
+
+    const [status, setStatus] = useState('received');
+
+    // 退貨前的主流程狀態（讓 stepper 在退貨時停留在退貨前的步驟）
+    const [lastMainStatus, setLastMainStatus] = useState('received');
+    useEffect(() => {
+      if (status !== 'returned') setLastMainStatus(status);
+    }, [status]);
+
+    // 模擬工具面板
+    const [mockOpen, setMockOpen] = useState(true);
+
+    // 全家選店 modal
+    const [pickerOpen, setPickerOpen] = useState(false);
+
+    // 聯絡備註
+    const [notes, setNotes] = useState(INITIAL_NOTES);
+    const [editingNote, setEditingNote] = useState(false);
+    const [noteDraft, setNoteDraft] = useState('');
+    const [noteUpdate, setNoteUpdate] = useState({ user: '陳小姐', time: '2026-05-15 09:30' });
+
+    // 轉店操作
+    const [pickedStore, setPickedStore] = useState(null);
+    const [storeSubmitted, setStoreSubmitted] = useState(false);
+
+    const cfg = statusMap[status];
+    const progress = calcStoreProgress(pickedStore, storeSubmitted, status);
+
+    // === 開啟全家選店（declarative Modal，避免 modal.confirm 在 babel runtime 殘留 DOM） ===
+    const openFamiPicker = () => setPickerOpen(true);
+    const confirmFamiPicker = () => {
+      setPickedStore({
+        id: '002100',
+        name: '大安門市',
+        address: '台北市大安區忠孝東路四段 100 號',
+      });
+      setPickerOpen(false);
+      message.success('已選好門市：大安門市 (002100)');
+    };
+
+    // === 送出給全家（直接執行，不再彈確認窗）===
+    const submitToFami = () => {
+      setStoreSubmitted(true);
+      setStatus('submitted');
+      message.success('已送出給全家，狀態切換為「已申請轉店」');
+    };
+
+    // === 重新發送（直接執行，不再彈確認窗）===
+    const resendToFami = () => {
+      setStoreSubmitted(false);
+      setStatus('contacting');
+      message.info('已解除送出鎖定，可重新選擇門市再次送出');
+    };
+
+    // === 重選 ===
+    const repickStore = () => setPickedStore(null);
+
+    // === 備註 ===
+    const startEditNote = () => { setNoteDraft(notes); setEditingNote(true); };
+    const cancelEditNote = () => { setEditingNote(false); setNoteDraft(''); };
+    const saveNote = () => {
+      const trimmed = noteDraft.trim();
+      if (!trimmed) { message.warning('備註內容為空，不儲存'); return; }
+      setNotes(trimmed);
+      setNoteUpdate({ user: 'Glen Wen', time: dayjs().format('YYYY-MM-DD HH:mm') });
+      setEditingNote(false);
+      if (status === 'received') {
+        setStatus('contacting');
+        message.success('備註已儲存，狀態自動切換為「聯絡客人中」');
+      } else {
+        message.success('備註已儲存');
+      }
+    };
+
+    // === Steps（退貨時保留退貨前進度）===
+    const steps = useMemo(() => {
+      const effectiveStatus = status === 'returned' ? lastMainStatus : status;
+      const map = STEP_MAP[effectiveStatus] || STEP_MAP.received;
+      return {
+        current: map.current,
+        status: map.status,
+        items: [
+          { title: '收到通知' },
+          { title: '聯絡客人中' },
+          { title: '已申請轉店' },
+          { title: '轉店完成' },
+        ],
+      };
+    }, [status, lastMainStatus]);
+
+    const onManualStatusChange = ({ key }) => {
+      setStatus(key);
+      message.info(`狀態已手動切換為「${statusMap[key].label}」`);
+    };
+
+    // === 模擬全家回應 ===
+    const canReceiveReply = status === 'submitted';
+    const simulateFamiSuccess = () => {
+      if (!canReceiveReply) {
+        message.warning('目前狀態不是「已申請轉店」，不會收到全家回應');
+        return;
+      }
+      setStatus('done');
+      message.success('全家回覆：ErrorCode=000 轉店成功，狀態自動切換為「轉店完成」');
+    };
+    const simulateFamiFailure = () => {
+      if (!canReceiveReply) {
+        message.warning('目前狀態不是「已申請轉店」，不會收到全家回應');
+        return;
+      }
+      setStatus('failed');
+      message.error('全家回覆：ErrorCode=101 已交寄無法轉店，狀態自動切換為「轉店失敗」');
+    };
+    const simulateRs9Return = () => {
+      setStatus('returned');
+      message.info('模擬 RS9 通知：商品已實際退回，狀態切換為「已退貨」');
+    };
+
+    return (
+      <Content style={{ padding: 24, background: '#f5f5f5' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Title level={3} style={{ margin: 0 }}>全家閉轉店訂單處理</Title>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => { window.location.href = 'list.html'; }}>
+              返回清單
+            </Button>
+          </div>
+
+          {/* 訂單資訊 */}
+          <Card title="訂單資訊" style={{ marginBottom: 16 }}>
+            <Row gutter={32}>
+              <Col span={11}>
+                <Descriptions column={1} size="small" colon={false}
+                  labelStyle={{ color: 'rgba(0,0,0,0.65)', width: 96 }}>
+                  <Descriptions.Item label="訂單編號">{ORDER.id}</Descriptions.Item>
+                  <Descriptions.Item label="客人姓名">{ORDER.customerName}</Descriptions.Item>
+                  <Descriptions.Item label="客人電話">{ORDER.phone}</Descriptions.Item>
+                  <Descriptions.Item label="原始店號">{ORDER.originStoreId} {ORDER.originStoreName}</Descriptions.Item>
+                  <Descriptions.Item label="收到通知時間">{ORDER.receivedAt}</Descriptions.Item>
+                </Descriptions>
+              </Col>
+              <Col span={13}>
+                <Descriptions column={1} size="small" colon={false}
+                  labelStyle={{ color: 'rgba(0,0,0,0.65)', width: 96, verticalAlign: 'top' }}>
+                  <Descriptions.Item label="訂單金額">
+                    <Text strong style={{ color: '#1677ff', fontSize: 15 }}>NT$ {ORDER.amount.toLocaleString()}</Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="商品內容">
+                    <div className="items-list">
+                      {ORDER.items.map((it, i) => <div key={i}>{it}</div>)}
+                    </div>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* 處理狀態 */}
+          <Card
+            title="處理狀態"
+            extra={status === 'returned' && <Tag color="default" style={{ margin: 0 }}>本案已退貨</Tag>}
+            style={{ marginBottom: 16 }}
+          >
+            <Steps current={steps.current} status={steps.status} items={steps.items} size="small" style={{ marginBottom: 24 }} />
+
+            <Alert
+              type={cfg.alertType}
+              showIcon
+              message={
+                <Space size={8}>
+                  <Text type="secondary" style={{ fontSize: 13 }}>目前狀態</Text>
+                  <Tag color={cfg.color} style={{ margin: 0 }}>{cfg.label}</Tag>
+                </Space>
+              }
+              description={
+                <div style={{ marginTop: 4 }}>
+                  <div>{cfg.desc}</div>
+                  <div style={{ marginTop: 4 }}>{cfg.next}</div>
+                </div>
+              }
+            />
+
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+              <Dropdown
+                menu={{ items: STATUS_DROPDOWN_ITEMS, onClick: onManualStatusChange }}
+                trigger={['click']}
+              >
+                <Button>
+                  <Space size={4}>手動修改狀態 <DownOutlined /></Space>
+                </Button>
+              </Dropdown>
+            </div>
+          </Card>
+
+          {/* 聯絡備註（上下對調，改在轉店操作上方） */}
+          <Card title="聯絡備註" style={{ marginBottom: 16 }}>
+            {!editingNote ? (
+              <>
+                <div className={`notes-display ${notes.trim() ? '' : 'empty'}`}>
+                  {notes.trim() || '尚無備註，點下方「編輯」開始輸入'}
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    最後更新：{noteUpdate.user} ・ {noteUpdate.time}
+                  </Text>
+                  <Button icon={<EditOutlined />} onClick={startEditNote}>編輯</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <TextArea
+                  value={noteDraft}
+                  onChange={e => setNoteDraft(e.target.value)}
+                  rows={6}
+                  placeholder="輸入備註內容（電話聯絡結果、客人意願、特殊情況等）"
+                />
+                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <Button icon={<CloseOutlined />} onClick={cancelEditNote}>取消</Button>
+                  <Button type="primary" icon={<SaveOutlined />} onClick={saveNote}>儲存</Button>
+                </div>
+              </>
+            )}
+          </Card>
+
+          {/* 轉店操作 */}
+          <Card title="轉店操作" style={{ marginBottom: 16 }}>
+            <Descriptions column={1} size="small" colon={false} bordered
+              labelStyle={{ color: 'rgba(0,0,0,0.65)', width: 110, background: '#fafafa' }}>
+              <Descriptions.Item label="門市名稱">
+                {pickedStore
+                  ? <Text strong>{pickedStore.name}</Text>
+                  : <Text type="secondary">—</Text>}
+              </Descriptions.Item>
+              <Descriptions.Item label="店號">
+                {pickedStore ? pickedStore.id : <Text type="secondary">—</Text>}
+              </Descriptions.Item>
+              <Descriptions.Item label="地址">
+                {pickedStore ? pickedStore.address : <Text type="secondary">—</Text>}
+              </Descriptions.Item>
+              <Descriptions.Item label="轉店進度">
+                <Tag color={progress.color} style={{ margin: 0 }}>{progress.label}</Tag>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              {!pickedStore && (
+                <Button type="primary" icon={<ShopOutlined />} onClick={openFamiPicker}>
+                  開啟全家門市選擇
+                </Button>
+              )}
+
+              {pickedStore && !storeSubmitted && (
+                <>
+                  <Button onClick={repickStore}>重選</Button>
+                  <Button type="primary" icon={<SendOutlined />} onClick={submitToFami}>
+                    送出給全家
+                  </Button>
+                </>
+              )}
+
+              {pickedStore && storeSubmitted && status !== 'returned' && (
+                <Button icon={<ReloadOutlined />} onClick={resendToFami}>
+                  重新發送（未確認完畢）
+                </Button>
+              )}
+            </div>
+          </Card>
+
+        </div>
+
+        {/* 全家選店 Modal（declarative，由 pickerOpen state 控制） */}
+        <Modal
+          open={pickerOpen}
+          title="即將跳到全家門市選擇頁面"
+          okText="確認，前往選店"
+          cancelText="取消"
+          onOk={confirmFamiPicker}
+          onCancel={() => setPickerOpen(false)}
+        >
+          <Paragraph style={{ marginBottom: 8 }}>
+            此為正式機會跳轉全家選擇門市的頁面（submit form 到 <Text code>ecmfme.map.com.tw</Text>，跟 fruit_web 結帳頁的全家選店是同一個流程）。
+          </Paragraph>
+          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            此為原型機，按確認會帶入模擬門市資料（大安門市 002100）方便看後續流程。
+          </Paragraph>
+        </Modal>
+
+        {/* === 模擬全家回應（demo 工具，非正式 UI） === */}
+        {!mockOpen && (
+          <Button
+            type="primary" icon={<ExperimentOutlined />}
+            style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+            onClick={() => setMockOpen(true)}
+          >
+            打開模擬工具
+          </Button>
+        )}
+        {mockOpen && (
+          <Card
+            size="small"
+            title={
+              <Space size={4}>
+                <ExperimentOutlined style={{ color: '#722ed1', fontSize: 12 }} />
+                <Text strong style={{ fontSize: 12 }}>模擬全家回應</Text>
+                <Tag color="purple" style={{ margin: 0, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>demo</Tag>
+              </Space>
+            }
+            extra={
+              <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => setMockOpen(false)} />
+            }
+            style={{
+              position: 'fixed', bottom: 24, left: 24, width: 180, zIndex: 1000,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              border: '1px solid #d3adf7',
+              fontSize: 12,
+            }}
+            headStyle={{ background: '#f9f0ff', borderBottom: '1px solid #efdbff', minHeight: 32, padding: '4px 10px' }}
+            bodyStyle={{ padding: 10 }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }} size={6}>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                送出轉店申請後按下方模擬全家回應
+              </Text>
+              <Button
+                block size="small"
+                icon={<CheckCircleOutlined style={{ color: canReceiveReply ? '#52c41a' : undefined }} />}
+                disabled={!canReceiveReply}
+                onClick={simulateFamiSuccess}
+                style={{ fontSize: 12 }}
+              >
+                轉店成功
+              </Button>
+              <Button
+                block size="small"
+                icon={<ExclamationCircleOutlined style={{ color: canReceiveReply ? '#ff4d4f' : undefined }} />}
+                disabled={!canReceiveReply}
+                onClick={simulateFamiFailure}
+                style={{ fontSize: 12 }}
+              >
+                轉店失敗
+              </Button>
+              <Divider style={{ margin: '2px 0' }} />
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                RS9 退貨（另一管道）
+              </Text>
+              <Button
+                block size="small" icon={<RollbackOutlined />}
+                onClick={simulateRs9Return}
+                style={{ fontSize: 12 }}
+              >
+                模擬 RS9 退貨
+              </Button>
+            </Space>
+          </Card>
+        )}
+      </Content>
+    );
+  }
+
+  function App() {
+    return (
+      <ConfigProvider theme={{
+        token: {
+          colorPrimary: '#1677ff',
+          borderRadius: 6,
+          fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', sans-serif",
+        },
+      }}>
+        <AntApp>
+          <Layout style={{ minHeight: '100vh' }}>
+            <Sider theme="dark" width={160} style={{ background: '#32323a' }}>
+              <div style={{
+                height: 48, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', borderBottom: '1px solid #1f2937'
+              }}>
+                <span className="brand-logo">無毒農</span>
+              </div>
+              <Menu theme="dark" mode="inline"
+                defaultOpenKeys={['orders']}
+                selectedKeys={['switch-store']}
+                items={SIDE_MENU}
+                style={{ background: '#32323a', borderRight: 0 }} />
+            </Sider>
+            <Layout>
+              <Header style={{
+                background: '#D7F4DA', padding: '0 24px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                borderBottom: '1px solid #c2dfc4', height: 48, lineHeight: '48px',
+              }}>
+                <Breadcrumb items={[
+                  { title: <span style={{ color: '#555' }}>訂單管理</span> },
+                  { title: <a href="list.html" style={{ color: '#555' }}>全家閉轉店</a> },
+                  { title: <strong>04901154451</strong> },
+                ]} />
+                <Space size={16}>
+                  <Space size={6}><UserOutlined style={{ color: '#666' }} /><Text style={{ color: '#666' }}>Glen Wen</Text></Space>
+                  <Button type="text" size="small" icon={<LogoutOutlined />} style={{ color: '#666' }}>登出</Button>
+                </Space>
+              </Header>
+              <DetailPage />
+            </Layout>
+          </Layout>
+        </AntApp>
+      </ConfigProvider>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
