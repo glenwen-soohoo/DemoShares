@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>無毒農 - 後台管理系統｜分類與導航管理</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
+<script src="https://unpkg.com/antd@5.20.0/dist/antd.min.js"></script>
+<script src="https://unpkg.com/@ant-design/icons@5/dist/index.umd.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<style>
+  html, body, #root { margin: 0; height: 100%; }
+  body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, sans-serif; }
+  .brand-logo { color: #3C8C3C; font-weight: 700; font-size: 20px; letter-spacing: 1px; }
+  .drag-handle { color: #999; cursor: grab; font-size: 16px; padding: 0 8px; }
+  .product-line-info {
+    display: grid; grid-template-columns: 1.2fr 0.8fr 2fr 1.2fr 1fr; gap: 12px;
+    background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px;
+    padding: 16px; margin-bottom: 16px; align-items: center;
+  }
+  .product-line-info .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .product-line-info .value { font-size: 15px; font-weight: 600; color: #2a3542; }
+  .product-line-info .preview-btn-cell { text-align: right; }
+  .nav-preview-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  .nav-preview-item:last-child { border-bottom: none; }
+  .nav-preview-item .sort-num {
+    color: #1677ff; font-weight: 600; min-width: 28px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script id="real-data" type="application/json">
+{
+  "subCategories": [{"id":17,"cat":2,"type":1,"pt":2,"name":"大寶寶","desc":"4倍粥，適合10-12個月寶寶。使用牙齦將食物碾碎，進行輕度咀嚼訓練","sort":6,"display":true,"en":"machingC"},{"id":18,"cat":2,"type":1,"pt":3,"name":"一歲以上","desc":"燉飯顆粒，適合1歲以上寶寶，保留完整米粒及豐富的配料，給孩子滿滿營養","sort":7,"display":true,"en":"machineD"},{"id":19,"cat":2,"type":1,"pt":10,"name":"寶寶好料","desc":"粥品的其他新選擇，讓孩子接觸更多元的食物及種類，保持童心好奇感","sort":8,"display":true,"en":"babySoup"},{"id":20,"cat":2,"type":1,"pt":6,"name":"常溫副食品","desc":"不佔冰箱空間，簡單保存好便利，米餅、凍乾、粥品、燉飯讓你自由挑選","sort":9,"display":true,"en":"machineF"},{"id":21,"cat":2,"type":1,"pt":8,"name":"嚴選商品","desc":"不用再爬文比較，好用的育兒神器都在這，一起跟粥品選購既便利又划算","sort":12,"display":true,"en":"machineG"},{"id":22,"cat":2,"type":1,"pt":11,"name":"安心送禮","desc":"給孩子的第一份祝福，不管是精選禮盒、或是客製化的專人服務通通都有","sort":13,"display":true,"en":"gift"},{"id":56,"cat":2,"type":1,"pt":12,"name":"龍來呷飽飽","desc":"凡購買指定呷飽飽組合，加贈【宅魚】干貝 或 一口吃烏魚子 或【長合餅舖】牛軋糖。","sort":1,"display":false,"en":"dragon"},{"id":57,"cat":2,"type":1,"pt":13,"name":"通路合作","desc":"無","sort":13,"display":false,"en":"etailer"},{"id":78,"cat":2,"type":1,"pt":14,"name":"乖乖聯名","desc":"全台副食品獨家首創的「乖乖」聯名商品，寶寶要乖乖就吃乖乖系列商品","sort":3,"display":false,"en":"kuai-kuai"},{"id":82,"cat":2,"type":1,"pt":15,"name":"訂閱制","desc":"節省爸媽時間的福音，一次下訂、分批出貨好便利，我們的倉庫就是你的大冰箱","sort":14,"display":true,"en":"Subscription"},{"id":84,"cat":2,"type":2,"pt":null,"name":"熱門主打","desc":"滿1500免運費！平日下午兩點前訂購，當天出貨、隔日到貨（遇假日出貨順延至上班日）","sort":1,"display":true,"en":"hot"},{"id":89,"cat":2,"type":2,"pt":null,"name":"乖乖聯名","desc":"全台副食品獨家首創的「乖乖」聯名商品，寶寶要乖乖就吃乖乖系列商品","sort":3,"display":true,"en":"kuai-kuai"},{"id":123,"cat":2,"type":1,"pt":16,"name":"預購專區","desc":"預購商品需獨立結帳， 出貨前將簡訊通知","sort":5,"display":false,"en":"pre-order"},{"id":140,"cat":2,"type":1,"pt":17,"name":"大富翁聯名","desc":"全台獨家首創的「大富翁」聯名副食品，一起環遊世界，讓寶寶成為營養的大富翁！","sort":2,"display":false,"en":"richman"},{"id":141,"cat":2,"type":2,"pt":null,"name":"大富翁聯名","desc":"全台獨家首創的「大富翁」聯名副食品，一起環遊世界，讓寶寶成為營養的大富翁！","sort":2,"display":true,"en":"richman"},{"id":151,"cat":2,"type":1,"pt":28,"name":"大人系專區","desc":"照顧寶寶之餘，別忘了好好照顧自己，一碗好湯幫您補足元氣","sort":11,"display":true,"en":"grown-up-zone"},{"id":155,"cat":2,"type":1,"pt":29,"name":"綠時光","desc":"早晚一杯綠時光，補充一天蔬果量！","sort":10,"display":true,"en":"green-time"},{"id":180,"cat":2,"type":2,"pt":null,"name":"精選組合","desc":"均衡攝取，多樣滿足","sort":16,"display":true,"en":"best-choices"},{"id":181,"cat":2,"type":2,"pt":null,"name":"新手綠拿鐵","desc":"果香濃郁，順口清甜","sort":17,"display":true,"en":"first-taste-suggestion"},{"id":182,"cat":2,"type":2,"pt":null,"name":"經典綠拿鐵","desc":"蔬菜加倍，體內環保","sort":18,"display":true,"en":"classic-choice"},{"id":183,"cat":2,"type":2,"pt":null,"name":"輕鬆快煮","desc":"湯品甜點，即刻滋補","sort":19,"display":true,"en":"fast-choice"},{"id":184,"cat":2,"type":2,"pt":null,"name":"長期訂閱","desc":"規律續訂，最優回饋","sort":20,"display":true,"en":"smoothie-subscription"},{"id":188,"cat":2,"type":1,"pt":30,"name":"預購專區","desc":"預購商品需獨立結帳，商品將於標示日期起依訂單順序陸續出貨","sort":15,"display":true,"en":"pre-order-greensmoothie"},{"id":9,"cat":1,"type":1,"pt":1,"name":"功效益生菌","desc":"✓消化道保健 ✓排便順暢","sort":4,"display":true,"en":"probiotics"},{"id":10,"cat":1,"type":2,"pt":null,"name":"強打推薦","desc":"孩子成長必備精選","sort":3,"display":true,"en":"hot"},{"id":11,"cat":1,"type":2,"pt":null,"name":"組合優惠","desc":"小孩才做選擇，通通一次買最划算！","sort":7,"display":true,"en":"multipack"},{"id":12,"cat":1,"type":1,"pt":2,"name":"成長補給","desc":"✓學習力 ✓晶亮力 ✓骨骼牙齒發育","sort":5,"display":true,"en":"grow"},{"id":55,"cat":1,"type":1,"pt":3,"name":"其他","desc":"不顯示","sort":9,"display":false,"en":"other"},{"id":59,"cat":1,"type":1,"pt":4,"name":"營養補給","desc":"營養美味補給站","sort":8,"display":true,"en":"other"},{"id":101,"cat":1,"type":1,"pt":5,"name":"預購專區","desc":"預購商品出貨前將簡訊通知","sort":2,"display":false,"en":"pre-order"},{"id":109,"cat":1,"type":2,"pt":null,"name":"雙11優惠","desc":"雙11指定品項及組合享優惠","sort":1,"display":false,"en":"double-11-discount"},{"id":146,"cat":1,"type":1,"pt":7,"name":"訂閱制","desc":"一次下訂分批出貨，不用囤貨在家裡","sort":1,"display":false,"en":"subscription"},{"id":148,"cat":1,"type":1,"pt":8,"name":"新客專區","desc":"新客首購獨享，最低只要85折","sort":1,"display":false,"en":"new-customer"},{"id":195,"cat":1,"type":1,"pt":9,"name":"晶亮有感","desc":"專為14歲以上設計，晶亮水潤健康維持","sort":6,"display":true,"en":"glow"},{"id":46,"cat":5,"type":1,"pt":1,"name":"在地小農","desc":"無毒農嚴選台灣在地好農產","sort":3,"display":true,"en":"hot"},{"id":47,"cat":5,"type":1,"pt":0,"name":"嚴選台果","desc":"嚴選在地蔬果，新鮮送達","sort":4,"display":false,"en":"season"},{"id":48,"cat":5,"type":1,"pt":12,"name":"進口菁品","desc":"嚴選進口蔬果，新鮮送達","sort":5,"display":true,"en":"import"},{"id":49,"cat":5,"type":1,"pt":11,"name":"嚴選好物","desc":"人氣熱銷，必嚐美味","sort":6,"display":true,"en":"pre-order"},{"id":50,"cat":5,"type":2,"pt":null,"name":"送禮專區","desc":"來自大地的鮮甜心意，傳遞最真心的祝福","sort":7,"display":true,"en":"gift"},{"id":51,"cat":5,"type":1,"pt":13,"name":"水產直送","desc":"嚴選在地水產，新鮮送達","sort":8,"display":true,"en":"seafood"},{"id":52,"cat":5,"type":1,"pt":6,"name":"不顯示","desc":"不顯示","sort":10,"display":false,"en":"not-show"},{"id":58,"cat":5,"type":2,"pt":null,"name":"草莓季春節不打烊","desc":"春節期間持續出貨，訂購時請留意或備註可以收貨的時間","sort":11,"display":false,"en":"strawberry"},{"id":79,"cat":5,"type":2,"pt":null,"name":"農產嘉年華","desc":"紅利點數放送無上限","sort":6,"display":false,"en":"farmer-festival"},{"id":85,"cat":5,"type":2,"pt":null,"name":"五月水蜜桃","desc":"","sort":1,"display":false,"en":"may-peach"},{"id":86,"cat":5,"type":2,"pt":null,"name":"荔枝/玉荷包","desc":"","sort":2,"display":false,"en":"litchi"},{"id":90,"cat":5,"type":2,"pt":null,"name":"夏天芒果季","desc":"","sort":2,"display":false,"en":"mango"},{"id":91,"cat":5,"type":2,"pt":null,"name":"高山水蜜桃","desc":"","sort":1,"display":false,"en":"highland-peach"},{"id":94,"cat":5,"type":2,"pt":null,"name":"新品快報","desc":"","sort":1,"display":true,"en":"new"},{"id":104,"cat":5,"type":2,"pt":null,"name":"無毒農嚴選","desc":"","sort":5,"display":false,"en":"premium"},{"id":162,"cat":5,"type":2,"pt":null,"name":"人氣商品","desc":"","sort":2,"display":true,"en":"popular-items"},{"id":192,"cat":5,"type":1,"pt":33,"name":"安心時蔬","desc":"","sort":4,"display":true,"en":"Safe-Vegetables"},{"id":23,"cat":3,"type":1,"pt":20,"name":"年菜預購專區","desc":"此專區需和一般商品分開結帳，預計2026/2/2起陸續出貨","sort":31,"display":false,"en":"preorder"},{"id":24,"cat":3,"type":2,"pt":null,"name":"熱銷排行","desc":"每週精選熱門產品","sort":3,"display":false,"en":"hot"},{"id":25,"cat":3,"type":2,"pt":null,"name":"限時限量","desc":"期間限定推薦商品","sort":23,"display":false,"en":"sort"},{"id":26,"cat":3,"type":1,"pt":14,"name":"VIP獨享","desc":"每週推出VIP專屬超值商品","sort":7,"display":false,"en":"vip"},{"id":28,"cat":3,"type":1,"pt":15,"name":"冷凍蔬果","desc":"鎖住蔬果的清甜與營養","sort":13,"display":true,"en":"frozenvegetable"},{"id":29,"cat":3,"type":1,"pt":3,"name":"野生漁獲","desc":"產地現撈活凍海鮮","sort":5,"display":true,"en":"seafood"},{"id":30,"cat":3,"type":1,"pt":18,"name":"養殖水產","desc":"層層把關的新鮮無毒水產","sort":6,"display":true,"en":"feed-seafood"},{"id":31,"cat":3,"type":1,"pt":19,"name":"時令限定","desc":"季節限定水產，營養價值高","sort":28,"display":false,"en":"season-food"},{"id":32,"cat":3,"type":1,"pt":7,"name":"牛羊肉","desc":"頂級嚴選，味美鮮嫩","sort":7,"display":true,"en":"beef"},{"id":33,"cat":3,"type":1,"pt":8,"name":"羊肉專區","desc":"秋冬限定，滋味濃郁","sort":17,"display":false,"en":"lamb"},{"id":34,"cat":3,"type":2,"pt":null,"name":"本土黑豬","desc":"友善養殖，安心入口","sort":14,"display":false,"en":"black-pork"},{"id":35,"cat":3,"type":2,"pt":null,"name":"國產白豬","desc":"人道飼養，支持在地","sort":15,"display":false,"en":"white-pork"},{"id":36,"cat":3,"type":1,"pt":31,"name":"肉品加工","desc":"用料扎實，簡單美味","sort":10,"display":true,"en":"processed"},{"id":37,"cat":3,"type":1,"pt":4,"name":"雞肉","desc":"家庭常備，入菜多變","sort":9,"display":true,"en":"chicken"},{"id":38,"cat":3,"type":1,"pt":10,"name":"鴨鵝專區","desc":"獨特風味，就愛這一味","sort":30,"display":false,"en":"duck"},{"id":53,"cat":3,"type":1,"pt":5,"name":"豬肉","desc":"","sort":8,"display":true,"en":"pork"},{"id":54,"cat":3,"type":1,"pt":17,"name":"調理即食","desc":"快速備餐的秘密武器","sort":12,"display":true,"en":"streetfood"},{"id":62,"cat":3,"type":1,"pt":21,"name":"惜食專區","desc":"皆為短效期 / 失真空商品，惜福價6折起","sort":14,"display":true,"en":"cherish-food"},{"id":80,"cat":3,"type":2,"pt":null,"name":"從心出花","desc":"振興花蓮農特產品，滿$500送$100，可累計","sort":26,"display":false,"en":"support-hualien"},{"id":87,"cat":3,"type":1,"pt":22,"name":"訂閱制","desc":"一次下單分次提領，無毒農冰箱借你冰","sort":27,"display":false,"en":"subscription"},{"id":88,"cat":3,"type":1,"pt":23,"name":"端午龍粽","desc":"飄香傳千里，全台龍粽名店安心送到家","sort":22,"display":false,"en":"festival-dumplings"},{"id":92,"cat":3,"type":2,"pt":null,"name":"海鮮季","desc":"單筆滿$500送$50，滿$1000再多送$70，無上限","sort":25,"display":false,"en":"seafood-season"},{"id":96,"cat":3,"type":2,"pt":null,"name":"中秋烤肉節","desc":"單筆滿$500送$50，滿$1000再多送$70，無上限","sort":24,"display":false,"en":"bbq-festival"},{"id":97,"cat":3,"type":2,"pt":null,"name":"中秋後享瘦","desc":"消費滿 $999 享 $1 好物加購","sort":20,"display":false,"en":"fit-festival"},{"id":106,"cat":3,"type":2,"pt":null,"name":"在地特產","desc":"免出國免排隊，在家就能享受","sort":21,"display":false,"en":"local-specialty"},{"id":111,"cat":3,"type":2,"pt":null,"name":"火鍋季","desc":"","sort":1,"display":false,"en":"hot-pot"},{"id":122,"cat":3,"type":1,"pt":24,"name":"澎湖嚴選","desc":"澎湖在地鮮漁獲，產地現挑送到家","sort":4,"display":true,"en":"penghu"},{"id":124,"cat":3,"type":1,"pt":25,"name":"澎湖直播","desc":"","sort":19,"display":false,"en":"penghu-live"},{"id":132,"cat":3,"type":2,"pt":null,"name":"年假必備好料","desc":"過年團圓就靠這一味","sort":1,"display":false,"en":"new-year-essentials"},{"id":137,"cat":3,"type":2,"pt":null,"name":"好漁進港","desc":"精選台灣各地漁港的優質水產","sort":5,"display":false,"en":"fishing-goods"},{"id":138,"cat":3,"type":2,"pt":null,"name":"春季美食饗宴","desc":"初春限定 7 折起，再享滿額 $1 加購","sort":1,"display":false,"en":"spring-food-feast"},{"id":142,"cat":3,"type":2,"pt":null,"name":"新客專區","desc":"新客限定超值優惠組，精選熱銷好物都在這","sort":6,"display":false,"en":"new-customer"},{"id":157,"cat":3,"type":2,"pt":null,"name":"夏末狂購祭","desc":"熱銷品項7折起，下單再抽鑄鐵鍋","sort":1,"display":false,"en":"late-summer-shopping"},{"id":160,"cat":3,"type":1,"pt":26,"name":"烘焙食品","desc":"嚴選食材，職人手作","sort":8,"display":false,"en":"baked-goods"},{"id":163,"cat":3,"type":2,"pt":null,"name":"中秋專區","desc":"精選中秋肉肉、海鮮一次滿足！","sort":1,"display":false,"en":"mid-autumn-collection"},{"id":170,"cat":3,"type":2,"pt":null,"name":"秋季吃鍋","desc":"精選鍋物6折起，再享週週$1好物","sort":1,"display":false,"en":"autumn-hotpot"},{"id":173,"cat":3,"type":2,"pt":null,"name":"蔬食專區","desc":"清爽蔬食補給站，健康料理更簡單","sort":15,"display":false,"en":"vegi"},{"id":177,"cat":3,"type":2,"pt":null,"name":"澎湃年味首選","desc":"經典大菜到必備食材，團圓滋味就靠這味","sort":2,"display":false,"en":"lunar-selection"},{"id":178,"cat":3,"type":2,"pt":null,"name":"年節下單開春即贈","desc":"年假期間（2/14-2/22），購買此分類任一品項即贈$50購物金","sort":2,"display":false,"en":"lunar-gift"},{"id":179,"cat":3,"type":2,"pt":null,"name":"元宵海陸祭","desc":"購買此分類任一品項，輸入折扣碼 FFM100 現折$100","sort":1,"display":false,"en":"surf-and-turf"},{"id":187,"cat":3,"type":2,"pt":null,"name":"春季鮮魚大賞","desc":"極致鮮魚饗宴，全面6折起","sort":2,"display":false,"en":"spring-fresh-fish"},{"id":189,"cat":3,"type":1,"pt":32,"name":"名店料理","desc":"","sort":11,"display":true,"en":"famous-restaurant"},{"id":191,"cat":3,"type":2,"pt":null,"name":"熱銷排行","desc":"老饕首選，好評熱銷中","sort":1,"display":true,"en":"best-sellers"},{"id":193,"cat":3,"type":2,"pt":null,"name":"鎖管季","desc":"時令限定，全面 8 折起","sort":3,"display":true,"en":"season"},{"id":194,"cat":3,"type":2,"pt":null,"name":"新客限定","desc":"不出錯盲買清單，首購最划算","sort":32,"display":true,"en":"new-customer-only"},{"id":196,"cat":3,"type":2,"pt":null,"name":"端午專區","desc":"精選各式南北粽，最粽你的心","sort":2,"display":true,"en":"festival-dumplings"}],
+  "greenSmoothieIds": [180, 181, 182, 183, 184, 188],
+  "productLines": [
+    { "key": "baby",   "id": 2, "productType": 9,  "name": "粥寶寶",        "url": "/Products/Kitchenette",   "isGreenSmoothie": false, "showGreenSmoothieField": true },
+    { "key": "eagle",  "id": 1, "productType": 11, "name": "益菓保",        "url": "/Products/Eaglebabee",    "isGreenSmoothie": false },
+    { "key": "green",  "id": 2, "productType": 9,  "name": "綠時光",        "url": "/Products/GreenSmoothie", "isGreenSmoothie": true,  "showGreenSmoothieField": true, "note": "綠時光是粥寶寶下的虛擬產線（共用 ProductCategoryId=2、ProductType=9），由 Mongo ProductCategoryFilterConfig.GreenSmoothieSubCategoryIds 白名單決定。" },
+    { "key": "local",  "id": 5, "productType": 0,  "name": "產地直送(免運)", "url": "/Products/ItemNew",      "hasNavPreview": true, "navKey": 5 },
+    { "key": "frozen", "id": 3, "productType": 7,  "name": "冷凍超市",      "url": "/Products/FrozenFood",    "hasNavPreview": true, "navKey": 6 }
+  ],
+  "layoutConfiguration": {"menuItems":[{"key":1,"children":[{"title":"品牌理念","url":"/Home/AboutNew"},{"title":"團隊介紹","url":"/Home/AboutTeam"},{"title":"好農推薦","url":"/Activity/RecommendFarmer"},{"title":"安心檢驗日報","url":"/Home/DailyReport"},{"title":"企業送禮","url":"/Activity/CompanyGift"}],"title":"關於無毒農","url":"/Home/AboutNew"},{"key":2,"children":[{"title":"關於粥寶寶","url":"/BabyFood"},{"title":"購買粥寶寶","url":"/Products/Kitchenette"}],"title":"粥寶寶","url":"/BabyFood"},{"key":3,"children":[{"title":"關於益菓保","url":"/Eaglebabee"},{"title":"購買益菓保","url":"/Products/Eaglebabee"},{"title":"保健知識","url":"/Blog/BlogNew?CategoryId=4153"},{"title":"購物須知","url":"https://greenbox.tw/Blog/BlogPostNew/7766/"}],"title":"益菓保","url":"/Eaglebabee"},{"key":4,"children":[{"title":"關於綠時光","url":"/Activity/GreenSmoothie"},{"title":"購買綠時光","url":"/Products/GreenSmoothie"}],"title":"綠時光","url":"/Activity/GreenSmoothie","tag":"NEW!"},{"key":5,"children":[{"title":"新品快報","url":"/Products/ItemNew#new"},{"title":"人氣商品","url":"/Products/ItemNew#popular-items"},{"title":"在地小農","url":"/Products/ItemNew#hot"},{"title":"安心時蔬","url":"/Products/ItemNew#Safe-Vegetables"},{"title":"進口菁品","url":"/Products/ItemNew#import"},{"title":"嚴選好物","url":"/Products/ItemNew#pre-order"},{"title":"送禮專區","url":"/Products/ItemNew#gift"},{"title":"水產直送","url":"/Products/ItemNew#seafood"}],"title":"產地直送(免運)","url":"/Products/ItemNew"},{"key":6,"children":[{"title":"熱銷排行","url":"/Products/FrozenFood#best-sellers"},{"title":"端午專區","url":"/Products/FrozenFood#festival-dumplings"},{"title":"鎖管季","url":"/Products/FrozenFood#season"},{"title":"澎湖嚴選","url":"/Products/FrozenFood#penghu","tag":"Hot"}],"title":"冷凍超市","url":"/Products/FrozenFood"}]}
+}
+</script>
+
+<script type="text/babel" data-presets="react">
+const {
+  Layout, Menu, Card, Tabs, Table, Button, Switch, Tag, Modal, Form, Input, Select,
+  InputNumber, Space, Alert, ConfigProvider, Segmented, Typography, Divider,
+  Radio, App: AntApp, message, theme, Badge, Checkbox, Tooltip, Drawer,
+  Row, Col
+} = antd;
+const { Header, Sider, Content } = Layout;
+const { Title, Text } = Typography;
+const Icons = window.icons || {};
+const {
+  DashboardOutlined, ShoppingCartOutlined, AppstoreOutlined, FolderOpenOutlined,
+  UserOutlined, BellOutlined, SettingOutlined, LogoutOutlined,
+  PlusOutlined, SwapOutlined, HolderOutlined, EditOutlined, DeleteOutlined,
+  SaveOutlined, CloseOutlined, LinkOutlined, EyeOutlined, StarFilled, InfoCircleOutlined
+} = Icons;
+
+const { useState, useMemo, useRef, useEffect } = React;
+
+const REAL = JSON.parse(document.getElementById('real-data').textContent);
+const PRODUCT_LINES = REAL.productLines;
+// 規範：display=false 的 sort 一律為 null（「隱藏=無排序」），避免跟顯示中的 sort 數字重疊
+const SUB_CATEGORIES_ALL = REAL.subCategories.map(r => r.display ? r : { ...r, sort: null });
+const GREEN_SMOOTHIE_IDS_INIT = REAL.greenSmoothieIds;
+const LAYOUT_CONFIG = REAL.layoutConfiguration;
+
+// ============== 產線詳細頁 ==============
+function ProductLineDetail({ line, data, setData, greenSmoothieIds, setGreenSmoothieIds }) {
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [displayFilter, setDisplayFilter] = useState('all'); // 預設全部（隱藏的 sort=null 會排表尾，不會干擾顯示中）
+  const [sortMode, setSortMode] = useState(false);
+  const [sortDraft, setSortDraft] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [editVisible, setEditVisible] = useState(false);
+  const [navPreviewOpen, setNavPreviewOpen] = useState(false);
+  const [form] = Form.useForm();
+  const dragRow = useRef(null);
+
+  // 切產線時 reset
+  useEffect(() => {
+    setSortMode(false); setSortDraft(null);
+    setTypeFilter('all'); setDisplayFilter('all');
+  }, [line.key]);
+
+  // 此產線的子分類。排序邏輯：display=true 優先（依 sort 升、id 升 tie-break），display=false 排最後（依 id 升）
+  const myData = useMemo(() => {
+    let baseRows = data.filter(r => r.cat === line.id);
+    if (line.key === 'baby')  baseRows = baseRows.filter(r => !greenSmoothieIds.includes(r.id));
+    if (line.key === 'green') baseRows = baseRows.filter(r =>  greenSmoothieIds.includes(r.id));
+    return [...baseRows].sort((a, b) => {
+      if (a.display !== b.display) return a.display ? -1 : 1;
+      if (a.display) return (a.sort ?? Infinity) - (b.sort ?? Infinity) || a.id - b.id;
+      return a.id - b.id;
+    });
+  }, [data, line.key, line.id, greenSmoothieIds]);
+
+  const filtered = useMemo(() => {
+    let rows = myData;
+    if (typeFilter !== 'all') rows = rows.filter(r => r.type === Number(typeFilter));
+    if (displayFilter === 'yes') rows = rows.filter(r => r.display);
+    if (displayFilter === 'no')  rows = rows.filter(r => !r.display);
+    return rows;
+  }, [myData, typeFilter, displayFilter]);
+
+  const list = sortMode ? sortDraft : filtered;
+
+  // 進排序模式：鎖「全部類型 + 顯示中+隱藏」。隱藏的 sort 維持 null，但可順手切換上下架
+  const enterSortMode = () => {
+    setTypeFilter('all');
+    setDisplayFilter('all');
+    setSortDraft([...myData]);
+    setSortMode(true);
+  };
+  const cancelSort = () => { setSortMode(false); setSortDraft(null); };
+  const saveSort = () => {
+    // 只重新編號 sortDraft 內「顯示中」的子分類；隱藏的 sort 統一設為 null
+    const displayedInOrder = sortDraft.filter(r => r.display);
+    const updateMap = new Map(displayedInOrder.map((r, i) => [r.id, i + 1]));
+    const draftIds = new Set(sortDraft.map(r => r.id));
+    const next = data.map(r => {
+      if (!draftIds.has(r.id)) return r;
+      const draftRow = sortDraft.find(x => x.id === r.id);
+      return {
+        ...r,
+        display: draftRow.display,
+        sort: draftRow.display ? updateMap.get(r.id) : null,
+      };
+    });
+    setData(next);
+    message.success('排序已儲存，已清除前台快取');
+    setSortMode(false); setSortDraft(null);
+  };
+
+  // 排序模式下切換 display：只改 sortDraft 暫存，儲存後一併處理 sort 與快取
+  const toggleDisplayInSort = (rowId, val) => {
+    setSortDraft(sortDraft.map(r => r.id === rowId ? { ...r, display: val } : r));
+  };
+
+  const onDragStart = (e, idx) => { dragRow.current = idx; e.dataTransfer.effectAllowed = 'move'; };
+  const onDragOver = (e, idx) => {
+    e.preventDefault();
+    if (dragRow.current === null || dragRow.current === idx) return;
+    const next = [...sortDraft];
+    const [moved] = next.splice(dragRow.current, 1);
+    next.splice(idx, 0, moved);
+    dragRow.current = idx;
+    setSortDraft(next);
+  };
+
+  // 計算下一個自動分配的 ProductType（同產線 type=1 的 max pt + 1）
+  const nextProductType = useMemo(() => {
+    const sameTypeRows = data.filter(r => r.cat === line.id && r.type === 1 && r.pt != null);
+    if (sameTypeRows.length === 0) return 0;
+    return Math.max(...sameTypeRows.map(r => r.pt)) + 1;
+  }, [data, line.id]);
+
+  const openAdd = () => {
+    setEditing(null);
+    form.resetFields();
+    form.setFieldsValue({
+      type: 1, display: true, isPreOrder: false,
+      isGreenSmoothie: line.key === 'green' ? true : false,
+    });
+    setEditVisible(true);
+  };
+  const openEdit = (row) => {
+    setEditing(row);
+    form.setFieldsValue({
+      ...row,
+      isGreenSmoothie: greenSmoothieIds.includes(row.id),
+    });
+    setEditVisible(true);
+  };
+
+  const submitForm = () => {
+    form.validateFields().then(values => {
+      const isNowGreenSmoothie = !!values.isGreenSmoothie;
+      const pt = values.type === 1 ? (editing ? editing.pt : nextProductType) : null;
+      const newDisplay = !!values.display;
+      const oldDisplay = editing ? editing.display : false;
+      const becomeShown = newDisplay && !oldDisplay; // 新增或從隱藏切到顯示
+      const becomeHidden = !newDisplay && oldDisplay; // 從顯示切到隱藏
+
+      // sort 規則：新上架（新增 or 隱藏→顯示）一律 sort=0，自動排到最前面，營運再用「調整排序」拖移到正確位置
+      // 下架時 sort=null；其他情況維持原值
+      let ownSort = editing ? editing.sort : null;
+      if (becomeShown) ownSort = 0;
+      else if (becomeHidden) ownSort = null;
+
+      const cleaned = {
+        name: values.name, type: values.type, en: values.en,
+        desc: values.desc || '', isPreOrder: !!values.isPreOrder,
+        display: newDisplay, pt, sort: ownSort,
+      };
+
+      if (editing) {
+        setData(data.map(r => r.id === editing.id ? { ...r, ...cleaned } : r));
+        if (line.showGreenSmoothieField) {
+          const inWhitelist = greenSmoothieIds.includes(editing.id);
+          if (isNowGreenSmoothie && !inWhitelist) {
+            setGreenSmoothieIds([...greenSmoothieIds, editing.id]);
+          } else if (!isNowGreenSmoothie && inWhitelist) {
+            setGreenSmoothieIds(greenSmoothieIds.filter(id => id !== editing.id));
+          }
+        }
+        message.success(becomeShown ? '已儲存並上架（排在最前面，可用「調整排序」拖移調整），前台快取已清除' :
+                        becomeHidden ? '已儲存並下架，前台快取已清除' :
+                        '已儲存子分類設定');
+      } else {
+        const newId = Date.now();
+        const newRow = { ...cleaned, id: newId, cat: line.id };
+        setData([...data, newRow]);
+        if (line.showGreenSmoothieField && isNowGreenSmoothie) {
+          setGreenSmoothieIds([...greenSmoothieIds, newId]);
+        }
+        message.success('已新增子分類（排在最前面，可用「調整排序」拖移調整），前台快取已清除');
+      }
+      setEditVisible(false);
+    });
+  };
+  const handleDelete = () => {
+    Modal.confirm({
+      title: `確定要刪除「${editing.name}」嗎？`,
+      content: '刪除後將無法復原，系統會自動清除前台快取。',
+      okText: '刪除', okButtonProps: { danger: true }, cancelText: '取消',
+      onOk: () => {
+        setData(data.filter(r => r.id !== editing.id));
+        setGreenSmoothieIds(greenSmoothieIds.filter(id => id !== editing.id));
+        message.success('已刪除');
+        setEditVisible(false);
+      },
+    });
+  };
+  const toggleDisplay = (row, val) => {
+    setData(data.map(r => r.id === row.id ? { ...r, display: val } : r));
+  };
+
+  // 導航欄預覽：對應的 menuItems 主項目
+  const navMain = useMemo(() => {
+    if (!line.hasNavPreview) return null;
+    return (LAYOUT_CONFIG.menuItems || []).find(m => m.key === line.navKey);
+  }, [line]);
+
+  // 導航欄預覽要列的子項目：永遠是「該產線所有顯示中」的子分類，不受 user filter 影響
+  const navItems = useMemo(() => myData.filter(r => r.display), [myData]);
+
+  const columns = [
+    ...(sortMode ? [{ title: '', width: 40, render: () => <span className="drag-handle"><HolderOutlined /></span> }] : []),
+    { title: '順序', dataIndex: 'sort', width: 60,
+      render: (v, row) => {
+        if (sortMode) {
+          if (!row.display) return <Text type="secondary">—</Text>;
+          // 排序模式：算當前 row 在 sortDraft 顯示中部分的位次
+          const displayedList = (sortDraft || []).filter(r => r.display);
+          const idx = displayedList.findIndex(r => r.id === row.id);
+          return <Text strong style={{ color: '#1677ff' }}>{idx + 1}</Text>;
+        }
+        if (!row.display) return <Text type="secondary">—</Text>;
+        return <Text strong style={{ color: '#1677ff' }}>{v}</Text>;
+      }
+    },
+    {
+      title: '子分類名稱',
+      dataIndex: 'name',
+      render: (v, row) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{v}</Text>
+          {row.desc && <Text type="secondary" style={{ fontSize: 12 }}>{row.desc}</Text>}
+        </Space>
+      ),
+    },
+    {
+      title: '類型', dataIndex: 'type', width: 130,
+      render: (v, row) => v === 1
+        ? <Tag color="blue">一般 #{row.pt}</Tag>
+        : <Tag color="purple">關鍵字</Tag>,
+    },
+    { title: '英文錨點', dataIndex: 'en', width: 170, render: v => <Text style={{ fontSize: 13, fontFamily: "'Roboto Mono', monospace", color: '#555' }}>{v}</Text> },
+    {
+      title: '前台顯示', dataIndex: 'display', width: 100,
+      render: (v, row) => {
+        if (sortMode) {
+          // 排序模式下可直接切換上下架，儲存時一併套用
+          return <Switch size="small" checked={v}
+            checkedChildren="顯示中" unCheckedChildren="隱藏"
+            onChange={(val) => toggleDisplayInSort(row.id, val)} />;
+        }
+        return v
+          ? <Tag style={{ background: '#52c41a', color: '#fff', border: 'none' }}>顯示中</Tag>
+          : <Tag>隱藏</Tag>;
+      },
+    },
+    {
+      title: '操作', width: 80,
+      render: (_, row) => (
+        <Button type="link" size="small" icon={<EditOutlined />} disabled={sortMode} onClick={() => openEdit(row)}>編輯</Button>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <div className="product-line-info">
+        <div><div className="label">產線名稱</div><div className="value">{line.name}</div></div>
+        <div><div className="label">Type</div><div className="value">#{line.productType}</div></div>
+        <div><div className="label">對應前台 URL</div><div className="value" style={{ fontFamily: 'Roboto Mono, monospace', fontSize: 13 }}>
+          <LinkOutlined /> {line.url}
+        </div></div>
+        <div><div className="label">子分類總數</div><div className="value">
+          {myData.length} <Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>（{myData.filter(r => r.display).length} 顯示中）</Text>
+        </div></div>
+        <div className="preview-btn-cell">
+          {line.hasNavPreview && (
+            <Button icon={<EyeOutlined />} onClick={() => setNavPreviewOpen(true)}>預覽導航欄</Button>
+          )}
+        </div>
+      </div>
+
+      <Space style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap' }}>
+        <Space wrap>
+          <Segmented options={[
+            { label: `全部（${myData.length}）`, value: 'all' },
+            { label: `一般（${myData.filter(r => r.type === 1).length}）`, value: '1' },
+            { label: `關鍵字（${myData.filter(r => r.type === 2).length}）`, value: '2' },
+          ]} value={typeFilter} onChange={setTypeFilter} disabled={sortMode} />
+          <Segmented options={[
+            { label: '顯示中+隱藏', value: 'all' },
+            { label: '僅顯示中', value: 'yes' },
+            { label: '僅隱藏', value: 'no' },
+          ]} value={displayFilter} onChange={setDisplayFilter} disabled={sortMode} />
+        </Space>
+        <Space>
+          <Button icon={<PlusOutlined />} type="primary" disabled={sortMode} onClick={openAdd}>新增子分類</Button>
+          {!sortMode
+            ? <Button icon={<SwapOutlined />} onClick={enterSortMode}>調整排序</Button>
+            : (<Space>
+                <Button icon={<CloseOutlined />} onClick={cancelSort}>取消</Button>
+                <Button icon={<SaveOutlined />} type="primary" onClick={saveSort}>儲存排序</Button>
+              </Space>)
+          }
+        </Space>
+      </Space>
+
+      <Table rowKey="id" columns={columns} dataSource={list}
+        pagination={{ pageSize: 30, showSizeChanger: false }}
+        size="middle"
+        onRow={(_, idx) => sortMode ? ({
+          draggable: true,
+          onDragStart: (e) => onDragStart(e, idx),
+          onDragOver: (e) => onDragOver(e, idx),
+          onDragEnd: () => { dragRow.current = null; },
+        }) : {}}
+      />
+
+      {/* 新增/編輯 Modal */}
+      <Modal
+        title={`${editing ? '編輯' : '新增'}子分類 — ${line.name}`}
+        open={editVisible}
+        onCancel={() => setEditVisible(false)}
+        width={560}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>
+              {editing && (
+                <Button danger icon={<DeleteOutlined />} onClick={handleDelete}>刪除此子分類</Button>
+              )}
+            </div>
+            <Space>
+              <Button onClick={() => setEditVisible(false)}>取消</Button>
+              <Button type="primary" onClick={submitForm}>{editing ? '儲存' : '新增'}</Button>
+            </Space>
+          </div>
+        }
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: 12 }}>
+          <Form.Item name="name" label="子分類名稱" rules={[{ required: true, message: '必填' }, { max: 50 }]}>
+            <Input placeholder="例：秋季吃鍋" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={line.showGreenSmoothieField ? 14 : 24}>
+              <Form.Item name="type" label="類型" rules={[{ required: true }]}
+                extra={editing ? '已建立子分類無法修改類別。' : '建立後不可改動類別。'}>
+                <Radio.Group disabled={!!editing}>
+                  <Radio value={1}>一般子分類</Radio>
+                  <Radio value={2}>關鍵字子分類</Radio>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            {line.showGreenSmoothieField && (
+              <Col span={10}>
+                <Form.Item name="isGreenSmoothie" label="顯示位置" valuePropName="checked">
+                  <Checkbox disabled={!editing && line.key === 'green'}>
+                    <StarFilled style={{ color: '#52c41a' }} /> 顯示在綠時光頁
+                  </Checkbox>
+                </Form.Item>
+              </Col>
+            )}
+          </Row>
+
+          {!editing && (
+            <Form.Item noStyle shouldUpdate={(p, c) => p.type !== c.type}>
+              {({ getFieldValue }) => getFieldValue('type') === 1 && (
+                <Form.Item label="Type2">
+                  <Input value={nextProductType} disabled
+                    addonAfter={<Text type="secondary" style={{ fontSize: 12 }}>系統自動分配（同產線 Type2 最大值 +1）</Text>} />
+                </Form.Item>
+              )}
+            </Form.Item>
+          )}
+
+          <Form.Item name="en" label="英文錨點 (EnglishName)" rules={[
+            { required: true, message: '必填，前台網址錨點用' },
+            { pattern: /^[a-zA-Z0-9-]+$/, message: '只允許英文、數字、連字號' },
+            {
+              validator: async (_, value) => {
+                if (!value) return;
+                const dup = data.find(r =>
+                  r.cat === line.id &&
+                  r.id !== editing?.id &&
+                  (r.en || '').toLowerCase() === value.toLowerCase()
+                );
+                if (dup) {
+                  throw new Error(`此英文錨點已被「${dup.name}」(${dup.display ? '顯示中' : '隱藏'}) 使用，請改用其他名稱`);
+                }
+              }
+            }
+          ]}>
+            <Input placeholder="例：fall-hotpot" />
+          </Form.Item>
+
+          <Form.Item name="desc" label="描述" extra="顯示在前台子分類名稱下方，可留空。">
+            <Input placeholder="例：精選鍋物 6 折起" maxLength={100} showCount />
+          </Form.Item>
+
+          <Divider style={{ margin: '12px 0' }} />
+
+          <Form.Item name="isPreOrder" label="預購商品" valuePropName="checked"
+            extra="預購商品不可與一般商品子分類混合結帳。">
+            <Switch checkedChildren="預購" unCheckedChildren="一般" />
+          </Form.Item>
+
+          <Form.Item name="display" label="前台顯示" valuePropName="checked">
+            <Switch checkedChildren="顯示中" unCheckedChildren="隱藏" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 導航欄預覽 Drawer */}
+      <Drawer
+        title={navMain ? `導航欄預覽 — ${navMain.title}` : '導航欄預覽'}
+        placement="right"
+        width={520}
+        open={navPreviewOpen}
+        onClose={() => setNavPreviewOpen(false)}
+      >
+        {navMain && (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 15 }}>{navMain.title}</Text>
+              {navMain.tag && <Tag color="red" style={{ marginLeft: 8 }}>{navMain.tag}</Tag>}
+              <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: 12, color: '#888', marginTop: 4 }}>
+                <LinkOutlined /> {navMain.url}
+              </div>
+            </div>
+            <Divider style={{ margin: '12px 0' }} />
+            <Text type="secondary" style={{ fontSize: 13 }}>子項目（共 {navItems.length} 個 / 顯示中）</Text>
+            <div style={{ marginTop: 8 }}>
+              {navItems.map((r, i) => (
+                <div key={r.id} className="nav-preview-item">
+                  <span className="sort-num">{i + 1}</span>
+                  <Text strong style={{ flex: 1 }}>{r.name}</Text>
+                  <Text style={{ fontFamily: 'Roboto Mono, monospace', fontSize: 12, color: '#888' }}>
+                    {line.url}#{r.en}
+                  </Text>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 16, padding: '10px 14px', background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 6, color: '#666', fontSize: 13 }}>
+              此預覽自動從目前顯示中的子分類產生
+            </div>
+          </>
+        )}
+      </Drawer>
+    </div>
+  );
+}
+
+// ============== Layout ==============
+function App() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [currentTab, setCurrentTab] = useState('baby');
+  const [data, setData] = useState(SUB_CATEGORIES_ALL);
+  const [greenSmoothieIds, setGreenSmoothieIds] = useState(GREEN_SMOOTHIE_IDS_INIT);
+
+  const sideMenuItems = [
+    { key: 'home', icon: <DashboardOutlined />, label: '首頁' },
+    { key: 'orders', icon: <ShoppingCartOutlined />, label: '訂單處理' },
+    { key: 'products', icon: <AppstoreOutlined />, label: '商品管理' },
+    { key: 'category', icon: <FolderOpenOutlined />, label: '分類與導航管理' },
+    { key: 'members', icon: <UserOutlined />, label: '會員管理' },
+    { key: 'events', icon: <BellOutlined />, label: '活動管理' },
+    { key: 'settings', icon: <SettingOutlined />, label: '系統設定' },
+  ];
+
+  const topTabItems = PRODUCT_LINES.map(l => ({
+    key: l.key,
+    label: <span>
+      {l.key === 'green' && <StarFilled style={{ color: '#52c41a', marginRight: 4 }} />}
+      {l.name}
+    </span>,
+  }));
+
+  const currentLine = PRODUCT_LINES.find(l => l.key === currentTab);
+
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#1677ff',
+          colorSuccess: '#3C8C3C',
+          colorWarning: '#faad14',
+          colorError: '#c62d1f',
+          borderRadius: 6,
+          fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', -apple-system, sans-serif",
+        },
+      }}>
+      <AntApp>
+        <Layout style={{ minHeight: '100vh' }}>
+          <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark" width={240}>
+            <div style={{ height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #1f2937' }}>
+              <span className="brand-logo" style={{ fontSize: collapsed ? 16 : 20 }}>{collapsed ? '無毒' : '無毒農'}</span>
+            </div>
+            <Menu theme="dark" mode="inline" selectedKeys={['category']} items={sideMenuItems} />
+          </Sider>
+          <Layout>
+            <Header style={{ background: '#D7F4DA', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #d1d2cf' }}>
+              <Text strong style={{ fontSize: 16, color: '#2a3542' }}>後台管理系統</Text>
+              <Space size={20}>
+                <Space size={6}><UserOutlined style={{ color: '#666' }} /><Text style={{ color: '#666' }}>王小明</Text></Space>
+                <Button type="text" icon={<LogoutOutlined />} style={{ color: '#666' }}>登出</Button>
+              </Space>
+            </Header>
+            <Content style={{ padding: 24, background: '#f5f5f5' }}>
+              <div style={{ marginBottom: 16 }}>
+                <Title level={3} style={{ margin: 0 }}>分類與導航管理</Title>
+              </div>
+              <Tabs activeKey={currentTab} onChange={setCurrentTab} size="large"
+                items={topTabItems} style={{ marginBottom: 0 }}
+                tabBarStyle={{ marginBottom: 0 }} />
+              <Card style={{ borderTopLeftRadius: 0 }}>
+                {currentLine && (
+                  <ProductLineDetail key={currentTab} line={currentLine}
+                    data={data} setData={setData}
+                    greenSmoothieIds={greenSmoothieIds} setGreenSmoothieIds={setGreenSmoothieIds} />
+                )}
+              </Card>
+            </Content>
+          </Layout>
+        </Layout>
+      </AntApp>
+    </ConfigProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

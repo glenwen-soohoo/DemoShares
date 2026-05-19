@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<title>全家閉轉店 — 後台</title>
+<title>全家閉改店 — 後台</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -29,7 +29,7 @@
 <script type="text/babel" data-presets="react">
   const {
     Layout, Menu, Card, Table, Button, Tag, Input, Space, Typography,
-    DatePicker, Breadcrumb, ConfigProvider, App: AntApp, Divider, Form, Checkbox
+    DatePicker, Breadcrumb, ConfigProvider, App: AntApp, Divider, Form, Checkbox, Modal
   } = antd;
   const { Sider, Header, Content } = Layout;
   const { Title, Text } = Typography;
@@ -68,10 +68,10 @@
   const STATUS_OPTIONS = [
     { value: 'received',      label: '收到通知',      color: 'orange'  },
     { value: 'contacting',    label: '聯絡客人中',    color: 'blue'    },
-    { value: 'submitted',     label: '已申請轉店',    color: 'purple'  },
-    { value: 'done',          label: '轉店完成',      color: 'green'   },
-    { value: 'failed',        label: '轉店失敗',      color: 'red'     },
-    { value: 'cannot_change', label: '無法轉店',      color: 'red'     },
+    { value: 'submitted',     label: '已申請改店',    color: 'purple'  },
+    { value: 'done',          label: '改店完成',      color: 'green'   },
+    { value: 'failed',        label: '改店失敗',      color: 'red'     },
+    { value: 'cannot_change', label: '無法改店',      color: 'red'     },
     { value: 'returned',      label: '已退貨',        color: 'default' },
   ];
   const statusMap = Object.fromEntries(STATUS_OPTIONS.map(s => [s.value, s]));
@@ -85,7 +85,7 @@
       children: [
         { key: 'order-list',   label: '訂單列表' },
         { key: 'fami-orders',  label: '全家訂單' },
-        { key: 'switch-store', label: '全家閉轉店' },
+        { key: 'switch-store', label: '全家閉改店' },
       ],
     },
     { key: 'product', label: '商品管理', disabled: true },
@@ -97,6 +97,7 @@
     const { message } = AntApp.useApp();
     const [orders, setOrders] = useState(INITIAL_ORDERS);
     const [mockOpen, setMockOpen] = useState(true);
+    const [emailOrder, setEmailOrder] = useState(null);
 
     const simulateNewNotification = () => {
       const newOrder = {
@@ -108,6 +109,7 @@
         status: 'received',
       };
       setOrders(prev => [newOrder, ...prev]);
+      setEmailOrder(newOrder);
       message.success({
         content: `全家發來新閉店通知（訂單 ${newOrder.id}）`,
         icon: <BellOutlined style={{ color: '#1677ff' }} />,
@@ -181,7 +183,7 @@
 
     return (
       <Content style={{ padding: 24, background: '#f5f5f5' }}>
-        <Title level={3} style={{ margin: '0 0 16px 0' }}>全家閉轉店</Title>
+        <Title level={3} style={{ margin: '0 0 16px 0' }}>全家全家閉改店</Title>
 
         <Card title="查詢條件" style={{ marginBottom: 16 }}>
           <Form layout="horizontal" labelCol={{ flex: '0 0 64px' }} labelAlign="left">
@@ -291,6 +293,53 @@
             </Space>
           </Card>
         )}
+
+        {/* 模擬寄給客服的 Email Modal */}
+        <Modal
+          open={!!emailOrder}
+          title={<Space><BellOutlined style={{ color: '#1677ff' }} />模擬寄給客服的通知信</Space>}
+          onCancel={() => setEmailOrder(null)}
+          width={600}
+          footer={[
+            <Button key="close" onClick={() => setEmailOrder(null)}>關閉</Button>,
+            <Button
+              key="goto" type="primary"
+              onClick={() => { window.location.href = 'detail.html?id=' + emailOrder.id; }}
+            >前往處理此單</Button>,
+          ]}
+        >
+          {emailOrder && (
+            <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 6, padding: 16, fontSize: 13, lineHeight: 1.8 }}>
+              <div style={{ borderBottom: '1px dashed #d9d9d9', paddingBottom: 12, marginBottom: 12, color: 'rgba(0,0,0,0.65)' }}>
+                <div><strong>寄件人：</strong>全家閉轉店系統 &lt;noreply@greenbox.tw&gt;</div>
+                <div><strong>收件人：</strong>客服信箱 &lt;cs@greenbox.tw&gt;</div>
+                <div><strong>主旨：</strong>【全家閉轉店通知】訂單 {emailOrder.id} 需處理（{dayjs().format('MM/DD HH:mm')}）</div>
+              </div>
+              <div style={{ color: 'rgba(0,0,0,0.88)' }}>
+                <p style={{ margin: '0 0 12px' }}>客服您好，</p>
+                <p style={{ margin: '0 0 12px' }}>剛收到全家發來的閉店通知，以下訂單的取貨門市需要改派，請至後台處理：</p>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
+                  <tbody>
+                    <tr><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0', width: 110, color: 'rgba(0,0,0,0.65)' }}>訂單編號</td><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0' }}>{emailOrder.id}</td></tr>
+                    <tr><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0', color: 'rgba(0,0,0,0.65)' }}>客人姓名</td><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0' }}>{emailOrder.customerName}</td></tr>
+                    <tr><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0', color: 'rgba(0,0,0,0.65)' }}>客人電話</td><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0' }}>{emailOrder.phone}</td></tr>
+                    <tr><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0', color: 'rgba(0,0,0,0.65)' }}>原始取貨門市</td><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0' }}>{emailOrder.originStore}</td></tr>
+                    <tr><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0', color: 'rgba(0,0,0,0.65)' }}>收到通知時間</td><td style={{ padding: '4px 8px', background: '#fff', border: '1px solid #f0f0f0' }}>{emailOrder.receivedAt}</td></tr>
+                  </tbody>
+                </table>
+                <p style={{ margin: '0 0 12px', color: '#cf1322' }}>請於 <strong>7 天內</strong> 聯絡客人並完成改店申請，逾時將自動退貨。</p>
+                <p style={{ margin: '0 0 12px' }}>
+                  <a href={`detail.html?id=${emailOrder.id}`} style={{ color: '#1677ff' }}>
+                    → 點此前往後台處理
+                  </a>
+                </p>
+              </div>
+              <div style={{ borderTop: '1px dashed #d9d9d9', paddingTop: 12, marginTop: 12, color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>
+                此為系統自動通知，請勿直接回覆此信。如有疑問請洽工程窗口。
+              </div>
+            </div>
+          )}
+        </Modal>
       </Content>
     );
   }
@@ -327,7 +376,7 @@
               }}>
                 <Breadcrumb items={[
                   { title: <span style={{ color: '#555' }}>訂單管理</span> },
-                  { title: <strong>全家閉轉店</strong> },
+                  { title: <strong>全家閉改店</strong> },
                 ]} />
                 <Space size={16}>
                   <Space size={6}><UserOutlined style={{ color: '#666' }} /><Text style={{ color: '#666' }}>Glen Wen</Text></Space>

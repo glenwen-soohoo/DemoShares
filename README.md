@@ -1,18 +1,21 @@
 # Demo Shares
 
 > 建立日期：2026-05-18
-> 最後更新：2026-05-18
+> 最後更新：2026-05-19
 > 類型：參考資料
 > 適用對象：自己 / 同事看 demo
 
 ---
 
-內部 demo 與原型頁面集中區。把資料夾推上 GitHub，自動透過 GitHub Pages 對外。
+內部 demo 與原型頁面集中區。把資料夾推上 GitHub，透過 GitHub Pages 對外。**沒有首頁清單，需要哪個 demo 就直接分享該 demo 的網址。**
 
-## 網址
+## 網址規則
 
-- 首頁：<https://glenwen-soohoo.github.io/DemoShares/>
-- 各 demo：<https://glenwen-soohoo.github.io/DemoShares/{資料夾名}/>
+```
+https://glenwen-soohoo.github.io/DemoShares/{資料夾名}/
+```
+
+範例：<https://glenwen-soohoo.github.io/DemoShares/2026-05-familymart-store-close/>
 
 ## 怎麼新增一個 demo
 
@@ -20,8 +23,6 @@
 2. 資料夾裡放 `index.html`（必要）+ 任何其他資源（images、css、js）
 3. `git add . && git commit -m "add 2026-05-greenbox-lp" && git push`
 4. 等 1–2 分鐘 GitHub Pages 部署完，網址就會通
-
-首頁 `index.html` 會自動透過 GitHub API 列出所有子資料夾，**不用手動維護清單**。
 
 ## 資料夾命名建議
 

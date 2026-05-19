@@ -84,18 +84,18 @@
       next: '下一步：聯絡客人，確認新門市；填寫聯絡備註後系統會自動切到「聯絡客人中」' },
     { value: 'contacting',    label: '聯絡客人中',   color: 'blue',    alertType: 'info',
       desc: '正在跟客人聯絡確認新門市。',
-      next: '下一步：客人決定後到下方「轉店操作」選擇新門市並送出給全家。' },
-    { value: 'submitted',     label: '已申請轉店',   color: 'purple',  alertType: 'info',
+      next: '下一步：客人決定後到下方「改店操作」選擇新門市並送出給全家。' },
+    { value: 'submitted',     label: '已申請改店',   color: 'purple',  alertType: 'info',
       desc: '新門市資訊已送給全家，等待全家系統確認。',
-      next: '下一步：等全家回應。若 ErrorCode=000 系統會自動切到「轉店完成」；若回失敗會自動切到「轉店失敗」。' },
-    { value: 'done',          label: '轉店完成',     color: 'green',   alertType: 'success',
+      next: '下一步：等全家回應。若 ErrorCode=000 系統會自動切到「改店完成」；若回失敗會自動切到「改店失敗」。' },
+    { value: 'done',          label: '改店完成',     color: 'green',   alertType: 'success',
       desc: '全家已確認轉店成功，訂單已轉至新門市，後續配送將送往新門市。',
       next: '下一步：本案可結案。' },
-    { value: 'failed',        label: '轉店失敗',     color: 'red',     alertType: 'error',
+    { value: 'failed',        label: '改店失敗',     color: 'red',     alertType: 'error',
       desc: 'API 回失敗（已交寄 / 已作廢 / 超時等），轉店無法完成。',
       next: '下一步：跟客人說明走退貨流程，等收到 RS9 退貨確認後切到「已退貨」。' },
-    { value: 'cannot_change', label: '無法轉店',     color: 'red',     alertType: 'error',
-      desc: '人工判定本案無法轉店（例如：客人聯絡不上、客人拒絕轉店、超過全家時限）。',
+    { value: 'cannot_change', label: '無法改店',     color: 'red',     alertType: 'error',
+      desc: '人工判定本案無法改店（例如：客人聯絡不上、客人拒絕轉店、超過全家時限）。',
       next: '下一步：跟客人協調退貨；本狀態需客服手動切換。' },
     { value: 'returned',      label: '已退貨',       color: 'default', alertType: 'info',
       desc: '商品已實際退回，本案結束。本狀態通常由 RS9 通知自動切換，也可人工切換。',
@@ -142,7 +142,7 @@
       children: [
         { key: 'order-list',   label: '訂單列表' },
         { key: 'fami-orders',  label: '全家訂單' },
-        { key: 'switch-store', label: '全家閉轉店' },
+        { key: 'switch-store', label: '全家閉改店' },
       ],
     },
     { key: 'product', label: '商品管理', disabled: true },
@@ -150,13 +150,13 @@
     { key: 'report',  label: '報表查詢', disabled: true },
   ];
 
-  // ====== 轉店進度（只反映「轉店操作」本身的進度，跟 returned 獨立）======
+  // ====== 改店進度（只反映「改店操作」本身的進度，跟 returned 獨立）======
   function calcStoreProgress(pickedStore, storeSubmitted, status) {
-    if (status === 'done')          return { label: '全家已確認轉店',     color: 'green'   };
-    if (status === 'failed')        return { label: '全家回覆轉店失敗',   color: 'red'     };
-    if (status === 'cannot_change') return { label: '無法轉店',           color: 'red'     };
-    // returned 不在這裡 — 進度落回實際操作狀態（可能是「尚未選店」/「已請全家轉店」等）
-    if (storeSubmitted)             return { label: '已請全家轉店',       color: 'purple'  };
+    if (status === 'done')          return { label: '全家已確認改店',     color: 'green'   };
+    if (status === 'failed')        return { label: '全家回覆改店失敗',   color: 'red'     };
+    if (status === 'cannot_change') return { label: '無法改店',           color: 'red'     };
+    // returned 不在這裡 — 進度落回實際操作狀態（可能是「尚未選店」/「已請全家改店」等）
+    if (storeSubmitted)             return { label: '已請全家改店',       color: 'purple'  };
     if (pickedStore)                return { label: '尚未送出給全家',     color: 'blue'    };
     return { label: '尚未選店', color: 'default' };
   }
@@ -208,7 +208,7 @@
     const submitToFami = () => {
       setStoreSubmitted(true);
       setStatus('submitted');
-      message.success('已送出給全家，狀態切換為「已申請轉店」');
+      message.success('已送出給全家，狀態切換為「已申請改店」');
     };
 
     // === 重新發送（直接執行，不再彈確認窗）===
@@ -248,8 +248,8 @@
         items: [
           { title: '收到通知' },
           { title: '聯絡客人中' },
-          { title: '已申請轉店' },
-          { title: '轉店完成' },
+          { title: '已申請改店' },
+          { title: '改店完成' },
         ],
       };
     }, [status, lastMainStatus]);
@@ -263,19 +263,19 @@
     const canReceiveReply = status === 'submitted';
     const simulateFamiSuccess = () => {
       if (!canReceiveReply) {
-        message.warning('目前狀態不是「已申請轉店」，不會收到全家回應');
+        message.warning('目前狀態不是「已申請改店」，不會收到全家回應');
         return;
       }
       setStatus('done');
-      message.success('全家回覆：ErrorCode=000 轉店成功，狀態自動切換為「轉店完成」');
+      message.success('全家回覆：ErrorCode=000 轉店成功，狀態自動切換為「改店完成」');
     };
     const simulateFamiFailure = () => {
       if (!canReceiveReply) {
-        message.warning('目前狀態不是「已申請轉店」，不會收到全家回應');
+        message.warning('目前狀態不是「已申請改店」，不會收到全家回應');
         return;
       }
       setStatus('failed');
-      message.error('全家回覆：ErrorCode=101 已交寄無法轉店，狀態自動切換為「轉店失敗」');
+      message.error('全家回覆：ErrorCode=101 已交寄無法改店，狀態自動切換為「改店失敗」');
     };
     const simulateRs9Return = () => {
       setStatus('returned');
@@ -299,6 +299,7 @@
                 <Descriptions column={1} size="small" colon={false}
                   labelStyle={{ color: 'rgba(0,0,0,0.65)', width: 96 }}>
                   <Descriptions.Item label="訂單編號">{ORDER.id}</Descriptions.Item>
+                  <Descriptions.Item label="EcOrderNo（未確認實際內容）">{ORDER.id}</Descriptions.Item>
                   <Descriptions.Item label="客人姓名">{ORDER.customerName}</Descriptions.Item>
                   <Descriptions.Item label="客人電話">{ORDER.phone}</Descriptions.Item>
                   <Descriptions.Item label="原始店號">{ORDER.originStoreId} {ORDER.originStoreName}</Descriptions.Item>
@@ -358,7 +359,7 @@
             </div>
           </Card>
 
-          {/* 聯絡備註（上下對調，改在轉店操作上方） */}
+          {/* 聯絡備註（上下對調，改在改店操作上方） */}
           <Card title="聯絡備註" style={{ marginBottom: 16 }}>
             {!editingNote ? (
               <>
@@ -388,8 +389,8 @@
             )}
           </Card>
 
-          {/* 轉店操作 */}
-          <Card title="轉店操作" style={{ marginBottom: 16 }}>
+          {/* 改店操作 */}
+          <Card title="改店操作" style={{ marginBottom: 16 }}>
             <Descriptions column={1} size="small" colon={false} bordered
               labelStyle={{ color: 'rgba(0,0,0,0.65)', width: 110, background: '#fafafa' }}>
               <Descriptions.Item label="門市名稱">
@@ -403,7 +404,7 @@
               <Descriptions.Item label="地址">
                 {pickedStore ? pickedStore.address : <Text type="secondary">—</Text>}
               </Descriptions.Item>
-              <Descriptions.Item label="轉店進度">
+              <Descriptions.Item label="改店進度">
                 <Tag color={progress.color} style={{ margin: 0 }}>{progress.label}</Tag>
               </Descriptions.Item>
             </Descriptions>
@@ -503,7 +504,7 @@
                 onClick={simulateFamiFailure}
                 style={{ fontSize: 12 }}
               >
-                轉店失敗
+                改店失敗
               </Button>
               <Divider style={{ margin: '2px 0' }} />
               <Text type="secondary" style={{ fontSize: 11 }}>
@@ -555,7 +556,7 @@
               }}>
                 <Breadcrumb items={[
                   { title: <span style={{ color: '#555' }}>訂單管理</span> },
-                  { title: <a href="index.html" style={{ color: '#555' }}>全家閉轉店</a> },
+                  { title: <a href="index.html" style={{ color: '#555' }}>全家閉改店</a> },
                   { title: <strong>04901154451</strong> },
                 ]} />
                 <Space size={16}>
