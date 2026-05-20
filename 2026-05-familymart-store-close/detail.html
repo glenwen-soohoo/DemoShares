@@ -95,15 +95,26 @@
       desc: 'API 回失敗（已交寄 / 已作廢 / 超時等），轉店無法完成。',
       next: '下一步：跟客人說明走退貨流程，等收到 RS9 退貨確認後切到「已退貨」。' },
     { value: 'cannot_change', label: '無法改店',     color: 'red',     alertType: 'error',
-      desc: '人工判定本案無法改店（例如：客人聯絡不上、客人拒絕轉店、超過全家時限）。',
+      desc: '人工判定本案無法改店（例如：客人聯絡不上、客人拒絕轉店）。',
       next: '下一步：跟客人協調退貨；本狀態需客服手動切換。' },
+    { value: 'expired',       label: '已超過改店期限', color: 'volcano', alertType: 'error',
+      desc: '已超過改店時限（NotifiedAt + 7 天），系統自動切換、無法再申請改店。',
+      next: '下一步：跟客人協調退貨；本狀態由系統自動切換、客服不可手動標。' },
     { value: 'returned',      label: '已退貨',       color: 'default', alertType: 'info',
       desc: '商品已實際退回，本案結束。本狀態通常由 RS9 通知自動切換，也可人工切換。',
       next: '本案已結案。' },
   ];
   const statusMap = Object.fromEntries(STATUS_OPTIONS.map(s => [s.value, s]));
 
-  // Dropdown items（分主流程 / 異常狀態 兩 group）
+  // ErrorCode 對應 API 文件原文（規格書 §13）— 不自己解釋、直接用全家寫的
+  const API_DOC_ERROR_TEXT = {
+    '101': '不可作廢訂單（已交寄、不可取消）',
+    '102': '此單已作廢',
+    '037': '訂單已達上限',
+    '035': '已超過 7 天不可異動店舖資訊',
+  };
+
+  // Dropdown items（分主流程 / 異常狀態 兩 group；expired 不放在 dropdown — 系統自動切，不允許手動）
   const STATUS_DROPDOWN_ITEMS = [
     {
       type: 'group',
@@ -123,7 +134,7 @@
     },
   ];
 
-  // Steps 視覺化（主流程 4 步；returned 不在主流程裡，stepper 用退貨前的進度顯示）
+  // Steps 視覺化（主流程 4 步；returned / expired 不在主流程裡）
   const STEP_MAP = {
     received:      { current: 0, status: 'process' },
     contacting:    { current: 1, status: 'process' },
@@ -131,6 +142,7 @@
     done:          { current: 3, status: 'finish' },
     failed:        { current: 2, status: 'error'   },
     cannot_change: { current: 1, status: 'error'   },
+    expired:       { current: 2, status: 'error'   },
   };
 
   const SIDE_MENU = [
@@ -155,6 +167,7 @@
     if (status === 'done')          return { label: '全家已確認改店',     color: 'green'   };
     if (status === 'failed')        return { label: '全家回覆改店失敗',   color: 'red'     };
     if (status === 'cannot_change') return { label: '無法改店',           color: 'red'     };
+    if (status === 'expired')       return { label: '已超過改店期限',     color: 'volcano' };
     // returned 不在這裡 — 進度落回實際操作狀態（可能是「尚未選店」/「已請全家改店」等）
     if (storeSubmitted)             return { label: '已請全家改店',       color: 'purple'  };
     if (pickedStore)                return { label: '尚未送出給全家',     color: 'blue'    };
@@ -189,8 +202,13 @@
     const [pickedStore, setPickedStore] = useState(null);
     const [storeSubmitted, setStoreSubmitted] = useState(false);
 
+    // 失敗 ErrorCode（對應工程規格 Pending.LastFailureCode）
+    const [failureCode, setFailureCode] = useState(null);
+
     const cfg = statusMap[status];
     const progress = calcStoreProgress(pickedStore, storeSubmitted, status);
+    const isExpired = status === 'expired';
+    const isFailed = status === 'failed';
 
     // === 開啟全家選店（declarative Modal，避免 modal.confirm 在 babel runtime 殘留 DOM） ===
     const openFamiPicker = () => setPickerOpen(true);
@@ -267,16 +285,39 @@
         return;
       }
       setStatus('done');
+      setFailureCode(null);
       message.success('全家回覆：ErrorCode=000 轉店成功，狀態自動切換為「改店完成」');
     };
-    const simulateFamiFailure = () => {
+
+    // 改店失敗 — 帶 ErrorCode 進來、UI 在進度旁註解顯示 API 文件原文
+    const simulateFamiFailure = (errorCode) => {
       if (!canReceiveReply) {
         message.warning('目前狀態不是「已申請改店」，不會收到全家回應');
         return;
       }
-      setStatus('failed');
-      message.error('全家回覆：ErrorCode=101 已交寄無法改店，狀態自動切換為「改店失敗」');
+      const docText = API_DOC_ERROR_TEXT[errorCode] || '未知錯誤';
+      setFailureCode(errorCode);
+      // 035 自動切「已超過改店期限」，其他切「改店失敗」
+      if (errorCode === '035') {
+        setStatus('expired');
+        message.error(`全家回覆：ErrorCode=035 ${docText}`);
+      } else {
+        setStatus('failed');
+        message.error(`全家回覆：ErrorCode=${errorCode} ${docText}`);
+      }
     };
+
+    // 超過 7 天客服都沒按確認 — cron 自動觸發（沒 ErrorCode）
+    const simulateTimeout = () => {
+      if (status === 'done' || status === 'returned' || status === 'expired') {
+        message.warning('本案已結案 / 已逾時，無需再模擬');
+        return;
+      }
+      setFailureCode(null);
+      setStatus('expired');
+      message.error('模擬：超過 7 天未送出 RCV，逾時 cron 自動切換為「已超過改店期限」');
+    };
+
     const simulateRs9Return = () => {
       setStatus('returned');
       message.info('模擬 RS9 通知：商品已實際退回，狀態切換為「已退貨」');
@@ -405,18 +446,32 @@
                 {pickedStore ? pickedStore.address : <Text type="secondary">—</Text>}
               </Descriptions.Item>
               <Descriptions.Item label="改店進度">
-                <Tag color={progress.color} style={{ margin: 0 }}>{progress.label}</Tag>
+                <Space size={8} wrap>
+                  <Tag color={progress.color} style={{ margin: 0 }}>{progress.label}</Tag>
+                  {isFailed && failureCode && (
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      ErrorCode {failureCode}：{API_DOC_ERROR_TEXT[failureCode] || '未知錯誤'}
+                    </Text>
+                  )}
+                </Space>
               </Descriptions.Item>
             </Descriptions>
 
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              {!pickedStore && (
+              {/* 過期狀態：選店按鈕 disable，無其他操作 */}
+              {isExpired && (
+                <Button type="primary" icon={<ShopOutlined />} disabled>
+                  開啟全家門市選擇
+                </Button>
+              )}
+
+              {!isExpired && !pickedStore && (
                 <Button type="primary" icon={<ShopOutlined />} onClick={openFamiPicker}>
                   開啟全家門市選擇
                 </Button>
               )}
 
-              {pickedStore && !storeSubmitted && (
+              {!isExpired && pickedStore && !storeSubmitted && (
                 <>
                   <Button onClick={repickStore}>重選</Button>
                   <Button type="primary" icon={<SendOutlined />} onClick={submitToFami}>
@@ -425,7 +480,7 @@
                 </>
               )}
 
-              {pickedStore && storeSubmitted && status !== 'returned' && (
+              {!isExpired && pickedStore && storeSubmitted && status !== 'returned' && (
                 <Button icon={<ReloadOutlined />} onClick={resendToFami}>
                   重新發送（未確認完畢）
                 </Button>
@@ -476,7 +531,7 @@
               <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => setMockOpen(false)} />
             }
             style={{
-              position: 'fixed', bottom: 24, left: 24, width: 180, zIndex: 1000,
+              position: 'fixed', bottom: 24, left: 24, width: 220, zIndex: 1000,
               boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
               border: '1px solid #d3adf7',
               fontSize: 12,
@@ -486,7 +541,7 @@
           >
             <Space direction="vertical" style={{ width: '100%' }} size={6}>
               <Text type="secondary" style={{ fontSize: 11 }}>
-                送出轉店申請後按下方模擬全家回應
+                RCV 回應（送出申請後可用）
               </Text>
               <Button
                 block size="small"
@@ -495,17 +550,54 @@
                 onClick={simulateFamiSuccess}
                 style={{ fontSize: 12 }}
               >
-                轉店成功
+                000 改店成功
               </Button>
               <Button
-                block size="small"
-                icon={<ExclamationCircleOutlined style={{ color: canReceiveReply ? '#ff4d4f' : undefined }} />}
+                block size="small" danger={canReceiveReply}
                 disabled={!canReceiveReply}
-                onClick={simulateFamiFailure}
+                onClick={() => simulateFamiFailure('101')}
+                style={{ fontSize: 12, textAlign: 'left' }}
+              >
+                101 已交寄不可作廢
+              </Button>
+              <Button
+                block size="small" danger={canReceiveReply}
+                disabled={!canReceiveReply}
+                onClick={() => simulateFamiFailure('102')}
+                style={{ fontSize: 12, textAlign: 'left' }}
+              >
+                102 此單已作廢
+              </Button>
+              <Button
+                block size="small" danger={canReceiveReply}
+                disabled={!canReceiveReply}
+                onClick={() => simulateFamiFailure('037')}
+                style={{ fontSize: 12, textAlign: 'left' }}
+              >
+                037 訂單已達上限
+              </Button>
+              <Button
+                block size="small" danger={canReceiveReply}
+                disabled={!canReceiveReply}
+                onClick={() => simulateFamiFailure('035')}
+                style={{ fontSize: 12, textAlign: 'left' }}
+              >
+                035 已超過時限
+              </Button>
+
+              <Divider style={{ margin: '2px 0' }} />
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                時限觸發（cron 自動）
+              </Text>
+              <Button
+                block size="small"
+                icon={<ExclamationCircleOutlined style={{ color: '#fa541c' }} />}
+                onClick={simulateTimeout}
                 style={{ fontSize: 12 }}
               >
-                改店失敗
+                超過 7 天未回 RCV
               </Button>
+
               <Divider style={{ margin: '2px 0' }} />
               <Text type="secondary" style={{ fontSize: 11 }}>
                 RS9 退貨（另一管道）

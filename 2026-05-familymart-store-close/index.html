@@ -61,18 +61,20 @@
     { id: '04901154894', customerName: '李*偉', phone: '09xx-xxx-234', originStore: '001563 復興門市', receivedAt: '2026-05-13 09:22', status: 'done' },
     { id: '04901155238', customerName: '吳*成', phone: '09xx-xxx-678', originStore: '001904 松山門市', receivedAt: '2026-05-12 15:55', status: 'done' },
     { id: '04901155349', customerName: '周*萱', phone: '09xx-xxx-012', originStore: '003876 中山門市', receivedAt: '2026-05-12 11:38', status: 'done' },
-    { id: '04901154905', customerName: '黃*君', phone: '09xx-xxx-567', originStore: '004721 民生門市', receivedAt: '2026-05-11 14:15', status: 'failed' },
+    { id: '04901154905', customerName: '黃*君', phone: '09xx-xxx-567', originStore: '004721 民生門市', receivedAt: '2026-05-11 14:15', status: 'failed',  failureMessage: '101 商品已交寄、無法改派' },
+    { id: '04901155571', customerName: '謝*文', phone: '09xx-xxx-321', originStore: '003012 中崙門市', receivedAt: '2026-05-08 10:30', status: 'expired', failureMessage: '超過 7 天未送出 RCV、系統自動逾時' },
     { id: '04901155450', customerName: '鄭*翔', phone: '09xx-xxx-456', originStore: '002564 大同門市', receivedAt: '2026-05-10 17:09', status: 'returned' },
   ];
 
   const STATUS_OPTIONS = [
-    { value: 'received',      label: '收到通知',      color: 'orange'  },
-    { value: 'contacting',    label: '聯絡客人中',    color: 'blue'    },
-    { value: 'submitted',     label: '已申請改店',    color: 'purple'  },
-    { value: 'done',          label: '改店完成',      color: 'green'   },
-    { value: 'failed',        label: '改店失敗',      color: 'red'     },
-    { value: 'cannot_change', label: '無法改店',      color: 'red'     },
-    { value: 'returned',      label: '已退貨',        color: 'default' },
+    { value: 'received',      label: '收到通知',        color: 'orange'  },
+    { value: 'contacting',    label: '聯絡客人中',      color: 'blue'    },
+    { value: 'submitted',     label: '已申請改店',      color: 'purple'  },
+    { value: 'done',          label: '改店完成',        color: 'green'   },
+    { value: 'failed',        label: '改店失敗',        color: 'red'     },
+    { value: 'cannot_change', label: '無法改店',        color: 'red'     },
+    { value: 'expired',       label: '已超過改店期限',  color: 'volcano' },
+    { value: 'returned',      label: '已退貨',          color: 'default' },
   ];
   const statusMap = Object.fromEntries(STATUS_OPTIONS.map(s => [s.value, s]));
 
