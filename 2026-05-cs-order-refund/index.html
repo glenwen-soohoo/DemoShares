@@ -943,7 +943,7 @@
                       <input data-val="true" data-val-required="The TotalPrice field is required." id="TotalPrice" min="0" name="TotalPrice" type="number" value="1015" class="amt2026-input">
                       <span class="amt2026-unit">元</span>
                       <div class="amt2026-actions">
-                        <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="formula">查看公式計算</button>
+                        <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="formula">計算明細</button>
                       </div>
                     </div>
 
@@ -982,7 +982,7 @@
                                 data-verb="取消折扣"
                                 data-target="折扣碼"
                                 data-amount="140"
-                                data-side-effect="僅取消此次套用，恢復折扣碼可用次數">取消折扣</button>
+                                data-side-effect="僅取消此次套用，恢復折扣碼可用次數">取消</button>
                       </div>
                     </div>
 
@@ -1017,7 +1017,7 @@
                                 data-field="redpoint"
                                 data-verb="返還"
                                 data-target="紅利點數"
-                                data-amount="102"
+                                data-amount="122"
                                 data-side-effect="僅退紅利到會員帳戶（過期者自動補發新效期）">返還</button>
                       </div>
                     </div>
@@ -1050,7 +1050,7 @@
                                 data-verb="取消折扣"
                                 data-target="活動折扣"
                                 data-amount="50"
-                                data-side-effect="僅刪除此次活動折扣紀錄，不會重新觸發活動">取消折扣</button>
+                                data-side-effect="僅刪除此次活動折扣紀錄，不會重新觸發活動">取消</button>
                       </div>
                     </div>
 
@@ -2286,9 +2286,8 @@
       <dt>使用期限</dt><dd id="amt2026-promote-period">2026/06/09 00:00:00</dd>
       <dt>建立時間</dt><dd id="amt2026-promote-created">2026/05/28 10:28:45</dd>
     </dl>
-    <div class="amt2026-coupon-calc" id="amt2026-promote-calc">
-      實際折抵金額：商品總額 1,399 × (1 − 0.9) ＝ <strong>−140 元</strong>
-    </div>
+    <!-- 此處內容由 refreshPromoteModal() 在開啟彈窗時動態填入 -->
+    <div class="amt2026-coupon-calc" id="amt2026-promote-calc"></div>
     <div class="amt2026-modal-actions">
       <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>關閉</button>
     </div>
@@ -2306,9 +2305,8 @@
       <dt>面額／折數</dt><dd id="amt2026-coupon-value">0.95（95 折）</dd>
       <dt>使用期限</dt><dd id="amt2026-coupon-period">2026/03/01 ~ 2026/03/31</dd>
     </dl>
-    <div class="amt2026-coupon-calc" id="amt2026-coupon-calc">
-      實際折抵金額：商品總額 1,399 × (1 − 0.95) ＝ <strong>−70 元</strong>
-    </div>
+    <!-- 此處內容由 refreshCouponModal() 在開啟彈窗時動態填入 -->
+    <div class="amt2026-coupon-calc" id="amt2026-coupon-calc"></div>
     <div class="amt2026-modal-actions">
       <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>關閉</button>
     </div>
@@ -2370,7 +2368,8 @@
 (function () {
   'use strict';
 
-  // 商品總額：嘗試從頁面「商品明細」表的「商品總額」cell 抓；失敗則 fallback 1399
+  // 商品總額：從頁面「商品明細」表的「商品總額」cell 即時抓
+  // 在 mockup 中 demo 用、移植到實際 Edit.cshtml 後一樣有效（商品總額 cell 是動態 render 的真實值）
   function getSubTotal() {
     const labelTds = Array.from(document.querySelectorAll('td')).filter(
       td => td.textContent.trim() === '商品總額'
@@ -2382,8 +2381,12 @@
         if (!isNaN(n)) return n;
       }
     }
-    return 1399; // demo fallback
+    console.warn('[amt2026] 找不到「商品總額」cell，回傳 0；移植時要確認此 cell 存在');
+    return 0;
   }
+  // page-load 時抓一次商品總額。
+  // 訂單編輯頁的商品總額在 mid-session 不會變動（商品明細只能由另一個流程改，不在這頁），
+  // 所以 const 快取沒問題；如果未來改成「在編輯頁加減商品」就要改成 getter。
   const SUBTOTAL = getSubTotal();
 
   // 依優惠券當前值切「元 / 折」單位
@@ -2805,6 +2808,13 @@
         <div class="dev-scenario-desc">客服已手動把總額調成符合系統應收（Synced）</div>
       </div>
     </label>
+    <label class="dev-scenario">
+      <input type="radio" name="amt2026-scenario" value="4">
+      <div>
+        <div class="dev-scenario-title">4. 未使用任何優惠</div>
+        <div class="dev-scenario-desc">客人沒用任何折扣／折價工具；各欄位按鈕應全部隱藏</div>
+      </div>
+    </label>
   </div>
 </div>
 
@@ -2834,6 +2844,12 @@
       Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122, ActivityDisocunt: 50,
       TotalPrice: 967,
       couponAmount: 70,
+    },
+    '4': { // 未使用任何優惠 — 全部 0、各欄位「返還／取消／查看」按鈕應隱藏
+      discount: 0, discount_rate: 0, realDiscount: 0,
+      Bonus: 0, CouponPrice: 0, RedPointPrice: 0, ActivityDisocunt: 0,
+      TotalPrice: 1549,  // 商品總額 1,399 + 運費 150（沒用折扣碼/優惠券 → 沒觸發運費後折）
+      couponAmount: 0,
     },
   };
 
@@ -2866,12 +2882,31 @@
       if (actions) actions.innerHTML = originalActions[rowKey];
     });
 
-    // 同步 data-amount（特別是優惠券，因為折抵金額會隨情境變）
-    const couponBtn = document.querySelector('[data-amt2026-row="coupon"] [data-amt2026-action="confirm"]');
-    if (couponBtn) couponBtn.dataset.amount = String(s.couponAmount);
-    // 折扣碼的 data-amount = realDiscount（折數型已換算成元）
-    const promoteBtn = document.querySelector('[data-amt2026-row="promote"] [data-amt2026-action="confirm"]');
-    if (promoteBtn) promoteBtn.dataset.amount = String(s.realDiscount);
+    // 同步 data-amount
+    // - 折扣碼／優惠券：折數型時 input.value 是 rate（0.9），data-amount 需用換算後的元數（realDiscount/couponAmount）
+    // - 購物金／紅利／活動折扣：input.value 就是元數，直接同步
+    const setAmt = (field, amt) => {
+      const btn = document.querySelector('[data-amt2026-row="' + field + '"] [data-amt2026-action="confirm"]');
+      if (btn) btn.dataset.amount = String(amt);
+    };
+    setAmt('coupon', s.couponAmount);
+    setAmt('promote', s.realDiscount);
+    setAmt('bonus', s.Bonus);
+    setAmt('redpoint', s.RedPointPrice);
+    setAmt('activity', s.ActivityDisocunt);
+
+    // 依「值是不是 0」隱藏／顯示對應的 actions（依狀態機規格第六節：欄位 = 0 時按鈕不該顯示）
+    const showActionsIf = (field, hasValue) => {
+      const row = document.querySelector('[data-amt2026-row="' + field + '"]');
+      if (!row) return;
+      const actions = row.querySelector('.amt2026-actions');
+      if (actions) actions.style.display = hasValue ? '' : 'none';
+    };
+    showActionsIf('coupon',   parseFloat(s.CouponPrice) > 0);
+    showActionsIf('promote',  parseFloat(s.discount) > 0);
+    showActionsIf('bonus',    s.Bonus > 0);
+    showActionsIf('redpoint', s.RedPointPrice > 0);
+    showActionsIf('activity', s.ActivityDisocunt > 0);
 
     // 切換 panel 內的 active 樣式
     document.querySelectorAll('.dev-scenario').forEach(function (s) { s.classList.remove('is-active'); });
