@@ -1,0 +1,68 @@
+﻿// 定義敏感性參數名稱（不分大小寫），這些參數將會從 URL 查詢參數中過濾掉
+const sensitiveParams = ['mobile', 'phone', 'email'];
+
+/**
+ * 自訂封裝的 Meta Pixel 事件追蹤函數
+ * @param {string} pixelId - Meta Pixel 的 ID
+ * @param {string} trackType - 事件名稱（如 'PageView', 'Purchase' 等）
+ * @param {object|null} contentObj - 可選的事件參數資料（如金額、商品資訊）
+ */
+function myfbq(pixelId, trackType, contentObj = null) {
+  // 預設使用 trackSingleCustom 追蹤方式（用於自訂事件）
+  var trackMethod = 'trackSingleCustom';
+
+  // 如果事件名稱是 Meta 預定義的標準事件，改用 trackSingle
+  switch (trackType) {
+    case 'AddPaymentInfo':
+    case 'AddToCart':
+    case 'AddToWishlist':
+    case 'CompleteRegistration':
+    case 'Contact':
+    case 'CustomizeProduct':
+    case 'Donate':
+    case 'FindLocation':
+    case 'InitiateCheckout':
+    case 'Lead':
+    case 'PageView':
+    case 'Purchase':
+    case 'Schedule':
+    case 'Search':
+    case 'StartTrial':
+    case 'SubmitApplication':
+    case 'Subscribe':
+    case 'ViewContent':
+      trackMethod = 'trackSingle';
+      break;
+    default:
+      trackMethod = 'trackSingleCustom';
+      break;
+  }
+
+  if (trackType === 'PageView') {
+    // 若是 PageView 事件，需清除 URL 中的敏感參數（避免 Meta 封鎖事件）
+    const url = new URL(window.location.href);
+    // 移除所有與 sensitiveParams 列表中匹配的 query 參數（不分大小寫）
+    sensitiveParams.forEach((param) => {
+      Array.from(url.searchParams.keys()).forEach((key) => {
+        if (key.toLowerCase() === param) {
+          url.searchParams.delete(key);
+        }
+      })
+    })
+    const cleanUrl = url.origin + url.pathname + url.search;
+    // 發送 PageView 事件，並指定乾淨的 URL，避免 Meta 認定含有 PII
+    fbq(trackMethod, pixelId, trackType, { currency: 'TWD' }, { page: cleanUrl });
+  } else if (contentObj != null) {
+    // 若傳入了事件內容物件（例如購買金額等）
+    if (contentObj?.event_id) {
+      // 若有自訂 event_id，則一併傳入 options 中供 Meta 做事件去重
+      fbq(trackMethod, pixelId, trackType, contentObj, {eventID: contentObj.event_id});
+    } else {
+      // 一般事件內容，不含特殊設定
+      fbq(trackMethod, pixelId, trackType, contentObj);
+    }
+  } else {
+    // 若沒有傳入事件內容，僅送出基本事件
+    fbq(trackMethod, pixelId, trackType);
+  }
+}

@@ -1,0 +1,402 @@
+﻿.updatecheck {
+    width: 12px;
+    height: 12px;
+}
+
+.updatelabel {
+    font-size: 12px;
+}
+
+fieldset {
+    padding: 5px;
+    padding-bottom: 20px;
+    display: inline-block;
+    width: 45%;
+    text-align: left;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+    border: 1px lightgray solid;
+}
+
+legend {
+    text-align: center;
+    display: block;
+    width: calc(100% + 12px);
+    padding: 5px;
+    margin-bottom: 5px;
+    font-size: 18px;
+    line-height: inherit;
+    color: white;
+    background-color: green;
+}
+
+.gray {
+    color: #767676;
+    font-weight: normal;
+}
+
+.table {
+    width: 100%;
+    margin: 10px auto;
+}
+
+    .table > thead > tr > th {
+        text-align: center;
+    }
+
+    .table > thead > tr > th {
+        text-align: center;
+        border-top: 1px solid green !important;
+        border-bottom: 1px solid green !important;
+    }
+
+    .table > tbody > tr > td {
+        border-left: 1px solid lightgray  ;
+        border-right: 1px solid lightgray  ;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+
+    .table > tbody > tr:nth-last-child(n) {
+        border-bottom: 1px solid lightgray  !important;
+    }
+
+    .table:nth-child(2n) > tbody > tr > td {
+        text-align: left;
+    }
+
+.editor-field {
+    margin-left: 15px;
+}
+
+.editor-label {
+    color: black;
+    font-size: 16px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+
+.Form_btn {
+    padding: 8px 30px;
+    border: 0px;
+    border-radius: 5px;
+    font-size: 20px;
+    color: white;
+    background-color: green;
+    margin-top:10px;
+    margin-left:15px;
+}
+
+    .Form_btn:hover {
+        opacity: 0.8;
+    }
+
+/* ========================================
+   Service 售後服務表單樣式
+   用於 Service/Create.cshtml, Service/Edit.cshtml
+   ======================================== */
+
+.service-form-container {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin: 10px auto;
+    max-width: 900px;
+}
+
+.service-form-header {
+    background-color: #5cb85c;
+    color: white;
+    padding: 10px 15px;
+    font-weight: bold;
+    border-radius: 4px 4px 0 0;
+}
+
+.service-form-body {
+    padding: 20px;
+}
+
+.service-form-container .form-row {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 15px;
+}
+
+.service-form-container .form-group {
+    flex: 1;
+}
+
+.service-form-container .form-group.narrow {
+    flex: 0 0 200px;
+}
+
+.service-form-container .form-group.fetch-row {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.service-form-container .form-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.service-form-container .form-label .required {
+    color: red;
+}
+
+.service-form-container .form-control-custom {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.service-form-container .form-control-custom:focus {
+    border-color: #5cb85c;
+    outline: none;
+}
+
+.service-form-container .form-control-custom[readonly] {
+    background-color: #eee;
+    cursor: not-allowed;
+}
+
+.service-form-container textarea.form-control-custom {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.service-form-container select.form-control-custom {
+    appearance: auto;
+    background-color: white;
+}
+
+.order-status-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 14px;
+    align-items: center;
+    padding-top: 5px;
+}
+
+.order-status-item {
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.order-status-item .label {
+    color: #666;
+    font-size: 14px;
+}
+
+.order-status-item .value {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+}
+
+.btn-fetch {
+    padding: 8px 16px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.btn-fetch:hover {
+    background-color: #e8e8e8;
+}
+
+.btn-fetch:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.fetch-status {
+    color: #999;
+    font-size: 13px;
+}
+
+.fetch-status.success {
+    color: #5cb85c;
+    white-space: nowrap;
+}
+
+.fetch-status.error {
+    color: #d9534f;
+    white-space: nowrap;
+}
+
+.reset-options-container {
+    margin: 20px 0;
+}
+
+.reset-options-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.reset-options-title {
+    font-weight: bold;
+}
+
+.reset-options-title .required {
+    color: red;
+}
+
+.btn-rule {
+    padding: 6px 12px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+}
+
+.btn-rule:hover {
+    background-color: #f5f5f5;
+}
+
+.reset-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reset-option-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reset-option-item input[type="radio"] {
+    margin: 0;
+}
+
+.reset-option-item label {
+    margin: 0;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.reset-option-item.disabled input[type="radio"] {
+    cursor: not-allowed;
+}
+
+.reset-option-item.disabled label {
+    color: #999;
+    cursor: not-allowed;
+}
+
+.reset-option-item .option-tooltip {
+    display: none;
+    color: #999;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.reset-option-item.disabled .option-tooltip {
+    display: inline;
+}
+
+.service-form-container .form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.service-form-container .form-meta {
+    font-size: 13px;
+    color: #666;
+}
+
+.service-form-container .form-meta div {
+    margin-bottom: 3px;
+}
+
+.service-form-container .btn-submit {
+    padding: 10px 30px;
+    background-color: #ccc;
+    border: none;
+    border-radius: 4px;
+    cursor: not-allowed;
+    font-size: 14px;
+    color: #666;
+}
+
+.service-form-container .btn-submit.active {
+    background-color: #5cb85c;
+    color: white;
+    cursor: pointer;
+}
+
+.service-form-container .btn-submit.active:hover {
+    background-color: #4cae4c;
+}
+
+.service-form-container .btn-submit:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.helper-text {
+    font-size: 12px;
+    color: #999;
+    margin-top: 5px;
+}
+
+/* jquery-confirm 樣式調整 */
+.jconfirm .jconfirm-box div.title-c {
+    text-align: center;
+}
+
+.jconfirm .jconfirm-box {
+    width: auto !important;
+    max-width: none !important;
+    min-width: auto !important;
+}
+
+.jconfirm .jconfirm-box .content-pane {
+    overflow: visible !important;
+}
+
+/* 規則彈窗表格樣式 */
+.rule-table {
+    width: auto;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 0 auto;
+}
+
+.rule-table th,
+.rule-table td {
+    border: 1px solid #ddd;
+    padding: 10px 20px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.rule-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.rule-table tr:hover {
+    background-color: #fafafa;
+}

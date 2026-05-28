@@ -1,0 +1,21 @@
+﻿// 驗證企業統編
+function isValidUBN(ubn) {
+    // 1. 是否為8位數字
+    if (!/^\d{8}$/.test(ubn)) return false;
+    // 2. 統編邏輯乘數
+    const weights = [1, 2, 1, 2, 1, 2, 4, 1];
+    let sums = [0]; // 初始的總和列表(當統編第7碼不是7時，用0作為總和起始)
+    // 3. ubn與weight兩數依照位數個別相乘
+    for (let i = 0; i < 8; i++) {
+        const prod = parseInt(ubn[i], 10) * weights[i]; //各位數字與邏輯乘數相乘
+        const digitSum = Math.floor(prod / 10) + (prod % 10); //拆成十位數+個位數
+        if (i === 6 && ubn[6] === '7') {
+            // 當統編第7碼為7時，加權後 7 * 4 = 28 -> 有兩種拆法: 1 或 0
+            sums = sums.map(s => s + 1).concat(sums.map(s => s + 0));
+        } else {
+            sums = sums.map(s => s + digitSum);
+        }
+    }
+
+    return sums.some(s => s % 5 === 0); //只要其中一個可被5整除就通過驗證
+}

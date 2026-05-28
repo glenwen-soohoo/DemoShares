@@ -1,0 +1,2719 @@
+<!DOCTYPE html>
+<!-- saved from url=(1404)https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0 -->
+<html lang="zh-Hant-TW" dir="ltr" class=""><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>無毒農 - 後台管理系統</title>
+    <link href="https://fruitbox.blob.core.windows.net/pagematerials/GreenBoxShortCutIcon.ico" rel="shortcut icon" type="image/x-icon">
+    <script async="" src="./assets/analytics.js.下載"></script><script>
+        var RootPath = '';
+    </script>
+    <script src="./assets/jquery-2.0.2.min.js.下載"></script>
+    <link rel="stylesheet" href="./assets/bootstrap.css">
+    <link rel="stylesheet" href="./assets/alertify.core.css">
+    <link rel="stylesheet" href="./assets/alertify.default.css">
+    <link rel="stylesheet" href="./assets/validation.css">
+    <link rel="stylesheet" href="./assets/bootstrap-reset.css">
+    <link rel="stylesheet" href="./assets/font-awesome.css">
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/style-responsive.css">
+    <script src="./assets/jquery-ui-1.10.4.js.下載"></script>
+    <script src="./assets/jquery.cookie.js.下載"></script>
+    <script src="./assets/bootstrap.js.下載"></script>
+    <script src="./assets/jquery.easing.1.3.js.下載"></script>
+    <script src="./assets/jquery.dcjqaccordion.2.9.js.下載"></script>
+    <script src="./assets/jquery.nicescroll.js.下載"></script>
+    <script src="./assets/dashboard.js.下載"></script>
+    <script src="./assets/scripts.js.下載"></script>
+    <script src="./assets/date.js.下載"></script>
+    <script src="./assets/time.js.下載"></script>
+    <script src="./assets/alertify.js.下載"></script>
+    <script src="./assets/axios.js.下載"></script>
+    <script src="./assets/vue.js.下載"></script>
+    <script type="text/javascript" src="./assets/jquery.blockUI.js.下載"></script>
+    <link rel="stylesheet" type="text/css" href="./assets/font-awesome.min.css">
+    <link href="./assets/rwd-fix.css" rel="stylesheet">
+    <script src="./assets/FacebookCustomTrack.js.下載"></script>
+    <script>
+        /*
+        * GA
+        */
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] ||
+                function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+        /**/
+        ga('create', 'UA-70114088-1', 'auto');
+        /**/
+        ga('send', 'pageview');
+        ga('set', 'referrer', 'BackEnd');
+    </script>
+    <script src="./assets/trackcode.js.下載"></script>
+    
+<style>.cke{visibility:hidden;}</style><style type="text/css">.fancybox-margin{margin-right:20px;}</style></head>
+<body style="">
+
+
+    <section id="container">
+        <!--header start-->
+        <header class="header fixed-top clearfix">
+            <!--logo start-->
+            <div class="brand">
+                <a href="https://gb-dev-1.azurewebsites.net/GoX">
+                    <img src="./assets/logo-small.png">
+                </a>
+                    <div class="sidebar-toggle-box">
+                        <div class="fa fa-bars"></div>
+                    </div>
+            </div>
+            <!--logo end-->
+            <div class="nav notify-row" id="top_menu">
+                <ul style="list-style:none;">
+                        <li class="dropdown">
+                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Index?fun_id=3034&amp;order_time_start=2026/05/28">訂單管理</a> &gt; 編輯
+                        </li>
+                </ul>
+            </div>
+                <div class="top-nav clearfix">
+                    <!--search & user info start-->
+                    <ul class="nav pull-right top-menu">
+                        <!--<li>
+                            <input type="text" class="form-control search" placeholder=" Search">
+                        </li>-->
+                        <!-- user login dropdown start-->
+                        <li class="dropdown">
+                            <a data-toggle="dropdown" class="dropdown-toggle" href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#">
+                                <!--<img alt="" src="">-->
+                                <span class="username">　温永瀚 </span>
+                                <b class="caret"></b>
+                            </a>
+                            <ul class="dropdown-menu extended logout">
+                                <!--<li><a href="#"><i class="fa fa-cog"></i>設定</a></li>-->
+                                <li><a href="https://gb-dev-1.azurewebsites.net/GoX/Member/Off"><i class="fa fa-sign-out"></i>登出</a></li>
+                            </ul>
+                        </li>
+                        <!-- user login dropdown end -->
+                    </ul>
+                    <!--search & user info end-->
+                </div>
+        </header>
+        <!--header end-->
+    <aside>
+    <div id="sidebar" class="nav-collapse">
+    <!-- sidebar menu start-->
+    <div class="leftside-navigation" style="overflow: hidden; outline: none;" tabindex="5000">
+    <ul class="sidebar-menu" id="nav-accordion" style="margin-bottom:200px;">
+            <li>
+                <a href="https://gb-dev-1.azurewebsites.net/GoX/Member/Index?fun_id=1" class="">
+                    <i class="fa fa-chevron-circle-right"></i>
+                    <span>帳號管理</span>
+                </a>
+            </li>
+            <li class="dcjq-parent-li">
+                <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#" class="dcjq-parent">
+                    <i class="fa fa-chevron-circle-right"></i>
+                    <span>會員管理</span>
+                    <span class="dcjq-icon"></span>
+                    <span class="dcjq-icon"></span>
+                <span class="dcjq-icon"></span></a>
+                <ul class="sub" style="display: none;">
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/CRM/Index"><i class="fa fa-angle-right"></i>CRM <small>Dashboard</small></a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Volunteers/Index?fun_id=6"><i class="fa fa-angle-right"></i>會員資料</a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Bonus/Index"><i class="fa fa-angle-right"></i>購物金資料</a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/RedPoint/Index"><i class="fa fa-angle-right"></i>紅利點數資料</a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Volunteers/CouponInfoRecord?fun_id=6"><i class="fa fa-angle-right"></i>優惠券資料</a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Volunteers/NESSS?fun_id=6"><i class="fa fa-angle-right"></i>NESSS</a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Volunteers/NESReport?fun_id=6"><i class="fa fa-angle-right"></i>會員NES資料</a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Volunteers/BlackList?fun_id=6"><i class="fa fa-angle-right"></i>黑名單管理</a>
+                    </li>
+                    <li>
+                        <a href="https://gb-dev-1.azurewebsites.net/GoX/VIP/CheckVipUpgrade"><i class="fa fa-angle-right"></i>VIP升級查詢</a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="https://gb-dev-1.azurewebsites.net/GoX/PendingItem/Index?fun_id=3041">
+                    <i class="fa fa-chevron-circle-right"></i>
+                    <span>待辦事項</span>
+                    <span class="dcjq-icon"></span>
+                        <span class="RedCircle">1</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://gb-dev-1.azurewebsites.net/GoX/PendingItem/StockIndex?fun_id=3041">
+                    <i class="fa fa-chevron-circle-right"></i>
+                    <span>倉庫待辦</span>
+                    <span class="dcjq-icon"></span>
+                        <span class="RedCircle">4</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://gb-dev-1.azurewebsites.net/GoX/PendingItem/CustomerServiceIndex?fun_id=3041">
+                    <i class="fa fa-chevron-circle-right"></i>
+                    <span>客服待辦</span>
+                    <span class="dcjq-icon"></span>
+                        <span class="RedCircle">1</span>
+                </a>
+            </li>
+                            <li>
+                                <a href="https://gb-dev-1.azurewebsites.net/GoX/News/Index?fun_id=3032">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>文章管理</span>
+                                </a>
+                            </li>
+                            <li class="dcjq-parent-li">
+                                <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#" class="dcjq-parent">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>產品管理</span>
+                                    <span class="dcjq-icon"></span>
+                                <span class="dcjq-icon"></span></a>
+                                <ul class="sub" style="display: none;">
+                                    <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Product/Index18?fun_id=3033"><i class="fa fa-angle-right"></i>產品資料</a>
+                                    </li>
+                                        <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/SubscriptionProduct/Index"><i class="fa fa-angle-right"></i>訂閱制產品</a>
+                                        </li>
+                                        <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Product/Analysis?fun_id=3033"><i class="fa fa-angle-right"></i>產品分析</a>
+                                        </li>
+                                        <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/CropPesticideResult/Index?fun_id=3033"><i class="fa fa-angle-right"></i>檢驗報告</a>
+                                        </li>
+                                        <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Product/Questionnaire?fun_id=3033"><i class="fa fa-angle-right"></i>問卷回饋</a>
+                                        </li>
+                                        <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Product/ProductRemind"><i class="fa fa-angle-right"></i>產品提醒</a>
+                                        </li>
+                                        <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Product/CompanyTemplateManagement?fun_id=3033"><i class="fa fa-angle-right"></i>異業合作入口管理</a>
+                                        </li>
+                                        <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Product/ProductHistoryCompare"><i class="fa fa-angle-right"></i>單品歷史資料</a>
+                                        </li>
+                                </ul>
+                            </li>
+                            <li class="dcjq-parent-li">
+                                <a class="&quot;active&quot; dcjq-parent active" href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>訂單管理</span>
+                                    <span class="dcjq-icon"></span>
+                                <span class="dcjq-icon"></span></a>
+                                <ul class="sub" style="display: block;">
+                                    <li>
+                                            <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Index?fun_id=3034&amp;order_time_start=2026/05/28" class="active"><i class="fa fa-angle-right"></i>訂單資料</a>
+                                    </li>
+
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/SubscriptionDetail">
+                                            <i class="fa fa-angle-right"></i>訂單資料-訂閱制
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/SelfShippingCenter">
+                                            <i class="fa fa-angle-right"></i>物流系統
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/OrderComplaint">
+                                            <i class="fa fa-angle-right"></i>客訴系統
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/CalculateBox?fun_id=3034&amp;IsFruit=true">
+                                            <i class="fa fa-angle-right"></i>出貨數量-箱類
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/CalculateProductNew?fun_id=3034">
+                                            <i class="fa fa-angle-right"></i>出貨數量-單品
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/CalculateSpecialExportStatus?fun_id=3034">
+                                            <i class="fa fa-angle-right"></i>出貨數量-特賣會
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/ExpiredNotification?fun_id=3034">
+                                            <i class="fa fa-angle-right"></i>出貨提醒
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/ShipmentRateProductNew">
+                                            <i class="fa fa-angle-right"></i>出貨率-單品
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/PeriodPayResultError?fun_id=3034">
+                                            <i class="fa fa-angle-right"></i>定期定額異常訂單
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="dcjq-parent-li">
+                                <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#" class="dcjq-parent">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>AI應用工具</span>
+                                    <span class="dcjq-icon"></span>
+                                <span class="dcjq-icon"></span></a>
+                                <ul class="sub" style="display: none;">
+                                    <li>
+                                        <a href="https://enzo-gb.net/" target="_blank" rel="noopener noreferrer">
+                                            <i class="fa fa-angle-right"></i>AI延伸系統
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Dashboard/Index?fun_id=3061">
+                                            <i class="fa fa-angle-right"></i>資訊圖表
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Dashboard/Index?fun_id=3061">
+                                            <i class="fa fa-angle-right"></i>自動化管理
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="https://gb-dev-1.azurewebsites.net/GoX/Setting/Index?fun_id=3036">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>網頁管理</span>
+                                </a>
+                            </li>
+                            <li class="dcjq-parent-li">
+                                <a class="&quot;active&quot; dcjq-parent" href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>直播功能</span>
+                                    <span class="dcjq-icon"></span>
+                                <span class="dcjq-icon"></span></a>
+                                <ul class="sub" style="display: none;">
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/FbLiveVideoProductList?fun_id=3059">
+                                            <i class="fa fa-angle-right"></i>直播喊單
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/FbLiveVideoAdd?fun_id=3059">
+                                            <i class="fa fa-angle-right"></i>新增直播場次
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#">
+                                            <i class="fa fa-angle-right"></i>直播併單
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="https://gb-dev-1.azurewebsites.net/GoX/Msg/Index?fun_id=3038">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>留言管理</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://gb-dev-1.azurewebsites.net/GoX/Service/Index?fun_id=3039">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>售後服務</span>
+                                        <span class="RedCircle">45</span>
+                                </a>
+                            </li>
+                            <li class="dcjq-parent-li">
+                                <a class="&quot;active&quot; dcjq-parent" href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>折扣碼管理</span>
+                                    <span class="dcjq-icon"></span>
+                                <span class="dcjq-icon"></span></a>
+                                <ul class="sub" style="display: none;">
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/PromoteCode/Index?fun_id=3043">
+                                            <i class="fa fa-angle-right"></i>折扣碼
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/CouponTemplate/List">
+                                            <i class="fa fa-angle-right"></i>優惠券管理
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://gb-dev-1.azurewebsites.net/GoX/GiftCode">
+                                            <i class="fa fa-angle-right"></i>禮物碼管理
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="https://gb-dev-1.azurewebsites.net/GoX/Shipping/Index?fun_id=3053">
+                                    <i class="fa fa-chevron-circle-right"></i>
+                                    <span>運費管理</span>
+                                </a>
+                            </li>
+                <li class="dcjq-parent-li">
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/Index?fun_id=3040" class="dcjq-parent">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>等家寶寶</span>
+                        <span class="dcjq-icon"></span>
+                    <span class="dcjq-icon"></span></a>
+                    <ul class="sub" style="display: none;">
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/Donate?fun_id=3040"><i class="fa fa-angle-right"></i>愛心名冊</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/Preschool?fun_id=3040"><i class="fa fa-angle-right"></i>育幼院</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/SetAboutPage?fun_id=3040"><i class="fa fa-angle-right"></i>前台關於等家頁面管理</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/SetVolunteerRecruitmentPage?fun_id=3040"><i class="fa fa-angle-right"></i>前台志工團招募頁面管理</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/CorpCsrInfoIndex"><i class="fa fa-angle-right"></i>CSR資料管理</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/LoveRiceAdoptIndex"><i class="fa fa-angle-right"></i>愛心稻田頁面管理</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/ChristmasVolunteerIndex"><i class="fa fa-angle-right"></i>聖誕志工報名管理</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/ChristmasProduct"><i class="fa fa-angle-right"></i>聖誕傳情設定</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/DreamerSponsor"><i class="fa fa-angle-right"></i>圓夢贊助管理</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/BabyOrderOverview?fun_id=3040"><i class="fa fa-angle-right"></i>專案其他調查</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/BabyDataDownload"><i class="fa fa-angle-right"></i>報表</a>
+                        </li>
+                        <li>
+                            <a style="color:bisque;" href="https://gb-dev-1.azurewebsites.net/GoX/SurveyBaby/BabyDonateReceipt"><i class="fa fa-angle-right"></i>寄發捐款收據信件</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/purchase" class="">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>採購專區</span>
+                    </a>
+                </li>
+                <li class="dcjq-parent-li">
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580?fun_id=3034&amp;returnUrl=%2FGoX%2FOrders%3Ffun_id%3D3034%26IsPrint%3Dfalse%26isTest%3D%26isSearch%3Dtrue%26keyword%3Dglen%26keyword2%3D%26specDetailKeyword%3D%26sortresult%3D0%26AllOrderType%3Dtrue%26AllOrderType%3Dfalse%26RadSingle%3Dtrue%26RadSingle%3Dfalse%26RadIsFruit%3Dtrue%26RadIsFruit%3Dfalse%26RadNonFruit%3Dtrue%26RadNonFruit%3Dfalse%26RadIsRice%3Dtrue%26RadIsRice%3Dfalse%26RadIsFakeTransform%3Dtrue%26RadIsFakeTransform%3Dfalse%26RadIsFrozen%3Dtrue%26RadIsFrozen%3Dfalse%26RadIsBabyFood%3Dtrue%26RadIsBabyFood%3Dfalse%26RadIsSpecialNew%3Dtrue%26RadIsSpecialNew%3Dfalse%26RadIsEagleBabee%3Dtrue%26RadIsEagleBabee%3Dfalse%26direction%3D0%26States%3D%26TemperatureLayer%3D0%26deliveryType%3D%26DeliveryArea%3D2%26PaymentType%3D%26isPay%3D%26order_time_start%3D%26order_time_end%3D%26create_time_start%3D2026%252F05%252F01%2B00%253A00%253A00%26create_time_end%3D%26ReceiveTime%3D0%26WeekType%3D0%26firstOrder%3D-1%26FirstBuy%3D0%26Additional%3D0%26IsTransform%3D0%26blackcat%3D0%26CheckList%3D0%26PrintPaper%3D0%26InvoiceType%3D%26IsBaby%3D2%26ReceiptType%3D0%26SNumberSt%3D%26BabyType%3D1%26search_from%3D0%26IsSuccess%3D1%26vipLevel%3D0%26orderType%3D0%26show_number%3D10%26CheckedList%3D%26IsExport%3Dfalse%26ExportType%3D1%26RcTime%3D0%26Temperature%3D2%26Size%3D1%26Fragile%3D0%26IsFruit%3Dtrue%26EzCatCustomerId%3D0%26SDisplayTime%3D0#" class="dcjq-parent">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>請款管理</span>
+                        <span class="dcjq-icon"></span>
+                    <span class="dcjq-icon"></span></a>
+                    <ul class="sub" style="display: none;">
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/PaymentApproval/Requests/New">
+                                <i class="fa fa-angle-right"></i>建立請款單
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/PaymentApproval/Requests/Pending">
+                                <i class="fa fa-angle-right"></i>待我簽核
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/PaymentApproval/Requests/Index">
+                                <i class="fa fa-angle-right"></i>我的請款紀錄
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/PaymentApproval/Search">
+                                <i class="fa fa-angle-right"></i>查詢
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/PaymentApproval/Vendors/Index">
+                                <i class="fa fa-angle-right"></i>廠商主檔
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="dcjq-parent-li">
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/KPI/Index" class="dcjq-parent">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>KPI</span>
+                    <span class="dcjq-icon"></span></a>
+                    <ul class="sub" style="display: none;">
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/GoX/KPI/Index"><i class="fa fa-angle-right"></i>營業額</a>
+                        </li>
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/GoX/KPI/Satisfication"><i class="fa fa-angle-right"></i>滿意度</a>
+                        </li>
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/GoX/KPI/GoogleAnalytics"><i class="fa fa-angle-right"></i>GA統計資料</a>
+                        </li>
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/GoX/KPI/OtherPage"><i class="fa fa-angle-right"></i>其他</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/ClosedPurchasing/Index?ProductLineType=99&amp;KeyWord=&amp;StartTime=&amp;EndTime=">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>團購專區</span>
+                    </a>
+                </li>
+                <li class="dcjq-parent-li">
+                    <a href="javascript:void(0)" class="dcjq-parent">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>粥寶寶專區</span>
+                    <span class="dcjq-icon"></span></a>
+                    <ul class="sub" style="display: none;">
+                        <li>
+                            <a href="https://gb-dev-1.azurewebsites.net/GoX/BabyFood/BabyFoodHomePage"><i class="fa fa-angle-right"></i>首頁內容</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/Notification/Index">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>訊息管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/RapidTest/RapidTest">
+                        <i class="fa fa-chevron-circle-right"></i>
+                        <span>安心日報管理</span>
+                    </a>
+                </li>
+    </ul>
+    </div>
+    <!-- sidebar menu end-->
+    <div id="ascrail2000" class="nicescroll-rails" style="width: 3px; z-index: auto; cursor: default; position: absolute; top: 0px; left: 237px; height: 368px; display: block; opacity: 0;">
+        <div style="position: relative; top: 0px; float: right; width: 3px; height: 203px; background-color: rgb(31, 181, 173); border: 0px solid rgb(255, 255, 255); background-clip: padding-box; border-top-left-radius: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px; border-bottom-left-radius: 0px;">
+        </div>
+    </div>
+    <div id="ascrail2000-hr" class="nicescroll-rails" style="height: 3px; z-index: auto; top: 365px; left: 0px; position: absolute; cursor: default; display: none; opacity: 0; width: 237px;">
+        <div style="position: relative; top: 0px; height: 3px; width: 240px; background-color: rgb(31, 181, 173); border: 0px solid rgb(255, 255, 255); background-clip: padding-box; border-top-left-radius: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px; border-bottom-left-radius: 0px; left: 0px;">
+        </div>
+    </div>
+    </div>
+    </aside>
+        <!--main content start-->
+        <section id="main-content">
+            <section class="wrapper">
+                
+<script src="./assets/ckeditor.js.下載"></script>
+<link rel="stylesheet" href="./assets/Content.css">
+<script src="./assets/Introduction.js.下載"></script>
+<script src="./assets/jquery.unobtrusive-ajax.js.下載"></script>
+<script src="./assets/jquery.validate-vsdoc.js.下載"></script>
+<script src="./assets/jquery.validate.js.下載"></script>
+<script src="./assets/jquery.validate.min.js.下載"></script>
+<script src="./assets/jquery.validate.unobtrusive.js.下載"></script>
+<link rel="stylesheet" href="./assets/jquery-ui-1.10.4.custom.css">
+<link rel="stylesheet" href="./assets/jquery-ui-timepicker-addon.css">
+<link rel="stylesheet" href="./assets/alertify.core.css">
+<link rel="stylesheet" href="./assets/alertify.default.css">
+<script src="./assets/jquery-ui-timepicker-addon.js.下載"></script>
+<script src="./assets/jquery.ui.datepicker-zh-TW.js.下載"></script>
+<script src="./assets/jquery-ui-timepicker-zh-TW.js.下載"></script>
+<script src="./assets/alertify.js.下載"></script>
+
+<script src="./assets/bootstrap.js.下載"></script>
+
+<link rel="stylesheet" href="./assets/Create-Edit-style.css">
+<link rel="stylesheet" href="./assets/jquery.fancybox.css">
+<script type="text/javascript" src="./assets/jquery.fancybox.js.下載"></script>
+<script src="./assets/OrderEdit.js.下載"></script>
+
+<!-- Select2 -->
+<link href="./assets/select2.min.css" rel="stylesheet">
+<script src="./assets/select2.min.js.下載"></script>
+<!-- Select2 i18 中文翻譯 -->
+<script src="./assets/zh-TW.js.下載"></script>
+
+
+<style>
+    .warning-text {
+        color: #FF0000;
+        font-size: 15px;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .myButton {
+        margin: 1px;
+        background-color: rgba(255, 0, 0, 0.75);
+        -moz-border-radius: 4px;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+        display: inline-block;
+        cursor: pointer;
+        color: #ffffff;
+        font-family: Arial;
+        font-size: 18px;
+        padding: 8px 15px;
+        text-decoration: none;
+        width: 150px;
+    }
+
+        .myButton:hover {
+            color: white;
+            background-color: red;
+        }
+
+        .myButton:active {
+            position: relative;
+            top: 1px;
+        }
+
+
+    .editor-label {
+        margin-left: 15px;
+    }
+
+    .updatelabel {
+        color: gray;
+    }
+
+    #ui-datepicker-div {
+        margin-left: 0px !important;
+    }
+
+    .modal-lg {
+        width: 80%;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 210px);
+        overflow-y: auto;
+    }
+
+    .modify-title {
+        background-color: #D7F4DA;
+        font-size: 17px;
+        padding: 5px 15px;
+        border: solid;
+        border-width: 1px;
+    }
+
+        .modify-title > i {
+            padding: 5px;
+        }
+
+    .modify-content {
+        border: solid;
+        border-width: 1px;
+        margin: 10px 0;
+    }
+
+    .modify-content-field {
+        padding: 3px;
+        background-color: #1fb5ad6e;
+    }
+
+    .modify-content-detail {
+        padding: 3px;
+    }
+
+        .modify-content-detail:nth-child(2n+1) {
+            background-color: #d3d3d366;
+        }
+</style>
+
+
+<div style="margin-bottom: 20px;">
+    <div style="color:red;">
+        
+        
+        
+
+
+        
+    </div>
+    更新時間：2026/05/05 17:35
+    <input id="order-modify-record" class="Form_btn" style="font-size: 16px" type="button" value="訂單編輯紀錄" onclick="">
+    <br>
+    <span>更新人員：無</span>
+
+</div>
+
+<form action="https://gb-dev-1.azurewebsites.net/GoX/Orders/Edit/1748580" enctype="multipart/form-data" id="form" method="post" name="ordersEdit_form" novalidate="novalidate"><input id="returnUrl" name="returnUrl" type="hidden" value="/GoX/Orders?fun_id=3034&amp;IsPrint=false&amp;isTest=&amp;isSearch=true&amp;keyword=glen&amp;keyword2=&amp;specDetailKeyword=&amp;sortresult=0&amp;AllOrderType=true&amp;AllOrderType=false&amp;RadSingle=true&amp;RadSingle=false&amp;RadIsFruit=true&amp;RadIsFruit=false&amp;RadNonFruit=true&amp;RadNonFruit=false&amp;RadIsRice=true&amp;RadIsRice=false&amp;RadIsFakeTransform=true&amp;RadIsFakeTransform=false&amp;RadIsFrozen=true&amp;RadIsFrozen=false&amp;RadIsBabyFood=true&amp;RadIsBabyFood=false&amp;RadIsSpecialNew=true&amp;RadIsSpecialNew=false&amp;RadIsEagleBabee=true&amp;RadIsEagleBabee=false&amp;direction=0&amp;States=&amp;TemperatureLayer=0&amp;deliveryType=&amp;DeliveryArea=2&amp;PaymentType=&amp;isPay=&amp;order_time_start=&amp;order_time_end=&amp;create_time_start=2026%2F05%2F01+00%3A00%3A00&amp;create_time_end=&amp;ReceiveTime=0&amp;WeekType=0&amp;firstOrder=-1&amp;FirstBuy=0&amp;Additional=0&amp;IsTransform=0&amp;blackcat=0&amp;CheckList=0&amp;PrintPaper=0&amp;InvoiceType=&amp;IsBaby=2&amp;ReceiptType=0&amp;SNumberSt=&amp;BabyType=1&amp;search_from=0&amp;IsSuccess=1&amp;vipLevel=0&amp;orderType=0&amp;show_number=10&amp;CheckedList=&amp;IsExport=false&amp;ExportType=1&amp;RcTime=0&amp;Temperature=2&amp;Size=1&amp;Fragile=0&amp;IsFruit=true&amp;EzCatCustomerId=0&amp;SDisplayTime=0"><input data-val="true" data-val-required="The 訂單編號 field is required." id="Id" name="Id" type="hidden" value="1748580"><input data-val="true" data-val-required="The Fun_Id field is required." id="Fun_Id" name="Fun_Id" type="hidden" value="3034">    <span style="margin-top: 50px; font-weight: bold;">訂單明細</span>
+    <table class="table table-striped" id="OrderData">
+        <thead>
+            <tr style="background-color: #D7F4DA;">
+                <th class="item1" style="width: 20%;">
+                    訂單資訊
+                </th>
+                <th class="item3" style="width: 25%">
+                    寄件人
+                </th>
+                <th class="item4" style="width: 30%">
+                    收件人
+                </th>
+                <th class="item2" style="width: 25%">
+                    發票資訊
+                </th>
+
+        </tr></thead>
+        <tbody>
+            <tr>
+                <td style="text-align: left;">
+                    訂單編號：260505748580
+                    <br>
+                    建立時間：2026/05/05 17:35
+                    <br>
+                    訂單狀態：
+                        <span style="color: red;">處理中</span>
+                </td>
+
+                <td style="text-align: left;">
+
+                    姓名：
+                    <input data-val="true" data-val-required="必填欄位" id="Name" name="Name" style="margin-bottom: 10px;" type="text" value="Glen Wen 測試">
+                    <a href="https://gb-dev-1.azurewebsites.net/GoX/Volunteers/Edit/267622" target="_blank" style="color:blue;">會員資料</a>
+                    <span class="field-validation-valid" data-valmsg-for="Name" data-valmsg-replace="true"></span>
+                    <br>
+                    電話：
+                    <input data-val="true" data-val-required="必填欄位" id="Mobile" name="Mobile" style="margin-bottom: 10px;" type="text" value="0987123728">
+                    <span class="field-validation-valid" data-valmsg-for="Mobile" data-valmsg-replace="true"></span>
+
+
+
+
+
+                    <br>
+                    備註：
+無
+                    <div class="editor-label">
+                        <input data-val="true" data-val-required="The 我要送禮，請幫讓收件人知道誰贈送(不顯示金額) field is required." id="DisplayBuyerName" name="DisplayBuyerName" type="checkbox" value="true"> 我要送禮，請幫讓收件人知道誰贈送(不顯示金額)
+                    </div>
+                </td>
+
+                <td style="text-align: left;">
+                    姓名：
+                    <input data-val="true" data-val-required="必填欄位" id="ReceiverName" name="ReceiverName" style="margin-bottom: 10px;" type="text" value="溫永瀚(新北)">
+                    <span class="field-validation-valid" data-valmsg-for="ReceiverName" data-valmsg-replace="true"></span>
+                    <br>
+
+                        <span>
+                            電話：
+                            <input data-val="true" data-val-required="必填欄位" id="ReceiverMobile" name="ReceiverMobile" style="margin-bottom: 10px;" type="text" value="0987123728">
+                            <span class="field-validation-valid" data-valmsg-for="ReceiverMobile" data-valmsg-replace="true"></span>
+                            <br>
+                            地址：
+                            <input id="Address" name="Address" onchange="showWarningMessage()" style="margin-bottom: 10px;width: 80%;" type="text" value="新北市板橋區光正街16巷9號">
+                            <span class="field-validation-valid" data-valmsg-for="Address" data-valmsg-replace="true"></span>
+                            <br>
+                            <input data-val="true" data-val-required="The ArrivalDays field is required." id="ArrivalDays" name="ArrivalDays" type="hidden" value="0">
+                            配達時段：
+                            <label title="09:00~13:00"><input data-val="true" data-val-required="必填欄位" id="ReciveTimeChoice" name="ReciveTimeChoice" type="radio" value="1">早上</label> 
+                            <label title="14:00~18:00"><input id="ReciveTimeChoice" name="ReciveTimeChoice" type="radio" value="2">下午</label> 
+                            <label title="16:00~19:00"><input id="ReciveTimeChoice" name="ReciveTimeChoice" type="radio" value="5">當日配</label> 
+                            <label><input checked="checked" id="ReciveTimeChoice" name="ReciveTimeChoice" type="radio" value="4">不指定</label> 
+                            <label class="warning-text" style="display: none;">*當日配訂單：請協助留意地址區域是否為當日配可配送區域</label>
+
+                            <span class="field-validation-valid" data-valmsg-for="ReciveTimeChoice" data-valmsg-replace="true"></span>
+                            <label class="updatelabel">
+                                <input class="updatecheck" type="checkbox" name="update_receiver" value="true">
+                                以此為主，覆蓋相同訂單的-收件人資訊
+                            </label>
+                        </span>
+                    <span>
+                        愛心名冊：
+                        <input data-val="true" data-val-length="勿超過50字喔！" data-val-length-max="50" id="Nickname" maxlength="50" name="Nickname" placeholder="勿超過50字喔！" style="margin-bottom: 10px;" type="text" value="">
+                        <span class="field-validation-valid" data-valmsg-for="Nickname" data-valmsg-replace="true"></span>
+                    </span>
+                </td>
+                <td style="text-align: left;">
+
+發票類型：
+                        <select name="InvoiceType" style="margin-bottom:10px; ">
+                            <option value="二聯式">二聯式</option>
+                            <option value="三聯式">三聯式</option>
+                            <option value="捐贈發票" selected="&quot;selected&quot;">捐贈發票</option>
+                        </select>
+                        <div style="display:none">
+                            <text>統一編號：</text>
+                            <input data-val="true" data-val-length="必須為8位數字" data-val-length-max="8" data-val-length-min="8" data-val-regex="請輸入數字" data-val-regex-pattern="^[0-9]*$" id="TaxId" maxlength="8" name="TaxId" style="margin-bottom: 10px;" type="text" value="">
+                            <span class="field-validation-valid" data-valmsg-for="TaxId" data-valmsg-replace="true"></span>
+                            <div class="Valid" id="TaxIdValid" style="display: none;">必填欄位</div>
+                            <br>
+                            <text>公司抬頭：</text>
+                            <input id="CompanyName" name="CompanyName" style="margin-bottom: 10px;" type="text" value="">
+                            <div class="Valid" id="CompanyNameValid" style="display: none;">必填欄位</div>
+                        </div>
+                        <div>
+                            <text>發票號碼：</text>
+<input id="InvoiceNumber" name="InvoiceNumber" placeholder="未開立" style="margin-bottom: 10px;" type="text" value="">                            <div class="Valid" id="InvoiceNumberValid" style="display: none;">必填欄位</div>
+                            <br>
+                            <text>開立時間：</text>
+<input id="InvoiceTime" name="InvoiceTime" placeholder="未開立" style="margin-bottom: 10px" type="text" value="" class="hasDatepicker">                            <div class="Valid" id="InvoiceTimeValid" style="display: none;">必填欄位</div>
+                            <br>
+                            <div id="invoice-for-paper">
+                                <text>發票地址：</text>
+                                <input id="InvoiceAddress" name="InvoiceAddress" placeholder="不須印紙本" style="margin-bottom: 10px;" type="text" value="">
+                                <br>
+                                <text>發票收件人名稱：</text>
+                                <input id="InvoiceName" name="InvoiceName" placeholder="不須印紙本" style="margin-bottom: 10px;width: 42%;" type="text" value="">
+                            </div>
+                            <div id="invoice-email">
+                                <text>寄件人Email：</text>
+                                <input id="Email" name="Email" style="margin-bottom: 10px;" type="text" value="glen.wen@soohoobook.com">
+                            </div>
+
+                            <div id="invoice-carrier-type">
+                                <text>載具類型：</text>
+                                <select id="CarrierType" name="CarrierType" style="margin-bottom: 10px;"><option selected="selected" value="">無載具</option>
+<option value="2">自然人載具</option>
+<option value="3">手機載具</option>
+</select>
+                            </div>
+                            <div id="invoice-carrier-number">
+                                <text>載具號碼：</text>
+                                <input id="CarrierNumber" name="CarrierNumber" style="margin-bottom: 10px;" type="text" value="">
+                                <div class="Valid" id="CarrierNumberValid" style="display: none;">請填寫正確載具號碼</div>
+                            </div>
+                        </div>
+                </td>
+
+            </tr>
+        </tbody>
+    </table>
+    <div style="margin: 50px"></div>
+    <span style="margin-top: 50px; font-weight: bold;">商品明細</span>
+    <table class="table table-striped">
+        <thead>
+            <tr style="background-color: #D7F4DA;">
+                <th class="item1" style="width: 300px;">
+                    商品名稱
+                </th>
+                <th class="item2" style="width: 150px;">
+                    單位
+                </th>
+                    <th class="item1" style="width: 150px;">
+                        週數
+                    </th>
+                <th class="item4" style="width: 150px;">
+                    單價
+                </th>
+                <th class="item3" style="width: 150px;">
+                    數量
+                </th>
+
+                <th class="item5" style="width: 150px;">
+                    小計
+                </th>
+        </tr></thead>
+        <tbody>
+                    <tr>
+                        <td style="text-align:center">
+                            【牛奶蜜棗】江媽媽愛心果園
+                        </td>
+                        <td style="text-align:center">
+                            1  盒
+(12粒裝)                        </td>
+                            <td>
+                                <span style="color: red"></span> / 
+                            </td>
+
+                        <td style="text-align:center">
+                            1399
+                        </td>
+                        <td style="text-align:center">
+                            1
+                        </td>
+                        <td style="text-align:center">
+                            1399
+                        </td>
+                    </tr>
+                <tr style="background-color: #f5f5f5; font-weight: bold;">
+                    <td colspan="5" style="text-align:right; padding-right:10px;">
+                        商品總額
+                    </td>
+                    <td style="text-align:center">
+                        1399
+                    </td>
+                </tr>
+        </tbody>
+
+    </table>
+    <div style="text-align: center;    margin-top: 50px;">
+
+        <fieldset style="width: 100%;">
+            <legend>訂單資訊</legend>
+
+            <div class="block">
+
+
+                <div class="editor-field">
+                    <!--正物流、暫停、取消-->
+                    <!--已退貨-->
+
+                    <div class="editor-label" style="margin-left: 0px;">
+                        是否結款
+                    </div>
+                    <div class="editor-field" style="margin-left: 0px;">
+                        <label><input checked="checked" data-val="true" data-val-required="The 結款狀態 field is required." id="Settlement" name="Settlement" type="radio" value="False"><span style="color:red">否</span></label>
+
+                        <label><input id="Settlement" name="Settlement" type="radio" value="True"><span style="color:green">是</span></label>
+                    </div>
+
+                    <div class="editor-label" style="margin-left: 0px;">
+                        配送溫層
+                    </div>
+                    <div class="editor-field" style="margin-left: 0px;">
+                        <label><input data-val="true" data-val-required="The TemperatureLayer field is required." id="TemperatureLayer" name="TemperatureLayer" type="radio" value="1"><span style="color:black">常溫</span></label>
+                        <label><input checked="checked" id="TemperatureLayer" name="TemperatureLayer" type="radio" value="2"><span style="color:black">冷藏</span></label>
+                        <label><input id="TemperatureLayer" name="TemperatureLayer" type="radio" value="3"><span style="color: black">冷凍</span></label>
+                    </div>
+
+                    <div class="editor-label" style="margin-left: 0px;">
+                        <span style="color: red;">*</span> 付款方式
+                    </div>
+                        <div class="editor-field" style="margin-left: 0px;">
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="貨到付款">貨到付款</label>&nbsp;&nbsp;
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="ATM轉帳">ATM轉帳</label>&nbsp;&nbsp;
+                            <label><input checked="checked" id="PaymentType" name="PaymentType" type="radio" value="信用卡">信用卡</label>&nbsp;&nbsp;
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="LinePay"> LinePay</label>&nbsp;&nbsp;
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="現金">現金</label>&nbsp;&nbsp;
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="劃撥">劃撥</label>&nbsp;&nbsp;
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="定期定額"> 定期定額</label>&nbsp;&nbsp;
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="無">無</label>&nbsp;&nbsp;
+                            <label><input id="PaymentType" name="PaymentType" type="radio" value="其他">其他</label>
+                            <span class="field-validation-valid" data-valmsg-for="PaymentType" data-valmsg-replace="true"></span>
+                            <br>
+                            <label class="updatelabel">
+                                <input class="updatecheck" type="checkbox" name="update_PayType" value="true">
+                                以此為主，覆蓋相同訂單的-付款方式
+                            </label>
+                            <br>
+                        </div>
+
+                    <div class="editor-label" style="margin-left: 0px;">
+                        <span style="color: red;">*</span> 物流配送方式
+                    </div>
+                        <div class="editor-field" style="margin-left: 0px;">
+                            <label><input checked="checked" id="DeliveryType" name="DeliveryType" type="radio" value="3">黑貓</label>&nbsp;&nbsp;
+                            <label><input id="DeliveryType" name="DeliveryType" type="radio" value="2">自行配送</label>&nbsp;&nbsp;
+                            <label><input disabled="disabled" id="DeliveryType" name="DeliveryType" type="radio" value="4">全家<span class="text-muted">(因編輯頁選擇全家會缺少門店選取，故先暫停使用)</span></label>&nbsp;&nbsp;
+
+                            <span class="field-validation-valid" data-valmsg-for="DeliveryType" data-valmsg-replace="true"></span>
+                            <br>
+                        </div>
+                </div>
+            </div>
+
+
+            <!-- ▼▼▼ 新版金額相關（客服優化原型；2026-05-28）▼▼▼ -->
+            <!-- 註：input 的 id / name 全部維持原樣，僅換 label 文案、改排版、加按鈕；不會破壞原本 form POST -->
+            <div class="block">
+                <div class="editor-label">
+                    <span style="color: red;">*</span> 金額相關
+                </div>
+                <div class="editor-field amt2026">
+
+                    <!-- 總額（強調列） -->
+                    <div class="amt2026-row is-total">
+                      <span class="amt2026-label">總額</span>
+                      <input data-val="true" data-val-required="The TotalPrice field is required." id="TotalPrice" min="0" name="TotalPrice" type="number" value="1204" class="amt2026-input">
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="formula">查看公式計算</button>
+                      </div>
+                    </div>
+
+                    <hr class="amt2026-divider">
+
+                    <!-- 加價組 -->
+                    <div class="amt2026-row">
+                      <span class="amt2026-prefix is-plus">+</span>
+                      <span class="amt2026-label">貨到付款</span>
+                      <input id="Fee" min="0" name="Fee" type="number" value="0" class="amt2026-input">
+                    </div>
+                    <div class="amt2026-row">
+                      <span class="amt2026-prefix is-plus">+</span>
+                      <span class="amt2026-label">運費</span>
+                      <input id="shipping" min="0" name="shipping" type="number" value="150" class="amt2026-input">
+                    </div>
+
+                    <hr class="amt2026-divider">
+
+                    <!-- 折價組 -->
+                    <div class="amt2026-row" data-amt2026-row="promote">
+                      <span class="amt2026-prefix is-minus">−</span>
+                      <span class="amt2026-label">折扣碼</span>
+                      <input id="discount" min="0" name="discount" type="number" value="100" disabled="disabled" class="amt2026-input">
+                      <input type="hidden" data-val="true" data-val-number="The field discount_rate must be a number." id="discount_rate" name="discount_rate" value="0">
+                      <span class="field-validation-valid" data-valmsg-for="discount_rate" data-valmsg-replace="true"></span>
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-danger"
+                                data-amt2026-action="confirm"
+                                data-field="promote"
+                                data-verb="取消折扣"
+                                data-target="折扣碼"
+                                data-amount="100"
+                                data-side-effect="僅取消此次套用，恢復折扣碼可用次數">取消折扣</button>
+                      </div>
+                    </div>
+
+                    <div class="amt2026-row" data-amt2026-row="bonus">
+                      <span class="amt2026-prefix is-minus">−</span>
+                      <span class="amt2026-label">購物金</span>
+                      <input data-val="true" data-val-required="The Bonus field is required." disabled="disabled" id="Bonus" min="0" name="Bonus" type="number" value="200" class="amt2026-input">
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-danger"
+                                data-amt2026-action="confirm"
+                                data-field="bonus"
+                                data-verb="返還"
+                                data-target="購物金"
+                                data-amount="200"
+                                data-side-effect="僅退購物金到會員帳戶">返還</button>
+                      </div>
+                    </div>
+
+                    <div class="amt2026-row" data-amt2026-row="coupon">
+                      <span class="amt2026-prefix is-minus">−</span>
+                      <span class="amt2026-label">優惠券</span>
+                      <input data-val="true" data-val-number="The field CouponPrice must be a number." data-val-required="The CouponPrice field is required." disabled="disabled" id="CouponPrice" min="0" name="CouponPrice" type="number" value="0.95" class="amt2026-input">
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="coupon">查看</button>
+                        <button type="button" class="amt2026-btn amt2026-btn-danger"
+                                data-amt2026-action="confirm"
+                                data-field="coupon"
+                                data-verb="返還"
+                                data-target="優惠券"
+                                data-amount="78"
+                                data-side-effect="僅釋出優惠券給會員（不動帳款）">返還</button>
+                      </div>
+                    </div>
+
+                    <div class="amt2026-row" data-amt2026-row="redpoint">
+                      <span class="amt2026-prefix is-minus">−</span>
+                      <span class="amt2026-label">紅利點數</span>
+                      <input data-val="true" data-val-required="The RedPointPrice field is required." disabled="disabled" id="RedPointPrice" min="0" name="RedPointPrice" type="number" value="102" class="amt2026-input">
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="redpoint">查看</button>
+                        <button type="button" class="amt2026-btn amt2026-btn-danger"
+                                data-amt2026-action="confirm"
+                                data-field="redpoint"
+                                data-verb="返還"
+                                data-target="紅利點數"
+                                data-amount="102"
+                                data-side-effect="僅退紅利到會員帳戶（過期者自動補發新效期）">返還</button>
+                      </div>
+                    </div>
+
+                    <div class="amt2026-row" data-amt2026-row="activity">
+                      <span class="amt2026-prefix is-minus">−</span>
+                      <span class="amt2026-label">活動折扣</span>
+                      <input data-val="true" data-val-required="The ActivityDisocunt field is required." disabled="disabled" id="ActivityDisocunt" min="0" name="ActivityDisocunt" type="number" value="50" class="amt2026-input">
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-danger"
+                                data-amt2026-action="confirm"
+                                data-field="activity"
+                                data-verb="取消折扣"
+                                data-target="活動折扣"
+                                data-amount="50"
+                                data-side-effect="僅刪除此次活動折扣紀錄，不會重新觸發活動">取消折扣</button>
+                      </div>
+                    </div>
+
+                    <div class="amt2026-checkbox-row">
+                      <label class="updatelabel">
+                        <input class="updatecheck" type="checkbox" name="update_PriceInfo" value="true">
+                        以此為主，覆蓋相同訂單的-金額相關
+                      </label>
+                    </div>
+
+                </div>
+            </div>
+            <!-- ▲▲▲ 新版金額相關 ▲▲▲ -->
+
+            <div class="block">
+
+                <div class="two_col">
+                    <div class="editor-label">
+                        <span style="color: red;">*</span>出貨日期
+                    </div>
+                    <div class="editor-field">
+                        <input data-val="true" data-val-required="The 出貨日期 field is required." id="OrdersTime" name="OrdersTime" readonly="readonly" style="cursor: pointer" type="text" value="2026/05/05" class="hasDatepicker">
+                        <span class="field-validation-valid" data-valmsg-for="OrdersTime" data-valmsg-replace="true"></span>
+                    </div>
+
+                    <div class="editor-label">
+                        物流單號
+                    </div>
+                    <div class="editor-field">
+                        <input id="BlackCatNum" name="BlackCatNum" type="text" value="">
+                        <div class="Valid" id="BlackCatNumValid">需為10或12碼</div>
+                    </div>
+                </div>
+                <div class="block">
+                        <div class="editor-label">
+                            <span style="color: red;">*</span>週配類別
+                        </div>
+                        <div class="editor-field">
+                            <label><input id="WeekType" name="WeekType" type="radio" value="1">單週配</label>&nbsp;&nbsp;
+                            <label><input id="WeekType" name="WeekType" type="radio" value="2">雙週配</label>&nbsp;&nbsp;
+                            <br>
+                            <label class="updatelabel">
+                                <input class="updatecheck" type="checkbox" name="update_WeekType" value="true">
+                                以此為主，覆蓋相同訂單的-週配類別
+                            </label>
+                        </div>
+                </div>
+                <div class="block">
+                    <div class="editor-label">
+                        車次
+                    </div>
+                    <div class="editor-field">
+                        <input id="CarNumber" name="CarNumber" type="text" value="">
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="block">
+                    <div class="block">
+                        <div class="editor-label">
+                            <label>特殊需求</label>
+                        </div>
+                        <div class="editor-field">
+                            <label><input data-val="true" data-val-required="The Special field is required." id="Special" name="Special" type="checkbox" value="true"> 為特殊單</label>
+                            <br>
+                            <label class="updatelabel">
+                                <input class="updatecheck" type="checkbox" name="update_Special" value="true">
+                                以此為主，覆蓋相同訂單的-為特殊單
+                            </label>
+                            <br>
+                        </div>
+                    </div>
+                    <div class="block">
+                        <div class="editor-label">
+                            <label>轉單已處理</label>
+                        </div>
+                        <div class="editor-field">
+                            <label><input id="TansformStates" name="TansformStates" type="radio" value="已處理">已處理</label>&nbsp;&nbsp;
+                            <label><input checked="checked" id="TansformStates" name="TansformStates" type="radio" value="未處理">未處理</label>
+                        </div>
+                    </div>
+
+
+            </div>
+
+            <div class="block">
+                <div class="editor-label">
+                    倉庫備註
+                </div>
+                <div class="editor-field">
+
+                    <textarea cols="50" id="RemarksFromAdmin" name="RemarksFromAdmin" placeholder="出貨單上不顯示此備註，可用來記錄ATM帳號末5碼等" rows="5"> </textarea>
+                    <label class="updatelabel">
+                        <input class="updatecheck" type="checkbox" name="update_adminremarks" value="true">
+                        以此為主，覆蓋相同訂單的-倉庫備註
+                    </label>
+                    <br>
+                </div>
+            </div>
+
+            <div class="block">
+
+                <div class="editor-label">
+                    <label>出貨備註</label>
+                </div>
+                <div class="editor-field">
+                    <textarea cols="50" id="Remarks" name="Remarks" placeholder="出貨單上的備註，例：管理員可代收，假日不再家。" rows="5">ITh測試，請勿出貨</textarea>
+                    <label class="updatelabel">
+                        <input class="updatecheck" type="checkbox" name="update_remarks" value="true">
+                        以此為主，覆蓋相同訂單的-出貨備註
+                    </label>
+                </div>
+            </div>
+
+            <div class="block">
+                <div class="editor-label">
+                    <label>客服註記</label>
+                </div>
+                <div class="editor-field">
+                    <div id="ServiceDetail" class="two_col" style="width:420px; height: 120px; padding: 10px;overflow-y:scroll;border: 1px solid #B5B5B5;">
+                        <div id="ServiceArea">
+                        </div>
+                    </div>
+                    <textarea cols="50" rows="2" style="width:420px;margin-top:3px; vertical-align:middle" id="ServiceContent" placeholder="請輸入註記內容，會自動新增到【售後服務】" onkeydown="showbtn();"></textarea>
+                    <button id="send_btn" type="button" class="Form_btn" style="display:none; vertical-align:middle;background-color:#0077FF;width:100px;height:45px;font-size:20px;" onclick="return InsertService(260505748580);">送出</button>
+                </div>
+            </div>
+
+            <div class="block">
+
+                <div class="editor-label">
+                    <label>客服備註</label>
+                </div>
+                <div class="editor-field">
+                    <textarea cols="50" id="CustomerServiceRemarks" name="CustomerServiceRemarks" rows="5">【主單】</textarea>
+                    <label class="updatelabel">
+                        <input class="updatecheck" type="checkbox" name="update_customerServiceRemark" value="true">
+                        以此為主，覆蓋相同訂單的-客服備註
+                    </label>
+                </div>
+            </div>
+
+            <div class="block" style="margin-top:20px;">
+                <span style="margin:15px;"><label>缺貨備註：</label><span></span></span>
+            </div>
+
+            <div class="block">
+            </div>
+
+            <div class="block">
+                <div class="editor-label">
+                    <label>客訴紀錄</label>
+                </div>
+                <div class="editor-field">
+                    <input class="Form_btn" type="button" value="新客訴" onclick="$(&#39;#complaint-modal&#39;).modal(&#39;show&#39;); $(&#39;#complaint-modal&#39;).fadeIn(&#39;slow&#39;);">
+
+
+                </div>
+            </div>
+
+        </fieldset>
+    </div>
+    <br>
+    <input class="Form_btn" type="button" value="儲存" onclick="return checkRemarkHasUpdateRemark(1748580,&#39;5/5/2026 5:35:44 PM&#39;);">
+        <div style="float: right; padding: 10px;">
+        </div>
+
+<br>
+<section id="order-edit-complaint-modal">
+    <section id="complaint-modal" class="modal fade modal-style">
+        <div class="modal-dialog" role="document" style="color:black">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button onclick="$(&#39;#complaint-modal&#39;).fadeOut(&#39;slow&#39;);$(&#39;#complaint-modal&#39;).modal(&#39;hide&#39;);" type="button" class="circle-close" data-dismiss="modal" aria-label="Close">
+                        <img aria-hidden="true" src="./assets/btn-close.png">
+                        <br>
+                    </button>
+                    <span>新增客訴</span>
+                </div>
+                <div class="modal-body">
+                    <input id="orderNumber" type="text" class="form-control" placeholder="訂單編號" value="260505748580" disabled="disabled">
+                    <div style="margin-left:1%;margin-bottom:2%">
+                        <select id="DropdownMultiSelect" class="dropDownMultiList form-control select2-hidden-accessible" name="user[]" multiple="" data-select2-id="DropdownMultiSelect" tabindex="-1" aria-hidden="true"><option value="【巨峰葡萄】褚譽合作社" data-select2-id="1">【巨峰葡萄】褚譽合作社</option><option value="柑橘季【雞蛋柳丁】無毒農嚴選" data-select2-id="2">柑橘季【雞蛋柳丁】無毒農嚴選</option><option value="【牛奶蜜棗】江媽媽愛心果園" data-select2-id="3">【牛奶蜜棗】江媽媽愛心果園</option><option value="柑橘季【雞蛋柳丁】無毒農嚴選" data-select2-id="4">柑橘季【雞蛋柳丁】無毒農嚴選</option><option value="【牛奶蜜棗】江媽媽愛心果園" data-select2-id="5">【牛奶蜜棗】江媽媽愛心果園</option><option value="【牛奶蜜棗】江媽媽愛心果園" data-select2-id="6">【牛奶蜜棗】江媽媽愛心果園</option></select><span class="select2 select2-container select2-container--default" dir="ltr" data-select2-id="7" style="width: 90%;"><span class="selection"><span class="select2-selection select2-selection--multiple" role="combobox" aria-haspopup="true" aria-expanded="false" tabindex="-1"><ul class="select2-selection__rendered"><li class="select2-search select2-search--inline"><input class="select2-search__field" type="search" tabindex="0" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" role="textbox" aria-autocomplete="list" placeholder="品項名稱" style="width: 100px;"></li></ul></span></span><span class="dropdown-wrapper" aria-hidden="true"></span></span>
+                    </div>
+
+                    <input id="complaintDate" type="text" class="form-control hasDatepicker" placeholder="日期">
+                    <select class="form-control" id="bonusType" name="bonusType"><option value="0">補寄</option>
+<option value="1">購物金</option>
+<option value="2">退款</option>
+<option value="3">退貨</option>
+<option value="4">重寄</option>
+<option value="5">紅利點數</option>
+<option value="6">優惠券</option>
+<option value="7">無賠償</option>
+</select>
+                    <input id="bonus" type="text" class="form-control" placeholder="金額">
+                    <select id="status" class="form-control">
+                        <option value="-1" selected="selected">請選擇狀態</option>
+                        <option value="0">未處理</option>
+                        <option value="1">處理完成</option>
+                    </select>
+                    <select id="user" class="form-control">
+                        <option value="-1" selected="selected">請選擇出錯人員</option>
+                            <option value="行銷">行銷</option>
+                            <option value="倉庫">倉庫</option>
+                            <option value="客服">客服</option>
+                            <option value="缺貨">缺貨</option>
+                            <option value="黑貓">黑貓</option>
+                            <option value="全家">全家</option>
+                            <option value="自家物流">自家物流</option>
+                            <option value="Lala">Lala</option>
+                            <option value="農友">農友</option>
+                            <option value="品質">品質</option>
+                            <option value="工程">工程</option>
+                            <option value="廚房">廚房</option>
+                            <option value="其他">其他</option>
+                            <option value="會計">會計</option>
+                            <option value="代工">代工</option>
+                            <option value="Enzo">Enzo</option>
+                            <option value="奧客">奧客</option>
+                            <option value="會員">會員</option>
+                            <option value="營運">營運</option>
+                    </select>
+                    <select id="owner" class="form-control">
+                        <option value="-1" selected="selected">請選擇負責人員</option>
+                            <option value="30">ENZO</option>
+                            <option value="120">soohoobook</option>
+                            <option value="522">廖素秋</option>
+                            <option value="634">郭懿瑩</option>
+                            <option value="637">周俊堂</option>
+                            <option value="642">陳志杰</option>
+                            <option value="673">李翊瑄</option>
+                            <option value="674">何振耀</option>
+                            <option value="679">洪明青</option>
+                            <option value="691">江珮萱</option>
+                            <option value="695">蕭宇辰</option>
+                            <option value="702">廖珮辰</option>
+                            <option value="704">鄭雲岫</option>
+                            <option value="716">黃冠蓁</option>
+                            <option value="722">林飛煌</option>
+                            <option value="727">林彥丞</option>
+                            <option value="731">黃巧萍</option>
+                            <option value="733">張雅琴</option>
+                            <option value="754">吳孟瑤</option>
+                            <option value="755">陳秋虹</option>
+                            <option value="756">許淑君</option>
+                            <option value="757">余君柔</option>
+                            <option value="759">孫玉馨</option>
+                            <option value="762">劉屹倫</option>
+                            <option value="763">行銷實習生</option>
+                            <option value="767">徐曼綾</option>
+                            <option value="769">楊若瑜</option>
+                            <option value="776">張君涵</option>
+                            <option value="781">許雅婷</option>
+                            <option value="784">蕭伊宏</option>
+                            <option value="786"> 陳昱潔</option>
+                            <option value="787">許昕紘</option>
+                            <option value="792">曾靖茹</option>
+                            <option value="797">江珮萱</option>
+                            <option value="798">潘致硯</option>
+                            <option value="803">許語桐</option>
+                            <option value="806">邱紹琮</option>
+                            <option value="808">高堤娜</option>
+                            <option value="814">楊婉翎</option>
+                            <option value="818">王士承</option>
+                            <option value="822">陳盈璇</option>
+                            <option value="830">楊詠竣</option>
+                            <option value="832">李佳欣</option>
+                            <option value="833">陳郁珊</option>
+                            <option value="835">陳奕正</option>
+                            <option value="837">温永瀚 </option>
+                            <option value="838">Hannah</option>
+                            <option value="839">JeanTest</option>
+                    </select>
+                    <select id="handlerType" class="form-control">
+                        <option value="0" selected="selected">請選擇處理人員</option>
+                            <option value="457">高欣怡</option>
+                            <option value="616">簡志珊</option>
+                            <option value="752">林慧盈</option>
+                            <option value="817">林志瑜</option>
+                            <option value="829">吳名陽</option>
+                            <option value="831">白幸申</option>
+                            <option value="840">CustomerTest</option>
+                    </select>
+                    <select id="handlerUrgency" class="form-control">
+                        <option value="0" selected="selected">請選擇客訴分級</option>
+                            <option value="0">無</option>
+                            <option value="3">三級客訴</option>
+                            <option value="2">二級客訴</option>
+                            <option value="1">一級客訴</option>
+                    </select>
+                    <textarea cols="50" rows="2" id="issue" class="form-control" placeholder="問題描述（最多20字元）" style="width: 400px;" maxlength="20"></textarea>
+                    <textarea cols="50" rows="2" id="insideProcess" class="form-control" placeholder="內部處理" style="width: 400px;"></textarea>
+                    <textarea cols="50" rows="2" id="solution" class="form-control" placeholder="解決方式" style="width: 400px;"></textarea>
+                    <input type="file" id="images" name="images" accept="image/*" value="上傳檔案" multiple="">
+                    <input class="Form_btn" type="button" value="新增" onclick="insertOrderComplaint();">
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <section id="complaint-log-modal" class="modal fade modal-style">
+        <div class="modal-dialog" role="document" style="color:black;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button onclick="$(&#39;#complaint-log-modal&#39;).fadeOut(&#39;slow&#39;);$(&#39;#complaint-log-modal&#39;).modal(&#39;hide&#39;);" type="button" class="circle-close" data-dismiss="modal" aria-label="Close">
+                        <img aria-hidden="true" src="./assets/btn-close.png">
+                        <br>
+                    </button>
+                    <span>客訴紀錄</span>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </section>
+</section>
+
+<div id="modify-record-modal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content col-xs-12">
+            <div class="modal-header col-xs-12">
+                <h5 class="modal-title">訂單編輯紀錄</h5>
+            </div>
+            <div class="modal-body col-xs-12">
+                <div id="modify-frame" style="padding: 0 5px;">
+                    <div id="order-modify-content">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer col-xs-12">
+                <button id="modify-modal-close" type="button" class="btn btn-primary" data-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="./assets/validationHelper.js.下載"></script>
+<script>
+    $(document).ready(function () {
+        $('.warning-text').hide();
+    });
+
+    const validationRules = {
+        carrierNumber: {
+            required: (value) => ({
+                isValid: value && value.trim() !== '',
+                message: '載具號碼為必填欄位'
+            }),
+            format: (value, carrierType) => {
+                if (carrierType === '3') {
+                    return {
+                        isValid: /^\/[0-9A-Z\+\-\.]{7}$/.test(value),
+                        message: '須填有效手機載具號碼'
+                    };
+                }
+                if (carrierType === '2') {
+                    return {
+                        isValid: /^[A-Z]{2}\d{14}$/.test(value),
+                        message: '須填有效自然人載具號碼'
+                    };
+                }
+                return { isValid: true, message: '' };
+            }
+        }
+    };
+
+    function validateField(fieldName, value, options = {}) {
+        const rules = validationRules[fieldName];
+        if (!rules) return { isValid: true, message: '' };
+
+        // 驗證必填
+        if (rules.required) {
+            const requiredResult = rules.required(value, options.carrierType);
+            if (!requiredResult.isValid) {
+                return requiredResult;
+            }
+        }
+
+        // 驗證格式
+        if (rules.format) {
+            const formatResult = rules.format(value, options.carrierType);
+            if (!formatResult.isValid) {
+                return formatResult;
+            }
+        }
+
+        return { isValid: true, message: '' };
+    }
+
+    /// 驗證訂單資料
+    function validateFormBeforeSubmit(){
+        let isValid = true;
+        let errorMessage = [];
+        let topErrorElement = null;
+
+        const taxId = $('#TaxId').val();
+        const companyName = $('#CompanyName').val();
+        const invoiceType = $('select[name="InvoiceType"]').val();
+        const carrierType = $('select[name="CarrierType"]').val();
+        const carrierNumber = $('#CarrierNumber').val();
+
+        // 清除之前的驗證錯誤
+        $('#CarrierNumberValid').hide();
+
+        // 檢查三聯式發票的必填欄位
+        if(invoiceType === '三聯式'){
+            if(!taxId || taxId.trim() === ''){
+                isValid = false;
+                errorMessage.push('統編為必填欄位');
+                $('#TaxIdValid').text('統編為必填欄位').addClass("field-validation-error").show();
+                topErrorElement ||= document.getElementById('TaxId');
+            } else if(!isValidUBN(taxId)){
+                isValid = false;
+                errorMessage.push('統編格式錯誤');
+                topErrorElement ||= document.getElementById('TaxId');
+                $('#TaxIdValid').text('統編格式錯誤').addClass("field-validation-error").show();
+            } else {
+                $('#TaxIdValid').hide();
+            }
+
+            if(!companyName || companyName.trim() === ''){
+                isValid = false;
+                errorMessage.push('公司抬頭為必填欄位');
+                topErrorElement ||= document.getElementById('CompanyName');
+                $('#CompanyNameValid').text('公司抬頭為必填欄位').addClass("field-validation-error").show();
+            } else {
+                $('#CompanyNameValid').hide();
+            }
+        } else {
+            $('#TaxIdValid').hide();
+            $('#CompanyNameValid').hide();
+        }
+        
+        if (carrierType === "2" || carrierType === "3") {
+            const carrierResult = validateField('carrierNumber', carrierNumber, { carrierType });
+            if (!carrierResult.isValid) {
+                isValid = false;
+                errorMessage.push(carrierResult.message);
+                topErrorElement ||= document.getElementById('CarrierNumber');
+                $('#CarrierNumberValid').text(carrierResult.message).addClass("field-validation-error").show();
+            }
+        } 
+
+        return { isValid, errorMessage, topErrorElement };
+    }
+
+    //增加當日配訂單地址修改的提示訊息(待後續優化，先用提示替代)
+    function showWarningMessage() {
+        var selectedValue = $('input[name="ReciveTimeChoice"]:checked').val();
+        // 當物流方式為當日配，在更改地址時會顯示提示訊息
+        if (selectedValue === '5') {
+            $('.warning-text').show();
+        } else {
+            $('.warning-text').hide();
+        }
+    }
+
+    $(function () {
+        setModifyFrameSlide();
+        $("#TaxId").on("blur", function () {
+            const val = $(this).val();
+            const invoiceType = $('select[name="InvoiceType"]').val();
+
+            if (invoiceType === '三聯式') {
+                if (!val || val.trim() === '') {
+                    $('#TaxIdValid').text('統編為必填欄位').addClass("field-validation-error").show();
+                } else if (!isValidUBN(val)) {
+                    $('#TaxIdValid').text('統編格式錯誤').addClass("field-validation-error").show();
+                } else {
+                    $('#TaxIdValid').hide();
+                }
+            } else {
+                $('#TaxIdValid').hide();
+            }
+        })
+
+        $('#CompanyName').on('input blur', function () {
+            const val = $(this).val();
+            const invoiceType = $('select[name="InvoiceType"]').val();
+
+            if (invoiceType === '三聯式') {
+                if (!val || val.trim() === '') {
+                    $('#CompanyNameValid').text('公司抬頭為必填欄位').addClass("field-validation-error").show();
+                } else {
+                    $('#CompanyNameValid').hide();
+                }
+            } else {
+                $('#CompanyNameValid').hide();
+            }
+        })
+
+        $('#CarrierNumber').on('input blur', function () {
+            validateCarrierNumber();
+        });
+
+        $('select[name="CarrierType"]').on('change', function () {
+            validateCarrierNumber();
+        });
+
+        $('select[name="InvoiceType"]').on('change', function () {
+            const invoiceType = $(this).val();
+            const $taxDiv = $('#TaxId').closest('div');
+
+            if (invoiceType === '三聯式') {
+                $taxDiv.show();
+            } else {
+                $taxDiv.hide();
+                $('#TaxIdValid').hide();
+                $('#CompanyNameValid').hide();
+            }
+
+            validateFormBeforeSubmit();
+        });
+    });
+
+    function validateCarrierNumber() {
+        const carrierType = $('select[name="CarrierType"]').val();
+        const carrierNumber = $('#CarrierNumber').val();
+
+        const result = validateField('carrierNumber', carrierNumber, { carrierType });
+
+        if (!result.isValid) {
+            $('#CarrierNumberValid').text(result.message).addClass("field-validation-error").show();
+        } else {
+            $('#CarrierNumberValid').hide();
+        }
+    }
+
+    function setModifyFrameSlide() {
+        $("#modify-frame").find('div.modify-title').on('click', function () {
+            var $Content = $(this).next('div.modify-content');
+            //$('#modify-frame div.modify-title i').removeClass('modify-show');
+            $Content.removeClass('modify-show');
+            if (!$Content.is(':visible')) {
+                //$('#modify-frame div.modify-content:visible').slideUp();
+                $(this).find('i').removeClass(' fa fa-chevron-right');
+                $(this).find('i').addClass('modify-show fa fa-chevron-down');
+            } else {
+                $(this).find('i').removeClass('fa fa-chevron-down');
+                $(this).find('i').addClass('fa fa-chevron-right');
+            }
+            $Content.slideToggle();
+        });
+    }
+
+
+    $('#order-modify-record').click(function () {
+        $.ajax({
+            async: true,
+            url: "/api/OrderModify/GetOrderModifyRecord",
+            type: 'GET',
+            data: {
+                ordersId: $('#Id').val(),
+            },
+        }).done(function (data) {
+            showOrdersModifyRecords(data);
+
+        })
+        .fail(function () { });
+
+        $('#modify-record-modal').show();
+    });
+
+
+    $('#modify-modal-close').click(function () {
+        $('#modify-record-modal').hide();
+    });
+
+    function showOrdersModifyRecords(data) {
+        let html = '';
+        $.each(JSON.parse(data), function (index, group) {
+            html += "<div class='modify-title col-xs-12'><i class='fa fa-chevron-right col-xs-1' aria-hidden='true'></i><div class='col-xs-4'>修改日期 : " + group.CreateTime + "</div><div class='col-xs-4'> 修改人員 : " + group.UserName + " </div></div >";
+            html += "<div class='modify-content col-xs-12 p-0' style='display: none;'><i></i><div class='modify-content-field col-xs-12'><div class='col-xs-2'>欄位</div><div class='col-xs-5'>原始資料</div><div class='col-xs-5'>修改資料</div></div>";
+            $.each(group.OrderModifyDetails, function (index, detail) {
+                html += "<div class='modify-content-detail col-xs-12'><div class='col-xs-2'>" + detail.Property + "</div><div class='col-xs-5'>" + detail.Original + "</div><div class='col-xs-5'>" + detail.Modify + "</div></div>";
+            });
+            html += "</div>";
+        });
+
+        $('#order-modify-content').html(html);
+        setModifyFrameSlide();
+    }
+
+    //select2套件 下拉選單加多選
+    $("#DropdownMultiSelect").select2({
+        language: 'zh-TW',
+        placeholder: '品項名稱',
+        width: '90%',
+        // 最多字元限制
+        maximumInputLength: 10,
+        // 最少字元才觸發尋找, 0 不指定
+        minimumInputLength: 0,
+        // 當找不到可以使用輸入的文字
+        tags: true,
+        data: [{"id":"【巨峰葡萄】褚譽合作社","text":"【巨峰葡萄】褚譽合作社"},{"id":"柑橘季【雞蛋柳丁】無毒農嚴選","text":"柑橘季【雞蛋柳丁】無毒農嚴選"},{"id":"【牛奶蜜棗】江媽媽愛心果園","text":"【牛奶蜜棗】江媽媽愛心果園"},{"id":"柑橘季【雞蛋柳丁】無毒農嚴選","text":"柑橘季【雞蛋柳丁】無毒農嚴選"},{"id":"【牛奶蜜棗】江媽媽愛心果園","text":"【牛奶蜜棗】江媽媽愛心果園"},{"id":"【牛奶蜜棗】江媽媽愛心果園","text":"【牛奶蜜棗】江媽媽愛心果園"}]
+    });
+
+    function insertOrderComplaint() {
+
+        var orderNumber = $('#complaint-modal #orderNumber').val();
+        // 20201021改為多選下拉選單 顯示資料為主單+副單所有產品
+
+        var productName_Array = $('#DropdownMultiSelect').val();
+        var productName = "";
+        // 將多選產品名稱字串組合
+        if (productName_Array && productName_Array.length > 0) {
+            $.each(productName_Array, function (v, str) {
+                // 過濾掉空字串
+                if (str && str.trim() !== '') {
+                    productName += str + ',';
+                }
+            });
+        }
+
+        var bonusType = $('#bonusType').val();
+        var handlerType = $('#handlerType').val();
+        var handlerUrgency = $('#handlerUrgency').val();
+        var complaintDate = $('#complaint-modal #complaintDate').val();
+        var bonus = $('#complaint-modal #bonus').val();
+        var status = $('#complaint-modal #status').val();
+        var user = $('#complaint-modal #user').val();
+        var owner = $('#complaint-modal #owner').val();
+        var issue = $('#complaint-modal #issue').val();
+        var solution = $('#complaint-modal #solution').val();
+        var insideProcess = $('#complaint-modal #insideProcess').val();
+
+        // 收集所有驗證錯誤
+        var errors = [];
+
+        // 必填欄位驗證
+        if (!orderNumber || orderNumber.trim() === '') {
+            errors.push('• 訂單編號為必填欄位');
+        }
+
+        // 產品名稱驗證 - 檢查原始陣列和組合後的字串
+        if (!productName_Array || productName_Array.length === 0 || !productName || productName.trim() === '' || productName.trim() === ',') {
+            errors.push('• 產品名稱為必填欄位');
+        }
+        if (!complaintDate || complaintDate.trim() === '') {
+            errors.push('• 客訴日期為必填欄位');
+        }
+        if (!bonus || bonus.trim() === '') {
+            errors.push('• 補償金額為必填欄位');
+        }
+        if (status === '-1') {
+            errors.push('• 請選擇處理狀態');
+        }
+        if (user === '-1') {
+            errors.push('• 請選擇出錯人員');
+        }
+        if (owner === '-1') {
+            errors.push('• 請選擇負責人員');
+        }
+        if (!issue || issue.trim() === '') {
+            errors.push('• 問題描述為必填欄位');
+        }
+
+        // Issue 長度驗證
+        if (issue && issue.length > 20) {
+            errors.push('• 問題描述最多只能輸入 20 字元（目前：' + issue.length + ' 字元）');
+        }
+
+        // 圖片數量驗證
+        var files = $('#images').get(0).files;
+        var fileCount = files.length;
+        if (fileCount > 5) {
+            errors.push('• 上傳圖片數量不能超過 5 張（目前：' + fileCount + ' 張）');
+        }
+
+        // 如果有錯誤，顯示所有錯誤訊息
+        if (errors.length > 0) {
+            alert('請修正以下問題：\n\n' + errors.join('\n'));
+            return;
+        }
+
+        var formData = new FormData();
+
+        // 添加圖片檔案
+        if (fileCount > 0) {
+            for (var i = 0; i < fileCount; i++) {
+                formData.append("files", files[i]);
+            }
+        } else {
+            formData.append("files", []);
+        }
+
+        formData.append("orderNumber", orderNumber);
+        formData.append("insideProcess", insideProcess);
+        formData.append("productName", productName);
+        formData.append("complaintDate", complaintDate);
+        formData.append("bonus", bonus);
+        formData.append("status", status);
+        formData.append("user", user);
+        formData.append("owner", owner);
+        formData.append("issue", issue);
+        formData.append("solution", solution);
+        formData.append("insideProcess", insideProcess);
+        formData.append('bonusType', bonusType);
+        formData.append('handlerType', handlerType);
+        formData.append('handlerUrgency', handlerUrgency);
+
+        $.ajax({
+            async: true,
+            url: "/Gox/Orders/InsertOrderComplaint",
+            type: 'post',
+            processData: false,
+            contentType: false,
+            data: formData,
+
+            beforeSend: function () {
+                $('#order-edit-complaint-modal .Form_btn').attr('disabled', true);
+                $.blockUI({ message: "處理中，請稍候.." });
+            },
+            complete: function () {
+                $.unblockUI();
+            },
+            success: function () {
+                location.reload();
+                $.blockUI({ message: "處理中，請稍候.." });
+            },
+            error: function () {
+                alert("系統錯誤");
+            }
+        });
+    }
+
+    function updateCompliant(id) {
+
+        if (!confirm('確定修改?')) {
+            return;
+        }
+
+        var ordernumber = $('#orderNumber-' + id).val();
+        var bonus = $('#bonus-' + id).val();
+        var bonusType = $('#bonusType-' + id).val();
+        var status = $('#status-' + id).val();
+        var solution = $('#solution-' + id).val();
+        var insideProcess = $('#insideProcess-' + id).val();
+
+        // 檢查欄位是否被 disabled（已處理完成的客訴不可編輯）
+        var isDisabled = $('#bonus-' + id).attr('disabled');
+
+        // 收集所有驗證錯誤
+        var errors = [];
+
+        // 只有在未 disabled 的情況下才驗證這些欄位
+        if (!isDisabled) {
+            if (!bonus || bonus.trim() === '') {
+                errors.push('• 補償金額為必填欄位');
+            }
+            if (!bonusType || bonusType === '') {
+                errors.push('• 請選擇補償類型');
+            }
+            if (!status || status === '') {
+                errors.push('• 請選擇處理狀態');
+            }
+        }
+
+        // 如果有錯誤，顯示所有錯誤訊息
+        if (errors.length > 0) {
+            alert('請修正以下問題：\n\n' + errors.join('\n'));
+            return;
+        }
+
+        var formData = new FormData();
+
+        formData.append("Id", id);
+        formData.append("ordernumber", ordernumber);
+        formData.append("bonus", bonus);
+        formData.append("bonusType", bonusType);
+        formData.append("status", status);
+        formData.append("solution", solution);
+        formData.append("insideProcess", insideProcess);
+
+        $.ajax({
+            async: true,
+            url: "/Gox/Orders/UpdateCompliant",
+            type: 'post',
+            processData: false,
+            contentType: false,
+            data: formData,
+
+            beforeSend: function () {
+                $.blockUI({ message: "處理中，請稍候.." });
+            },
+            complete: function () {
+                $.unblockUI();
+            },
+            success: function () {
+                if (status == 1) {
+                    $('#bonusType-' + id).attr('disabled', 'disabled');
+                    $('#status-' + id).attr('disabled', 'disabled');
+                    $('#bonus-' + id).attr('disabled', 'disabled');
+                }
+            },
+            error: function () {
+                alert("系統錯誤");
+            }
+        });
+    }
+
+    function checkRemarkHasUpdateRemark(ordersId, updateTime) {
+        const validation = validateFormBeforeSubmit();
+        if (!validation.isValid) {
+            validation.topErrorElement?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            validation.topErrorElement?.focus();
+            return false;
+        }
+
+      $.blockUI({ message: "處理中，請稍候..." });
+      const queryString = new URLSearchParams({ ordersId, updateTime }).toString();
+      fetch(`/api/OrdersWebApi/IsCheckHasUpdatedByOther?${queryString}`)
+        .then((res) => {
+          $.unblockUI();
+          return res.json()
+        })
+        .then((isOk) => {
+          if (isOk) {
+            checkBlackCatNum(ordersId)
+          } else {
+            alert("此筆資料已被修改過，如欲繼續修改請先重新整理取得最新資料。");
+          }
+        })
+        .catch(() => {
+          $.unblockUI();
+        });
+    }
+
+</script>
+
+<link href="./assets/order-gox-min.css" rel="stylesheet">
+<input name="__RequestVerificationToken" type="hidden" value="CfDJ8M_ebXd5uWxPkUVG3266Bet3y2agAaL_3Lfi05AqyIFUatlzwo0Ui95R6YrD3pcb97JKncvO7KhXGfjSej7aHRxuf2c8tN9yn58V04CcLwcQijLF7-PCfUMlOxgSfyst2DM-lStIv-X51GFeWqa5l5s"><input name="DisplayBuyerName" type="hidden" value="false"><input name="Special" type="hidden" value="false"></form>
+
+                <script>
+                    $(document).ready(function () {
+                        reSizeForMob();
+                    });
+
+                    function reSizeForMob() {
+                        if ($(window).width() <= 580) {
+                            $('body').width(1080);
+                            console.log("setMobWidth");
+                        }
+                    }
+                </script>
+            </section>
+        </section>
+        <!--main content end-->
+    </section>
+    
+
+
+
+<div id="ascrail2001" class="nicescroll-rails" style="width: 3px; z-index: auto; cursor: default; position: absolute; top: 47.9948px; left: 147px; height: 1122px; opacity: 0; display: block;"><div style="position: relative; top: 0px; float: right; width: 3px; height: 738px; background-color: rgb(31, 181, 173); border: 0px solid rgb(255, 255, 255); background-clip: padding-box; border-radius: 0px;"></div></div><div id="ascrail2001-hr" class="nicescroll-rails" style="height: 3px; z-index: auto; top: 1166.99px; left: 0px; position: absolute; cursor: default; display: none; width: 147px; opacity: 0;"><div style="position: relative; top: 0px; height: 3px; width: 150px; background-color: rgb(31, 181, 173); border: 0px solid rgb(255, 255, 255); background-clip: padding-box; border-radius: 0px;"></div></div><div id="ui-datepicker-div" class="ui-datepicker ui-widget ui-widget-content ui-helper-clearfix ui-corner-all"></div><!-- ============================================================
+     ▼▼▼ 客服優化-金額相關區塊 / 自包含 CSS + Modal + JS (2026-05-28) ▼▼▼
+     全部命名都 .amt2026- 前綴，不污染原本後台樣式 / class
+     ============================================================ -->
+<style>
+  .amt2026 {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 480px;
+  }
+
+  /* ============================================================
+     訂單資訊外框 — 圓角卡片 + 綠底白字置中標題
+     參考其他系統的「編輯售後服務訂單」標題列樣式
+     ============================================================ */
+  body > section#container fieldset {
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 0 24px 24px;
+    margin: 16px 0;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,.04),
+                0 2px 6px 0 rgba(0,0,0,.03);
+    overflow: hidden;
+  }
+  body > section#container fieldset > legend {
+    /* 綠底白字、置中、圓角頂部對齊外框 */
+    background: #008000;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: 12px 16px;
+    margin: 0 -24px 20px;
+    width: calc(100% + 48px);
+    border: 0;
+    border-radius: 8px 8px 0 0;
+    box-sizing: border-box;
+  }
+  /* fieldset 內所有 .block 跟著卡片新的 padding 重排 */
+  body > section#container fieldset .block {
+    margin-bottom: 12px;
+  }
+  .amt2026-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+  }
+  .amt2026-row.is-total {
+    background: #f7faf6;
+    border: 1px solid #d9ecd5;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+  }
+  .amt2026-row.is-total .amt2026-label {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .amt2026-row.is-total .amt2026-input {
+    font-size: 16px;
+    font-weight: 600;
+    width: 100px;
+  }
+  .amt2026-prefix {
+    display: inline-block;
+    width: 16px;
+    text-align: center;
+    font-weight: 600;
+  }
+  .amt2026-prefix.is-plus { color: #2c98f0; }
+  .amt2026-prefix.is-minus { color: #dc4e43; }
+  .amt2026-label {
+    width: 80px;
+    color: #333;
+  }
+  .amt2026-input {
+    width: 84px;
+    text-align: right;
+    padding: 4px 8px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+  .amt2026-input:disabled {
+    background: #f5f5f5;
+    color: #666;
+  }
+  .amt2026-divider {
+    margin: 8px 0;
+    border: 0;
+    border-top: 1px dashed #e6e6e6;
+  }
+  .amt2026-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+  }
+  .amt2026-btn {
+    padding: 2px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.5;
+    background: #fff;
+  }
+  .amt2026-btn-default {
+    border-color: #dcdfe6;
+    color: #333;
+  }
+  .amt2026-btn-default:hover { background: #f5f7fa; }
+  /* 紅色按鈕改成空心：紅字 + 紅框，淡紅 hover */
+  .amt2026-btn-danger {
+    background: #fff;
+    color: #dc4e43;
+    border-color: #dc4e43;
+  }
+  .amt2026-btn-danger:hover { background: #fdf2f1; }
+  /* primary 用在彈窗內的「確認執行」，保留實心綠以與一般操作做區分 */
+  .amt2026-btn-primary {
+    background: #4ba83b;
+    color: #fff;
+    border-color: #4ba83b;
+  }
+  .amt2026-btn-primary:hover { background: #3d8c30; border-color: #3d8c30; }
+  .amt2026-checkbox-row {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #e6e6e6;
+    font-size: 13px;
+    color: #666;
+  }
+  .amt2026-done-tag {
+    font-size: 12px;
+    color: #888;
+    padding: 4px 8px;
+  }
+
+  /* Modal */
+  .amt2026-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  }
+  .amt2026-modal.is-hidden { display: none; }
+  .amt2026-modal-box {
+    background: #fff;
+    border-radius: 6px;
+    padding: 24px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  }
+  .amt2026-modal-box h4 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  .amt2026-modal-actions {
+    margin-top: 16px;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* 公式表 */
+  .amt2026-formula-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  .amt2026-formula-table td {
+    padding: 6px 4px;
+    border-bottom: 1px dashed #e6e6e6;
+  }
+  .amt2026-formula-table td:first-child { color: #666; }
+  .amt2026-formula-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .amt2026-formula-table tr.is-result td {
+    font-weight: 600;
+    border-bottom: 2px solid #333;
+    border-top: 1px solid #888;
+    padding-top: 8px;
+  }
+  .amt2026-formula-table tr.is-current td {
+    font-weight: 600;
+    color: #333;
+    padding-top: 14px;
+    border-bottom: 0;
+  }
+  .amt2026-formula-diff {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .amt2026-formula-diff.is-synced { background: #ecf7e9; color: #2b7a1f; }
+  .amt2026-formula-diff.is-diverged { background: #fff4e0; color: #946b00; }
+
+  /* 紅利明細表 */
+  .amt2026-rp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .amt2026-rp-table th, .amt2026-rp-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e6e6e6;
+  }
+  .amt2026-rp-table th {
+    background: #fafafa;
+    font-weight: 600;
+    color: #666;
+  }
+  .amt2026-rp-table td.is-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .amt2026-rp-table td.is-center { text-align: center; }
+  .amt2026-rp-expired { color: #dc4e43; }
+  .amt2026-rp-valid { color: #52c41a; }
+
+  /* 優惠券明細 */
+  .amt2026-coupon-detail dl {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px 16px;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  .amt2026-coupon-detail dt { color: #666; }
+  .amt2026-coupon-detail dd { margin: 0; }
+  .amt2026-coupon-calc {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #f7faf6;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #666;
+  }
+  .amt2026-coupon-calc strong { color: #dc4e43; }
+
+  /* 確認彈窗 */
+  .amt2026-confirm-summary {
+    margin: 8px 0 16px;
+    padding: 10px 12px;
+    background: #fafafa;
+    border-left: 3px solid #4ba83b;
+    font-size: 14px;
+  }
+  .amt2026-confirm-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .amt2026-confirm-option {
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    padding: 12px 14px;
+    cursor: pointer;
+  }
+  .amt2026-confirm-option:hover { border-color: #4ba83b; }
+  .amt2026-confirm-option.is-selected {
+    border-color: #4ba83b;
+    background: #f3faf1;
+  }
+  .amt2026-confirm-option-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #333;
+  }
+  .amt2026-confirm-option-desc {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+  }
+  .amt2026-confirm-option-amount {
+    font-weight: 600;
+    color: #2c98f0;
+  }
+
+  /* Toast */
+  #amt2026-toast-host {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .amt2026-toast {
+    background: rgba(0,0,0,.78);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    transition: opacity .3s;
+  }
+</style>
+
+<!-- Modal: 查看公式計算（動態重算）-->
+<div id="amt2026-modal-formula" class="amt2026-modal is-hidden">
+  <div class="amt2026-modal-box">
+    <h4>公式計算</h4>
+    <p style="font-size:13px;color:#666;margin:0 0 12px;">此為根據系統條件計算的金額，僅供參考，<strong>不會自動修改總額</strong>。</p>
+    <table class="amt2026-formula-table" id="amt2026-formula-table">
+      <!-- 內容由 JS 在開啟彈窗時動態填入 -->
+    </table>
+    <div class="amt2026-modal-actions">
+      <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 查看優惠券 -->
+<div id="amt2026-modal-coupon" class="amt2026-modal is-hidden">
+  <div class="amt2026-modal-box amt2026-coupon-detail">
+    <h4>優惠券明細</h4>
+    <dl>
+      <dt>訂單編號</dt><dd>260304787074</dd>
+      <dt>優惠券名稱</dt><dd>SVIP 95 折優惠券</dd>
+      <dt>類型</dt><dd>折數型</dt>
+      <dt>折數</dt><dd>0.95（95 折）</dd>
+      <dt>使用期限</dt><dd>2026/03/01 ~ 2026/03/31</dd>
+    </dl>
+    <div class="amt2026-coupon-calc">
+      實際折抵金額：商品小計 1,556 × (1 − 0.95) ＝ <strong>−78 元</strong>
+    </div>
+    <div class="amt2026-modal-actions">
+      <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 查看紅利 -->
+<div id="amt2026-modal-redpoint" class="amt2026-modal is-hidden">
+  <div class="amt2026-modal-box">
+    <h4>紅利點數明細（共使用 102 點）</h4>
+    <p style="font-size:13px;color:#666;margin:0 0 8px;">過期 ❌ 的紀錄在「返還」時會自動補發等值新效期（當日起 +1 個月）。</p>
+    <table class="amt2026-rp-table">
+      <thead>
+        <tr><th>來源紅利 ID</th><th>點數</th><th>取得日</th><th>到期日</th><th style="text-align:center;">效期</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>849640</td><td class="is-num">50</td><td>4/22 直播問券填寫</td><td>2026-05-31</td><td class="is-center amt2026-rp-valid">✓ 有效</td></tr>
+        <tr><td>832816</td><td class="is-num">22</td><td>3/6 VVIP回饋金</td><td>2026-06-07</td><td class="is-center amt2026-rp-valid">✓ 有效</td></tr>
+        <tr><td>843111</td><td class="is-num">30</td><td>4/3 VVIP回饋金</td><td>2026-07-04</td><td class="is-center amt2026-rp-valid">✓ 有效</td></tr>
+      </tbody>
+    </table>
+    <div class="amt2026-modal-actions">
+      <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 確認返還 / 取消折扣 -->
+<div id="amt2026-modal-confirm" class="amt2026-modal is-hidden">
+  <div class="amt2026-modal-box">
+    <h4 id="amt2026-confirm-title">確認返還</h4>
+    <div class="amt2026-confirm-summary" id="amt2026-confirm-summary">您要 [動詞] [標的]。</div>
+    <p style="font-size:13px;color:#666;margin:0 0 12px;">執行後要怎麼處理「總額」？</p>
+    <div class="amt2026-confirm-options">
+      <div class="amt2026-confirm-option" data-mode="auto">
+        <div class="amt2026-confirm-option-title">
+          <input type="radio" name="amt2026-confirm-mode" value="auto" style="margin-right:6px;vertical-align:middle;">
+          自動調整總額
+        </div>
+        <div class="amt2026-confirm-option-desc" id="amt2026-confirm-desc-auto">總額會從 N 改為 M。</div>
+      </div>
+      <div class="amt2026-confirm-option is-selected" data-mode="keep">
+        <div class="amt2026-confirm-option-title">
+          <input type="radio" name="amt2026-confirm-mode" value="keep" checked style="margin-right:6px;vertical-align:middle;">
+          維持目前總額
+        </div>
+        <div class="amt2026-confirm-option-desc" id="amt2026-confirm-desc-keep">總額仍為 N，[副作用]。</div>
+      </div>
+    </div>
+    <div class="amt2026-modal-actions">
+      <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>取消</button>
+      <button type="button" class="amt2026-btn amt2026-btn-primary" id="amt2026-confirm-execute">確認執行</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 公式重算（每次開啟 formula modal 時呼叫，反映當前 input 值）
+  // 商品總額固定為 1556（demo 用，正式版應抓上方訂單明細區塊的「商品總額」）
+  const SUBTOTAL = 1556;
+  function refreshFormula() {
+    const val = (id) => {
+      const el = document.querySelector('#' + id);
+      if (!el) return 0;
+      const n = parseFloat(el.value);
+      return isNaN(n) ? 0 : n;
+    };
+    const fee = val('Fee') | 0;
+    const shipping = val('shipping') | 0;
+    const discount = val('discount') | 0;
+    const bonus = val('Bonus') | 0;
+    const couponRaw = val('CouponPrice');
+    // 優惠券：值 < 1 視為折數，否則視為固定金額
+    const couponDiscount = (couponRaw > 0 && couponRaw < 1)
+      ? Math.round(SUBTOTAL * (1 - couponRaw))
+      : Math.round(couponRaw);
+    const redpoint = val('RedPointPrice') | 0;
+    const activity = val('ActivityDisocunt') | 0;
+    const total = val('TotalPrice') | 0;
+
+    const totalDiscount = discount + bonus + couponDiscount + redpoint + activity;
+    const systemTotal = SUBTOTAL + shipping + fee - totalDiscount;
+    const diff = total - systemTotal;
+
+    const couponLabel = (couponRaw > 0 && couponRaw < 1)
+      ? `− 優惠券（${couponRaw} 折，商品 ${SUBTOTAL.toLocaleString()} × ${(1 - couponRaw).toFixed(2)}）`
+      : '− 優惠券';
+
+    // 中間警示列
+    let diffRow = '';
+    if (diff > 0) {
+      diffRow = `<tr><td colspan="2" style="padding:10px 0;text-align:center;background:#fff4e0;color:#946b00;font-size:13px;border-bottom:0;">⚠ 客服已手動加價 +${diff.toLocaleString()}</td></tr>`;
+    } else if (diff < 0) {
+      diffRow = `<tr><td colspan="2" style="padding:10px 0;text-align:center;background:#fff4e0;color:#946b00;font-size:13px;border-bottom:0;">⚠ 客服已手動減價 ${diff.toLocaleString()}</td></tr>`;
+    } else {
+      diffRow = `<tr><td colspan="2" style="padding:10px 0;text-align:center;background:#ecf7e9;color:#2b7a1f;font-size:13px;border-bottom:0;">✓ 一致</td></tr>`;
+    }
+
+    document.querySelector('#amt2026-formula-table').innerHTML = `
+      <tr><td>商品總額</td><td>${SUBTOTAL.toLocaleString()}</td></tr>
+      <tr><td>＋ 運費</td><td>${shipping.toLocaleString()}</td></tr>
+      <tr><td>＋ 貨到付款</td><td>${fee.toLocaleString()}</td></tr>
+      <tr><td>− 折扣碼</td><td>${discount ? '−' + discount.toLocaleString() : 0}</td></tr>
+      <tr><td>− 購物金</td><td>${bonus ? '−' + bonus.toLocaleString() : 0}</td></tr>
+      <tr><td>${couponLabel}</td><td>${couponDiscount ? '−' + couponDiscount.toLocaleString() : 0}</td></tr>
+      <tr><td>− 紅利點數</td><td>${redpoint ? '−' + redpoint.toLocaleString() : 0}</td></tr>
+      <tr><td>− 活動折扣</td><td>${activity ? '−' + activity.toLocaleString() : 0}</td></tr>
+      <tr class="is-result"><td>系統應收金額</td><td>${systemTotal.toLocaleString()}</td></tr>
+      ${diffRow}
+      <tr class="is-current"><td>目前訂單總額</td><td>${total.toLocaleString()}</td></tr>
+    `;
+  }
+
+  // 開 modal
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-amt2026-open]');
+    if (!btn) return;
+    const key = btn.dataset.amt2026Open;
+    if (key === 'formula') refreshFormula();
+    const m = document.querySelector('#amt2026-modal-' + key);
+    if (m) m.classList.remove('is-hidden');
+  });
+
+  // 關 modal
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-amt2026-close]');
+    if (!btn) return;
+    btn.closest('.amt2026-modal').classList.add('is-hidden');
+  });
+
+  // 點背景關
+  document.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('amt2026-modal')) return;
+    e.target.classList.add('is-hidden');
+  });
+
+  // ESC 關
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('.amt2026-modal:not(.is-hidden)').forEach(function (m) {
+      m.classList.add('is-hidden');
+    });
+  });
+
+  // 確認彈窗：動態填內容
+  let confirmContext = null;
+
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-amt2026-action="confirm"]');
+    if (!btn) return;
+
+    const verb = btn.dataset.verb;
+    const target = btn.dataset.target;
+    const amount = parseInt(btn.dataset.amount, 10);
+    const sideEffect = btn.dataset.sideEffect;
+    const field = btn.dataset.field;
+
+    confirmContext = { field, verb, target, amount, sideEffect };
+
+    const totalInput = document.querySelector('#TotalPrice');
+    const currentTotal = parseInt(totalInput.value, 10);
+    const newTotal = currentTotal + amount;
+
+    // 標題：「取消折扣」+「折扣碼」會贅字，調整一下
+    const titleVerb = verb === '取消折扣' ? '取消' : verb;
+    document.querySelector('#amt2026-confirm-title').textContent = '確認' + titleVerb + target;
+
+    document.querySelector('#amt2026-confirm-summary').innerHTML =
+      '您要 <strong>' + verb + '</strong> <strong>' + target + '</strong>（折抵 ' + amount + ' 元）。';
+
+    document.querySelector('#amt2026-confirm-desc-auto').innerHTML =
+      '總額會從 <span class="amt2026-confirm-option-amount">' + currentTotal.toLocaleString() + '</span> ' +
+      '改為 <span class="amt2026-confirm-option-amount">' + newTotal.toLocaleString() + '</span>（+' + amount + '，把折抵補回）。';
+
+    document.querySelector('#amt2026-confirm-desc-keep').innerHTML =
+      '總額仍為 <span class="amt2026-confirm-option-amount">' + currentTotal.toLocaleString() + '</span>，' + sideEffect + '。';
+
+    document.querySelectorAll('#amt2026-modal-confirm .amt2026-confirm-option').forEach(function (opt) {
+      opt.classList.remove('is-selected');
+      opt.querySelector('input[type=radio]').checked = false;
+    });
+    const keepOpt = document.querySelector('#amt2026-modal-confirm .amt2026-confirm-option[data-mode="keep"]');
+    keepOpt.classList.add('is-selected');
+    keepOpt.querySelector('input[type=radio]').checked = true;
+
+    document.querySelector('#amt2026-modal-confirm').classList.remove('is-hidden');
+  });
+
+  // 選項切換
+  document.addEventListener('click', function (e) {
+    const opt = e.target.closest('#amt2026-modal-confirm .amt2026-confirm-option');
+    if (!opt) return;
+    document.querySelectorAll('#amt2026-modal-confirm .amt2026-confirm-option').forEach(function (o) {
+      o.classList.remove('is-selected');
+      o.querySelector('input[type=radio]').checked = false;
+    });
+    opt.classList.add('is-selected');
+    opt.querySelector('input[type=radio]').checked = true;
+  });
+
+  // Toast
+  function toast(msg) {
+    let host = document.querySelector('#amt2026-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'amt2026-toast-host';
+      document.body.appendChild(host);
+    }
+    const t = document.createElement('div');
+    t.className = 'amt2026-toast';
+    t.textContent = msg;
+    host.appendChild(t);
+    setTimeout(function () { t.style.opacity = '0'; }, 2000);
+    setTimeout(function () { t.remove(); }, 2400);
+  }
+
+  // 確認執行
+  document.querySelector('#amt2026-confirm-execute').addEventListener('click', function () {
+    if (!confirmContext) return;
+    const { field, verb, target, amount } = confirmContext;
+    const mode = document.querySelector('#amt2026-modal-confirm input[name="amt2026-confirm-mode"]:checked').value;
+
+    const totalInput = document.querySelector('#TotalPrice');
+    if (mode === 'auto') {
+      totalInput.value = parseInt(totalInput.value, 10) + amount;
+    }
+
+    const row = document.querySelector('[data-amt2026-row="' + field + '"]');
+    if (row) {
+      const input = row.querySelector('.amt2026-input');
+      input.value = 0;
+      const actions = row.querySelector('.amt2026-actions');
+      if (actions) actions.innerHTML = '<span class="amt2026-done-tag">已' + verb + '</span>';
+    }
+
+    document.querySelector('#amt2026-modal-confirm').classList.add('is-hidden');
+    const modeText = mode === 'auto' ? '已自動調整總額' : '已維持目前總額';
+    toast('已' + verb + ' ' + target + ' ' + amount + ' 元（' + modeText + '）');
+
+    confirmContext = null;
+  });
+})();
+</script>
+
+<!-- ============================================================
+     開發者情境切換面板（dev tool；非正式 UI，要拿掉的東西）
+     ============================================================ -->
+<style>
+  #amt2026-dev-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 99998;
+    background: #722ed1;
+    color: #fff;
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(114,46,209,.35);
+  }
+  #amt2026-dev-toggle:hover { background: #5e1ea8; }
+
+  #amt2026-dev-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 99998;
+    width: 280px;
+    background: #fff;
+    border: 1px solid #d3adf7;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+  }
+  #amt2026-dev-panel.is-hidden { display: none; }
+  #amt2026-dev-panel .dev-head {
+    background: #f9f0ff;
+    border-bottom: 1px solid #efdbff;
+    border-radius: 8px 8px 0 0;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #722ed1;
+  }
+  #amt2026-dev-panel .dev-head strong { color: #531dab; font-size: 13px; }
+  #amt2026-dev-panel .dev-head .dev-tag {
+    background: #722ed1;
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    line-height: 1.4;
+  }
+  #amt2026-dev-panel .dev-head .dev-close {
+    margin-left: auto;
+    background: transparent;
+    border: 0;
+    color: #722ed1;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  #amt2026-dev-panel .dev-body { padding: 10px 12px; }
+  #amt2026-dev-panel .dev-hint {
+    color: #888;
+    font-size: 12px;
+    margin: 0 0 8px;
+  }
+  .dev-scenario {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border: 1px solid #f0f0f0;
+    border-radius: 4px;
+    padding: 8px 10px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    transition: border-color .15s, background .15s;
+  }
+  .dev-scenario:hover { border-color: #b37feb; }
+  .dev-scenario.is-active {
+    border-color: #722ed1;
+    background: #f9f0ff;
+  }
+  .dev-scenario input { margin-top: 2px; }
+  .dev-scenario-title { font-weight: 600; color: #262626; line-height: 1.4; }
+  .dev-scenario-desc { color: #666; font-size: 12px; margin-top: 2px; line-height: 1.4; }
+</style>
+
+<button id="amt2026-dev-toggle" type="button">🧪 切換情境</button>
+
+<div id="amt2026-dev-panel" class="is-hidden">
+  <div class="dev-head">
+    <strong>情境切換</strong>
+    <span class="dev-tag">demo</span>
+    <button type="button" class="dev-close" id="amt2026-dev-close" aria-label="關閉">×</button>
+  </div>
+  <div class="dev-body">
+    <p class="dev-hint">demo 用，正式版會拿掉。切換情境後欄位會重設、已操作的列也會還原。</p>
+    <label class="dev-scenario is-active">
+      <input type="radio" name="amt2026-scenario" value="1" checked>
+      <div>
+        <div class="dev-scenario-title">1. 優惠券 95 折</div>
+        <div class="dev-scenario-desc">折數型優惠券；客服已加價 +28（Diverged⁺）</div>
+      </div>
+    </label>
+    <label class="dev-scenario">
+      <input type="radio" name="amt2026-scenario" value="2">
+      <div>
+        <div class="dev-scenario-title">2. 優惠券 300 元面額</div>
+        <div class="dev-scenario-desc">固定金額型優惠券；客服已加價 +28（Diverged⁺）</div>
+      </div>
+    </label>
+    <label class="dev-scenario">
+      <input type="radio" name="amt2026-scenario" value="3">
+      <div>
+        <div class="dev-scenario-title">3. 公式對齊</div>
+        <div class="dev-scenario-desc">客服已手動把總額調成符合系統應收（Synced）</div>
+      </div>
+    </label>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 情境定義：對應 6 個金額欄位
+  // amount 是「點返還按鈕」時要從總額補回的金額（也就是該項實際折抵了多少元）
+  const SCENARIOS = {
+    '1': { // 95 折，diff +28
+      discount: 100, Bonus: 200, CouponPrice: 0.95, RedPointPrice: 102, ActivityDisocunt: 50,
+      TotalPrice: 1204,
+      couponAmount: 78,  // 95 折在商品 1556 上的折抵金額
+    },
+    '2': { // 300 元面額，diff +28
+      discount: 100, Bonus: 200, CouponPrice: 300, RedPointPrice: 102, ActivityDisocunt: 50,
+      TotalPrice: 982,
+      couponAmount: 300,
+    },
+    '3': { // 公式對齊，diff 0
+      discount: 100, Bonus: 200, CouponPrice: 0.95, RedPointPrice: 102, ActivityDisocunt: 50,
+      TotalPrice: 1176,
+      couponAmount: 78,
+    },
+  };
+
+  // 記住每一列「未操作前」的 actions HTML（給「重置」用）
+  const originalActions = {};
+  document.querySelectorAll('[data-amt2026-row]').forEach(function (row) {
+    const key = row.dataset.amt2026Row;
+    const a = row.querySelector('.amt2026-actions');
+    if (a) originalActions[key] = a.innerHTML;
+  });
+
+  function applyScenario(key) {
+    const s = SCENARIOS[key];
+    if (!s) return;
+
+    // 重設 6 個欄位
+    document.querySelector('#discount').value = s.discount;
+    document.querySelector('#Bonus').value = s.Bonus;
+    document.querySelector('#CouponPrice').value = s.CouponPrice;
+    document.querySelector('#RedPointPrice').value = s.RedPointPrice;
+    document.querySelector('#ActivityDisocunt').value = s.ActivityDisocunt;
+    document.querySelector('#TotalPrice').value = s.TotalPrice;
+
+    // 還原每一列的按鈕（如果有人已經點過「返還」會變「已返還」灰字）
+    Object.keys(originalActions).forEach(function (rowKey) {
+      const row = document.querySelector('[data-amt2026-row="' + rowKey + '"]');
+      if (!row) return;
+      const actions = row.querySelector('.amt2026-actions');
+      if (actions) actions.innerHTML = originalActions[rowKey];
+    });
+
+    // 同步 data-amount（特別是優惠券，因為折抵金額會隨情境變）
+    const couponBtn = document.querySelector('[data-amt2026-row="coupon"] [data-amt2026-action="confirm"]');
+    if (couponBtn) couponBtn.dataset.amount = String(s.couponAmount);
+
+    // 切換 panel 內的 active 樣式
+    document.querySelectorAll('.dev-scenario').forEach(function (s) { s.classList.remove('is-active'); });
+    const active = document.querySelector('.dev-scenario input[value="' + key + '"]');
+    if (active) active.closest('.dev-scenario').classList.add('is-active');
+  }
+
+  // 切換 panel 開關
+  document.querySelector('#amt2026-dev-toggle').addEventListener('click', function () {
+    document.querySelector('#amt2026-dev-panel').classList.remove('is-hidden');
+    document.querySelector('#amt2026-dev-toggle').style.display = 'none';
+  });
+  document.querySelector('#amt2026-dev-close').addEventListener('click', function () {
+    document.querySelector('#amt2026-dev-panel').classList.add('is-hidden');
+    document.querySelector('#amt2026-dev-toggle').style.display = '';
+  });
+
+  // 切換情境
+  document.querySelectorAll('.dev-scenario input[type=radio]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      if (input.checked) applyScenario(input.value);
+    });
+  });
+  // 點 label 整塊也算選擇
+  document.querySelectorAll('.dev-scenario').forEach(function (label) {
+    label.addEventListener('click', function (e) {
+      if (e.target.tagName === 'INPUT') return; // input 自己會觸發 change
+      const input = label.querySelector('input[type=radio]');
+      if (input && !input.checked) {
+        input.checked = true;
+        applyScenario(input.value);
+      }
+    });
+  });
+
+  // 初始狀態
+  applyScenario('1');
+})();
+</script>
+<!-- ▲▲▲ 客服優化-金額相關區塊 ▲▲▲ -->
+
+</body></html>

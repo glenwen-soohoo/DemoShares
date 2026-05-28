@@ -1,0 +1,73 @@
+/**
+ * Default Look and Feel
+ */
+.alertify,
+.alertify-log {
+    font-family: Microsoft JhengHei !important;
+}
+
+.alertify {
+    background: #FFF;
+    border: 4px solid #666; /* browsers that don't support rgba */
+    border-radius: 8px;
+    box-shadow: 0 3px 3px rgba(0,0,0,.3);
+    -moz-background-clip: padding; /* Firefox 3.6 */
+    background-clip: padding-box; /* Firefox 4, Safari 5, Opera 10, IE 9 */
+}
+
+.alertify-text {
+    border: 1px solid #CCC;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.alertify-button {
+    border-radius: 4px;
+    color: #FFF;
+    padding: 6px 15px;
+    text-decoration: none;
+    margin: 0px 10px;
+}
+
+.alertify-button-cancel,
+.alertify-button-cancel:hover {
+    background-color: #999;
+    border: 1px solid #999;
+}
+
+.alertify-button-ok,
+.alertify-button-ok:hover {
+    background-color: #43b443;
+    border: 1px solid #43b443;
+}
+
+.alertify-button:hover {
+    opacity: 0.8;
+}
+
+.alertify-message {
+    margin-bottom: 15px;
+}
+
+.alertify-log {
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 -1px 1px #222;
+    box-shadow: 0 0 1px 1px lightgrey;
+    -moz-box-shadow: 0 0 1px 1px lightgray;
+    -webkit-box-shadow: 0 0 1px 1px lightgrey;
+    background: #999;
+    padding: 10px 12px;
+    border-radius: 4px;
+    color: #FFF;
+}
+
+.alertify-log-error {
+    background: #FE1A00;
+    background: rgba(254,26,0,.9);
+}
+
+.alertify-log-success {
+    background-color: #43b443;
+    border: 1px solid #43b443;
+}

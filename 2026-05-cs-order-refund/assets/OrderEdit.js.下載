@@ -1,0 +1,605 @@
+﻿var returnUrl = "";
+
+$(window).load(function () {
+  returnUrl = $("#returnUrl").val();
+
+  $("[name=OrdersTime]").datetimepicker({
+    altFormat: "yyyy/mm/dd",
+    timeFormat: "",
+    hourGrid: 5,
+    minuteGrid: 10,
+    onClose: function (dateText, inst) {
+      if (dateText != "" && dateText != null) {
+        $(this).val(dateText);
+      }
+    },
+    onSelect: function (e, t) {
+      if (!t.clicks) t.clicks = 0;
+
+      if (++t.clicks === 2) {
+        t.inline = false;
+        t.clicks = 0;
+      }
+      setTimeout(function () {
+        t.clicks = 0;
+      }, 500);
+    },
+    beforeShow: function (input, inst) {
+      inst.dpDiv.css({ marginLeft: input.offsetWidth + "px" });
+    },
+  });
+
+  $("[name=InvoiceTime]").datetimepicker({
+    //showOn: 'both', showOtherMonths: true,
+    //showWeeks: true, firstDay: 7, changeFirstDay: false,
+    //buttonImageOnly: true, buttonImage: 'calendar.gif'
+    altFormat: "yyyy/mm/dd",
+    timeFormat: "HH:mm",
+    hourGrid: 4,
+    minuteGrid: 10,
+    //stepMinute: 30,
+    //showSecond: false,
+    onClose: function (dateText, inst) {
+      if (dateText != "" && dateText != null) {
+        $(this).val(dateText);
+      }
+    },
+    onSelect: function (e, t) {
+      if (!t.clicks) t.clicks = 0;
+
+      if (++t.clicks === 2) {
+        t.inline = false;
+        t.clicks = 0;
+      }
+      setTimeout(function () {
+        t.clicks = 0;
+      }, 500);
+    },
+    beforeShow: function (input, inst) {
+      inst.dpDiv.css({ marginLeft: input.offsetWidth + "px" });
+    },
+  });
+
+  $("#complaintDate").datetimepicker({
+    //showOn: 'both', showOtherMonths: true,
+    //showWeeks: true, firstDay: 7, changeFirstDay: false,
+    //buttonImageOnly: true, buttonImage: 'calendar.gif'
+    altFormat: "yyyy/mm/dd",
+    timeFormat: "HH:mm",
+    hourGrid: 4,
+    minuteGrid: 10,
+    //stepMinute: 30,
+    //showSecond: false,
+    onClose: function (dateText, inst) {
+      if (dateText != "" && dateText != null) {
+        $(this).val(dateText);
+      }
+    },
+    onSelect: function (e, t) {
+      if (!t.clicks) t.clicks = 0;
+
+      if (++t.clicks === 2) {
+        t.inline = false;
+        t.clicks = 0;
+      }
+      setTimeout(function () {
+        t.clicks = 0;
+      }, 500);
+    },
+    beforeShow: function (input, inst) {
+      inst.dpDiv.css({ marginLeft: input.offsetWidth + "px" });
+    },
+  });
+
+  $("[name=InvoiceType]").change(function () {
+    if (this.value == "三聯式") {
+      $("#invoice-for-paper").show();
+      $("#invoice-email").show();
+      $("#invoice-carrier-type").hide();
+      $("#invoice-carrier-number").hide();
+    } else if (this.value == "二聯式") {
+      $("#invoice-for-paper").hide();
+      $("#invoice-email").show();
+      $("#invoice-carrier-type").show();
+      $("#invoice-carrier-number").show();
+    } else {
+      $("#invoice-for-paper").hide();
+      $("#invoice-email").hide();
+      $("#invoice-carrier-type").hide();
+      $("#invoice-carrier-number").hide();
+    }
+
+    if (this.value != "三聯式") {
+      $("#TaxId").parent().hide();
+      $("#TaxId").val(null);
+      $("#CompanyName").val(null);
+
+      $("#TaxIdValid").css("display", "none");
+      $("#CompanyNameValid").css("display", "none");
+    } else {
+      $("#TaxId").parent().show();
+    }
+  });
+
+  $("#TaxId").keyup(function () {
+    $("#TaxIdValid").css("display", "none");
+  });
+
+  $("#CompanyName").keyup(function () {
+    $("#CompanyNameValid").css("display", "none");
+  });
+
+  $("#InvoiceNumber").keyup(function () {
+    $("#InvoiceNumberValid").css("display", "none");
+  });
+
+  $("#BlackCatNum").keyup(function () {
+    $("#BlackCatNumValid").css("display", "none");
+  });
+
+  check_addtion();
+  $("#Additional").change(function () {
+    check_addtion();
+  });
+});
+
+function check_addtion() {
+  if ($("#Additional").is(":checked")) {
+    $("#AddOrdersId").show();
+  } else {
+    $("#AddOrdersId").hide();
+  }
+}
+
+function pause(id, states) {
+  var str = "確認暫停此筆?";
+  if (states == "returned") {
+    str = "確認退貨此筆?";
+  }
+  if (confirm(str)) {
+    $.ajax({
+      async: true,
+      url: "/webapi/PauseOrderShippingTimeFromAdmin",
+      type: "POST",
+      data: { Id: id, States: states },
+      beforeSend: function () {
+        $.blockUI({ message: "處理中，請稍候.." });
+      },
+      complete: function () {
+        //$.unblockUI();
+      },
+      success: function (data) {
+        if (data > 0) {
+          location.reload();
+        } else {
+          $.unblockUI();
+          alert("發生錯誤!");
+        }
+      },
+      error: function () {
+        $.unblockUI();
+        alert("發生錯誤，請檢查網路連線狀態");
+      },
+    });
+  }
+}
+
+function Returned_week(id) {
+  if (confirm("確認本週退貨?")) {
+    $.ajax({
+      async: true,
+      url: "/webapi/Returned_week",
+      type: "POST",
+      data: { Id: id },
+      beforeSend: function () {
+        $.blockUI({ message: "處理中，請稍候.." });
+      },
+      //complete: function () {
+      //    $.unblockUI();
+      //},
+      success: function (data) {
+        if (data > 0) {
+          if (returnUrl != "") {
+            location.href = returnUrl;
+          }
+        } else {
+          $.unblockUI();
+          alert("發生錯誤!");
+        }
+      },
+      error: function () {
+        $.unblockUI();
+        alert("發生錯誤，請檢查網路連線狀態");
+      },
+    });
+  }
+  return false;
+}
+
+function ReturnedAll(id) {
+  if (confirm("確認全部退貨?")) {
+    $.ajax({
+      async: true,
+      url: "/webapi/ReturnedAll",
+      type: "POST",
+      data: { Id: id },
+      beforeSend: function () {
+        $.blockUI({ message: "處理中，請稍候.." });
+      },
+      //complete: function () {
+      //},
+      success: function (data) {
+        if (data > 0) {
+          if (returnUrl != "") {
+            location.href = returnUrl;
+          }
+        } else {
+          $.unblockUI();
+          alert("發生錯誤!");
+        }
+      },
+      error: function () {
+        $.unblockUI();
+        alert("發生錯誤，請檢查網路連線狀態");
+      },
+    });
+  }
+  return false;
+}
+
+function Cancel(id) {
+  if (confirm("確認取消此筆訂單?")) {
+    $.ajax({
+      async: true,
+      url: "/webapi/CancelOne",
+      type: "POST",
+      data: { Id: id },
+      beforeSend: function () {
+        $.blockUI({ message: "處理中，請稍候.." });
+      },
+      complete: function () {
+        //$.unblockUI();
+      },
+      success: function (data) {
+        if (data > 0) {
+          location.reload();
+        } else {
+          $.unblockUI();
+          alert("發生錯誤!");
+        }
+      },
+      error: function () {
+        $.unblockUI();
+        alert("發生錯誤，請檢查網路連線狀態");
+      },
+    });
+  }
+}
+
+function CancelAll(OrderNumber) {
+  if (confirm("確認取消全部訂單?")) {
+    $.ajax({
+      async: true,
+      url: "/webapi/CancelAll",
+      type: "POST",
+      data: { OrderNumber: OrderNumber },
+      beforeSend: function () {
+        $.blockUI({ message: "處理中，請稍候.." });
+      },
+      //complete: function () {
+      //},
+      success: function (data) {
+        if (data > 0) {
+          if (returnUrl != "") {
+            location.href = returnUrl;
+          }
+        } else {
+          alert("發生錯誤!");
+          $.unblockUI();
+        }
+      },
+      error: function () {
+        alert("發生錯誤，請檢查網路連線狀態");
+        $.unblockUI();
+      },
+    });
+  }
+  return false;
+}
+
+//重設訂單所有的出貨日期
+function UpdateAllOrdersTime(OrderNumber) {
+  if (confirm("確定重設此週之後，所有的出貨日期?")) {
+    $.ajax({
+      async: true,
+      url: "/webapi/UpdateAllOrdersTime",
+      type: "POST",
+      data: {
+        id: $("#Id").val(),
+        OrderNumber: OrderNumber,
+        OrdersTime: $("#OrdersTime").val(),
+      },
+      beforeSend: function () {
+        $.blockUI({ message: "處理中，請稍候.." });
+      },
+      //complete: function () {
+      //},
+      success: function (data) {
+        if (data > 0) {
+          if (returnUrl != "") {
+            location.href = returnUrl;
+          }
+        } else {
+          alert("發生錯誤!");
+          $.unblockUI();
+        }
+      },
+      error: function () {
+        alert("發生錯誤，請檢查網路連線狀態");
+        $.unblockUI();
+      },
+    });
+  }
+  return false;
+}
+
+//重設訂單所有的週數
+function UpdateAllSubweek(OrderNumber) {
+  if (confirm("確定重設此訂單，所有的週數?")) {
+    $.ajax({
+      async: true,
+      url: "/webapi/UpdateAllSubweek",
+      type: "POST",
+      data: {
+        OrderNumber: OrderNumber,
+      },
+      beforeSend: function () {
+        $.blockUI({ message: "處理中，請稍候.." });
+      },
+      //complete: function () {
+      //},
+      success: function (data) {
+        if (data > 0) {
+          if (returnUrl != "") {
+            location.href = returnUrl;
+          }
+        } else {
+          alert("發生錯誤!");
+          $.unblockUI();
+        }
+      },
+      error: function () {
+        alert("發生錯誤，請檢查網路連線狀態");
+        $.unblockUI();
+      },
+    });
+  }
+  return false;
+}
+
+function showbtn() {
+  $("#send_btn").show();
+}
+function InsertService(oid) {
+  $.ajax({
+    async: true,
+    url: "/Service/Order_update",
+    type: "POST",
+    data: { OrderNumber: oid, Content: $("#ServiceContent").val() },
+
+    success: function (data) {
+      if (data > 0) {
+        $("#ServiceDetail").html(
+          "<center><img src='/images/ajax-loader.gif'></center>"
+        );
+        $("#ServiceDetail").load(location.href + " #ServiceArea");
+      } else {
+        $.unblockUI();
+        alert("發生錯誤!");
+      }
+    },
+    error: function () {
+      $.unblockUI();
+      alert("發生錯誤，請檢查網路連線狀態");
+    },
+  });
+}
+function add_Week() {
+  $("#add_week").hide();
+  $("#extra_week").show();
+  $("#submit_week").show();
+}
+
+function Insert_Week(id) {
+  $.ajax({
+    async: true,
+    url: "/webapi/Insert_Week",
+    type: "POST",
+    data: { Id: id, add_week: $("#extra_week").val() },
+    beforeSend: function () {
+      $.blockUI({ message: "處理中，請稍候.." });
+    },
+    success: function (data) {
+      if (data > 0) {
+        if (returnUrl != "") {
+          location.href = returnUrl;
+        }
+      } else {
+        $.unblockUI();
+        alert("發生錯誤!");
+      }
+    },
+    error: function () {
+      $.unblockUI();
+      alert("發生錯誤，請檢查網路連線狀態");
+    },
+  });
+}
+
+//確認是否已有檢或單或黑貓單號
+function checkBlackCatNum(ordersId) {
+  $.ajax({
+    async: false,
+    url: "/gox/Orders/checkBlackCatNumAndPackFile",
+    type: "POST",
+    dataType: "json",
+    data: {
+      ordersId: ordersId,
+    },
+
+    success: function (data) {
+      // .NET 9 migration: server 端 `public bool` action 在 ASP.NET Core 下
+      // 序列化成 JSON 小寫 true/false，不再是 .NET Framework 的純文字 "True"/"False"。
+      // 明確用 dataType:"json" 讓 jQuery parse 成 JS boolean，再以 === true 比對。
+      if (data === true) {
+        if (confirm("此筆訂單已經有檢貨單或黑貓單號，確定修改?")) {
+          check();
+        } else {
+          return false;
+        }
+      } else {
+        check();
+      }
+    },
+    error: function () {
+      $.unblockUI();
+      alert("連線錯誤，無法確認是否已有檢貨單或黑貓單號");
+
+      return;
+    },
+  });
+}
+
+function check() {
+  if ($("#form").valid()) {
+    if (!$("#totalPriceIsZero")) {
+      let Valid = 0;
+      if (
+        $("[name=InvoiceType]").val() == "三聯式" &&
+        $("#CompanyName").val() == ""
+      ) {
+        $("#CompanyNameValid").css("display", "block");
+        $("html, body").scrollTop($("#CompanyNameValid").offset().top - 200);
+        Valid++;
+      }
+      if (
+        $("[name=InvoiceType]").val() == "三聯式" &&
+        $("#TaxId").val() == ""
+      ) {
+        $("#TaxIdValid").css("display", "block");
+        $("html, body").scrollTop($("#TaxIdValid").offset().top - 200);
+        Valid++;
+      }
+
+      if (
+        $("[name=InvoiceNumber]").val() == "" &&
+        $("[name=InvoiceTime]").val() != ""
+      ) {
+        $("#InvoiceNumberValid").css("display", "block");
+        $("html, body").scrollTop($("#InvoiceNumberValid").offset().top - 200);
+        Valid++;
+      }
+
+      if (Valid > 0) {
+        return false;
+      }
+    }
+
+    ordersEdit_form.submit(); //submit
+
+    $.blockUI({ message: "處理中，請稍候.." });
+    return true;
+  } else {
+    var validator = $("#form").validate();
+    var invalidElements = validator.invalidElements();
+    var getPrecedingLabel = function (el) {
+      // 向前找同層（或 wrapping <label>）的 text node，取第一個有中文/文字內容的
+      var node = el.previousSibling;
+      var guard = 0;
+      while (guard++ < 30) {
+        while (node) {
+          if (node.nodeType === 3) {
+            var t = $.trim(node.nodeValue);
+            if (t) return t;
+          } else if (node.nodeType === 1) {
+            var tagName = (node.tagName || "").toLowerCase();
+            if (tagName === "br" || tagName === "span" || tagName === "a") {
+              // 跳過這類 inline 元素
+            } else {
+              var tt = $.trim($(node).text());
+              if (tt && tt.length < 30) return tt;
+            }
+          }
+          node = node.previousSibling;
+        }
+        // 爬到容器邊界，往上一層繼續找（限制不跨 td / .editor-field）
+        var parent = el.parentNode;
+        if (!parent) break;
+        var pTag = (parent.tagName || "").toLowerCase();
+        if (pTag === "td" || pTag === "form" || pTag === "body") break;
+        el = parent;
+        node = el.previousSibling;
+      }
+      return "";
+    };
+
+    var fieldLabels = $.map(invalidElements, function (el) {
+      var label =
+        $.trim($("label[for='" + el.id + "']").text()) ||
+        $.trim(
+          $(el).closest(".editor-field").prev(".editor-label").text()
+        ) ||
+        getPrecedingLabel(el) ||
+        "未命名欄位";
+      label = label.replace(/^\*\s*/, "").replace(/[:：]\s*$/, "").replace(/\s+/g, " ");
+      return "<li>" + label + "</li>";
+    });
+
+    $("<div></div>")
+      .html(
+        "<p>以下欄位驗證失敗，請確認填寫內容：</p><ul>" +
+          fieldLabels.join("") +
+          "</ul>"
+      )
+      .dialog({
+        title: "提示",
+        modal: true,
+        width: 400,
+        resizable: false,
+        buttons: {
+          確定: function () {
+            $(this).dialog("close");
+          },
+        },
+        close: function () {
+          $(this).remove();
+          if (invalidElements.length > 0) {
+            var $first = $(invalidElements[0]);
+            $("html, body").animate(
+              { scrollTop: $first.offset().top - 150 },
+              400
+            );
+            $first.focus();
+          }
+        },
+      });
+
+    return false;
+  }
+}
+
+$(document).ready(function () {
+  $(".fancybox")
+    .attr("rel", "gallery")
+    .fancybox({
+      autoDimensions: false,
+      maxWidth: 935,
+      helpers: {
+        overlay: {
+          css: {
+            background: "rgba(58, 42, 45, 0.95)",
+          },
+        },
+      },
+    });
+});

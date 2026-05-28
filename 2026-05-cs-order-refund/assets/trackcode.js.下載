@@ -1,0 +1,1393 @@
+﻿//onclike="javascript:sendGAClickEvent('UX', '按鈕', '限時特賣會/看更多');"
+function sendGAClickEvent(eventType, eventAction, eventDescript) {
+    ga('send', 'event', eventType, eventAction, eventDescript);
+}
+
+/**
+ * Enhanced Ecommerce
+ */
+//send Home/Index impression action
+function sendHomeImpressionAction(pageViewed) {
+    ga('require', 'ec');
+    var productDisplays = 0;
+    if ($(window).width() > 767)
+        productDisplays = $('.webshowpart div[data-pId]').length;
+    else
+        productDisplays = $('.mobileshowpart div[data-pId]').length;
+
+    for (var index = 0; index < productDisplays; index++) {
+        var product = $('div[data-pId]')
+        if ($(window).width() > 767)
+            product = $('.webshowpart div[data-pId]')[index].dataset;
+        else
+            product = $('.mobileshowpart div[data-pId]')[index].dataset;
+
+        var position = index + 1;
+        if (product.name.includes("test"))
+            return false;
+        else {
+            ga('ec:addImpression', {
+                'id': product.pid,
+                'name': product.name,
+                'category': product.category,
+                'list': pageViewed,
+                'position': position,
+            });
+        }
+
+    }
+    ga('send', 'pageview');
+}
+
+//send impression action
+function sendImpressionAction(pageViewed) {
+    ga('require', 'ec');
+    var productDisplays = $('div[data-pId]').length;
+    for (var index = 0; index < productDisplays; index++) {
+        var product = $('div[data-pId]')[index].dataset;
+        var position = index + 1;
+        if (product.name.match("test"))
+            return false;
+        ga('ec:addImpression', {
+            'id': product.pid,
+            'name': product.name,
+            'category': product.category,
+            'list': pageViewed,
+            'position': position,
+        });
+
+        //Payload size fixes
+        if (index % 20 == 0)
+            ga('send', 'pageview');
+    }
+    ga('send', 'pageview');
+
+    if (pageViewed == "小廚房專區") {
+        myfbq('1567383533597023', 'PageView');
+        myfbq('378211592357729', 'PageView');
+    }
+}
+
+//send detail action
+function sendDetailAction() {
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    var productDisplays = $('div[data-pId]').length;
+    for (var index = 0; index < productDisplays; index++) {
+        //var product = $('div[data-pId]')[index].dataset;
+        var product = document.querySelectorAll('[data-pid]')[index].dataset;
+        if (product.name.match("test"))
+            return false;
+        ga('ec:addProduct', {
+            'id': product.pid,
+            'name': product.name,
+            'price': product.price,
+            'category': product.category,
+            'variant': product.variant
+        });
+
+    }
+    ga('ec:setAction', 'detail');
+    ga('send', 'pageview');
+}
+
+
+function sendDetailActionByParmater(productId, name, price, category, variant) {
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    if (name.match("test"))
+        return false;
+    ga('ec:addProduct', {
+        'id': productId,
+        'name': name,
+        'price': price,
+        'category': category,
+        'variant': variant
+    });
+    ga('ec:setAction', 'detail');
+    ga('send', 'pageview');
+}
+
+function sendAddToCartByProductDetail(apiResponse) {
+    var product = apiResponse.ProductDetail;
+
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    ga('ec:addProduct', {
+        'id': product.PdId,
+        'name': product.Name,
+        'category': productTypeMapping[product.Type],
+        'price': product.Price,
+        'quantity': apiResponse.Quantity
+    });
+
+    if (product.category == "無毒農小廚房") {
+        myfbq('1567383533597023', 'AddToCart', {
+            content_ids: product.PdId,
+            content_name: product.Name,
+            contents: [{ 'id': product.PdId, 'quantity': apiResponse.Quantity, 'category': productTypeMapping[product.Type] }],
+            content_type: 'product',
+            currency: 'TWD',
+            value: product.Price
+        });
+    }
+    // Eaglebabee
+    if (apiResponse.ProductDetail.Type === 11) {
+        myfbq('303900099395783', 'AddToCart', {
+            content_ids: [product.PdId],
+            content_name: `${product.Name}${
+                product.SpecDetail ? ` ${product.SpecDetail}` : ''
+            } ${product.Unit}${product.Module}`,
+            contents: [{ 
+                'id': product.PdId,
+                'quantity': apiResponse.Quantity,
+                'category': productTypeMapping[product.Type] 
+            }],
+            content_type: 'product',
+            currency: 'TWD',
+            value: product.Price,
+        });
+    }
+
+    lineAD("addtocart", productTypeMapping[product.Type], true);
+
+    myfbq('378211592357729', 'AddToCart', {
+        content_ids: product.PdId,
+        content_name: product.Name,
+        contents: [{ 'id': product.PdId, 'quantity': apiResponse.Quantity, 'category': productTypeMapping[product.Type] }],
+        content_type: 'product',
+        currency: 'TWD',
+        value: product.price
+    });
+
+    dataLayer.push({
+        'event': 'product_added_to_cart',
+        'product_id': product.PdId,
+        'category_name': productTypeMapping[product.Type],
+        'product_name': product.Name,
+        'product_link': product.Type == 2 ? "https://greenbox.tw/Products/ItemDetail/" + product.PdId : "https://greenbox.tw/Products/SpecialNew#" + product.PdId,
+        'product_price': product.Price,
+        'product_link': product.Type == 2 ? "https://greenbox.tw/Products/SpecialNew/" + product.PdId + "#" + product.PdId : "https://greenbox.tw/Products/ItemDetail/" + product.PdId
+    });
+
+    dataLayer.push({ ecommerce: null });
+    dataLayer.push({
+        event: "add_to_cart",
+        ecommerce: {
+            currency: "TWD",
+            value: apiResponse.Quantity * product.Price,
+            items: [
+                {
+                    item_id: product.PId,
+                    item_name: product.Name,
+                    affiliation: "Greenbox",
+                    index: 0,
+                    item_brand: "Greenbox",
+                    item_category: productTypeMapping[product.Type],
+                    price: product.Price,
+                    quantity: apiResponse.Quantity
+                }
+            ]
+        }
+    });
+}
+
+//send add to cart action
+function sendAddToCartAction(productId, productDetailId) {
+    //var product = $('div[data-pId="' + productId + '"]')[0].dataset;
+    var product = document.querySelectorAll('[data-pid="' + productId + '"][data-pdid="' + productDetailId + '"]')[0].dataset;
+    var quantity = $('#amount_' + productId + '_' + productDetailId).val();
+    if (quantity == undefined || quantity == null) {
+        quantity = "0";
+    }
+    if (product.name.match("test"))
+        return false;
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    ga('ec:addProduct', {
+        'id': productId,
+        'name': product.name,
+        'category': product.category,
+        'variant': product.variant,
+        'price': product.price,
+        'quantity': quantity
+    });
+
+    if (product.category == "無毒農小廚房") {
+        myfbq('1567383533597023', 'AddToCart', {
+            content_ids: productId,
+            content_name: product.name,
+            contents: [{ 'id': productId, 'quantity': quantity, 'category': product.category }],
+            content_type: 'product',
+            currency: 'TWD',
+            value: product.price
+        });
+    }
+
+    lineAD("addtocart", product.category, true);
+
+    myfbq('378211592357729', 'AddToCart', {
+        content_ids: productId,
+        content_name: product.name,
+        contents: [{ 'id': productId, 'quantity': quantity, 'category': product.category }],
+        content_type: 'product',
+        currency: 'TWD',
+        value: product.price
+    });
+
+
+    ga('ec:setAction', 'add', { list: product.pageview });
+    ga('send', 'event', 'UX', '按鈕', '加入購物車');
+    ga('send', 'pageview');
+    var productDetail = {
+        id: productId,
+        pdid: productDetailId,
+        name: product.name,
+        category: product.category,
+        variant: product.variant,
+        price: product.price,
+        quantity: quantity,
+        list: product.pageview
+    }
+
+    if ($.cookie('GACart') != null && $.cookie('GACart') != undefined && $.cookie('GACart') != "[]") {
+        updateGACartCookie(productDetail, "add");
+    } else {
+        var cartPool = [];
+        cartPool.push(productDetail);
+        createGACartCookie(cartPool);
+    }
+}
+
+function sendAddBoxToCartAction(productId, productDetailId) {
+    var product = document.querySelectorAll('[data-pid="' + productId + '"][data-pdid="' + productDetailId + '"]')[0].dataset;
+    var quantity = 1;
+    if (product.name.match("test"))
+        return false;
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    ga('ec:addProduct', {
+        'id': productId,
+        'name': product.name,
+        'category': product.category,
+        'variant': product.variant,
+        'price': product.price,
+        'quantity': quantity
+    });
+    ga('ec:setAction', 'add', { list: product.pageview });
+    ga('send', 'event', 'UX', '按鈕', '加入購物車');
+    ga('send', 'pageview');
+    var productDetail = {
+        id: productId,
+        pdid: productDetailId,
+        name: product.name,
+        category: product.category,
+        variant: product.variant,
+        price: product.price,
+        quantity: quantity,
+        list: product.pageview
+    }
+
+    if ($.cookie('GACart') != null && $.cookie('GACart') != undefined && $.cookie('GACart') != "[]") {
+        updateBoxGACartCookie(productDetail, "add");
+    } else {
+        var cartPool = [];
+        cartPool.push(productDetail);
+        createGACartCookie(cartPool);
+    }
+}
+
+function sendAddToCartActionBackEnd(productId, productDetailId, cartItemId) {
+    var productEl = document.querySelectorAll('[data-pid="' + productId + '"][data-pdid="' + productDetailId + '"]')[0];
+    if (!productEl) {
+        return;
+    }
+    var product = productEl.dataset;
+    var quantity = document.getElementById('Amount_0').value;
+    if (quantity == undefined || quantity == null) {
+        quantity = "0";
+    }
+    if (product.name.match("test"))
+        return false;
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    ga('ec:addProduct', {
+        'id': productId,
+        'name': product.name,
+        'category': product.category,
+        'variant': product.variant,
+        'price': product.price,
+        'quantity': quantity
+    });
+
+
+
+    myfbq('378211592357729', 'AddToCart', {
+        content_ids: productId,
+        content_name: product.name,
+        contents: [{ 'id': productId, 'quantity': quantity, 'category': product.category }],
+        content_type: 'product',
+        currency: 'TWD',
+        value: product.price
+    });
+
+    ga('ec:setAction', 'add', { list: product.pageview });
+    ga('send', 'event', 'UX', '按鈕', '加入購物車');
+    ga('send', 'pageview');
+    ga('set', 'referrer', 'BackEnd');
+    var productDetail = {
+        id: productId,
+        pdid: productDetailId,
+        name: product.name,
+        category: product.category,
+        variant: product.variant,
+        price: product.price,
+        quantity: quantity,
+        list: product.pageview
+    }
+
+    if ($.cookie('GACart') != null && $.cookie('GACart') != undefined && $.cookie('GACart') != "[]") {
+        updateGACartCookie(productDetail, "add");
+    } else {
+        var cartPool = [];
+        cartPool.push(productDetail);
+        createGACartCookie(cartPool);
+    }
+}
+
+//send checkout step 2 action : confirm order
+function sendCheckoutStep2Action() {
+
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    var cartList = "[]";
+    cartList = getGACartList();
+    if (cartList == "[]")
+        return false;
+    var paymentType = "";
+    for (var i = 0; i < cartList.length; i++) {
+        var product = cartList[i];
+        if (product.name.match("test"))
+            return false;
+        ga('ec:addProduct', {
+            'id': product.id,
+            'name': product.name,
+            'category': product.category,
+            'price': product.price,
+            'quantity': product.quantity,
+            'variant': product.variant
+        });
+
+        ga('ec:setAction', 'checkout', {
+            'step': 2,
+        });
+        ga('send', 'pageview');
+    }
+}
+
+
+//send checkout step 3 action : confirm order
+function sendCheckoutStep3Action() {
+    ga('ec:setAction', 'checkout', {
+        'step': 3,
+    });
+    ga('send', 'pageview');
+}
+
+//send purchase action
+function sendPurchaseAction() {
+    try {
+        ga('require', 'ec');
+        ga('set', 'currencyCode', 'TWD');
+        var cartList = window.orderDetail;
+
+        if (!cartList || cartList.length == 0)
+            return false;
+
+        var productType = "";
+        var transactionTotal = 0;
+        var products = [];
+
+        for (var o = 0; o < cartList.length; o++) {
+            var order = cartList[o];
+
+            for (var i = 0; i < order.CartItems.length; i++) {
+                var product = order.CartItems[i]
+
+                ga('ec:addProduct', {
+                    'id': product.ProductId,
+                    'name': product.ProductName,
+                    'category': productTypeMapping[product.Type],
+                    'price': product.Price,
+                    'quantity': product.Quantity
+                });
+
+                lineAD("purchase", productTypeMapping[product.Type], true);
+
+                products.push({
+                    item_id: product.ProductId,
+                    item_name: product.ProductName,
+                    item_category: productTypeMapping[product.Type],
+                    affiliation: "Greenbox",
+                    currency: "TWD",
+                    item_brand: "Greenbox",
+                    price: product.Price,
+                    quantity: product.Quantity
+                });
+
+                transactionTotal += product.Price * product.Quantity;
+            }
+        }
+
+        if (transactionTotal < 500000) {
+            ga('ec:setAction', 'purchase', {
+                'id': $('#transaction-no').val(), //order number
+                'affiliation': 'GreenBox WebSite',
+                'revenue': transactionTotal,
+                'tax': '0',
+                'shipping': '0',
+                list: productType
+            });
+        }
+
+        var dataLayer = window.dataLayer || [];
+
+        dataLayer.push({ ecommerce: null });
+        dataLayer.push({
+            event: "purchase",
+            ecommerce: {
+                transaction_id: $('#transaction-no').val(),
+                affiliation: "greenbox",
+                value: transactionTotal,
+                currency: "TWD",
+                tax: 0,
+                shipping: 0,
+                items: products
+            }
+        });
+        
+        const eaglebabeeItems = products.filter((v) => v.item_category === productTypeMapping[11]);
+        if (eaglebabeeItems.length > 0) {
+            dataLayer.push({
+                event: "eaglebabee_purchase",
+                ecommerce: {
+                    transaction_id: $('#transaction-no').val(),
+                    affiliation: "greenbox",
+                    value: eaglebabeeItems.reduce((accu, cur) => accu + (cur.price * cur.quantity), 0),
+                    currency: "TWD",
+                    tax: 0,
+                    shipping: 0,
+                    items: eaglebabeeItems
+                }
+            });
+        }
+    } catch (ex) {
+        console.log("send purchase event error");
+    }
+}
+
+function sendPurchaseActionBackEnd(orderNumber) {
+
+    if (orderNumber == null || orderNumber == 0 || orderNumber == undefined) {
+        return false;
+    }
+
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    var cartList = getGACartList();
+    if (cartList == "[]")
+        return false;
+    var productType = "";
+    var transactionTotal = 0;
+
+    for (var i = 0; i < cartList.length; i++) {
+        var product = cartList[i];
+        if (product.name.match("test"))
+            return false;
+        ga('ec:addProduct', {
+            'id': product.id,
+            'name': product.name,
+            'category': product.category,
+            'price': product.price,
+            'quantity': product.quantity,
+            'variant': product.variant
+        });
+
+        if (productType.match(product.pageview) == null) {
+            productType = productType + '/' + product.pageview;
+        }
+        transactionTotal += product.price * product.quantity;
+    }
+
+    ga('ec:setAction', 'purchase', {
+        'id': orderNumber, //order number
+        'affiliation': 'GreenBox WebSite',
+        'revenue': transactionTotal,
+        'tax': '0',
+        'shipping': '0',
+        list: productType
+    });
+    ga('send', 'pageview');
+    ga('set', 'referrer', 'BackEnd');
+    deleteCartTagCookie();
+}
+
+//get cart list
+function getCartTag() {
+    try {
+        var cookieData = getCookie('cartTag'); //fix $.cookie not working properly
+        if (cookieData != null && cookieData != undefined)
+            return JSON.parse(cookieData);
+        else
+            return "[]";
+    } catch (e) {
+        return "[]";
+    }
+}
+
+function getGACartList() {
+    try {
+        var cookieData = $.cookie('GACart');//getCookie('GACart'); //$.cookie('GACart');
+        if (cookieData != null && cookieData != undefined)
+            return JSON.parse(cookieData);
+        else
+            return [];
+    } catch (e) {
+        return [];
+    }
+}
+
+//clear cookie
+function deleteCartTagCookie() {
+    $.removeCookie('cartTag');
+    $.removeCookie('GACart', { path: '/' });
+}
+
+//create cookie
+function createGACartCookie(products) {
+    //create
+    $.cookie('GACart', JSON.stringify(products), { expires: 2, path: '/' });
+}
+
+function updateGACartCookie(product, action) {
+    if ($.cookie('GACart') != undefined) {
+        var storedCart = JSON.parse($.cookie('GACart'));
+        var newCartList = [];
+
+        if (action == "add") {
+            var isExist = false;
+            for (var i = 0; i < storedCart.length; i++) {
+                if (storedCart[i].id == product.id && storedCart[i].pdid == product.pdid) {
+                    storedCart[i].quantity = (parseInt(storedCart[i].quantity) + parseInt(product.quantity)).toString();
+                    isExist = true;
+                }
+            }
+
+            if (!isExist) {
+                storedCart.push(product);
+            }
+
+            newCartList = storedCart;
+        } else if (action == "delete") {
+            for (var i = 0; i < storedCart.length; i++) {
+                if (storedCart[i].id !== product.id &&
+                    storedCart[i].pdid !== product.pdid) {
+                    newCartList.push(storedCart[i]);
+                }
+            }
+        }
+        $.cookie('GACart', JSON.stringify(newCartList), { expires: 2, path: '/' });
+    }
+}
+
+function updateBoxGACartCookie(product, action) {
+    if ($.cookie('GACart') != undefined) {
+        var storedCart = JSON.parse($.cookie('GACart'));
+        var newCartList = [];
+
+        if (action == "add") {
+            var isExist = false;
+            for (var i = 0; i < storedCart.length; i++) {
+                if (storedCart[i].id == product.id && storedCart[i].pdid == product.pdid) {
+                    storedCart[i].quantity += product.quantity;
+                    isExist = true;
+                }
+            }
+
+            if (!isExist) {
+                storedCart.push(product);
+            }
+
+            newCartList = storedCart;
+        } else if (action == "delete") {
+            for (var i = 0; i < storedCart.length; i++) {
+                if (storedCart[i].id !== product.id &&
+                    storedCart[i].pdid !== product.pdid) {
+                    newCartList.push(storedCart[i]);
+                }
+            }
+        }
+        $.cookie('GACart', JSON.stringify(newCartList), { expires: 2, path: '/' });
+    }
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return null;
+}
+
+/**
+ * -------箱類Tracker
+ */
+function sendBoxImpressionAction(pageViewed) {
+    ga('require', 'ec');
+    var productDisplays = $('div[data-pId]').length;
+
+    for (var index = 0; index < productDisplays; index++) {
+        var product = $('div[data-pId]')[index].dataset;
+        var position = index + 1;
+        ga('ec:addImpression', {
+            'id': product.id,
+            'name': product.name,
+            'category': product.category,
+            'list': pageViewed,
+            'position': position,
+        });
+    }
+    ga('send', 'pageview');
+}
+
+function sendBoxAddToCartAction(id) {
+    var product = $('div[data-pId="' + id + '"]')[0].dataset;
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+    ga('ec:addProduct', {
+        'id': product.pid,
+        'name': product.name,
+        'category': product.category,
+        'quantity': 1
+    });
+
+    myfbq('378211592357729', 'AddToCart', {
+        content_ids: product.id,
+        content_name: product.name,
+        contents: [{ 'id': product.id, 'quantity': 1, 'category': product.category }],
+        content_type: 'product',
+        currency: 'TWD',
+        value: product.price
+    });
+
+    ga('ec:setAction', 'add', { list: product.pageview });
+    ga('send', 'event', 'UX', '按鈕', '加入購物車');
+}
+
+//send checkout step 1 action : fill order information
+function sendBoxCheckoutStep1Action() {
+
+    ga('require', 'ec');
+    ga('set', 'currencyCode', 'TWD');
+
+    var cartList = [];
+    var category = "箱類/";
+    var id = "";
+    var boxSize = "";
+    var pageView = "";
+    var boxType = "";
+    var boxScribe = { "1": 0, "4": 1, "8": 2, "12": 4, "24": 3, "52": 5 };
+    var hasFruitBoxOrder = $("div.cartitem:contains('水果箱')").length;
+    var hasVegetableBoxOrder = $("div.cartitem:contains('蔬菜箱')").length;
+    if (hasFruitBoxOrder > 0) {
+        boxType = "水果箱";
+        pageView = "週配水果箱";
+        id = "fruitbox_";
+    }
+    if (hasVegetableBoxOrder > 0) {
+        boxType = "蔬菜箱";
+        pageView = "無毒蔬菜箱";
+        id = "vegetablebox_";
+    }
+    if ($("#Size:checked").val() == "1") {
+        boxSize = "個人號";
+        id = id + 'personel_' + boxScribe[$('#Subscribe').val()];
+    }
+    else {
+        boxSize = "家庭號";
+        id = id + 'family_';
+    }
+    //data-name="水果箱-@(week[i])週-個人號" data-category="箱類/水果箱/個人號"
+
+    var productContent = {
+        id: id,
+        name: boxType + "-" + $('#Subscribe').val() + "-" + boxSize,
+        category: category + boxType + "/" + boxSize,
+        price: $('.unit-price').text(),
+        quantity: $('#amount').val(),
+        option: $("input[name='paytype']").val()
+    }
+    ga('ec:addProduct', {
+        'id': id,
+        'name': boxType + "-" + $('#Subscribe').val() + "-" + boxSize,
+        'category': category + boxType + "/" + boxSize,
+        'price': $('.unit-price').text(),
+        'quantity': $('#amount').val(),
+    });
+
+
+    //checkout step 1: place an order
+    ga('ec:setAction', 'checkout', {
+        'step': 1,
+        'option': $("input[name='paytype']").val(),
+        list: pageView
+    });
+    ga('send', 'pageview');
+    cartList.push(productContent);
+    //set cookie
+    $.cookie('cartTag', JSON.stringify(cartList), { expires: 1 });
+}
+
+//引導自定義ga事件
+function sendSalesGaAction(gaType, gaAction, gaPlace) {
+    try {
+
+        if (typeof gaPlace == 'undefined') {
+            gaPlace = '';
+        }
+        var context = gaContext[gaType][gaAction][gaPlace];
+
+        if (location.href.indexOf('localhost') != -1 || location.href.indexOf('greenboxtest') != -1 || location.href.indexOf('ngrok') != -1) {
+            sendlog('testGA', context.type + " " + context.action + " " + context.place);
+        }
+        else {
+            sendGAClickEvent(context.type, context.action, context.place);
+            //sendlog('sendGA', context.type + " " + context.action + " " + context.place);
+        }
+
+    } catch (e) {
+        sendlog('ex', e);
+    }
+}
+
+function sendSalesGaActionCustom(Type, Action, Place) {
+
+    try {
+        if (location.href.indexOf('localhost') != -1 || location.href.indexOf('greenboxtest') != -1 || location.href.indexOf('ngrok') != -1) {
+            sendlog('testGA', Type + " " + Action + " " + Place);
+
+        } else {
+            sendGAClickEvent(Type, Action, Place);
+
+            //sendlog('sendGA', Type + " " + Action + " " + Place);
+        }
+
+    } catch (e) {
+        sendlog('ex', e);
+    }
+}
+
+function sendlog(frontWord, mainWord) {
+    console.log(frontWord + '：' + mainWord);
+}
+
+function lineAD(trackType, productCategory, needMatchKey) {
+    try {
+        if (needMatchKey) {
+            var category = lineCategoryMatch[trackType];
+
+            if (category) {
+                var categoryName = Object.keys(category).find(function (e) {
+                    return productCategory.includes(e);
+                });
+
+                if (categoryName) {
+                    productCategory = category[categoryName];
+                }
+            }
+        }
+
+        var type = trackType + "_" + productCategory;
+
+        if (_lt) {
+            _lt('send', 'cv', {
+                type: type
+            }, ['f043812f-b850-4d93-84cd-1bc8fe6b47c8']);
+        }
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+var lineCategoryMatch = {
+    "view": {
+        "產地直送": "origin",
+        "冷凍超市": "frozen",
+        "粥寶寶": "baobaofood"
+    },
+    "addtocart": {
+        "產地直送": "origin",
+        "冷凍超市": "frozen",
+        "粥寶寶": "baobaofood",
+        "快速到貨": "onsale"
+    },
+    "purchase": {
+        "產地直送": "origin",
+        "冷凍超市": "frozen",
+        "粥寶寶": "baobaofood",
+        "快速到貨": "onsale"
+    }
+}
+
+var productTypeMapping = {
+    "0": "產地直送",
+    "1": "加購商品",
+    "2": "快速到貨",
+    "4": "VIP商品",
+    "5": "箱類",
+    "7": "冷凍超市",
+    "9": "粥寶寶",
+    "11": "益菓保"
+}
+
+//行銷自定義事件
+var gaContext = {
+    'top': {
+        'back': {
+            'default': { type: '置頂', action: '返回首頁', place: '' }
+        },
+        'burger': {
+            'default': { type: '置頂', action: '漢堡鍵', place: '' }
+        },
+        'mobileTop': {
+            'MobItemNew': { type: '置頂', action: '手機頂', place: '產地直送(m)' },
+            'MobSpecialNew': { type: '置頂', action: '手機頂', place: '限時特賣(m)' },
+            'MobFrozenFood': { type: '置頂', action: '手機頂', place: '冷凍超市(m)' },
+            'MobBoxDown': { type: '置頂', action: '手機頂', place: '蔬果箱下拉(m)' },
+            'MobBox': { type: '置頂', action: '手機頂', place: '蔬果箱(m)' },
+        },
+        'desktop': {
+            'AboutNewWeb': { type: '置頂', action: '桌機頂', place: '關於無毒農' },
+            'AboutNew': { type: '置頂', action: '桌機頂', place: '關於無毒農-關於無毒農' },
+            'AboutTeam': { type: '置頂', action: '桌機頂', place: '關於無毒農-無毒農團隊' },
+            'QuestionAndAnswer': { type: '置頂', action: '桌機頂', place: '關於無毒農-常見問題' },
+            'AboutPGS': { type: '置頂', action: '桌機頂', place: '關於無毒農-什麼是PGS?' },
+            'ReturnPolicy': { type: '置頂', action: '桌機頂', place: '關於無毒農-退貨辦法' },
+            'InternationalPartner': { type: '置頂', action: '桌機頂', place: '關於無毒農-國際出口夥伴招募' },
+            'Fig2018': { type: '置頂', action: '桌機頂', place: '最新活動-幸福無花果' },
+            'Caviar': { type: '置頂', action: '桌機頂', place: '最新活動-薄鹽烏魚子' },
+            'GoodFish': { type: '置頂', action: '桌機頂', place: '最新活動-安心健康魚' },
+            'Strawberry': { type: '置頂', action: '桌機頂', place: '最新活動-無農藥草莓' },
+            'HealthyChicken': { type: '置頂', action: '桌機頂', place: '最新活動-嚴選無毒安心雞' },
+            'GrainStore': { type: '置頂', action: '桌機頂', place: '最新活動-長期飯票' },
+            'PeanutButterStore': { type: '置頂', action: '桌機頂', place: '最新活動-透明花生醬' },
+            'CSRPromotion': { type: '置頂', action: '桌機頂', place: '等家寶寶-CSR企業專區' },
+            'LoveRiceAdopt': { type: '置頂', action: '桌機頂', place: '愛心稻田認養專區' },
+            'RecommendFarmer': { type: '置頂', action: '桌機頂', place: '最新活動-小農推薦計畫' },
+            'FruitTree': { type: '置頂', action: '桌機頂', place: '最新活動-果樹認養' },
+            'Transform': { type: '置頂', action: '桌機頂', place: '產地直送' },
+            'CompanyGift': { type: '置頂', action: '桌機頂', place: '產地直送-年節送禮' },
+            'Activity': { type: '置頂', action: '桌機頂', place: '產地直送-活動專區' },
+            'FortyEight': { type: '置頂', action: '桌機頂', place: '產地直送-48小時到貨專區' },
+            'DelivedFromSource': { type: '置頂', action: '桌機頂', place: '產地直送-當季產物' },
+            'special-activity-two': { type: '置頂', action: '桌機頂', place: '產地直送-心鮮上好，產銷履歷專區' },
+            'PrevOrder': { type: '置頂', action: '桌機頂', place: '產地直送-預定幸福果物' },
+            'SpecialNew-Web': { type: '置頂', action: '桌機頂', place: '限時特賣' },
+            'SpecialNew': { type: '置頂', action: '桌機頂', place: '限時特賣-新鮮水果' },
+            'special-vegetable': { type: '置頂', action: '桌機頂', place: '限時特賣-生鮮蔬菜' },
+            'special-crop': { type: '置頂', action: '桌機頂', place: '限時特賣-五穀雜糧' },
+            'special-cherish': { type: '置頂', action: '桌機頂', place: '限時特賣-惜福專區' },
+            'FrozenFood': { type: '置頂', action: '桌機頂', place: '冷凍超市' },
+            'non-freight': { type: '置頂', action: '桌機頂', place: '冷凍超市-免運專區' },
+            'seafood': { type: '置頂', action: '桌機頂', place: '冷凍超市-安心水產' },
+            'chicken': { type: '置頂', action: '桌機頂', place: '冷凍超市-雞肉專區' },
+            'pork': { type: '置頂', action: '桌機頂', place: '冷凍超市-豬肉專區' },
+            'VegetableAndFruitBox': { type: '置頂', action: '桌機頂', place: '週配蔬果箱' },
+            'VegetableBox': { type: '置頂', action: '桌機頂', place: '週配蔬果箱-無毒蔬菜箱' },
+            'Box': { type: '置頂', action: '桌機頂', place: '週配蔬果箱-週配水果箱' },
+            'baby': { type: '置頂', action: '桌機頂', place: '等家寶寶' },
+            'BlogNewWeb': { type: '置頂', action: '桌機頂', place: '部落格' },
+            'BlogNew': { type: '置頂', action: '桌機頂', place: '部落格-部落格' },
+            'CategoryId': { type: '置頂', action: '桌機頂', place: '部落格-產地故事' },
+
+        },
+        'cart': {
+            'default': { type: '置頂', action: '購物車', place: '' }
+        },
+        '101': {
+            'default': { type: '置頂', action: '新手上路', place: '' }
+        },
+    },
+    'burger': {
+        'news': {
+            'default': { type: '漢堡鍵', action: '最新活動', place: '' },
+            'Fig2018': { type: '漢堡鍵', action: '最新活動', place: '最新活動-幸福無花果' },
+            'Caviar': { type: '漢堡鍵', action: '最新活動', place: '最新活動-薄鹽烏魚子' },
+            'GoodFish': { type: '漢堡鍵', action: '最新活動', place: '最新活動-安心健康魚' },
+            'Strawberry': { type: '漢堡鍵', action: '最新活動', place: '最新活動-無農藥草莓' },
+            'HealthyChicken': { type: '漢堡鍵', action: '最新活動', place: '最新活動-嚴選無毒安心雞' },
+            'GrainStore': { type: '漢堡鍵', action: '最新活動', place: '最新活動-長期飯票' },
+            'PeanutButterStore': { type: '漢堡鍵', action: '最新活動', place: '最新活動-透明花生醬' },
+            'CSRPromotion': { type: '漢堡鍵', action: '最新活動', place: '最新活動-CSR企業專區' },
+            'RecommendFarmer': { type: '漢堡鍵', action: '最新活動', place: '最新活動-小農推薦計畫' },
+            'FruitTree': { type: '漢堡鍵', action: '最新活動', place: '最新活動-果樹認養' },
+        },
+        'baby': {
+            'baby': { type: '漢堡鍵', action: '等家寶寶', place: '' },
+        },
+        'babyfood': {
+            'baby': { type: '漢堡鍵', action: '粥寶寶', place: '' },
+        },
+        'itewNew': {
+            'default': { type: '漢堡鍵', action: '產地直送', place: '' },
+            'CompanyGift': { type: '漢堡鍵', action: '產地直送', place: '產地直送-年節送禮' },
+            'Activity': { type: '漢堡鍵', action: '產地直送', place: '產地直送-活動專區' },
+            'FortyEight': { type: '漢堡鍵', action: '產地直送', place: '產地直送-48小時到貨專區' },
+            'DelivedFromSource': { type: '漢堡鍵', action: '產地直送', place: '產地直送-當季產物' },
+            'special-activity-two': { type: '漢堡鍵', action: '產地直送', place: '產地直送-心鮮上好，產銷履歷專區' },
+            'PrevOrder': { type: '漢堡鍵', action: '產地直送', place: '產地直送-預定幸福果物' },
+        },
+        'SpecialNew': {
+            'default': { type: '漢堡鍵', action: '限時特賣會', place: '' },
+            'special-vegetable': { type: '漢堡鍵', action: '限時特賣會', place: '限時特賣-新鮮水果' },
+            'special-crop': { type: '漢堡鍵', action: '限時特賣會', place: '限時特賣-生鮮蔬菜' },
+            'special-grain': { type: '漢堡鍵', action: '限時特賣會', place: '限時特賣-五穀雜糧' },
+            'special-cherish': { type: '漢堡鍵', action: '限時特賣會', place: '限時特賣-惜福專區' },
+            'ChristmasCardStore': { type: '漢堡鍵', action: '限時特賣會', place: '限時特賣-聖誕募資' },
+        },
+        'FrozenFood': {
+            'default': { type: '漢堡鍵', action: '冷凍超市', place: '' },
+            'non-freight': { type: '漢堡鍵', action: '冷凍超市', place: '冷凍超市-免運專區' },
+            'seafood': { type: '漢堡鍵', action: '冷凍超市', place: '冷凍超市-安心水產' },
+            'chicken': { type: '漢堡鍵', action: '冷凍超市', place: '冷凍超市-雞肉專區' },
+            'pork': { type: '漢堡鍵', action: '冷凍超市', place: '冷凍超市-豬肉專區' },
+        },
+        'VegetableBox': {
+            'default': { type: '漢堡鍵', action: '無毒蔬菜箱', place: '' },
+            'VegetableBox': { type: '漢堡鍵', action: '無毒蔬菜箱', place: '蔬菜箱介紹' },
+            'vbox-package': { type: '漢堡鍵', action: '無毒蔬菜箱', place: '訂購蔬菜箱' },
+            'boxqa': { type: '漢堡鍵', action: '無毒蔬菜箱', place: '蔬菜箱Q&A' },
+        },
+        'Box': {
+            'default': { type: '漢堡鍵', action: '週配水果箱', place: '' },
+            'Box': { type: '漢堡鍵', action: '週配水果箱', place: '水果箱介紹' },
+            'buybox': { type: '漢堡鍵', action: '週配水果箱', place: '訂購水果箱' },
+            'boxqa': { type: '漢堡鍵', action: '週配水果箱', place: '水果箱Q&A' },
+        },
+        'GrainStore': {
+            'GrainStore': { type: '漢堡鍵', action: '雜糧柑仔店', place: '' },
+        },
+        'AboutNew': {
+            'default': { type: '漢堡鍵', action: '關於無毒農', place: '' },
+            'AboutNew': { type: '漢堡鍵', action: '關於無毒農', place: '關於無毒農-關於無毒農' },
+            'AboutTeam': { type: '漢堡鍵', action: '關於無毒農', place: '關於無毒農-無毒農團隊' },
+            'QuestionAndAnswer': { type: '漢堡鍵', action: '關於無毒農', place: '關於無毒農-常見問題' },
+            'AboutPGS': { type: '漢堡鍵', action: '關於無毒農', place: '關於無毒農-什麼是PGS?' },
+            'ReturnPolicy': { type: '漢堡鍵', action: '關於無毒農', place: '關於無毒農-退貨辦法' },
+            'InternationalPartner': { type: '漢堡鍵', action: '關於無毒農', place: '關於無毒農-國際出口夥伴招募' },
+        },
+        'BlogNew': {
+            'BlogNew': { type: '漢堡鍵', action: '部落格', place: '' },
+        },
+        'connect': {
+            'connect': { type: '漢堡鍵', action: '聯絡我們', place: '' },
+        },
+
+    },
+    'index': {
+        'leftReightSlide': {
+            'banner': { type: '首頁', action: '左右滑動', place: 'BN' },
+            'keyWord': { type: '首頁', action: '左右滑動', place: '關鍵字' },
+            'itemNew': { type: '首頁', action: '左右滑動', place: '產地直送' },
+            'specialNew': { type: '首頁', action: '左右滑動', place: '限時特賣' },
+            'frozenFood': { type: '首頁', action: '左右滑動', place: '冷凍超市' },
+            'localStory': { type: '首頁', action: '左右滑動', place: '產地故事' },
+        },
+        'secondBanner': {
+            'default': { type: '首頁', action: '第二BN', place: '' }//
+        },
+        'bannerDot': {
+            'default': { type: '首頁', action: 'BN輪播點點', place: '' }
+        },
+        'lookMore': {
+            'itemNew': { type: '首頁', action: '看更多', place: '產地直送' },
+            'specialNew': { type: '首頁', action: '看更多', place: '限時特賣' },
+            'frozenFood': { type: '首頁', action: '看更多', place: '冷凍超市' },
+        },
+        'pdClick': {
+            'itemNew': { type: '首頁', action: '產品點擊', place: '產地直送' },
+            'specialNew': { type: '首頁', action: '產品點擊', place: '限時特賣' },
+            'frozenFood': { type: '首頁', action: '產品點擊', place: '冷凍超市' },
+            'localStory': { type: '首頁', action: '產品點擊', place: '產地故事' },
+            'goodContext': { type: '首頁', action: '產品點擊', place: '文章精選' },
+            'fruitbox': { type: '首頁', action: '產品點擊', place: '水果箱' },
+            'vegBox': { type: '首頁', action: '產品點擊', place: '蔬菜箱' },
+        },
+        'title': {
+            'itemNew': { type: '首頁', action: '標題', place: '產地直送' },
+            'specialNew': { type: '首頁', action: '標題', place: '限時特賣' },
+            'frozenFood': { type: '首頁', action: '標題', place: '冷凍超市' },
+            'localStory': { type: '首頁', action: '標題', place: '產地故事' },
+            'goodContext': { type: '首頁', action: '標題', place: '文章精選' },
+            'enterpriseArea': { type: '首頁', action: '標題', place: '企業系列' },
+        },
+        'connection': {
+            'addLine': { type: '首頁', action: '聯絡', place: '加入LINE' },// onclick="sendSalesGaAction('index','connection','addLine');"
+            'addFb': { type: '首頁', action: '聯絡', place: '加入FB' },
+        },
+        'photoClick': {
+            'CSR': { type: '首頁', action: '圖片點擊', place: '企業CSR' },
+            'fruitTree': { type: '首頁', action: '圖片點擊', place: '果樹認養' },
+            'giftBox': { type: '首頁', action: '圖片點擊', place: '禮盒認購' },
+            'hair': { type: '首頁', action: '圖片點擊', place: '進出口招募' },
+            'QA': { type: '首頁', action: '圖片點擊', place: 'Q&A' },
+        },
+        'backTop': {
+            'default': { type: '首頁', action: '回到最上', place: '' }
+        },
+        'greenLine': {
+            'about': { type: '首頁', action: '下方綠條', place: '關於無毒農' },
+            'refund': { type: '首頁', action: '下方綠條', place: '退貨辦法' },
+            'partner': { type: '首頁', action: '下方綠條', place: '合作夥伴' },
+        },
+    },
+    'itemNew': {
+        'slide-btn': {
+            'default': { type: '產地直送', action: '輪播鈕', place: '' }
+        },
+        'bannerDot': {
+            'default': { type: '產地直送', action: 'BN點點', place: '' }
+        },
+        'mainMenu': {
+            'transform': { type: '產地直送', action: '分頁選單', place: '產地直送' },
+            'companyGift': { type: '產地直送', action: '分頁選單', place: '企業送禮' },// onclick="sendSalesGaAction('index','connection','addLine');"
+            'prevOrder': { type: '產地直送', action: '分頁選單', place: '預定幸福果物' },
+        },
+        'floatMenu': {
+            'activity': { type: '產地直送', action: '分頁按鈕', place: '活動專區' },
+            'fortyEight': { type: '產地直送', action: '分頁按鈕', place: '48小時' },
+            'delivedFromSource': { type: '產地直送', action: '分頁按鈕', place: '當季產物' },
+            'activity-two': { type: '產地直送', action: '分頁按鈕', place: '清明節活動' },
+            'pre-sale': { type: '產地直送', action: '分頁按鈕', place: '預購專區' },
+        },
+    },
+    'companyGift': {
+        'mainMenu': {
+            'giftArea1': { type: '分頁按鈕', action: '返回首頁', place: '尊榮精選禮盒' },
+            'giftArea2': { type: '分頁按鈕', action: '返回首頁', place: '年節精選禮盒' },
+        },
+        'open': {
+            '尊榮禮盒X': { type: '年節送禮', action: '展開', place: '尊榮X' }, //onclick="sendSalesGaAction('companyGift','mainMenu','giftArea1');"
+            '尊榮禮盒A': { type: '年節送禮', action: '展開', place: '尊榮A' },
+            '尊榮禮盒B': { type: '年節送禮', action: '展開', place: '尊榮B' },
+            '尊榮禮盒C': { type: '年節送禮', action: '展開', place: '尊榮C' },
+            //
+        },
+        'goBuy': {
+            'default': { type: '年節送禮', action: '前往購買', place: '' }
+        },
+    },
+    'fig2018': {
+        'goBuy': {
+            'top': { type: '無花果LP', action: '前往購買', place: '頂端' },
+            'bottom': { type: '無花果LP', action: '前往購買', place: '底部' }//sendSalesGaActionCustom
+        },
+        'video': {
+            'cf': { type: '無花果LP', action: '影片', place: 'CF' },//?
+        },
+        'slideBtn': {
+            'giftbox': { type: '無花果LP', action: '輪播鈕', place: '無花果禮盒' },
+            'farmers': { type: '無花果LP', action: '輪播鈕', place: '供應農友' },
+            'fans': { type: '無花果LP', action: '輪播鈕', place: '農粉回饋' },
+            'contexts': { type: '無花果LP', action: '輪播鈕', place: '相關文章' },
+        },
+        'open': {
+            //
+        },
+        'report': {
+            'skybuty': { type: '無花果LP', action: '檢驗報告', place: '天美' },
+            'honest': { type: '無花果LP', action: '檢驗報告', place: '茂誠' },
+            'sun': { type: '無花果LP', action: '檢驗報告', place: '向陽' },
+            'popo': { type: '無花果LP', action: '檢驗報告', place: '波波' },//
+        },
+        'keepingRead': {
+            'skybuty': { type: '無花果LP', action: '繼續閱讀', place: '天美' },
+            'honest': { type: '無花果LP', action: '繼續閱讀', place: '茂誠' },
+            'sun': { type: '無花果LP', action: '繼續閱讀', place: '向陽' },
+            'popo': { type: '無花果LP', action: '繼續閱讀', place: '波波' },
+            'figEatingTime': { type: '無花果LP', action: '繼續閱讀', place: '【無毒農小學堂】無花果食用時機' },
+            'fig': { type: '無花果LP', action: '繼續閱讀', place: '【無毒農小百科】無花果' },
+        },
+        'floatMenu': {
+            'feature': { type: '無花果LP', action: '浮動按紐', place: '無花果特色' },
+            'saveWay': { type: '無花果LP', action: '浮動按紐', place: '保存說明' },
+            'buyNow': { type: '無花果LP', action: '浮動按紐', place: '立即購買' },
+            'famers': { type: '無花果LP', action: '浮動按紐', place: '供應農友' },
+            'goTop': { type: '無花果LP', action: '浮動按紐', place: '回最上' },
+        },
+
+    },
+    'Strawberry': {
+        'mainMenu': {
+            'farmer-1': { type: '草莓LP', action: '分頁選單', place: '鴨子' },//onclick="sendSalesGaAction('Strawberry','mainMenu','cf');"
+            'farmer-2': { type: '草莓LP', action: '分頁選單', place: '好姬會' },
+            'farmer-3': { type: '草莓LP', action: '分頁選單', place: '吉菓' },
+        },
+        'goBuy': {
+            'duck': { type: '草莓LP', action: '前往購買', place: '鴨子' },
+            'Jihui': { type: '草莓LP', action: '前往購買', place: '好姬會' },
+            'ichico': { type: '草莓LP', action: '前往購買', place: '吉菓' },
+        },
+        'slideBtn': {
+            'local-photo-duck': { type: '草莓LP', action: '輪播鈕', place: '產地實照(鴨子)' },
+            'local-photo-Jihui': { type: '草莓LP', action: '輪播鈕', place: '產地實照(好姬會)' },
+            'local-photo-ichico': { type: '草莓LP', action: '輪播鈕', place: '產地實照(吉菓)' },
+            'pd-photo-duck': { type: '草莓LP', action: '輪播鈕', place: '草莓實照(鴨子)' },
+            'pd-photo-Jihui': { type: '草莓LP', action: '輪播鈕', place: '草莓實照(好姬會)' },
+            'pd-photo-ichico': { type: '草莓LP', action: '輪播鈕', place: '草莓實照(吉菓)' },
+        },
+        'report': {
+            '': { type: '草莓LP', action: '檢驗報告', place: '好姬會' },
+            'duck': { type: '草莓LP', action: '檢驗報告', place: '鴨子' },//sendSalesGaAction('Strawberry', 'slideBtn', '');
+            'Jihui': { type: '草莓LP', action: '檢驗報告', place: '好姬會' },
+            'ichico': { type: '草莓LP', action: '檢驗報告', place: '吉菓' },
+        },
+        'open': {
+            //
+        },
+    },
+    'goodFish': {
+        'goBuy': {
+            'top': { type: '安心健康魚LP', action: '前往購買', place: '置頂' },
+            'bottom': { type: '安心健康魚LP', action: '前往購買', place: '置底' },//sendSalesGaAction('goodFish', 'goBuy', 'top');
+        },
+        'mainMenu': {
+            'farmer-1': { type: '安心健康魚LP', action: '分頁選單', place: '飼好漁' },
+            'farmer-2': { type: '安心健康魚LP', action: '分頁選單', place: '產銷班' },
+            'farmer-3': { type: '安心健康魚LP', action: '分頁選單', place: '博海' },
+        },
+        'vdo': {
+            'default': { type: '安心健康魚LP', action: '影片', place: '產地影片' },//?
+        },
+        'slideBtn': {
+            'localphoto': { type: '安心健康魚LP', action: '輪播鈕', place: '產地實照' },
+            'report': { type: '安心健康魚LP', action: '輪播鈕', place: '檢驗報告' },
+        },
+        'float-menu': {
+            'buy-now': { type: '安心健康魚LP', action: '浮動按紐', place: '立即選購' },
+            'local-interduce': { type: '安心健康魚LP', action: '浮動按紐', place: '產地介紹' },
+            'feature': { type: '安心健康魚LP', action: '浮動按紐', place: '產品特色' },
+            'cooking-way': { type: '安心健康魚LP', action: '浮動按紐', place: '料理方式' },
+            'go-top': { type: '安心健康魚LP', action: '浮動按紐', place: '回最上' },
+        },
+        'report': {
+            'default': { type: '安心健康魚LP', action: '檢驗報告', place: '' },
+        },
+        'second-menu': {
+            'farmer-1': { type: '安心健康魚LP', action: '分頁按鈕', place: '飼好漁' },
+            'farmer-2': { type: '安心健康魚LP', action: '分頁按鈕', place: '產銷班' },
+            'farmer-3': { type: '安心健康魚LP', action: '分頁按鈕', place: '博海' },
+        },
+    },
+    'specialNew': {
+        'slide-btn': {
+            'banner': { type: '特賣會', action: '輪播鈕', place: 'BN' },
+        },
+        'pop': {
+            'same-day': { type: '特賣會', action: '彈出視窗', place: '當日配' },
+        },
+        'float-menu': {
+            'fruit': { type: '特賣會', action: '分頁按鈕', place: '水果' },
+            'veg': { type: '特賣會', action: '分頁按鈕', place: '蔬菜' },
+            'grains': { type: '特賣會', action: '分頁按鈕', place: '雜糧' },
+            'xifu': { type: '特賣會', action: '分頁按鈕', place: '惜福' },
+        },
+        'connect': {
+            'addLine': { type: '特賣會', action: '聯絡', place: '加入LINE' },//sendSalesGaAction('specialNew', 'connect', 'addLine');
+            'addFb': { type: '特賣會', action: '聯絡', place: '電話訂購' },
+        },
+        'enter-photo': {
+            'longturn-rice': { type: '特賣會', action: '進入圖片', place: '長期飯票' },
+            'grain': { type: '特賣會', action: '進入圖片', place: '五穀自由配' },
+        },
+        'enter-btn': {
+            'longturn-rice': { type: '特賣會', action: '進入按鈕', place: '長期飯票' },
+            'grain': { type: '特賣會', action: '進入按鈕', place: '五穀自由配' },
+        },
+    },
+    'grains': {
+        'main-menu': {
+            'longturn-rice': { type: '雜糧柑仔店LP', action: '分頁按鈕', place: '長期飯票' },
+            'grain': { type: '雜糧柑仔店LP', action: '分頁按鈕', place: '五穀自由配' },
+        },
+        'float-menu': {
+            'buy': { type: '雜糧柑仔店LP', action: '浮動按鈕', place: 'Buy' },
+        },
+    },
+    'frozen-food': {
+        'slide-btn': {
+            'banner': { type: '冷凍超市', action: '輪播鈕', place: 'BN' },
+        },
+        'float-menu': {
+            'freight-free': { type: '冷凍超市', action: '浮動按紐', place: '免運專區' },
+            'sea-food': { type: '冷凍超市', action: '浮動按紐', place: '安心水產' },
+            'checken': { type: '冷凍超市', action: '浮動按紐', place: '雞肉專區' },//sendSalesGaAction('frozen-food', 'float-menu', 'freight-free');
+            'pork': { type: '冷凍超市', action: '浮動按紐', place: '豬肉專區' },
+        },
+        'second-title': {
+            'default': { type: '冷凍超市', action: '副標', place: '' },
+        },
+        'connect': {
+            'addLine': { type: '冷凍超市', action: '聯絡', place: '加入LINE' },
+            'phoneBuy': { type: '冷凍超市', action: '聯絡', place: '電話訂購' },
+        },
+    },
+    'Caviar': {
+        'go-buy': {
+            'top': { type: '烏魚子LP', action: '前往購買', place: '頂端' },
+            'bottom': { type: '烏魚子LP', action: '前往購買', place: '底部' },//sendSalesGaAction('Caviar', 'go-buy', 'top');
+        },
+        'vdo': {
+            'cf': { type: '烏魚子LP', action: '影片', place: 'CF' },//
+        },
+        'slide-btn': {
+            'know': { type: '烏魚子LP', action: '輪播鈕', place: '認識烏魚' },
+            'foods': { type: '烏魚子LP', action: '輪播鈕', place: '料理' },
+            'package': { type: '烏魚子LP', action: '輪播鈕', place: '包裝規格' },
+            'report': { type: '烏魚子LP', action: '輪播鈕', place: '檢驗報告' },
+        },
+        'float-menu': {
+            'intro': { type: '烏魚子LP', action: '浮動按紐', place: '產地介紹' },
+            'feature': { type: '烏魚子LP', action: '浮動按紐', place: '產品特色' },
+            'cooking': { type: '烏魚子LP', action: '浮動按紐', place: '料理方式' },
+            'buyNow': { type: '烏魚子LP', action: '浮動按紐', place: '立即選購' },
+        },
+        'open': {
+            '0': { type: '烏魚子LP', action: '展開', place: '薄鹽烏魚子' },
+            '1': { type: '烏魚子LP', action: '展開', place: '匠燒烏魚子' },
+        },
+    },
+    'Chicken': {
+        'goBuy': {
+            'top': { type: '雞LP', action: '前往購買', place: '頂端' },
+            'bottom': { type: '雞LP', action: '前往購買', place: '底部' },
+        },
+        'vdo': {
+            'cf': { type: '雞LP', action: '影片', place: 'CF' },//
+            'foods': { type: '雞LP', action: '影片', place: '料理' },//
+        },
+        'slideBtn': {
+            'foods': { type: '雞LP', action: '輪播鈕', place: '料理' },//sendSalesGaAction('Chicken', 'floatMenu', 'intro');
+            'report': { type: '雞LP', action: '輪播鈕', place: '檢驗報告' },
+        },
+        'report': {
+            'default': { type: '雞LP', action: '檢驗報告', place: '' },
+        },
+        'floatMenu': {
+            'intro': { type: '雞LP', action: '浮動按鈕', place: '產地介紹' },
+            'feature': { type: '雞LP', action: '浮動按鈕', place: '尙穀雞特色' },
+            'foods': { type: '雞LP', action: '浮動按鈕', place: '尙穀雞料理' },
+            'buy-now': { type: '雞LP', action: '浮動按鈕', place: '立即選購' },
+        },
+    },
+    'Peanut': {
+        'goBuy': {
+            'top': { type: '花生醬LP', action: '前往購買', place: '頂端' },
+        },
+        'vdo': {
+            'how-to-make': { type: '花生醬LP', action: '影片', place: '製作過程' },//
+            'record': { type: '花生醬LP', action: '影片', place: '出貨錄影' },//
+        },
+        'slideBtn': {
+            'pics': { type: '花生醬LP', action: '輪播鈕', place: '加工廠照' },
+            'ingredients': { type: '花生醬LP', action: '輪播鈕', place: '成分' },
+            'report': { type: '花生醬LP', action: '輪播鈕', place: '檢驗報告' },
+            'feedback': { type: '花生醬LP', action: '輪播鈕', place: '顧客好評' },
+        },
+        'report': {
+            'default': { type: '花生醬LP', action: '檢驗報告', place: '' },
+        },
+        'floatMenu': {
+            'intro': { type: '花生醬LP', action: '浮動按鈕', place: '產地介紹' },
+            'feature': { type: '花生醬LP', action: '浮動按鈕', place: '產品特色' },
+            'foods': { type: '花生醬LP', action: '浮動按鈕', place: '料理方式' },
+            'buy-now': { type: '花生醬LP', action: '浮動按鈕', place: '立即選購' },
+        },
+    },
+    'goodPork': {
+        'goBuy': {
+            'top': { type: '台灣嚴選豬LP', action: '前往購買', place: '置頂' },
+            'bottom': { type: '台灣嚴選豬LP', action: '前往購買', place: '置底' },
+        },
+        'mainMenu': {
+            'farmer-1': { type: '台灣嚴選豬LP', action: '分頁選單', place: '平埔黑豬' },
+            'farmer-2': { type: '台灣嚴選豬LP', action: '分頁選單', place: '台全豬' },
+        },
+        'vdo': {
+            'default': { type: '台灣嚴選豬LP', action: '影片', place: '產地影片' },//?
+        },
+        'slideBtn': {
+            'localphoto': { type: '台灣嚴選豬LP', action: '輪播鈕', place: '產地實照' },
+            'report': { type: '台灣嚴選豬LP', action: '輪播鈕', place: '檢驗報告' },
+        },
+        'float-menu': {
+            'buy-now': { type: '台灣嚴選豬LP', action: '浮動按紐', place: '立即選購' },
+            'local-interduce': { type: '台灣嚴選豬LP', action: '浮動按紐', place: '豬肉特色' },
+            'feature': { type: '台灣嚴選豬LP', action: '浮動按紐', place: '產品圖' },
+            'report': { type: '台灣嚴選豬LP', action: '浮動按紐', place: '檢驗報告' },
+            'go-top': { type: '台灣嚴選豬LP', action: '浮動按紐', place: '回最上' },
+        },
+        'report': {
+            'default': { type: '台灣嚴選豬LP', action: '檢驗報告', place: '' },
+        },
+        'second-menu': {
+            'farmer-1': { type: '台灣嚴選豬LP', action: '分頁按鈕', place: '飼好漁' },
+            'farmer-2': { type: '台灣嚴選豬LP', action: '分頁按鈕', place: '產銷班' },
+            'farmer-3': { type: '台灣嚴選豬LP', action: '分頁按鈕', place: '博海' },
+        },
+    },
+    'shoppingFestival': {//sendSalesGaAction('shoppingFestival', 'preOrderPeach', 'default');
+        'preOrderPeach': {
+            'default': { type: '新農食LP', action: '預購五月桃', place: '' },
+        },
+        'rulePeach': {
+            'default': { type: '新農食LP', action: '五月桃戰爭規則', place: '' },
+        },
+        'howToUsePeach': {
+            'default': { type: '新農食LP', action: '如何使用五月桃折價券', place: '' },
+        },
+        'watchVdo': {
+            'default': { type: '新農食LP', action: '觀看影片', place: '' },
+        },
+        'knowMore': {
+            'default': { type: '新農食LP', action: '了解更多', place: '' },
+        },
+        'Peach': {
+            'default': { type: '新農食LP', action: '五月桃', place: '' },
+        },
+        'loveMango': {
+            'default': { type: '新農食LP', action: '愛文芒果', place: '' },
+        },
+        'Alos': {
+            'default': { type: '新農食LP', action: '阿露斯哈密瓜', place: '' },
+        },
+        'NaCiJou': {
+            'default': { type: '新農食LP', action: '楠西早荔枝', place: '' },
+        },
+        'UiHoBau': {
+            'default': { type: '新農食LP', action: '玉荷包', place: '' },
+        },
+        'summerMango': {
+            'default': { type: '新農食LP', action: '夏雪芒果', place: '' },
+        },
+
+    },
+}

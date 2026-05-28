@@ -1,0 +1,8 @@
+﻿$(function () {
+    $("#video_list").click(function () {
+        var id = $(this).attr("data-id");
+        var fid = $(this).attr("data-fid");
+        var newWindow = window.open(RootPath + "/GoX/Video/Index?fun="+fid+"&mid="+id, "", "height=500,width=500");
+        newWindow.document.title = "影片列表";
+    });
+});
