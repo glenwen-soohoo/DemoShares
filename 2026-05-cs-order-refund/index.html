@@ -940,7 +940,8 @@
                     <!-- 總額（強調列） -->
                     <div class="amt2026-row is-total">
                       <span class="amt2026-label">總額</span>
-                      <input data-val="true" data-val-required="The TotalPrice field is required." id="TotalPrice" min="0" name="TotalPrice" type="number" value="1204" class="amt2026-input">
+                      <input data-val="true" data-val-required="The TotalPrice field is required." id="TotalPrice" min="0" name="TotalPrice" type="number" value="1015" class="amt2026-input">
+                      <span class="amt2026-unit">元</span>
                       <div class="amt2026-actions">
                         <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="formula">查看公式計算</button>
                       </div>
@@ -948,57 +949,12 @@
 
                     <hr class="amt2026-divider">
 
-                    <!-- 加價組 -->
-                    <div class="amt2026-row">
-                      <span class="amt2026-prefix is-plus">+</span>
-                      <span class="amt2026-label">貨到付款</span>
-                      <input id="Fee" min="0" name="Fee" type="number" value="0" class="amt2026-input">
-                    </div>
-                    <div class="amt2026-row">
-                      <span class="amt2026-prefix is-plus">+</span>
-                      <span class="amt2026-label">運費</span>
-                      <input id="shipping" min="0" name="shipping" type="number" value="150" class="amt2026-input">
-                    </div>
-
-                    <hr class="amt2026-divider">
-
-                    <!-- 折價組 -->
-                    <div class="amt2026-row" data-amt2026-row="promote">
-                      <span class="amt2026-prefix is-minus">−</span>
-                      <span class="amt2026-label">折扣碼</span>
-                      <input id="discount" min="0" name="discount" type="number" value="100" disabled="disabled" class="amt2026-input">
-                      <input type="hidden" data-val="true" data-val-number="The field discount_rate must be a number." id="discount_rate" name="discount_rate" value="0">
-                      <span class="field-validation-valid" data-valmsg-for="discount_rate" data-valmsg-replace="true"></span>
-                      <div class="amt2026-actions">
-                        <button type="button" class="amt2026-btn amt2026-btn-danger"
-                                data-amt2026-action="confirm"
-                                data-field="promote"
-                                data-verb="取消折扣"
-                                data-target="折扣碼"
-                                data-amount="100"
-                                data-side-effect="僅取消此次套用，恢復折扣碼可用次數">取消折扣</button>
-                      </div>
-                    </div>
-
-                    <div class="amt2026-row" data-amt2026-row="bonus">
-                      <span class="amt2026-prefix is-minus">−</span>
-                      <span class="amt2026-label">購物金</span>
-                      <input data-val="true" data-val-required="The Bonus field is required." disabled="disabled" id="Bonus" min="0" name="Bonus" type="number" value="200" class="amt2026-input">
-                      <div class="amt2026-actions">
-                        <button type="button" class="amt2026-btn amt2026-btn-danger"
-                                data-amt2026-action="confirm"
-                                data-field="bonus"
-                                data-verb="返還"
-                                data-target="購物金"
-                                data-amount="200"
-                                data-side-effect="僅退購物金到會員帳戶">返還</button>
-                      </div>
-                    </div>
-
+                    <!-- 折抵組 A：優惠券 + 折扣碼（前置） -->
                     <div class="amt2026-row" data-amt2026-row="coupon">
                       <span class="amt2026-prefix is-minus">−</span>
                       <span class="amt2026-label">優惠券</span>
                       <input data-val="true" data-val-number="The field CouponPrice must be a number." data-val-required="The CouponPrice field is required." disabled="disabled" id="CouponPrice" min="0" name="CouponPrice" type="number" value="0.95" class="amt2026-input">
+                      <span class="amt2026-unit" id="amt2026-unit-coupon">折</span>
                       <div class="amt2026-actions">
                         <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="coupon">查看</button>
                         <button type="button" class="amt2026-btn amt2026-btn-danger"
@@ -1006,15 +962,54 @@
                                 data-field="coupon"
                                 data-verb="返還"
                                 data-target="優惠券"
-                                data-amount="78"
+                                data-amount="70"
                                 data-side-effect="僅釋出優惠券給會員（不動帳款）">返還</button>
                       </div>
                     </div>
 
+                    <div class="amt2026-row" data-amt2026-row="promote">
+                      <span class="amt2026-prefix is-minus">−</span>
+                      <span class="amt2026-label">折扣碼</span>
+                      <input id="discount" min="0" name="discount" type="number" step="0.01" value="0.9" disabled="disabled" class="amt2026-input">
+                      <span class="amt2026-unit" id="amt2026-unit-promote">折</span>
+                      <input type="hidden" data-val="true" data-val-number="The field discount_rate must be a number." id="discount_rate" name="discount_rate" value="0.9">
+                      <span class="field-validation-valid" data-valmsg-for="discount_rate" data-valmsg-replace="true"></span>
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="promote">查看</button>
+                        <button type="button" class="amt2026-btn amt2026-btn-danger"
+                                data-amt2026-action="confirm"
+                                data-field="promote"
+                                data-verb="取消折扣"
+                                data-target="折扣碼"
+                                data-amount="140"
+                                data-side-effect="僅取消此次套用，恢復折扣碼可用次數">取消折扣</button>
+                      </div>
+                    </div>
+
+                    <hr class="amt2026-divider">
+
+                    <!-- 加價組：運費 + 貨到付款（在折扣碼／優惠券「之後」計算） -->
+                    <div class="amt2026-row">
+                      <span class="amt2026-prefix is-plus">+</span>
+                      <span class="amt2026-label">運費</span>
+                      <input id="shipping" min="0" name="shipping" type="number" value="150" class="amt2026-input">
+                      <span class="amt2026-unit">元</span>
+                    </div>
+                    <div class="amt2026-row">
+                      <span class="amt2026-prefix is-plus">+</span>
+                      <span class="amt2026-label">貨到付款</span>
+                      <input id="Fee" min="0" name="Fee" type="number" value="0" class="amt2026-input">
+                      <span class="amt2026-unit">元</span>
+                    </div>
+
+                    <hr class="amt2026-divider">
+
+                    <!-- 折抵組 B：紅利點數 + 購物金 + 活動折扣（後置） -->
                     <div class="amt2026-row" data-amt2026-row="redpoint">
                       <span class="amt2026-prefix is-minus">−</span>
                       <span class="amt2026-label">紅利點數</span>
                       <input data-val="true" data-val-required="The RedPointPrice field is required." disabled="disabled" id="RedPointPrice" min="0" name="RedPointPrice" type="number" value="102" class="amt2026-input">
+                      <span class="amt2026-unit">點</span>
                       <div class="amt2026-actions">
                         <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-open="redpoint">查看</button>
                         <button type="button" class="amt2026-btn amt2026-btn-danger"
@@ -1027,10 +1022,27 @@
                       </div>
                     </div>
 
+                    <div class="amt2026-row" data-amt2026-row="bonus">
+                      <span class="amt2026-prefix is-minus">−</span>
+                      <span class="amt2026-label">購物金</span>
+                      <input data-val="true" data-val-required="The Bonus field is required." disabled="disabled" id="Bonus" min="0" name="Bonus" type="number" value="200" class="amt2026-input">
+                      <span class="amt2026-unit">元</span>
+                      <div class="amt2026-actions">
+                        <button type="button" class="amt2026-btn amt2026-btn-danger"
+                                data-amt2026-action="confirm"
+                                data-field="bonus"
+                                data-verb="返還"
+                                data-target="購物金"
+                                data-amount="200"
+                                data-side-effect="僅退購物金到會員帳戶">返還</button>
+                      </div>
+                    </div>
+
                     <div class="amt2026-row" data-amt2026-row="activity">
                       <span class="amt2026-prefix is-minus">−</span>
                       <span class="amt2026-label">活動折扣</span>
                       <input data-val="true" data-val-required="The ActivityDisocunt field is required." disabled="disabled" id="ActivityDisocunt" min="0" name="ActivityDisocunt" type="number" value="50" class="amt2026-input">
+                      <span class="amt2026-unit">元</span>
                       <div class="amt2026-actions">
                         <button type="button" class="amt2026-btn amt2026-btn-danger"
                                 data-amt2026-action="confirm"
@@ -1972,8 +1984,9 @@
     text-align: center;
     font-weight: 600;
   }
-  .amt2026-prefix.is-plus { color: #2c98f0; }
-  .amt2026-prefix.is-minus { color: #dc4e43; }
+  /* 「+」紅色（會讓總額變多／客戶要多付）、「−」綠色（會讓總額變少／對客戶有利） */
+  .amt2026-prefix.is-plus { color: #dc4e43; }
+  .amt2026-prefix.is-minus { color: #52c41a; }
   .amt2026-label {
     width: 80px;
     color: #333;
@@ -1993,6 +2006,16 @@
     background: #f5f5f5;
     color: #666;
   }
+  .amt2026-unit {
+    color: #888;
+    font-size: 13px;
+    margin-left: 2px;
+    min-width: 14px;
+  }
+  .amt2026-row.is-total .amt2026-unit {
+    font-size: 14px;
+    color: #666;
+  }
   .amt2026-divider {
     margin: 8px 0;
     border: 0;
@@ -2005,13 +2028,19 @@
   }
   .amt2026-btn {
     padding: 2px 10px;
-    font-size: 12px;
+    /* 蓋過 order-gox-min.css 內 button { font-size: 16px !important } 的全域規則 */
+    font-size: 12px !important;
     border-radius: 4px;
     border: 1px solid transparent;
     cursor: pointer;
     font-family: inherit;
     line-height: 1.5;
     background: #fff;
+  }
+  /* 行內動作按鈕（查看／返還／取消折扣／查看公式計算）小一級，跟金額欄位視覺更協調 */
+  .amt2026-actions .amt2026-btn {
+    padding: 2px 8px;
+    font-size: 12px !important;
   }
   .amt2026-btn-default {
     border-color: #dcdfe6;
@@ -2038,6 +2067,14 @@
     border-top: 1px solid #e6e6e6;
     font-size: 13px;
     color: #666;
+  }
+  /* 欄位下方的灰底小註記（運費門檻說明等） */
+  .amt2026-note-row {
+    margin: -4px 0 6px 28px;
+    padding: 4px 0 4px 4px;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.4;
   }
   .amt2026-done-tag {
     font-size: 12px;
@@ -2234,19 +2271,43 @@
   </div>
 </div>
 
-<!-- Modal: 查看優惠券 -->
+<!-- Modal: 查看折扣碼（欄位對齊 PromoteCode 後台列表的實際結構） -->
+<div id="amt2026-modal-promote" class="amt2026-modal is-hidden">
+  <div class="amt2026-modal-box amt2026-coupon-detail">
+    <h4>折扣碼明細</h4>
+    <dl>
+      <dt>Id</dt><dd id="amt2026-promote-id">4349</dd>
+      <dt>活動名稱</dt><dd id="amt2026-promote-name">粥寶團媽婉均</dd>
+      <dt>優惠碼</dt><dd><code id="amt2026-promote-code">buni90</code></dd>
+      <dt>重複使用</dt><dd id="amt2026-promote-reuse">否</dd>
+      <dt>限首購</dt><dd id="amt2026-promote-first">否</dd>
+      <dt>種類</dt><dd id="amt2026-promote-type">打折</dd>
+      <dt>價錢</dt><dd id="amt2026-promote-price">0</dd>
+      <dt>使用期限</dt><dd id="amt2026-promote-period">2026/06/09 00:00:00</dd>
+      <dt>建立時間</dt><dd id="amt2026-promote-created">2026/05/28 10:28:45</dd>
+    </dl>
+    <div class="amt2026-coupon-calc" id="amt2026-promote-calc">
+      實際折抵金額：商品總額 1,399 × (1 − 0.9) ＝ <strong>−140 元</strong>
+    </div>
+    <div class="amt2026-modal-actions">
+      <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 查看優惠券（依當前情境動態填入） -->
 <div id="amt2026-modal-coupon" class="amt2026-modal is-hidden">
   <div class="amt2026-modal-box amt2026-coupon-detail">
     <h4>優惠券明細</h4>
     <dl>
-      <dt>訂單編號</dt><dd>260304787074</dd>
-      <dt>優惠券名稱</dt><dd>SVIP 95 折優惠券</dd>
-      <dt>類型</dt><dd>折數型</dt>
-      <dt>折數</dt><dd>0.95（95 折）</dd>
-      <dt>使用期限</dt><dd>2026/03/01 ~ 2026/03/31</dd>
+      <dt>訂單編號</dt><dd id="amt2026-coupon-order">260304787074</dd>
+      <dt>優惠券名稱</dt><dd id="amt2026-coupon-name">SVIP 95 折優惠券</dd>
+      <dt>類型</dt><dd id="amt2026-coupon-type">折數型</dd>
+      <dt>面額／折數</dt><dd id="amt2026-coupon-value">0.95（95 折）</dd>
+      <dt>使用期限</dt><dd id="amt2026-coupon-period">2026/03/01 ~ 2026/03/31</dd>
     </dl>
-    <div class="amt2026-coupon-calc">
-      實際折抵金額：商品小計 1,556 × (1 − 0.95) ＝ <strong>−78 元</strong>
+    <div class="amt2026-coupon-calc" id="amt2026-coupon-calc">
+      實際折抵金額：商品總額 1,399 × (1 − 0.95) ＝ <strong>−70 元</strong>
     </div>
     <div class="amt2026-modal-actions">
       <button type="button" class="amt2026-btn amt2026-btn-default" data-amt2026-close>關閉</button>
@@ -2257,7 +2318,7 @@
 <!-- Modal: 查看紅利 -->
 <div id="amt2026-modal-redpoint" class="amt2026-modal is-hidden">
   <div class="amt2026-modal-box">
-    <h4>紅利點數明細（共使用 102 點）</h4>
+    <h4>紅利點數明細（共使用 122 點）</h4>
     <p style="font-size:13px;color:#666;margin:0 0 8px;">過期 ❌ 的紀錄在「返還」時會自動補發等值新效期（當日起 +1 個月）。</p>
     <table class="amt2026-rp-table">
       <thead>
@@ -2267,6 +2328,7 @@
         <tr><td>849640</td><td class="is-num">50</td><td>4/22 直播問券填寫</td><td>2026-05-31</td><td class="is-center amt2026-rp-valid">✓ 有效</td></tr>
         <tr><td>832816</td><td class="is-num">22</td><td>3/6 VVIP回饋金</td><td>2026-06-07</td><td class="is-center amt2026-rp-valid">✓ 有效</td></tr>
         <tr><td>843111</td><td class="is-num">30</td><td>4/3 VVIP回饋金</td><td>2026-07-04</td><td class="is-center amt2026-rp-valid">✓ 有效</td></tr>
+        <tr><td>781204</td><td class="is-num">20</td><td>1/14 情人節活動</td><td>2026-04-30</td><td class="is-center amt2026-rp-expired">✕ 已過期</td></tr>
       </tbody>
     </table>
     <div class="amt2026-modal-actions">
@@ -2308,9 +2370,118 @@
 (function () {
   'use strict';
 
+  // 商品總額：嘗試從頁面「商品明細」表的「商品總額」cell 抓；失敗則 fallback 1399
+  function getSubTotal() {
+    const labelTds = Array.from(document.querySelectorAll('td')).filter(
+      td => td.textContent.trim() === '商品總額'
+    );
+    for (const td of labelTds) {
+      const valTd = td.nextElementSibling;
+      if (valTd) {
+        const n = parseInt(valTd.textContent.trim().replace(/,/g, ''), 10);
+        if (!isNaN(n)) return n;
+      }
+    }
+    return 1399; // demo fallback
+  }
+  const SUBTOTAL = getSubTotal();
+
+  // 依優惠券當前值切「元 / 折」單位
+  // 掛 window 讓另一個 IIFE（dev panel）也能呼叫
+  function refreshCouponUnit() {
+    const el = document.querySelector('#CouponPrice');
+    const v = parseFloat(el?.value);
+    const unit = document.querySelector('#amt2026-unit-coupon');
+    if (unit) unit.textContent = (v > 0 && v < 1) ? '折' : '元';
+  }
+  window.amt2026RefreshCouponUnit = refreshCouponUnit;
+
+  // 折扣碼：依當前 discount_rate 值切「元 / 折」單位
+  function refreshPromoteUnit() {
+    const rate = parseFloat(document.querySelector('#discount_rate')?.value) || 0;
+    const unit = document.querySelector('#amt2026-unit-promote');
+    if (unit) unit.textContent = (rate > 0 && rate < 1) ? '折' : '元';
+  }
+  window.amt2026RefreshPromoteUnit = refreshPromoteUnit;
+
+  // 優惠券明細彈窗：依當前情境動態填欄位
+  const COUPON_DETAIL = {
+    folding: {
+      order: '260304787074', name: 'SVIP 95 折優惠券',
+      type: '折數型', period: '2026/03/01 ~ 2026/03/31',
+    },
+    fixed: {
+      order: '260304787074', name: '母親節 300 元面額券',
+      type: '固定金額型', period: '2026/05/01 ~ 2026/05/31',
+    },
+  };
+
+  function refreshCouponModal() {
+    const couponRaw = parseFloat(document.querySelector('#CouponPrice')?.value) || 0;
+    const isFolding = couponRaw > 0 && couponRaw < 1;
+    const d = isFolding ? COUPON_DETAIL.folding : COUPON_DETAIL.fixed;
+    const set = (id, val) => { const el = document.querySelector('#' + id); if (el) el.textContent = val; };
+    set('amt2026-coupon-order', d.order);
+    set('amt2026-coupon-name', d.name);
+    set('amt2026-coupon-type', d.type);
+    set('amt2026-coupon-period', d.period);
+    const valueEl = document.querySelector('#amt2026-coupon-value');
+    const calcEl = document.querySelector('#amt2026-coupon-calc');
+    if (isFolding) {
+      const real = Math.round(SUBTOTAL * (1 - couponRaw));
+      if (valueEl) valueEl.textContent = couponRaw + '（' + Math.round(couponRaw * 100) + ' 折）';
+      if (calcEl) calcEl.innerHTML = `實際折抵金額：商品總額 ${SUBTOTAL.toLocaleString()} × (1 − ${couponRaw}) ＝ <strong>−${real.toLocaleString()} 元</strong>`;
+    } else {
+      if (valueEl) valueEl.textContent = couponRaw.toLocaleString() + ' 元';
+      if (calcEl) calcEl.innerHTML = `折抵金額：<strong>−${couponRaw.toLocaleString()} 元</strong>`;
+    }
+  }
+  window.amt2026RefreshCouponModal = refreshCouponModal;
+
+  // 折扣碼明細彈窗：依當前情境動態填整套欄位（對齊 PromoteCode 後台列表）
+  // 兩套 mock 資料：folding（粥寶團媽婉均 9 折）／fixed（母親節 100 元現折）
+  const PROMOTE_DETAIL = {
+    folding: {
+      id: '4349', name: '粥寶團媽婉均 9 折', code: 'buni90',
+      reuse: '否', firstOrder: '否',
+      type: '打折', price: 0,
+      period: '2026/06/09 00:00:00', created: '2026/05/28 10:28:45',
+    },
+    fixed: {
+      id: '4350', name: '母親節 100 元現折', code: 'MOM100',
+      reuse: '否', firstOrder: '否',
+      type: '現折', price: 100,
+      period: '2026/05/31 23:59:59', created: '2026/05/01 09:00:00',
+    },
+  };
+
+  function refreshPromoteModal() {
+    const rate = parseFloat(document.querySelector('#discount_rate')?.value) || 0;
+    const isFolding = rate > 0 && rate < 1;
+    const d = isFolding ? PROMOTE_DETAIL.folding : PROMOTE_DETAIL.fixed;
+    const set = (id, val) => { const el = document.querySelector('#' + id); if (el) el.textContent = val; };
+    set('amt2026-promote-id', d.id);
+    set('amt2026-promote-name', d.name);
+    set('amt2026-promote-code', d.code);
+    set('amt2026-promote-reuse', d.reuse);
+    set('amt2026-promote-first', d.firstOrder);
+    set('amt2026-promote-type', d.type);
+    set('amt2026-promote-price', d.price);
+    set('amt2026-promote-period', d.period);
+    set('amt2026-promote-created', d.created);
+    const calcEl = document.querySelector('#amt2026-promote-calc');
+    if (calcEl) {
+      if (isFolding) {
+        const real = Math.round(SUBTOTAL * (1 - rate));
+        calcEl.innerHTML = `實際折抵金額：商品總額 ${SUBTOTAL.toLocaleString()} × (1 − ${rate}) ＝ <strong>−${real.toLocaleString()} 元</strong>`;
+      } else {
+        calcEl.innerHTML = `折抵金額：<strong>−${d.price.toLocaleString()} 元</strong>`;
+      }
+    }
+  }
+  window.amt2026RefreshPromoteModal = refreshPromoteModal;
+
   // 公式重算（每次開啟 formula modal 時呼叫，反映當前 input 值）
-  // 商品總額固定為 1556（demo 用，正式版應抓上方訂單明細區塊的「商品總額」）
-  const SUBTOTAL = 1556;
   function refreshFormula() {
     const val = (id) => {
       const el = document.querySelector('#' + id);
@@ -2320,7 +2491,12 @@
     };
     const fee = val('Fee') | 0;
     const shipping = val('shipping') | 0;
-    const discount = val('discount') | 0;
+    const discountRaw = val('discount');  // 折數型時是 0.9；固定金額型時是 100
+    const discountRate = val('discount_rate');
+    // 折扣碼：rate>0 視為折數，從 discount_rate 推實際折抵元；否則直接拿 #discount 元數
+    const discount = (discountRate > 0 && discountRate < 1)
+      ? Math.round(SUBTOTAL * (1 - discountRate))
+      : Math.round(discountRaw);
     const bonus = val('Bonus') | 0;
     const couponRaw = val('CouponPrice');
     // 優惠券：值 < 1 視為折數，否則視為固定金額
@@ -2338,6 +2514,9 @@
     const couponLabel = (couponRaw > 0 && couponRaw < 1)
       ? `− 優惠券（${couponRaw} 折，商品 ${SUBTOTAL.toLocaleString()} × ${(1 - couponRaw).toFixed(2)}）`
       : '− 優惠券';
+    const promoteLabel = (discountRate > 0 && discountRate < 1)
+      ? `− 折扣碼（${discountRate} 折，商品 ${SUBTOTAL.toLocaleString()} × ${(1 - discountRate).toFixed(2)}）`
+      : '− 折扣碼';
 
     // 中間警示列
     let diffRow = '';
@@ -2349,20 +2528,23 @@
       diffRow = `<tr><td colspan="2" style="padding:10px 0;text-align:center;background:#ecf7e9;color:#2b7a1f;font-size:13px;border-bottom:0;">✓ 一致</td></tr>`;
     }
 
+    // 新排序：商品總額 → 折抵組 A（優惠券、折扣碼）→ 加價組（運費、貨到付款）→ 折抵組 B（紅利、購物金、活動折扣）
     document.querySelector('#amt2026-formula-table').innerHTML = `
-      <tr><td>商品總額</td><td>${SUBTOTAL.toLocaleString()}</td></tr>
-      <tr><td>＋ 運費</td><td>${shipping.toLocaleString()}</td></tr>
-      <tr><td>＋ 貨到付款</td><td>${fee.toLocaleString()}</td></tr>
-      <tr><td>− 折扣碼</td><td>${discount ? '−' + discount.toLocaleString() : 0}</td></tr>
-      <tr><td>− 購物金</td><td>${bonus ? '−' + bonus.toLocaleString() : 0}</td></tr>
-      <tr><td>${couponLabel}</td><td>${couponDiscount ? '−' + couponDiscount.toLocaleString() : 0}</td></tr>
-      <tr><td>− 紅利點數</td><td>${redpoint ? '−' + redpoint.toLocaleString() : 0}</td></tr>
-      <tr><td>− 活動折扣</td><td>${activity ? '−' + activity.toLocaleString() : 0}</td></tr>
-      <tr class="is-result"><td>系統應收金額</td><td>${systemTotal.toLocaleString()}</td></tr>
+      <tr><td>商品總額</td><td>${SUBTOTAL.toLocaleString()} 元</td></tr>
+      <tr><td>${couponLabel}</td><td>${couponDiscount ? '−' + couponDiscount.toLocaleString() : 0} 元</td></tr>
+      <tr><td>${promoteLabel}</td><td>${discount ? '−' + discount.toLocaleString() : 0} 元</td></tr>
+      <tr><td>＋ 運費 <span style="color:#888;font-size:12px;font-weight:400;margin-left:6px;">（門檻以扣除優惠券、折扣碼後的金額為準）</span></td><td>${shipping.toLocaleString()} 元</td></tr>
+      <tr><td>＋ 貨到付款</td><td>${fee.toLocaleString()} 元</td></tr>
+      <tr><td>− 紅利點數</td><td>${redpoint ? '−' + redpoint.toLocaleString() : 0} 元</td></tr>
+      <tr><td>− 購物金</td><td>${bonus ? '−' + bonus.toLocaleString() : 0} 元</td></tr>
+      <tr><td>− 活動折扣</td><td>${activity ? '−' + activity.toLocaleString() : 0} 元</td></tr>
+      <tr class="is-result"><td>系統應收金額</td><td>${systemTotal.toLocaleString()} 元</td></tr>
       ${diffRow}
-      <tr class="is-current"><td>目前訂單總額</td><td>${total.toLocaleString()}</td></tr>
+      <tr class="is-current"><td>目前訂單總額</td><td>${total.toLocaleString()} 元</td></tr>
     `;
   }
+
+  window.amt2026RefreshFormula = refreshFormula;
 
   // 開 modal
   document.addEventListener('click', function (e) {
@@ -2370,9 +2552,15 @@
     if (!btn) return;
     const key = btn.dataset.amt2026Open;
     if (key === 'formula') refreshFormula();
+    if (key === 'promote') refreshPromoteModal();
+    if (key === 'coupon') refreshCouponModal();
     const m = document.querySelector('#amt2026-modal-' + key);
     if (m) m.classList.remove('is-hidden');
   });
+
+  // 初次與情境切換時同步單位
+  refreshCouponUnit();
+  refreshPromoteUnit();
 
   // 關 modal
   document.addEventListener('click', function (e) {
@@ -2599,15 +2787,15 @@
     <label class="dev-scenario is-active">
       <input type="radio" name="amt2026-scenario" value="1" checked>
       <div>
-        <div class="dev-scenario-title">1. 優惠券 95 折</div>
-        <div class="dev-scenario-desc">折數型優惠券；客服已加價 +28（Diverged⁺）</div>
+        <div class="dev-scenario-title">1. 優惠券 95 折 + 折扣碼 9 折</div>
+        <div class="dev-scenario-desc">兩個都是折數型；客服已加價 +28（Diverged⁺）</div>
       </div>
     </label>
     <label class="dev-scenario">
       <input type="radio" name="amt2026-scenario" value="2">
       <div>
-        <div class="dev-scenario-title">2. 優惠券 300 元面額</div>
-        <div class="dev-scenario-desc">固定金額型優惠券；客服已加價 +28（Diverged⁺）</div>
+        <div class="dev-scenario-title">2. 優惠券 300 元 + 折扣碼 100 元</div>
+        <div class="dev-scenario-desc">兩個都是固定金額型；客服已加價 +28（Diverged⁺）</div>
       </div>
     </label>
     <label class="dev-scenario">
@@ -2624,23 +2812,28 @@
 (function () {
   'use strict';
 
-  // 情境定義：對應 6 個金額欄位
-  // amount 是「點返還按鈕」時要從總額補回的金額（也就是該項實際折抵了多少元）
+  // 情境定義（商品總額 = 1399 為基準）
+  // discount 是「欄位顯示值」— 折數型放 rate（0.9），固定型放元數（100）
+  // discount_rate 是真實 rate 值（折數型 > 0，固定型 = 0）
+  // realDiscount / couponAmount 是「返還按鈕點下去要從總額補回的元數」
   const SCENARIOS = {
-    '1': { // 95 折，diff +28
-      discount: 100, Bonus: 200, CouponPrice: 0.95, RedPointPrice: 102, ActivityDisocunt: 50,
-      TotalPrice: 1204,
-      couponAmount: 78,  // 95 折在商品 1556 上的折抵金額
+    '1': { // 95 折優惠券 + 9 折折扣碼，diff +28
+      discount: 0.9, discount_rate: 0.9, realDiscount: 140,
+      Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122, ActivityDisocunt: 50,
+      TotalPrice: 995,
+      couponAmount: 70,
     },
-    '2': { // 300 元面額，diff +28
-      discount: 100, Bonus: 200, CouponPrice: 300, RedPointPrice: 102, ActivityDisocunt: 50,
-      TotalPrice: 982,
+    '2': { // 300 元優惠券 + 100 元折扣碼（兩個都固定金額），diff +28
+      discount: 100, discount_rate: 0, realDiscount: 100,
+      Bonus: 200, CouponPrice: 300, RedPointPrice: 122, ActivityDisocunt: 50,
+      TotalPrice: 805,
       couponAmount: 300,
     },
-    '3': { // 公式對齊，diff 0
-      discount: 100, Bonus: 200, CouponPrice: 0.95, RedPointPrice: 102, ActivityDisocunt: 50,
-      TotalPrice: 1176,
-      couponAmount: 78,
+    '3': { // 公式對齊：同情境 1 但 total 拉齊為 systemTotal
+      discount: 0.9, discount_rate: 0.9, realDiscount: 140,
+      Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122, ActivityDisocunt: 50,
+      TotalPrice: 967,
+      couponAmount: 70,
     },
   };
 
@@ -2656,8 +2849,9 @@
     const s = SCENARIOS[key];
     if (!s) return;
 
-    // 重設 6 個欄位
+    // 重設欄位
     document.querySelector('#discount').value = s.discount;
+    document.querySelector('#discount_rate').value = s.discount_rate;
     document.querySelector('#Bonus').value = s.Bonus;
     document.querySelector('#CouponPrice').value = s.CouponPrice;
     document.querySelector('#RedPointPrice').value = s.RedPointPrice;
@@ -2675,11 +2869,24 @@
     // 同步 data-amount（特別是優惠券，因為折抵金額會隨情境變）
     const couponBtn = document.querySelector('[data-amt2026-row="coupon"] [data-amt2026-action="confirm"]');
     if (couponBtn) couponBtn.dataset.amount = String(s.couponAmount);
+    // 折扣碼的 data-amount = realDiscount（折數型已換算成元）
+    const promoteBtn = document.querySelector('[data-amt2026-row="promote"] [data-amt2026-action="confirm"]');
+    if (promoteBtn) promoteBtn.dataset.amount = String(s.realDiscount);
 
     // 切換 panel 內的 active 樣式
     document.querySelectorAll('.dev-scenario').forEach(function (s) { s.classList.remove('is-active'); });
     const active = document.querySelector('.dev-scenario input[value="' + key + '"]');
     if (active) active.closest('.dev-scenario').classList.add('is-active');
+
+    // 同步單位（優惠券折／元、折扣碼折／元）
+    if (window.amt2026RefreshCouponUnit) window.amt2026RefreshCouponUnit();
+    if (window.amt2026RefreshPromoteUnit) window.amt2026RefreshPromoteUnit();
+
+    // 同步 3 個彈窗內容（即使目前是關閉的，下次打開就會看到正確情境的資料；
+    // 如果是開著的，視覺也會立即更新）
+    if (window.amt2026RefreshCouponModal) window.amt2026RefreshCouponModal();
+    if (window.amt2026RefreshPromoteModal) window.amt2026RefreshPromoteModal();
+    if (window.amt2026RefreshFormula) window.amt2026RefreshFormula();
   }
 
   // 切換 panel 開關
