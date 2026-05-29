@@ -1054,13 +1054,6 @@
                       </div>
                     </div>
 
-                    <div class="amt2026-checkbox-row">
-                      <label class="updatelabel">
-                        <input class="updatecheck" type="checkbox" name="update_PriceInfo" value="true">
-                        以此為主，覆蓋相同訂單的-金額相關
-                      </label>
-                    </div>
-
                 </div>
             </div>
             <!-- ▲▲▲ 新版金額相關 ▲▲▲ -->
@@ -2342,10 +2335,18 @@
     <div class="amt2026-confirm-summary" id="amt2026-confirm-summary">您要 [動詞] [標的]。</div>
     <p style="font-size:13px;color:#666;margin:0 0 12px;">執行後要怎麼處理「總額」？</p>
     <div class="amt2026-confirm-options">
+      <!-- 僅在「折扣碼／優惠券」返還時顯示；其他項目由 JS 動態隱藏 -->
+      <div class="amt2026-confirm-option" data-mode="auto-shipping" id="amt2026-confirm-opt-auto-shipping">
+        <div class="amt2026-confirm-option-title">
+          <input type="radio" name="amt2026-confirm-mode" value="auto-shipping" style="margin-right:6px;vertical-align:middle;">
+          自動調整總額（也退運費）
+        </div>
+        <div class="amt2026-confirm-option-desc" id="amt2026-confirm-desc-auto-shipping">總額會從 N 改為 M。</div>
+      </div>
       <div class="amt2026-confirm-option" data-mode="auto">
         <div class="amt2026-confirm-option-title">
           <input type="radio" name="amt2026-confirm-mode" value="auto" style="margin-right:6px;vertical-align:middle;">
-          自動調整總額
+          自動調整總額（不動運費）
         </div>
         <div class="amt2026-confirm-option-desc" id="amt2026-confirm-desc-auto">總額會從 N 改為 M。</div>
       </div>
@@ -2602,8 +2603,11 @@
     confirmContext = { field, verb, target, amount, sideEffect };
 
     const totalInput = document.querySelector('#TotalPrice');
+    const shippingInput = document.querySelector('#shipping');
     const currentTotal = parseInt(totalInput.value, 10);
+    const currentShipping = parseInt(shippingInput?.value, 10) || 0;
     const newTotal = currentTotal + amount;
+    const newTotalWithShippingRefund = currentTotal + amount - currentShipping;
 
     // 標題：「取消折扣」+「折扣碼」會贅字，調整一下
     const titleVerb = verb === '取消折扣' ? '取消' : verb;
@@ -2612,9 +2616,22 @@
     document.querySelector('#amt2026-confirm-summary').innerHTML =
       '您要 <strong>' + verb + '</strong> <strong>' + target + '</strong>（折抵 ' + amount + ' 元）。';
 
+        // 「自動調整總額（也退運費）」— 僅折扣碼/優惠券返還、且原本有付運費時顯示
+    const isShippingRefundable = (field === 'promote' || field === 'coupon') && currentShipping > 0;
+    const optShipping = document.querySelector('#amt2026-confirm-opt-auto-shipping');
+    if (optShipping) {
+      optShipping.style.display = isShippingRefundable ? '' : 'none';
+      if (isShippingRefundable) {
+        document.querySelector('#amt2026-confirm-desc-auto-shipping').innerHTML =
+          '總額會從 <span class="amt2026-confirm-option-amount">' + currentTotal.toLocaleString() + '</span> ' +
+          '改為 <span class="amt2026-confirm-option-amount">' + newTotalWithShippingRefund.toLocaleString() + '</span>' +
+          '（+' + amount + ' 折抵 − ' + currentShipping + ' 運費）。';
+      }
+    }
+
     document.querySelector('#amt2026-confirm-desc-auto').innerHTML =
       '總額會從 <span class="amt2026-confirm-option-amount">' + currentTotal.toLocaleString() + '</span> ' +
-      '改為 <span class="amt2026-confirm-option-amount">' + newTotal.toLocaleString() + '</span>（+' + amount + '，把折抵補回）。';
+      '改為 <span class="amt2026-confirm-option-amount">' + newTotal.toLocaleString() + '</span>（+' + amount + '，把折抵補回，運費不動）。';
 
     document.querySelector('#amt2026-confirm-desc-keep').innerHTML =
       '總額仍為 <span class="amt2026-confirm-option-amount">' + currentTotal.toLocaleString() + '</span>，' + sideEffect + '。';
@@ -2665,8 +2682,23 @@
     const mode = document.querySelector('#amt2026-modal-confirm input[name="amt2026-confirm-mode"]:checked').value;
 
     const totalInput = document.querySelector('#TotalPrice');
+    const shippingInput = document.querySelector('#shipping');
+    const origTotal = parseInt(totalInput.value, 10);
+    const origShipping = parseInt(shippingInput?.value, 10) || 0;
+    let toastSuffix = '';
+
     if (mode === 'auto') {
-      totalInput.value = parseInt(totalInput.value, 10) + amount;
+      // 自動調整總額（不動運費）
+      totalInput.value = origTotal + amount;
+      toastSuffix = '已自動調整總額';
+    } else if (mode === 'auto-shipping') {
+      // 自動調整總額 + 退運費
+      totalInput.value = origTotal + amount - origShipping;
+      if (shippingInput) shippingInput.value = 0;
+      toastSuffix = '已自動調整總額並退運費 ' + origShipping + ' 元';
+    } else {
+      // keep: 不動
+      toastSuffix = '已維持目前總額';
     }
 
     const row = document.querySelector('[data-amt2026-row="' + field + '"]');
@@ -2678,8 +2710,7 @@
     }
 
     document.querySelector('#amt2026-modal-confirm').classList.add('is-hidden');
-    const modeText = mode === 'auto' ? '已自動調整總額' : '已維持目前總額';
-    toast('已' + verb + ' ' + target + ' ' + amount + ' 元（' + modeText + '）');
+    toast('已' + verb + ' ' + target + ' ' + amount + ' 元（' + toastSuffix + '）');
 
     confirmContext = null;
   });
@@ -2790,28 +2821,42 @@
     <label class="dev-scenario is-active">
       <input type="radio" name="amt2026-scenario" value="1" checked>
       <div>
-        <div class="dev-scenario-title">1. 優惠券 95 折 + 折扣碼 9 折</div>
-        <div class="dev-scenario-desc">兩個都是折數型；客服已加價 +28（Diverged⁺）</div>
+        <div class="dev-scenario-title">1. 優惠券 95 折（只用優惠券）</div>
+        <div class="dev-scenario-desc">折數型優惠券；客服已加價 +28（Diverged⁺）</div>
       </div>
     </label>
     <label class="dev-scenario">
       <input type="radio" name="amt2026-scenario" value="2">
       <div>
-        <div class="dev-scenario-title">2. 優惠券 300 元 + 折扣碼 100 元</div>
-        <div class="dev-scenario-desc">兩個都是固定金額型；客服已加價 +28（Diverged⁺）</div>
+        <div class="dev-scenario-title">2. 折扣碼 9 折（只用折扣碼）</div>
+        <div class="dev-scenario-desc">折數型折扣碼；客服已加價 +28（Diverged⁺）</div>
       </div>
     </label>
     <label class="dev-scenario">
       <input type="radio" name="amt2026-scenario" value="3">
       <div>
-        <div class="dev-scenario-title">3. 公式對齊</div>
-        <div class="dev-scenario-desc">客服已手動把總額調成符合系統應收（Synced）</div>
+        <div class="dev-scenario-title">3. 優惠券 300 元面額（只用優惠券）</div>
+        <div class="dev-scenario-desc">固定金額型優惠券；客服已加價 +28（Diverged⁺）</div>
       </div>
     </label>
     <label class="dev-scenario">
       <input type="radio" name="amt2026-scenario" value="4">
       <div>
-        <div class="dev-scenario-title">4. 未使用任何優惠</div>
+        <div class="dev-scenario-title">4. 折扣碼 100 元（只用折扣碼）</div>
+        <div class="dev-scenario-desc">固定金額型折扣碼；客服已加價 +28（Diverged⁺）</div>
+      </div>
+    </label>
+    <label class="dev-scenario">
+      <input type="radio" name="amt2026-scenario" value="5">
+      <div>
+        <div class="dev-scenario-title">5. 公式對齊</div>
+        <div class="dev-scenario-desc">用情境 1 的值但總額已調成 1,107（Synced）</div>
+      </div>
+    </label>
+    <label class="dev-scenario">
+      <input type="radio" name="amt2026-scenario" value="6">
+      <div>
+        <div class="dev-scenario-title">6. 未使用任何優惠</div>
         <div class="dev-scenario-desc">客人沒用任何折扣／折價工具；各欄位按鈕應全部隱藏</div>
       </div>
     </label>
@@ -2822,33 +2867,46 @@
 (function () {
   'use strict';
 
-  // 情境定義（商品總額 = 1399 為基準）
+  // 情境定義（商品總額 = 1399 為基準；優惠券／折扣碼擇一使用）
   // discount 是「欄位顯示值」— 折數型放 rate（0.9），固定型放元數（100）
   // discount_rate 是真實 rate 值（折數型 > 0，固定型 = 0）
   // realDiscount / couponAmount 是「返還按鈕點下去要從總額補回的元數」
+  // 紅利 122 + 購物金 200 + 活動折扣 50 = 372 是各情境共用的「其他折抵」
   const SCENARIOS = {
-    '1': { // 95 折優惠券 + 9 折折扣碼，diff +28
-      discount: 0.9, discount_rate: 0.9, realDiscount: 140,
+    '1': { // 只用優惠券 95 折，diff +28
+      discount: 0, discount_rate: 0, realDiscount: 0,
       Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 995,
+      TotalPrice: 1135,  // 1399+150-(70+372)+28
       couponAmount: 70,
     },
-    '2': { // 300 元優惠券 + 100 元折扣碼（兩個都固定金額），diff +28
-      discount: 100, discount_rate: 0, realDiscount: 100,
+    '2': { // 只用折扣碼 9 折，diff +28
+      discount: 0.9, discount_rate: 0.9, realDiscount: 140,
+      Bonus: 200, CouponPrice: 0, RedPointPrice: 122, ActivityDisocunt: 50,
+      TotalPrice: 1065,  // 1399+150-(140+372)+28
+      couponAmount: 0,
+    },
+    '3': { // 只用優惠券 300 元，diff +28
+      discount: 0, discount_rate: 0, realDiscount: 0,
       Bonus: 200, CouponPrice: 300, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 805,
+      TotalPrice: 905,  // 1399+150-(300+372)+28
       couponAmount: 300,
     },
-    '3': { // 公式對齊：同情境 1 但 total 拉齊為 systemTotal
-      discount: 0.9, discount_rate: 0.9, realDiscount: 140,
+    '4': { // 只用折扣碼 100 元，diff +28
+      discount: 100, discount_rate: 0, realDiscount: 100,
+      Bonus: 200, CouponPrice: 0, RedPointPrice: 122, ActivityDisocunt: 50,
+      TotalPrice: 1105,  // 1399+150-(100+372)+28
+      couponAmount: 0,
+    },
+    '5': { // 公式對齊：同情境 1 但 total 拉齊為 systemTotal
+      discount: 0, discount_rate: 0, realDiscount: 0,
       Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 967,
+      TotalPrice: 1107,  // = systemTotal，Synced
       couponAmount: 70,
     },
-    '4': { // 未使用任何優惠 — 全部 0、各欄位「返還／取消／查看」按鈕應隱藏
+    '6': { // 未使用任何優惠 — 全部 0、各欄位「返還／取消／查看」按鈕應隱藏
       discount: 0, discount_rate: 0, realDiscount: 0,
       Bonus: 0, CouponPrice: 0, RedPointPrice: 0, ActivityDisocunt: 0,
-      TotalPrice: 1549,  // 商品總額 1,399 + 運費 150（沒用折扣碼/優惠券 → 沒觸發運費後折）
+      TotalPrice: 1549,  // 商品總額 1,399 + 運費 150
       couponAmount: 0,
     },
   };
@@ -2873,6 +2931,11 @@
     document.querySelector('#RedPointPrice').value = s.RedPointPrice;
     document.querySelector('#ActivityDisocunt').value = s.ActivityDisocunt;
     document.querySelector('#TotalPrice').value = s.TotalPrice;
+    // 運費 / 貨到付款也要重設，否則 auto-shipping mode 把 shipping 清 0 後切情境不會復原
+    const shippingEl = document.querySelector('#shipping');
+    if (shippingEl) shippingEl.value = 150;
+    const feeEl = document.querySelector('#Fee');
+    if (feeEl) feeEl.value = 0;
 
     // 還原每一列的按鈕（如果有人已經點過「返還」會變「已返還」灰字）
     Object.keys(originalActions).forEach(function (rowKey) {
