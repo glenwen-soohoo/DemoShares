@@ -1004,7 +1004,7 @@
 
                     <hr class="amt2026-divider">
 
-                    <!-- 折抵組 B：紅利點數 + 購物金 + 活動折扣（後置） -->
+                    <!-- 折抵組 B：紅利點數 + 購物金（後置） -->
                     <div class="amt2026-row" data-amt2026-row="redpoint">
                       <span class="amt2026-prefix is-minus">−</span>
                       <span class="amt2026-label">紅利點數</span>
@@ -1035,22 +1035,6 @@
                                 data-target="購物金"
                                 data-amount="200"
                                 data-side-effect="僅退購物金到會員帳戶">返還</button>
-                      </div>
-                    </div>
-
-                    <div class="amt2026-row" data-amt2026-row="activity">
-                      <span class="amt2026-prefix is-minus">−</span>
-                      <span class="amt2026-label">活動折扣</span>
-                      <input data-val="true" data-val-required="The ActivityDisocunt field is required." disabled="disabled" id="ActivityDisocunt" min="0" name="ActivityDisocunt" type="number" value="50" class="amt2026-input">
-                      <span class="amt2026-unit">元</span>
-                      <div class="amt2026-actions">
-                        <button type="button" class="amt2026-btn amt2026-btn-danger"
-                                data-amt2026-action="confirm"
-                                data-field="activity"
-                                data-verb="取消折扣"
-                                data-target="活動折扣"
-                                data-amount="50"
-                                data-side-effect="僅刪除此次活動折扣紀錄，不會重新觸發活動">取消</button>
                       </div>
                     </div>
 
@@ -2508,10 +2492,9 @@
       ? Math.round(SUBTOTAL * (1 - couponRaw))
       : Math.round(couponRaw);
     const redpoint = val('RedPointPrice') | 0;
-    const activity = val('ActivityDisocunt') | 0;
     const total = val('TotalPrice') | 0;
 
-    const totalDiscount = discount + bonus + couponDiscount + redpoint + activity;
+    const totalDiscount = discount + bonus + couponDiscount + redpoint;
     const systemTotal = SUBTOTAL + shipping + fee - totalDiscount;
     const diff = total - systemTotal;
 
@@ -2532,7 +2515,7 @@
       diffRow = `<tr><td colspan="2" style="padding:10px 0;text-align:center;background:#ecf7e9;color:#2b7a1f;font-size:13px;border-bottom:0;">✓ 一致</td></tr>`;
     }
 
-    // 新排序：商品總額 → 折抵組 A（優惠券、折扣碼）→ 加價組（運費、貨到付款）→ 折抵組 B（紅利、購物金、活動折扣）
+    // 新排序：商品總額 → 折抵組 A（優惠券、折扣碼）→ 加價組（運費、貨到付款）→ 折抵組 B（紅利、購物金）
     document.querySelector('#amt2026-formula-table').innerHTML = `
       <tr><td>商品總額</td><td>${SUBTOTAL.toLocaleString()} 元</td></tr>
       <tr><td>${couponLabel}</td><td>${couponDiscount ? '−' + couponDiscount.toLocaleString() : 0} 元</td></tr>
@@ -2541,7 +2524,6 @@
       <tr><td>＋ 貨到付款</td><td>${fee.toLocaleString()} 元</td></tr>
       <tr><td>− 紅利點數</td><td>${redpoint ? '−' + redpoint.toLocaleString() : 0} 元</td></tr>
       <tr><td>− 購物金</td><td>${bonus ? '−' + bonus.toLocaleString() : 0} 元</td></tr>
-      <tr><td>− 活動折扣</td><td>${activity ? '−' + activity.toLocaleString() : 0} 元</td></tr>
       <tr class="is-result"><td>系統應收金額</td><td>${systemTotal.toLocaleString()} 元</td></tr>
       ${diffRow}
       <tr class="is-current"><td>目前訂單總額</td><td>${total.toLocaleString()} 元</td></tr>
@@ -2871,41 +2853,41 @@
   // discount 是「欄位顯示值」— 折數型放 rate（0.9），固定型放元數（100）
   // discount_rate 是真實 rate 值（折數型 > 0，固定型 = 0）
   // realDiscount / couponAmount 是「返還按鈕點下去要從總額補回的元數」
-  // 紅利 122 + 購物金 200 + 活動折扣 50 = 372 是各情境共用的「其他折抵」
+  // 紅利 122 + 購物金 200 = 322 是各情境共用的「其他折抵」
   const SCENARIOS = {
     '1': { // 只用優惠券 95 折，diff +28
       discount: 0, discount_rate: 0, realDiscount: 0,
-      Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 1135,  // 1399+150-(70+372)+28
+      Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122,
+      TotalPrice: 1185,  // 1399+150-(70+322)+28
       couponAmount: 70,
     },
     '2': { // 只用折扣碼 9 折，diff +28
       discount: 0.9, discount_rate: 0.9, realDiscount: 140,
-      Bonus: 200, CouponPrice: 0, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 1065,  // 1399+150-(140+372)+28
+      Bonus: 200, CouponPrice: 0, RedPointPrice: 122,
+      TotalPrice: 1115,  // 1399+150-(140+322)+28
       couponAmount: 0,
     },
     '3': { // 只用優惠券 300 元，diff +28
       discount: 0, discount_rate: 0, realDiscount: 0,
-      Bonus: 200, CouponPrice: 300, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 905,  // 1399+150-(300+372)+28
+      Bonus: 200, CouponPrice: 300, RedPointPrice: 122,
+      TotalPrice: 955,  // 1399+150-(300+322)+28
       couponAmount: 300,
     },
     '4': { // 只用折扣碼 100 元，diff +28
       discount: 100, discount_rate: 0, realDiscount: 100,
-      Bonus: 200, CouponPrice: 0, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 1105,  // 1399+150-(100+372)+28
+      Bonus: 200, CouponPrice: 0, RedPointPrice: 122,
+      TotalPrice: 1155,  // 1399+150-(100+322)+28
       couponAmount: 0,
     },
     '5': { // 公式對齊：同情境 1 但 total 拉齊為 systemTotal
       discount: 0, discount_rate: 0, realDiscount: 0,
-      Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122, ActivityDisocunt: 50,
-      TotalPrice: 1107,  // = systemTotal，Synced
+      Bonus: 200, CouponPrice: 0.95, RedPointPrice: 122,
+      TotalPrice: 1157,  // = systemTotal，Synced
       couponAmount: 70,
     },
     '6': { // 未使用任何優惠 — 全部 0、各欄位「返還／取消／查看」按鈕應隱藏
       discount: 0, discount_rate: 0, realDiscount: 0,
-      Bonus: 0, CouponPrice: 0, RedPointPrice: 0, ActivityDisocunt: 0,
+      Bonus: 0, CouponPrice: 0, RedPointPrice: 0,
       TotalPrice: 1549,  // 商品總額 1,399 + 運費 150
       couponAmount: 0,
     },
@@ -2929,7 +2911,6 @@
     document.querySelector('#Bonus').value = s.Bonus;
     document.querySelector('#CouponPrice').value = s.CouponPrice;
     document.querySelector('#RedPointPrice').value = s.RedPointPrice;
-    document.querySelector('#ActivityDisocunt').value = s.ActivityDisocunt;
     document.querySelector('#TotalPrice').value = s.TotalPrice;
     // 運費 / 貨到付款也要重設，否則 auto-shipping mode 把 shipping 清 0 後切情境不會復原
     const shippingEl = document.querySelector('#shipping');
@@ -2947,7 +2928,7 @@
 
     // 同步 data-amount
     // - 折扣碼／優惠券：折數型時 input.value 是 rate（0.9），data-amount 需用換算後的元數（realDiscount/couponAmount）
-    // - 購物金／紅利／活動折扣：input.value 就是元數，直接同步
+    // - 購物金／紅利：input.value 就是元數，直接同步
     const setAmt = (field, amt) => {
       const btn = document.querySelector('[data-amt2026-row="' + field + '"] [data-amt2026-action="confirm"]');
       if (btn) btn.dataset.amount = String(amt);
@@ -2956,7 +2937,6 @@
     setAmt('promote', s.realDiscount);
     setAmt('bonus', s.Bonus);
     setAmt('redpoint', s.RedPointPrice);
-    setAmt('activity', s.ActivityDisocunt);
 
     // 依「值是不是 0」隱藏／顯示對應的 actions（依狀態機規格第六節：欄位 = 0 時按鈕不該顯示）
     const showActionsIf = (field, hasValue) => {
@@ -2969,7 +2949,6 @@
     showActionsIf('promote',  parseFloat(s.discount) > 0);
     showActionsIf('bonus',    s.Bonus > 0);
     showActionsIf('redpoint', s.RedPointPrice > 0);
-    showActionsIf('activity', s.ActivityDisocunt > 0);
 
     // 切換 panel 內的 active 樣式
     document.querySelectorAll('.dev-scenario').forEach(function (s) { s.classList.remove('is-active'); });
