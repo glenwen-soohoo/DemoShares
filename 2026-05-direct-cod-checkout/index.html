@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>產地直送貨付 — 結帳頁付款區塊 UI mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ====== Base ====== */
+  :root {
+    --green:   #4caf50;
+    --green-d: #2e7d32;
+    --red:     #d32f2f;
+    --orange:  #f57c00;
+    --text:    #303133;
+    --muted:   #909399;
+    --border:  #dcdfe6;
+    --bg:      #f5f5f5;
+    --card:    #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ====== Layout ====== */
+  .topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+  }
+  .topbar h1 {
+    font-size: 16px;
+    margin: 0;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .topbar .badge {
+    display: inline-block;
+    background: var(--green);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    font-weight: 400;
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+
+  /* ====== 情境標題 ====== */
+  .scenario-banner {
+    background: #fff7e6;
+    border-left: 4px solid var(--orange);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+  }
+  .scenario-banner .sb-id {
+    font-weight: 700;
+    color: var(--orange);
+    margin-right: 8px;
+  }
+  .scenario-banner .sb-desc {
+    color: #555;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .scenario-banner .sb-tags {
+    margin-top: 6px;
+  }
+  .scenario-banner .sb-tag {
+    display: inline-block;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    margin-right: 4px;
+    color: #555;
+  }
+
+  /* ====== 模擬購物車摘要 ====== */
+  .cart-summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .cart-summary h2 {
+    font-size: 14px;
+    margin: 0 0 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .cart-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 13px;
+  }
+  .cart-item:last-child { border-bottom: 0; }
+  .cart-item .ci-name {
+    color: var(--text);
+  }
+  .cart-item .ci-tag {
+    display: inline-block;
+    background: #e8f5e9;
+    color: var(--green-d);
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+  .cart-item .ci-price {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* ====== 付款方式區塊 ====== */
+  .payment-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .payment-section h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pay-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pay {
+    flex: 0 0 auto;
+    min-width: 120px;
+    text-align: center;
+    padding: 10px 16px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all .15s;
+    font-size: 14px;
+    user-select: none;
+  }
+  .pay:hover {
+    border-color: var(--green);
+    color: var(--green-d);
+  }
+  .pay.is-active {
+    background: var(--green);
+    color: #fff;
+    border-color: var(--green);
+    font-weight: 600;
+  }
+
+  /* ====== 條款 checkbox 區塊 ====== */
+  .cod-terms {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 4px;
+  }
+  .cod-terms.is-hidden { display: none; }
+  .cod-terms.has-error {
+    border-color: var(--red);
+    background: #ffebee;
+  }
+  .cod-terms label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .cod-terms input[type="checkbox"] {
+    margin-top: 4px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  .cod-terms .terms-error {
+    display: none;
+    color: var(--red);
+    font-size: 12px;
+    margin: 8px 0 0 24px;
+  }
+  .cod-terms.has-error .terms-error {
+    display: block;
+  }
+
+  /* ====== 訂單摘要 / 送出 ====== */
+  .submit-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .submit-bar .total {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .submit-bar .total strong {
+    color: var(--red);
+    font-size: 20px;
+    margin-left: 4px;
+  }
+  .submit-btn {
+    background: var(--green);
+    color: #fff;
+    border: 0;
+    border-radius: 4px;
+    padding: 12px 32px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .submit-btn:hover { background: var(--green-d); }
+  .submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  /* ====== 彈窗 ====== */
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+  .modal-mask.is-shown { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px 28px;
+    max-width: 360px;
+    width: calc(100% - 32px);
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  }
+  .modal-box .icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #ffebee;
+    color: var(--red);
+    line-height: 48px;
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 auto 12px;
+  }
+  .modal-box .msg {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  .modal-box button {
+    background: var(--green);
+    color: #fff;
+    border: 0;
+    border-radius: 4px;
+    padding: 8px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .modal-box button:hover { background: var(--green-d); }
+
+  /* ====== 情境切換面板 ====== */
+  #dev-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99998;
+    background: #722ed1;
+    color: #fff;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(114,46,209,.35);
+  }
+  #dev-toggle:hover { background: #5e1ea8; }
+
+  #dev-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99999;
+    width: 320px;
+    max-height: calc(100vh - 40px);
+    background: #fff;
+    border: 1px solid #d3adf7;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+  }
+  #dev-panel.is-hidden { display: none; }
+  #dev-panel .dev-head {
+    background: #f9f0ff;
+    border-bottom: 1px solid #efdbff;
+    border-radius: 8px 8px 0 0;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #722ed1;
+    flex-shrink: 0;
+  }
+  #dev-panel .dev-head strong { color: #531dab; font-size: 14px; }
+  #dev-panel .dev-tag {
+    background: #722ed1;
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
+  #dev-panel .dev-close {
+    margin-left: auto;
+    background: transparent;
+    border: 0;
+    color: #722ed1;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  #dev-panel .dev-body {
+    padding: 10px 14px 14px;
+    overflow-y: auto;
+  }
+  #dev-panel .dev-hint {
+    color: #888;
+    font-size: 12px;
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+  #dev-panel .dev-group {
+    font-size: 11px;
+    color: #722ed1;
+    font-weight: 600;
+    margin: 12px 0 4px;
+    padding-left: 4px;
+    letter-spacing: .5px;
+  }
+  #dev-panel .dev-group:first-of-type { margin-top: 0; }
+  .dev-scenario {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border: 1px solid #f0f0f0;
+    border-radius: 4px;
+    padding: 8px 10px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: border-color .15s, background .15s;
+  }
+  .dev-scenario:hover { border-color: #b37feb; }
+  .dev-scenario.is-active {
+    border-color: #722ed1;
+    background: #f9f0ff;
+  }
+  .dev-scenario input {
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .dev-scenario-title {
+    font-weight: 600;
+    color: #262626;
+    line-height: 1.4;
+    font-size: 13px;
+  }
+  .dev-scenario-desc {
+    color: #666;
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>結帳頁 — 付款方式區塊<span class="badge">UI mockup</span></h1>
+</div>
+
+<div class="page">
+
+  <div class="scenario-banner">
+    <div><span class="sb-id" id="sb-id">S1.</span><span id="sb-title">一般會員 + 含產地直送 + 選貨付</span></div>
+    <div class="sb-desc" id="sb-desc">同一頁可測：勾 / 取消勾 / 不勾就送出，三種狀態都會看到對應 UI 變化。</div>
+    <div class="sb-tags" id="sb-tags"></div>
+  </div>
+
+  <div class="cart-summary">
+    <h2>購物車（測試資料）</h2>
+    <div id="cart-list"></div>
+  </div>
+
+  <div class="payment-section">
+    <h2>付款方式</h2>
+    <div class="pay-options" id="pay-options">
+      <div class="pay" data-pay="信用卡">線上刷卡</div>
+      <div class="pay" data-pay="ATM轉帳">ATM 轉帳</div>
+      <div class="pay" data-pay="貨到付款">貨到付款</div>
+      <div class="pay" data-pay="LinePay">LINE Pay</div>
+    </div>
+
+    <div class="cod-terms is-hidden" id="cod-terms">
+      <label>
+        <input type="checkbox" id="agreedCODTerms">
+        <span>我已閱讀並同意：若發生一次未取貨，系統將自動取消帳號下所有未出貨訂單，如有疑問請洽客服。</span>
+      </label>
+      <div class="terms-error">請先勾選同意條款後再送出訂單</div>
+    </div>
+  </div>
+
+  <div class="submit-bar">
+    <div class="total">訂單總金額：<strong>NT$ <span id="total">1,580</span></strong></div>
+    <button class="submit-btn" id="submit-btn">確認送出訂單</button>
+  </div>
+
+</div>
+
+<!-- 彈窗 -->
+<div class="modal-mask" id="modal">
+  <div class="modal-box">
+    <div class="icon">!</div>
+    <div class="msg" id="modal-msg">您的貨到付款功能已停用，請洽客服</div>
+    <button id="modal-close">確認</button>
+  </div>
+</div>
+
+<!-- 情境切換面板 -->
+<button id="dev-toggle" type="button">🧪 切換情境</button>
+
+<div id="dev-panel" class="is-hidden">
+  <div class="dev-head">
+    <strong>情境切換</strong>
+    <span class="dev-tag">demo</span>
+    <button type="button" class="dev-close" id="dev-close" aria-label="關閉">×</button>
+  </div>
+  <div class="dev-body">
+    <p class="dev-hint">demo 用，正式版會拿掉。切換情境後頁面 UI 會即時更新。</p>
+
+    <div class="dev-group">A — 需勾條款</div>
+    <label class="dev-scenario is-active">
+      <input type="radio" name="scenario" value="S1" checked>
+      <div>
+        <div class="dev-scenario-title">S1. 一般會員 + 含產地直送 + 貨付</div>
+        <div class="dev-scenario-desc">checkbox 顯示。可實際勾選、取消勾、不勾按送出觀察行為</div>
+      </div>
+    </label>
+
+    <div class="dev-group">B — 不需勾條款</div>
+    <label class="dev-scenario">
+      <input type="radio" name="scenario" value="S2">
+      <div>
+        <div class="dev-scenario-title">S2. 一般會員 + 含產地直送 + ATM</div>
+        <div class="dev-scenario-desc">非貨付 → 不需勾條款</div>
+      </div>
+    </label>
+    <label class="dev-scenario">
+      <input type="radio" name="scenario" value="S3">
+      <div>
+        <div class="dev-scenario-title">S3. 一般會員 + 純一般商品 + 貨付</div>
+        <div class="dev-scenario-desc">購物車不含產地直送商品 → 不需勾條款</div>
+      </div>
+    </label>
+    <label class="dev-scenario">
+      <input type="radio" name="scenario" value="S4">
+      <div>
+        <div class="dev-scenario-title">S4. VIP + 含產地直送 + 貨付</div>
+        <div class="dev-scenario-desc">VIP 不受本次規則影響</div>
+      </div>
+    </label>
+
+    <div class="dev-group">C — 封鎖會員攔截</div>
+    <label class="dev-scenario">
+      <input type="radio" name="scenario" value="S5">
+      <div>
+        <div class="dev-scenario-title">S5. 封鎖會員</div>
+        <div class="dev-scenario-desc">貨付按鈕仍可點，但點下去跳彈窗、不會切換成貨付</div>
+      </div>
+    </label>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 情境定義：每個情境決定「會員等級 / 購物車內容 / 預設付款方式」
+  const SCENARIOS = {
+    'S1': {
+      title: '一般會員 + 含產地直送 + 選貨付',
+      desc:  '同一頁可測：勾 / 取消勾 / 不勾就送出，三種狀態都會看到對應 UI 變化。',
+      member: 'normal', cart: 'with_direct', selectedPay: '貨到付款',
+    },
+    'S2': {
+      title: '一般會員 + 含產地直送 + 選 ATM',
+      desc:  '改選 ATM / 信用卡 / LinePay → 不需勾條款。',
+      member: 'normal', cart: 'with_direct', selectedPay: 'ATM轉帳',
+    },
+    'S3': {
+      title: '一般會員 + 不含產地直送 + 選貨付',
+      desc:  '購物車內全部是非產地直送商品（牛奶、零食等）→ 選貨付也不需勾條款。',
+      member: 'normal', cart: 'without_direct', selectedPay: '貨到付款',
+    },
+    'S4': {
+      title: 'VIP + 含產地直送 + 選貨付',
+      desc:  'VIP 不受本次規則影響，貨付正常使用、不需勾條款。',
+      member: 'vip', cart: 'with_direct', selectedPay: '貨到付款',
+    },
+    'S5': {
+      title: '封鎖會員',
+      desc:  '會員 CanUseCOD=false。貨付按鈕仍可點、但點下去直接跳彈窗「您的貨到付款功能已停用，請洽客服」，且不會切換成貨付（保持原本選的付款方式）。',
+      member: 'blocked', cart: 'with_direct', selectedPay: '信用卡',
+    },
+  };
+
+  const CART_ITEMS = {
+    'with_direct': [
+      { name: '台灣鮮選蘋果 6 入禮盒', tag: '產地直送', price: 880 },
+      { name: '有機鳳梨乾 200g',         tag: '一般商品', price: 350 },
+      { name: '冷凍藍莓 500g',           tag: '一般商品', price: 350 },
+    ],
+    'without_direct': [
+      { name: '義美牛奶 936ml × 2',     tag: '一般商品', price: 280 },
+      { name: '統一肉燥麵 5入',          tag: '一般商品', price: 95  },
+      { name: '可口可樂 1.25L × 3',     tag: '一般商品', price: 165 },
+    ],
+  };
+
+  const MEMBER_TAGS = {
+    'normal':  { label: '會員：一般會員',     color: '#555' },
+    'vip':     { label: '會員：VIP',          color: '#9c27b0' },
+    'blocked': { label: '會員：已被封鎖貨付', color: '#d32f2f' },
+  };
+
+  // DOM refs
+  const $sbId = document.getElementById('sb-id');
+  const $sbTitle = document.getElementById('sb-title');
+  const $sbDesc = document.getElementById('sb-desc');
+  const $sbTags = document.getElementById('sb-tags');
+  const $cartList = document.getElementById('cart-list');
+  const $payOptions = document.getElementById('pay-options');
+  const $codTerms = document.getElementById('cod-terms');
+  const $agreedCheckbox = document.getElementById('agreedCODTerms');
+  const $submitBtn = document.getElementById('submit-btn');
+  const $total = document.getElementById('total');
+  const $modal = document.getElementById('modal');
+  const $modalMsg = document.getElementById('modal-msg');
+  const $modalClose = document.getElementById('modal-close');
+  const $devToggle = document.getElementById('dev-toggle');
+  const $devPanel = document.getElementById('dev-panel');
+  const $devClose = document.getElementById('dev-close');
+
+  let currentScenario = 'S1';
+
+  function applyScenario(id) {
+    const s = SCENARIOS[id];
+    if (!s) return;
+    currentScenario = id;
+
+    // banner
+    $sbId.textContent = id + '.';
+    $sbTitle.textContent = s.title;
+    $sbDesc.textContent = s.desc;
+
+    // tags
+    const memberTag = MEMBER_TAGS[s.member];
+    const cartTag = s.cart === 'with_direct' ? '購物車：含產地直送' : '購物車：純一般商品';
+    $sbTags.innerHTML = '';
+    [
+      { label: memberTag.label, color: memberTag.color },
+      { label: cartTag,         color: s.cart === 'with_direct' ? '#2e7d32' : '#555' },
+      { label: '預設付款：' + s.selectedPay, color: '#555' },
+    ].forEach(t => {
+      const span = document.createElement('span');
+      span.className = 'sb-tag';
+      span.textContent = t.label;
+      span.style.color = t.color;
+      $sbTags.appendChild(span);
+    });
+
+    // cart
+    const items = CART_ITEMS[s.cart];
+    $cartList.innerHTML = items.map(it => `
+      <div class="cart-item">
+        <div class="ci-name">${it.name}<span class="ci-tag">${it.tag}</span></div>
+        <div class="ci-price">NT$ ${it.price}</div>
+      </div>
+    `).join('');
+    const total = items.reduce((a, b) => a + b.price, 0);
+    $total.textContent = total.toLocaleString();
+
+    // 付款方式（全部可點，封鎖會員的貨付改用 click handler 攔截）
+    document.querySelectorAll('.pay').forEach(el => {
+      el.classList.toggle('is-active', el.dataset.pay === s.selectedPay);
+    });
+
+    // checkbox 區塊（依條件顯示）
+    refreshCodTerms();
+
+    // 關掉殘留 modal
+    $modal.classList.remove('is-shown');
+  }
+
+  // 依當前 selectedPay + member + cart 決定要不要顯示 checkbox
+  function refreshCodTerms() {
+    const s = SCENARIOS[currentScenario];
+    const needTerms = (s.member === 'normal')
+                  && (s.cart === 'with_direct')
+                  && (s.selectedPay === '貨到付款');
+    if (needTerms) {
+      $codTerms.classList.remove('is-hidden');
+    } else {
+      $codTerms.classList.add('is-hidden');
+      $codTerms.classList.remove('has-error');
+      $agreedCheckbox.checked = false;
+    }
+  }
+
+  // 點付款方式
+  $payOptions.addEventListener('click', e => {
+    const el = e.target.closest('.pay');
+    if (!el) return;
+    const s = SCENARIOS[currentScenario];
+
+    // 封鎖會員點貨付：跳彈窗、不切換、不更新 active
+    if (s.member === 'blocked' && el.dataset.pay === '貨到付款') {
+      $modalMsg.textContent = '您的貨到付款功能已停用，請洽客服';
+      $modal.classList.add('is-shown');
+      return;
+    }
+
+    // 正常切換
+    s.selectedPay = el.dataset.pay;
+    document.querySelectorAll('.pay').forEach(p => {
+      p.classList.toggle('is-active', p.dataset.pay === s.selectedPay);
+    });
+    $codTerms.classList.remove('has-error');
+    refreshCodTerms();
+  });
+
+  // 勾條款
+  $agreedCheckbox.addEventListener('change', () => {
+    if ($agreedCheckbox.checked) {
+      $codTerms.classList.remove('has-error');
+    }
+  });
+
+  // 送出
+  $submitBtn.addEventListener('click', () => {
+    const s = SCENARIOS[currentScenario];
+
+    // 條款未勾 → 紅框 + 彈窗
+    const needTerms = (s.member === 'normal')
+                  && (s.cart === 'with_direct')
+                  && (s.selectedPay === '貨到付款');
+    if (needTerms && !$agreedCheckbox.checked) {
+      $codTerms.classList.add('has-error');
+      $modalMsg.textContent = '請先勾選同意條款後再送出訂單';
+      $modal.classList.add('is-shown');
+      return;
+    }
+
+    // 正常送出
+    $modalMsg.textContent = '訂單送出成功（demo，無實際送單）';
+    $modal.classList.add('is-shown');
+  });
+
+  $modalClose.addEventListener('click', () => $modal.classList.remove('is-shown'));
+
+  // Dev panel
+  $devToggle.addEventListener('click', () => {
+    $devPanel.classList.remove('is-hidden');
+    $devToggle.style.display = 'none';
+  });
+  $devClose.addEventListener('click', () => {
+    $devPanel.classList.add('is-hidden');
+    $devToggle.style.display = '';
+  });
+  $devPanel.addEventListener('change', e => {
+    if (e.target.name !== 'scenario') return;
+    document.querySelectorAll('.dev-scenario').forEach(el => el.classList.remove('is-active'));
+    e.target.closest('.dev-scenario').classList.add('is-active');
+    applyScenario(e.target.value);
+  });
+
+  // 初始化
+  applyScenario('S1');
+})();
+</script>
+
+</body>
+</html>
