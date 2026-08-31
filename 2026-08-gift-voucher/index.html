@@ -8,236 +8,55 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   body {
-    margin: 0; padding: 32px 20px 60px;
+    margin: 0; padding: 60px 20px;
     font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
-    font-size: 14px; line-height: 1.7; color: #333; background: #f1f2f7;
+    font-size: 16px; line-height: 1.7; color: #333; background: #f1f2f7;
   }
-  .wrap { max-width: 900px; margin: 0 auto; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  .sub { color: #888; font-size: 13px; margin: 0 0 24px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: #888; font-size: 14px; margin: 0 0 32px; }
 
-  .notice {
-    background: #fff; border: 1px solid #e6e6e6; border-left: 3px solid #4ba83b;
-    border-radius: 6px; padding: 16px 20px; margin-bottom: 28px;
-  }
-  .notice p { margin: 0 0 8px; }
-  .notice p:last-child { margin-bottom: 0; }
-
-  h2 { font-size: 16px; margin: 32px 0 12px; }
-
-  .entries { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 8px; }
+  .entries { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   @media (max-width: 760px) { .entries { grid-template-columns: 1fr; } }
   .entry {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: #fff; border: 1px solid #e6e6e6; border-radius: 8px;
-    padding: 28px 20px; text-decoration: none; color: inherit; text-align: center;
+    padding: 36px 20px; text-decoration: none; color: inherit; text-align: center;
     transition: border-color .15s, box-shadow .15s, transform .15s;
   }
   .entry:hover { border-color: #4ba83b; box-shadow: 0 4px 14px rgba(0,0,0,.08); transform: translateY(-2px); }
   .entry-icon {
-    width: 52px; height: 52px; border-radius: 50%; background: #eef7ec; color: #4ba83b;
-    display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700;
-    margin-bottom: 12px;
+    width: 56px; height: 56px; border-radius: 50%; background: #eef7ec; color: #4ba83b;
+    display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700;
+    margin-bottom: 14px;
   }
-  .entry-name { font-size: 17px; font-weight: 600; color: #4ba83b; margin-bottom: 4px; }
-  .entry-desc { font-size: 13px; color: #666; line-height: 1.6; }
-  .entry-count { font-size: 12px; color: #999; margin-top: 8px; }
-
-  .card {
-    display: block; background: #fff; border: 1px solid #e6e6e6; border-radius: 6px;
-    padding: 16px 20px; margin-bottom: 12px; text-decoration: none; color: inherit;
-  }
-  a.card:hover { border-color: #4ba83b; }
-  .card-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-  .card-name { font-size: 15px; font-weight: 600; color: #4ba83b; }
-  .card-file { font-size: 12px; color: #888; }
-  .card-desc { color: #555; margin: 0 0 8px; }
-  .card dl { margin: 0; font-size: 13px; }
-  .card dt { color: #888; margin-top: 10px; font-weight: 600; }
-  .card dd { margin: 2px 0 0; color: #444; }
-  .card dd ul { margin: 4px 0 0; padding-left: 20px; }
-  .card dd li { margin-bottom: 3px; }
-  code { background: #f3f3f3; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
-
-  ol.questions { background: #fff; border: 1px solid #e6e6e6; border-radius: 6px; padding: 16px 20px 16px 40px; }
-  ol.questions li { margin-bottom: 12px; }
-  ol.questions li:last-child { margin-bottom: 0; }
-  .tip { color: #888; font-size: 13px; }
+  .entry-name { font-size: 18px; font-weight: 600; color: #4ba83b; margin-bottom: 4px; }
+  .entry-desc { font-size: 14px; color: #666; line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <h1>禮物券 demo</h1>
-  <p class="sub">2026-08　後台 3 頁 ＋ 前台 4 頁</p>
-
-  <div class="notice">
-    <p>這批畫面是<strong>用來把還沒定義清楚的規則逼出來</strong>的，不是最終視覺。畫面上的說明文字都是照「未來真的會留下」的樣子寫，方便判斷語意對不對。</p>
-    <p>資料都是<strong>虛構的</strong>，操作（篩選、發券、改數量、加入菜籃）都會有反應，但重新整理就還原。</p>
-    <p><strong>前台兩頁是照現行網站的版面做的</strong> —— 包含目前的固定寬度、灰階交錯、沒有圓角這些特徵，方便對照著討論要優化哪裡。</p>
-  </div>
-
-  <h2>三個入口</h2>
+  <p class="sub">2026-08</p>
 
   <div class="entries">
     <a class="entry" href="admin-gift-list.html">
       <div class="entry-icon">後</div>
       <div class="entry-name">後台</div>
       <div class="entry-desc">禮物與禮物券的管理介面</div>
-      <div class="entry-count">3 個畫面</div>
     </a>
     <a class="entry" href="member-center-new2.html">
       <div class="entry-icon">員</div>
       <div class="entry-name">前台會員中心</div>
       <div class="entry-desc">客人看到與使用禮物券的地方</div>
-      <div class="entry-count">優化版 2｜另有 v1 與現況版可對照</div>
     </a>
     <a class="entry" href="checkout-cart.html">
       <div class="entry-icon">車</div>
       <div class="entry-name">加入購物車</div>
       <div class="entry-desc">禮物進購物車後的樣子與金額計算</div>
-      <div class="entry-count">含湊單免運</div>
     </a>
   </div>
-
-  <h2>後台（3 頁）</h2>
-
-  <a class="card" href="admin-gift-list.html">
-    <div class="card-head"><span class="card-name">1　禮物列表</span><span class="card-file">admin-gift-list.html</span></div>
-    <p class="card-desc">側邊選單只有「禮物券管理」一項，進來就是禮物列表。券要點進單一禮物才看得到。</p>
-    <dl>
-      <dt>要確認</dt>
-      <dd>
-        <ul>
-          <li>六個欄位夠不夠用？（產品名、規格、上架、庫存、未使用券數、操作）</li>
-          <li>第 2 筆「有機米餅」的未使用券數 45 大於庫存 12，目前用紅字＋「超出庫存 33 張」提示。這個警示夠明顯嗎？</li>
-          <li>需不需要按庫存或券數排序？</li>
-        </ul>
-      </dd>
-      <dt>已知的取捨</dt>
-      <dd>「上架」開關控制的是<strong>這個禮物現在可不可以送</strong>，不是前台看不看得到（禮物永遠不會出現在前台商品頁）。</dd>
-    </dl>
-  </a>
-
-  <a class="card" href="admin-gift-create.html">
-    <div class="card-head"><span class="card-name">2　新增禮物</span><span class="card-file">admin-gift-create.html</span></div>
-    <p class="card-desc">上半綁定產品、下半填規格。綁定前下半部是鎖住的。可試的產品 ID：<strong>77385</strong>、<strong>77412</strong>、<strong>77208</strong>、<strong>76950</strong>。</p>
-    <dl>
-      <dt>要確認</dt>
-      <dd>
-        <ul>
-          <li>綁定後顯示的產品資訊夠不夠？（圖、產品名、產線、溫層、規格限購、產品總限購）</li>
-          <li>輸入 <strong>76950</strong> 會看到紅字提醒「此產線運費一律為 0 元」。要只提醒還是直接擋住不准建立？</li>
-          <li>「預計出貨日」與「自動延後區間」沒做成欄位，改成在開始贈送日下方寫一行「同時作為預計出貨日」。這樣夠清楚嗎？</li>
-          <li>「規格設定」用統一的四欄寬度排成三排（規格描述佔三格＋庫存　→　規格量／單位／產品原價／成本　→　開始贈送／結束贈送），所有欄位寬度都是同一個基準的倍數。<strong>明細頁的編輯面板用同一套排列</strong>，兩邊操作起來一致。</li>
-        </ul>
-      </dd>
-    </dl>
-  </a>
-
-  <a class="card" href="admin-gift-detail.html">
-    <div class="card-head"><span class="card-name">3　禮物明細</span><span class="card-file">admin-gift-detail.html</span></div>
-    <p class="card-desc">上半是產品與規格資訊（產品／規格／狀態一行、產線溫層原價一行、贈送期間一行），「剩餘庫存」和「未兌換有效券」並排強調。下半是這個禮物底下的所有券，篩選、統計、列表放在同一張卡片。</p>
-    <dl>
-      <dt>生日券是「每週一批」</dt>
-      <dd>每週一開一批，所以列表一週一列。<strong>目前放了 16 批（4～8 月）</strong>，預設篩最近三個月會看到 13 批，按「顯示全部」變 16 批 —— 統計數字會跟著篩選走。</dd>
-      <dt>可以實際操作</dt>
-      <dd>
-        <ul>
-          <li><strong>改庫存</strong>：「剩餘庫存」旁的「編輯」按鈕，改成 8 看看，右邊會立刻跳超出庫存的警示</li>
-          <li><strong>手動發券</strong>：送出後列表真的多一批，統計也會加</li>
-          <li><strong>查看名單</strong>：逐筆會員、狀態、訂單編號、<strong>訂單金額</strong>，最下面有總金額與平均客單價</li>
-          <li><strong>查看生日券發放規則</strong>：只有生日禮這種自動發放的禮物才有這顆按鈕</li>
-        </ul>
-      </dd>
-      <dt>要確認</dt>
-      <dd>
-        <ul>
-          <li><strong>「手動發券」的定義</strong>：我理解成「發券給指定會員」。如果是「新增一種券」那彈窗要改。</li>
-          <li><strong>「啟用」關掉後，已發出去的券還能不能用？</strong>目前做成立刻失效。</li>
-          <li>券代碼的編碼規則可以嗎？（<code>BD-260803</code>）</li>
-        </ul>
-      </dd>
-    </dl>
-  </a>
-
-  <h2>前台（2 頁）</h2>
-
-  <a class="card" href="member-center-new2.html">
-    <div class="card-head"><span class="card-name">4　會員中心（優化版 2）</span><span class="card-file">member-center-new2.html</span></div>
-    <p class="card-desc">依 0831 回饋大改的版本。<strong>三個版本並存可以對照</strong>：<a href="member-center-new2.html" style="color:#4ba83b;">優化版 2</a>（這份）、<a href="member-center-new.html" style="color:#4ba83b;">優化版 1</a>、<a href="member-center.html" style="color:#4ba83b;">現況版</a>。</p>
-    <dl>
-      <dt>版面：兩層而不是四層</dt>
-      <dd>
-        <ul>
-          <li><strong>會員資料與錢包合併成一塊，用淡綠底</strong>（<code>#eef5ec</code>）。原本各自一個綠標題面板，區塊切太碎。合併後上半是身分與升等進度，下半是購物金與紅利兩張白卡片浮在淡綠上。</li>
-          <li><strong>頭像撐滿整個區塊高度</strong>，不再下面空一塊白。目前是綠底加等級文字，<strong>之後依會員等級換不同圖片</strong>（換 <code>background-image</code> 即可，圖檔另外處理）。</li>
-          <li><strong>拿掉副標</strong>「你的等級、優惠與禮物都在這裡」。</li>
-        </ul>
-      </dd>
-      <dt>顏色：標題降彩度，內容區襯灰</dt>
-      <dd>
-        <ul>
-          <li>禮物券／優惠券的標題列從 <code>#22ac38</code> 降到 <code>#578949</code>（同色相、彩度降低），大面積看起來不刺眼。彈窗標題也一起換。</li>
-          <li><strong>內容區改淺灰</strong>（<code>#f5f6f5</code>），券卡片維持白色＋淡陰影，讓項目浮在底上而不是跟背景黏在一起。</li>
-        </ul>
-      </dd>
-      <dt>禮物券</dt>
-      <dd><strong>拿掉「說明」按鈕</strong>，只留一顆滿寬的「使用」。點下去的彈窗本來就有說明，兩顆按鈕做同一件事。</dd>
-      <dt>沒動的</dt>
-      <dd>優惠券的收合結構、輪盤的層級與合併試算、歷史紀錄彈窗、四顆篩選，都跟 v1 一樣。左選單維持原樣。</dd>
-      <dt>要確認</dt>
-      <dd>
-        <ul>
-          <li><strong>降彩度的綠 <code>#578949</code> 可以嗎？</strong>這是把 <code>#4ba83b</code> 保留色相、降彩度來的，不是另外挑的色。太暗或太灰都可以再調。</li>
-          <li><strong>頭像的等級分圖要幾張？</strong>（一般／VIP／VVIP 三張？還是每一級一張？）</li>
-          <li><strong>淡綠色塊只給會員資料，還是其他區塊也要？</strong>目前只有這一塊有底色，其餘靠標題列分。</li>
-          <li>1080px 這個寬度上限可以嗎？（現況是寫死 952.2px）</li>
-          <li>左邊選單目前有一項「<strong>禮物兌換</strong>」（那是舊的大冰箱券入口），跟新的「我的禮物券」名字很像，會不會混淆？舊入口下架時這一項要一起拿掉嗎？</li>
-        </ul>
-      </dd>
-    </dl>
-  </a>
-
-  <a class="card" href="checkout-cart.html">
-    <div class="card-head"><span class="card-name">5　加入購物車</span><span class="card-file">checkout-cart.html</span></div>
-    <p class="card-desc">禮物進購物車之後的樣子。用的是結帳頁的六欄結構（商品／出貨時間／單價／數量／小計／刪除），<strong>禮物跟一般商品在同一張表裡</strong>。</p>
-    <dl>
-      <dt>禮物列跟一般商品的差別只有三個地方</dt>
-      <dd>
-        <ul>
-          <li>多一個「禮物券兌換」標籤</li>
-          <li>單價顯示成 <code>~~$199~~ $0</code>（原價劃掉，保留價值感）</li>
-          <li>數量固定 1、不能改（但<strong>可以刪除</strong> —— 刪掉券會退回會員中心，可以再加一次）</li>
-        </ul>
-      </dd>
-      <dt>可以實際操作</dt>
-      <dd>把「寶寶粥」的數量從 2 改成 3，小計會超過 $1,500、<strong>運費自動變免運</strong>。這就是活動想要的湊單效果。<br>
-      注意<strong>禮物的 $0 不會幫忙墊免運門檻</strong>：現在商品小計是 $1,400、還差 $100，禮物雖然值 $199 但不算進去。</dd>
-      <dt>要確認</dt>
-      <dd>
-        <ul>
-          <li>禮物列的呈現這樣可以嗎？還是要更明顯地跟自購商品區隔（例如整列換底色）？</li>
-          <li>金額區我放了一行「禮物券折抵 —」，因為禮物本來就是 0 元、沒有折抵金額。這一行要留著（讓客人知道有用到券）還是拿掉？</li>
-          <li>刪除禮物時的提示文字：「已移除禮物，禮物券仍保留在會員中心，可以再加入一次」—— 這樣講夠清楚嗎？</li>
-        </ul>
-      </dd>
-    </dl>
-  </a>
-
-  <h2>看完之後要回答的問題</h2>
-  <ol class="questions">
-    <li><strong>「手動發券」到底是「發券給會員」還是「新增一種券」？</strong>（後台 3）</li>
-    <li><strong>券的「啟用」關掉後，已經發出去的券還能不能用？</strong>（後台 3；目前做成立刻失效）</li>
-    <li><strong>會員中心的禮物券要放哪裡？</strong>目前在優惠券下方。另外左選單既有的「禮物兌換」跟它名字太像，要不要一起處理？</li>
-    <li><strong>購物車裡的禮物列，要不要跟自購商品有更明顯的區隔？</strong></li>
-    <li>券代碼的編碼規則可以嗎？（<code>BD-260803</code>）</li>
-    <li>日期篩選預設三個月夠嗎？統計要跟著篩選走，還是永遠顯示全部？</li>
-    <li>名單的「訂單金額」要用訂單總金額（含運費）還是客人實付？目前用總金額，才看得出湊單效果。</li>
-    <li>「查看名單」的匯出要什麼格式？要不要含未使用的那些？</li>
-    <li>綁到「產地直送」這種一律免運的產線時，要只提醒還是直接禁止？（後台 2，輸入 76950）</li>
-    <li>編輯模式裡，綁定的產品應該可以換嗎？（目前唯讀）</li>
-  </ol>
 
 </div>
 </body>

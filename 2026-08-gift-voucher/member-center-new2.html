@@ -576,10 +576,21 @@ img { vertical-align: middle; }
   }
   .mc3 .btn-use:hover { background: #3f8f32; }
   .mc3 .btn-added {
-    width: 100%; background: #fff; color: var(--green); border: 1px solid var(--green); border-radius: 6px;
-    font-size: 18px; font-weight: 600; padding: 12px; cursor: pointer;
+    width: 100%; background: #f4faf3; color: var(--green); border: 1px solid #cfe4c9; border-radius: 6px;
+    font-size: 18px; font-weight: 600; padding: 12px; cursor: default;
   }
-  .mc3 .btn-added:hover { background: #f4faf3; }
+  /* 暫時缺貨：整張卡片降階，按鈕不可按 */
+  .mc3 .gv-card.is-oos { background: #fafafa; border-color: #e5e5e5; box-shadow: none; }
+  .mc3 .gv-card.is-oos .gv-thumb { opacity: .5; }
+  .mc3 .gv-card.is-oos .gv-name { color: #8a8a8a; }
+  .mc3 .gv-flag {
+    display: inline-block; font-size: 15px; background: #ececec; color: #767676;
+    border-radius: 4px; padding: 4px 12px; margin-top: 8px;
+  }
+  .mc3 .btn-oos {
+    width: 100%; background: #f0f0f0; color: #999; border: 1px solid #e0e0e0; border-radius: 6px;
+    font-size: 18px; font-weight: 600; padding: 12px; cursor: not-allowed;
+  }
 
   /* ── 優惠券 ── */
   .mc3 .cp-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -771,6 +782,16 @@ img { vertical-align: middle; }
             <button type="button" class="btn-use" data-gv-use="2">使用</button>
           </div>
         </div>
+        <div class="gv-card is-oos" data-gv="3">
+          <div class="gv-thumb">禮物圖</div>
+          <div class="gv-name">季節果乾 隨手包</div>
+          <div class="gv-exp">09/12 到期，剩 37 天</div>
+          <div class="gv-code">SF-260806</div>
+          <div><span class="gv-flag">暫時缺貨</span></div>
+          <div class="gv-actions" style="margin-top:12px;">
+            <button type="button" class="btn-oos" disabled>暫時缺貨</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -872,7 +893,9 @@ img { vertical-align: middle; }
     '1': { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
            note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。' },
     '2': { name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
-           note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' }
+           note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' },
+    '3': { name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
+           note: '訂單回饋禮，依當季供貨情況出貨。券於有效期限內可兌換，補貨後即可加入菜籃。' }
   };
 
   var ALL_LINES = ['產地直送', '快速到貨', '冷凍專區', '粥寶寶專區', '綠時光專區', '益菓保'];
@@ -1054,27 +1077,29 @@ img { vertical-align: middle; }
   }
 
   function refreshMeta() {
-    var total = document.querySelectorAll('.gv-card').length, n = 0, k;
+    var total = document.querySelectorAll('.gv-card').length;
+    var oos = document.querySelectorAll('.gv-card.is-oos').length;
+    var n = 0, k;
     for (k in added) { if (added[k]) n++; }
-    document.getElementById('gv-meta').textContent =
-      n ? (total + ' 張，' + n + ' 張已在菜籃') : (total + ' 張可用');
+    var parts = ['可用 ' + (total - oos - n) + ' 張'];
+    if (n) parts.push('已加入 ' + n + ' 張');
+    if (oos) parts.push('缺貨 ' + oos + ' 張');
+    document.getElementById('gv-meta').textContent = parts.join('・');
   }
 
-  function setAdded(id, isAdded) {
-    added[id] = isAdded;
+  function setAdded(id) {
+    if (added[id]) return;
+    added[id] = true;
     var card = document.querySelector('.gv-card[data-gv="' + id + '"]');
     if (!card) return;
-    card.classList.toggle('is-added', isAdded);
+    card.classList.add('is-added');
     var btn = card.querySelector('.gv-actions button');
-    if (isAdded) {
-      btn.className = 'btn-added'; btn.textContent = '已加入';
-      btn.setAttribute('data-gv-remove', id); btn.removeAttribute('data-gv-use');
-    } else {
-      btn.className = 'btn-use'; btn.textContent = '使用';
-      btn.setAttribute('data-gv-use', id); btn.removeAttribute('data-gv-remove');
-    }
+    btn.className = 'btn-added';
+    btn.textContent = '已加入';
+    btn.disabled = true;
+    btn.removeAttribute('data-gv-use');
     var badge = document.querySelector('.badge');
-    if (badge) badge.textContent = String(Math.max(0, Number(badge.textContent || 0) + (isAdded ? 1 : -1)));
+    if (badge) badge.textContent = String(Number(badge.textContent || 0) + 1);
     refreshMeta();
   }
 
@@ -1090,13 +1115,7 @@ img { vertical-align: middle; }
 
   document.getElementById('gv-list').addEventListener('click', function (e) {
     var use = e.target.closest('[data-gv-use]');
-    var rm = e.target.closest('[data-gv-remove]');
-    if (use) { openGift(use.getAttribute('data-gv-use')); return; }
-    if (rm) {
-      var id = rm.getAttribute('data-gv-remove');
-      setAdded(id, false);
-      toast('已從菜籃移除「' + GIFTS[id].name + '」，這張券恢復可用');
-    }
+    if (use) openGift(use.getAttribute('data-gv-use'));
   });
 
   function bindClose(sel) {
@@ -1121,7 +1140,7 @@ img { vertical-align: middle; }
 
   document.getElementById('gv-d-ok').addEventListener('click', function () {
     document.getElementById('gv-mask').classList.remove('is-open');
-    setAdded(current, true);
+    setAdded(current);
     toast('已將「' + GIFTS[current].name + '」加入菜籃');
   });
 

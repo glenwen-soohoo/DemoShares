@@ -705,6 +705,7 @@ a:hover { text-decoration: underline; }
   .gv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .gv-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
   .gv-row:last-of-type { margin-bottom: 0; }
+  .gv-span-2 { grid-column: span 2; }
   .gv-span-3 { grid-column: span 3; }
   .gv-span-4 { grid-column: span 4; }
   .gv-field textarea.gox-input { resize: vertical; font-family: inherit; line-height: 1.7; }
@@ -759,14 +760,9 @@ a:hover { text-decoration: underline; }
 
       <div class="gv-spec-body is-locked" id="gv-spec-body">
         <div class="gv-row">
-          <div class="gv-field gv-span-3">
+          <div class="gv-field gv-span-2">
             <label>規格描述<span class="gv-req">*</span></label>
             <input type="text" class="gox-input" id="gv-desc" placeholder="例：生日禮專用">
-          </div>
-          <div class="gv-field">
-            <label>庫存<span class="gv-req">*</span></label>
-            <input type="number" class="gox-input" id="gv-stock" placeholder="100">
-            <div class="gv-field-hint">庫存不足時客人無法兌換</div>
           </div>
         </div>
 
@@ -804,6 +800,11 @@ a:hover { text-decoration: underline; }
           <div class="gv-field">
             <label>結束贈送<span class="gv-req">*</span></label>
             <input type="date" class="gox-input" id="gv-end">
+          </div>
+          <div class="gv-field">
+            <label>庫存<span class="gv-req">*</span></label>
+            <input type="number" class="gox-input" id="gv-stock" placeholder="100">
+            <div class="gv-field-hint">庫存不足時客人無法兌換</div>
           </div>
         </div>
 

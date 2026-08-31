@@ -717,6 +717,7 @@ a:hover { text-decoration: underline; }
   .gv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .gv-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
   .gv-row:last-of-type { margin-bottom: 0; }
+  .gv-span-2 { grid-column: span 2; }
   .gv-span-3 { grid-column: span 3; }
   .gv-span-4 { grid-column: span 4; }
   .gv-field textarea.gox-input { resize: vertical; font-family: inherit; line-height: 1.7; }
@@ -836,14 +837,9 @@ a:hover { text-decoration: underline; }
         </div>
       </div>
         <div class="gv-row">
-          <div class="gv-field gv-span-3">
+          <div class="gv-field gv-span-2">
             <label>規格描述</label>
             <input type="text" class="gox-input" id="gv-e-desc">
-          </div>
-          <div class="gv-field">
-            <label>庫存</label>
-            <input type="number" class="gox-input" id="gv-e-stock">
-            <div class="gv-field-hint">庫存不足時客人無法兌換（目前未兌換有效券 <b id="gv-e-unused"></b> 張）</div>
           </div>
         </div>
 
@@ -881,6 +877,11 @@ a:hover { text-decoration: underline; }
           <div class="gv-field">
             <label>結束贈送</label>
             <input type="date" class="gox-input" id="gv-e-end">
+          </div>
+          <div class="gv-field">
+            <label>庫存</label>
+            <input type="number" class="gox-input" id="gv-e-stock">
+            <div class="gv-field-hint">庫存不足時客人無法兌換（目前未兌換有效券 <b id="gv-e-unused"></b> 張）</div>
           </div>
         </div>
 
