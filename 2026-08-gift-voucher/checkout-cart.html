@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>加入購物車 — 禮物券 demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ===========================================================
+   base.css — reset + body + 容器佈局
+   =========================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "Microsoft JhengHei", "微軟正黑體", -apple-system, BlinkMacSystemFont, "PingFang TC", sans-serif;
+  background: #fff;
+  color: #33435a;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; padding: 0; margin: 0; }
+img { vertical-align: middle; }
+
+/* 簡易 icon helper（fa 替代用 unicode 字符） */
+.icon {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+}
+
+/* ===========================================================
+   主版面容器
+   - .sb-site-container：全寬白底外殼
+   - .page：水平 padding，無 max-width 限制（會員中心會延伸到視窗右側）
+     若要限制寬度（一般頁面），自行在 .page 加 max-width: 1200px; margin: 0 auto;
+   =========================================================== */
+.sb-site-container {
+  background: #fff;
+  padding: 20px 0;
+  min-height: 400px;
+}
+.page {
+  padding: 0 20px;
+}
+.page::after { content: ''; display: table; clear: both; }
+
+/* ===========================================================
+   header.css — 無毒農主站 header
+   設計參考：正式站 header 樣式
+   主色：#4ba83b（按鈕綠）、#caa940（hover 金）、#dc4e43（badge 紅）
+   max-width 1200 與內容容器對齊
+   =========================================================== */
+
+.gb-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  border-bottom: 1px solid rgba(211, 211, 211, 0.74);
+}
+
+.gb-head .top-bar {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  gap: 14px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.gb-head .logo-wrap img { height: 36px; }
+
+.gb-head .search-box {
+  flex: 0 0 260px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 18px;
+  font-size: 13px;
+}
+.gb-head .search-box input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  flex: 1;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.gb-head .spacer { flex: 1; }
+
+.gb-head .right-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gb-head .member-wrap-link {
+  color: #4ba83b;
+  font-size: 15px;
+  margin: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gb-head .member-wrap-link:hover { opacity: 0.8; }
+
+.gb-head .cart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 18px;
+  background: #4ba83b;
+  color: #fff;
+  font-size: 13px;
+  position: relative;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.gb-head .cart-btn:hover { background: #3d8c30; }
+
+.gb-head .cart-btn .badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc4e43;
+  color: #fff;
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.gb-head .nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px 8px;
+  font-size: 15px;
+  font-weight: 700;
+  overflow-x: auto;
+  white-space: nowrap;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.gb-head .nav-row a {
+  color: #4ba83b;
+  padding: 4px 2px;
+  position: relative;
+}
+.gb-head .nav-row a:hover { color: #caa940; }
+.gb-head .new-badge {
+  color: red;
+  margin-right: 4px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+@media (max-width: 960px) {
+  .gb-head .search-box { display: none; }
+  .gb-head .nav-row { font-size: 13px; gap: 14px; padding: 6px 12px; }
+}
+@media (max-width: 720px) {
+  .gb-head .top-bar { padding: 8px 12px; gap: 8px; }
+  .gb-head .top-bar .username { display: none; }
+}
+
+/* ===========================================================
+   footer.css — 無毒農主站 footer
+   設計參考：正式站 footer 樣式
+   主色：#4ba83b（鮮綠底）、白字
+   =========================================================== */
+
+.gb-footer {
+  background: #4ba83b;
+  color: #fff;
+  padding: 32px 20px 18px;
+}
+
+.gb-footer .wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.gb-footer h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.gb-footer a {
+  color: #fff;
+  opacity: 0.9;
+  display: block;
+}
+.gb-footer a:hover { opacity: 1; }
+
+.gb-footer .social {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.gb-footer .social a {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+}
+.gb-footer .social img { width: 28px; height: 28px; }
+
+.gb-footer .info {
+  font-size: 12px;
+  opacity: 0.9;
+  line-height: 1.7;
+  margin-top: 8px;
+}
+
+.gb-footer .bottom {
+  max-width: 1200px;
+  margin: 24px auto 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.25);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.85;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gb-footer .bottom .slogan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+}
+.gb-footer .bottom .slogan img { height: 28px; }
+.gb-footer .bottom .legal p {
+  margin: 0;
+  line-height: 1.7;
+  text-align: right;
+}
+
+@media (max-width: 960px) {
+  .gb-footer .wrap { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .gb-footer .wrap { grid-template-columns: 1fr; }
+  .gb-footer .bottom { flex-direction: column; align-items: flex-start; }
+  .gb-footer .bottom .legal p { text-align: left; }
+}
+
+
+</style>
+</head>
+<body>
+
+<!--
+  header.html — 無毒農主站 header
+  依賴：base.css、header.css
+  圖片：images/logo.svg、images/smallNormal.svg
+  使用前可調整：會員姓名、購物車數量、active 連結
+-->
+<header class="gb-head">
+  <div class="top-bar">
+    <div class="logo-wrap">
+      <a href="/"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農，友善環境的安心水果"></a>
+    </div>
+    <div class="search-box">
+      <i class="icon">&#128269;</i>
+      <input type="text" placeholder="請輸入關鍵字">
+    </div>
+    <div class="spacer"></div>
+    <div class="right-area">
+      <a class="member-wrap-link" href="/Volunteers/Orders">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYiIGhlaWdodD0iMjYiIHZpZXdCb3g9IjAgMCAyNiAyNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyLjY5MjEgMjZDMTIuODMwMiAyNiAxLjc3MjA1IDIxLjU4IDAuNjg3MzY3IDE3LjczMjhDLTAuMTYxNjk1IDE0LjcxODQgLTAuMDI3NjMyNyA1LjgyMTU2IDAuMDc3OTkyMyAxLjg5NzE5QzAuMTA2NDMgMC44NDA5MzggMS4wMTIzNyAwIDIuMTE3MzcgMEgyMy40MDg5QzI0LjUxMzkgMCAyNS40MTk5IDAuODQwOTM4IDI1LjQ0ODMgMS44OTcxOUMyNS41NTM5IDUuODIxNTYgMjUuNjg4IDE0LjcxNDQgMjQuODM0OSAxNy43MzI4QzIzLjc1MDIgMjEuNTggMTIuNjkyMSAyNiAxMi44MzAyIDI2SDEyLjY5MjFaIiBmaWxsPSIjQjlDM0NFIi8+CjxwYXRoIGQ9Ik0xMi44MTAyIDBIMi4xMTc2OEMxLjAxMjY4IDAgMC4xMDY3NDEgMC44NDA5MzggMC4wNzgzMDMyIDEuODk3MTlDLTAuMDI3MzIxOCA1LjgyMTU2IC0wLjE2MTM4NCAxNC43MTg0IDAuNjkxNzQxIDE3LjczMjhDMS43NzY0MyAyMS41ODQxIDEyLjgzNDYgMjYgMTIuNjk2NCAyNkgxMi44MTQyVjBIMTIuODEwMloiIGZpbGw9IiNDNUQwREIiLz4KPHBhdGggZD0iTTEuODUzMTMgMi42NzcyMUMxLjY0NTk1IDIuNjc3MjEgMS40MzQ3IDIuNTkxOSAxLjI5MjUxIDIuNDQxNTlDMS4xNDIyIDIuMjkxMjggMS4wNTY4OCAyLjA4ODE1IDEuMDU2ODggMS44ODA5NkMxLjA1Njg4IDEuNjczNzggMS4xNDIyIDEuNDcwNjUgMS4yOTI1MSAxLjMyNDRDMS40NzUzMiAxLjEzMzQ2IDEuNzUxNTcgMS4wNTYyOCAyLjAwMzQ1IDEuMTAwOTZDMi4wNTYyNiAxLjExMzE1IDIuMTA5MDcgMS4xMjUzNCAyLjE1Mzc2IDEuMTQ1NjVDMi4xOTg0NSAxLjE2NTk2IDIuMjQzMTMgMS4xOTAzNCAyLjI5MTg4IDEuMjE4NzhDMi4zMzY1NyAxLjI1MTI4IDIuMzc3MiAxLjI4Mzc4IDIuNDA5NyAxLjMyNDRDMi41NjAwMSAxLjQ2NjU5IDIuNjQ1MzIgMS42Njk3MSAyLjY0NTMyIDEuODgwOTZDMi42NDUzMiAyLjA5MjIxIDIuNTYwMDEgMi4yOTEyOCAyLjQwOTcgMi40NDE1OUMyLjI2NzUxIDIuNTkxOSAyLjA1NjI2IDIuNjc3MjEgMS44NTMxMyAyLjY3NzIxWiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNMTguNTIxNyAxLjg4MTA1QzE4LjUyMTcgMS40NDIzIDE4Ljg3NTEgMS4wODg4NyAxOS4zMTM4IDEuMDg4ODdDMTkuNzUyNiAxLjA4ODg3IDIwLjEwNiAxLjQ0MjMgMjAuMTA2IDEuODgxMDVDMjAuMTA2IDIuMzE5OCAxOS43NTI2IDIuNjc3MyAxOS4zMTM4IDIuNjc3M0MxOC44NzUxIDIuNjc3MyAxOC41MjE3IDIuMzE5OCAxOC41MjE3IDEuODgxMDVaTTE0LjE1NDUgMS44ODEwNUMxNC4xNTQ1IDEuNDQyMyAxNC41MTIgMS4wODg4NyAxNC45NTA3IDEuMDg4ODdDMTUuMzg5NSAxLjA4ODg3IDE1Ljc0MjkgMS40NDIzIDE1Ljc0MjkgMS44ODEwNUMxNS43NDI5IDIuMzE5OCAxNS4zODk1IDIuNjc3MyAxNC45NTA3IDIuNjc3M0MxNC41MTIgMi42NzczIDE0LjE1NDUgMi4zMTk4IDE0LjE1NDUgMS44ODEwNVpNOS43OTEzNSAxLjg4MTA1QzkuNzkxMzUgMS40NDIzIDEwLjE0NDggMS4wODg4NyAxMC41ODM1IDEuMDg4ODdDMTEuMDIyMyAxLjA4ODg3IDExLjM3NTcgMS40NDIzIDExLjM3NTcgMS44ODEwNUMxMS4zNzU3IDIuMzE5OCAxMS4wMjIzIDIuNjc3MyAxMC41ODM1IDIuNjc3M0MxMC4xNDQ4IDIuNjc3MyA5Ljc5MTM1IDIuMzE5OCA5Ljc5MTM1IDEuODgxMDVaTTUuNDI4MjIgMS44ODEwNUM1LjQyODIyIDEuNDQyMyA1Ljc4MTY2IDEuMDg4ODcgNi4yMjA0MSAxLjA4ODg3QzYuNjU5MTYgMS4wODg4NyA3LjAxMjYgMS40NDIzIDcuMDEyNiAxLjg4MTA1QzcuMDEyNiAyLjMxOTggNi42NTkxNiAyLjY3NzMgNi4yMjA0MSAyLjY3NzNDNS43ODE2NiAyLjY3NzMgNS40MjgyMiAyLjMxOTggNS40MjgyMiAxLjg4MTA1WiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNMjMuNjcyOSAyLjY3NzE2QzIzLjQ2NTcgMi42NzcxNiAyMy4yNjI2IDIuNTkxODUgMjMuMTEyMyAyLjQ0MTUzQzIyLjk3MDEgMi4yOTEyMiAyMi44ODQ4IDIuMDg4MSAyMi44ODQ4IDEuODgwOTFDMjIuODg0OCAxLjY3MzcyIDIyLjk3MDEgMS40NzA2IDIzLjExMjMgMS4zMjQzNUMyMy40MTI5IDEuMDIzNzIgMjMuOTQxIDEuMDIzNzIgMjQuMjM3NiAxLjMyNDM1QzI0LjM4NzkgMS40NjY1MyAyNC40NjUxIDEuNjY5NjYgMjQuNDY1MSAxLjg4MDkxQzI0LjQ2NTEgMi4wOTIxNiAyNC4zODc5IDIuMjkxMjIgMjQuMjM3NiAyLjQ0MTUzQzI0LjA4NzMgMi41OTE4NSAyMy44ODQxIDIuNjc3MTYgMjMuNjc3IDIuNjc3MTZIMjMuNjcyOVoiIGZpbGw9IiNBOUIyQkUiLz4KPHBhdGggZD0iTTE1LjY2NTcgMjIuNTkxNUMxNS40NzA3IDIyLjIwNTUgMTUuNjI1MSAyMS43MzAyIDE2LjAxMSAyMS41MjcxQzE2LjQwMSAyMS4zMzIxIDE2Ljg4MDQgMjEuNDg2NSAxNy4wNzU0IDIxLjg3MjRDMTcuMjc4NSAyMi4yNjI0IDE3LjEyMDEgMjIuNzQxOCAxNi43MzAxIDIyLjk0NDlDMTYuNjIwNCAyMi45OTc3IDE2LjQ5NDQgMjMuMDMwMiAxNi4zNzI2IDIzLjAzMDJDMTYuMDg0MSAyMy4wMzAyIDE1LjgxMTkgMjIuODY3NyAxNS42NjU3IDIyLjU5MTVaTTE5LjE3MTYgMjAuNzAyNEMxOC45MzYgMjAuMzM2OCAxOS4wNDE2IDE5Ljg0NTIgMTkuNDA3MiAxOS42MDU1QzE5Ljc3MjkgMTkuMzY5OSAyMC4yNjQ0IDE5LjQ3NTUgMjAuNTA0MSAxOS44NDEyQzIwLjczOTcgMjAuMjE0OSAyMC42MzQxIDIwLjcwMjQgMjAuMjY0NCAyMC45MzhDMjAuMTM0NCAyMS4wMjM0IDE5Ljk4NDEgMjEuMDY0IDE5Ljg0MTkgMjEuMDY0QzE5LjU4MTkgMjEuMDY0IDE5LjMyNiAyMC45MzggMTkuMTc1NyAyMC43MDY1TDE5LjE3MTYgMjAuNzAyNFpNMjIuNDA5NCAxOC4zNjI0QzIyLjA1MTkgMTguMTA2NSAyMS45NjY2IDE3LjYxOSAyMi4yMTg1IDE3LjI1NzRDMjIuNDY2MyAxNi44OTk5IDIyLjk2MTkgMTYuODE0NiAyMy4zMjM1IDE3LjA2NjVDMjMuNjc2OSAxNy4zMjI0IDIzLjc2MjIgMTcuODA5OSAyMy41MTQ0IDE4LjE3MTVDMjMuMzU2IDE4LjM5NDkgMjMuMTA4MiAxOC41MDQ2IDIyLjg2MDQgMTguNTA0NkMyMi43MDE5IDE4LjUwNDYgMjIuNTQ3NiAxOC40NTk5IDIyLjQwOTQgMTguMzYyNFpNMjMuNTA2MyAxNC42MjA5QzIzLjA2NzYgMTQuNTk2NSAyMi43NDI2IDE0LjIxNDYgMjIuNzY2OSAxMy43Nzk5QzIyLjc5OTQgMTMuMzQxMiAyMy4xNzcyIDEzLjAxNjIgMjMuNjA3OSAxMy4wNDA1QzI0LjA0NjYgMTMuMDczIDI0LjM3OTcgMTMuNDUwOSAyNC4zNDcyIDEzLjg4OTZDMjQuMzIyOSAxNC4zMDggMjMuOTczNSAxNC42MjkgMjMuNTU1MSAxNC42MjlDMjMuNTU1MSAxNC42MjkgMjMuNTIyNiAxNC42MjkgMjMuNTAyMiAxNC42MjA5SDIzLjUwNjNaTTIzLjcwMTMgMTAuNjQzN0MyMy4yNjI2IDEwLjYzNTUgMjIuOTE3MiAxMC4yNjk5IDIyLjkyNTQgOS44MzUyMkMyMi45MzM1IDkuMzk2NDcgMjMuMjk5MSA5LjA1MTE2IDIzLjczMzggOS4wNTkyOUMyNC4xNzI2IDkuMDcxNDcgMjQuNTE3OSA5LjQzMzA0IDI0LjUwOTcgOS44Njc3MkMyNC41MDE2IDEwLjI5ODMgMjQuMTQ0MSAxMC42NDM3IDIzLjcxMzUgMTAuNjQzN0gyMy43MDEzWk0yMi45NDE2IDUuODcwMjJDMjIuOTMzNSA1LjQzMTQ3IDIzLjI4NjkgNS4wNzgwNCAyMy43MjU3IDUuMDczOTdDMjQuMTY0NCA1LjA3Mzk3IDI0LjUyMTkgNS40Mjc0MSAyNC41MjE5IDUuODY2MTZDMjQuNTMwMSA2LjMwNDkxIDI0LjE3NjYgNi42NTgzNSAyMy43Mzc5IDYuNjYyNDFIMjMuNzI5N0MyMy4yOTkxIDYuNjYyNDEgMjIuOTM3NiA2LjMwODk3IDIyLjkzNzYgNS44NzAyMkgyMi45NDE2WiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNMTIuNzYxMiAyNC43MjQ0QzEyLjU1ODEgMjQuNzI0NCAxMi4zNTA5IDI0LjYzOTEgMTIuMjA0NiAyNC40OTY5QzEyLjA1NDMgMjQuMzQ2NiAxMS45NjkgMjQuMTQzNCAxMS45NjkgMjMuOTM2M0MxMS45NjkgMjMuNzI5MSAxMi4wNTQzIDIzLjUyNTkgMTIuMjA0NiAyMy4zNzU2QzEyLjQ5NzEgMjMuMDgzMSAxMy4wMjkzIDIzLjA4MzEgMTMuMzIxOCAyMy4zNzU2QzEzLjQ3MjEgMjMuNTI1OSAxMy41NTc0IDIzLjcyOTEgMTMuNTU3NCAyMy45MzYzQzEzLjU1NzQgMjQuMTQzNCAxMy40NzIxIDI0LjM0NjYgMTMuMzIxOCAyNC40OTY5QzEzLjE3OTYgMjQuNjM5MSAxMi45Njg0IDI0LjcyNDQgMTIuNzYxMiAyNC43MjQ0WiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNOC43OTYxNiAyMi45NDVDOC40MTAyMiAyMi43NDE5IDguMjU1ODUgMjIuMjY2NSA4LjQ1MDg1IDIxLjg4MDZDOC42NDU4NSAyMS40OTA2IDkuMTI1MjIgMjEuMzMyMiA5LjUxNTIyIDIxLjUyNzJDOS45MDUyMiAyMS43MzAzIDEwLjA2MzcgMjIuMjA1NiA5Ljg2MDU0IDIyLjU5OTdDOS43MjI0MSAyMi44NzU5IDkuNDQyMSAyMy4wMzAzIDkuMTUzNjYgMjMuMDMwM0M5LjAzNTg1IDIzLjAzMDMgOC45MTM5NyAyMy4wMDU5IDguNzk2MTYgMjIuOTQ1Wk01LjI2MTc5IDIwLjkzODFDNC44OTYxNiAyMC43MDI1IDQuNzg2NDcgMjAuMjE1IDUuMDI2MTYgMTkuODQ5NEM1LjI2MTc5IDE5LjQ3NTYgNS43NDkyOSAxOS4zNzQgNi4xMTQ5MSAxOS42MTM3QzYuNDg4NjYgMTkuODQ5NCA2LjU5MDIyIDIwLjMzNjkgNi4zNTQ2IDIwLjcwMjVDNi4xOTYxNiAyMC45MzgxIDUuOTQ0MjkgMjEuMDY4MSA1LjY4MDIyIDIxLjA2ODFDNS41MzgwNCAyMS4wNjgxIDUuMzg3NzIgMjEuMDI3NSA1LjI1NzcyIDIwLjkzODFINS4yNjE3OVpNMi4wMTU4NSAxOC4xODM3QzEuNzU5OTEgMTcuODI2MiAxLjg0NTIyIDE3LjMyNjUgMi4xOTg2NiAxNy4wNzg3QzIuNTU2MTYgMTYuODIyOCAzLjA1NTg1IDE2LjkwODEgMy4zMDc3MiAxNy4yNjk3VjE3LjI2MTVDMy41NTU1NCAxNy42MTkgMy40NzAyMiAxOC4xMTg3IDMuMTE2NzkgMTguMzcwNkMyLjk3NDYgMTguNDY4MSAyLjgxNjE2IDE4LjUxMjggMi42NTc3MiAxOC41MTI4QzIuNDA5OTEgMTguNTEyOCAyLjE2MjEgMTguMzk1IDIuMDExNzkgMTguMTc5N0wyLjAxNTg1IDE4LjE4MzdaTTEuMTY2NzkgMTMuODkzN0MxLjE0MjQxIDEzLjQ1NSAxLjQ2NzQxIDEzLjA4NTMgMS45MDYxNiAxMy4wNTI4QzIuMzQ0OTEgMTMuMDIwMyAyLjcyMjcyIDEzLjM1MzQgMi43NDcxIDEzLjc5MjJDMi43Nzk2IDE0LjIzMDkgMi40NDY0NyAxNC42MDg3IDIuMDE1ODUgMTQuNjMzMUgxLjk1ODk3QzEuNTQ4NjYgMTQuNjMzMSAxLjIwMzM1IDE0LjMxMjIgMS4xNjY3OSAxMy44OTM3Wk0xLjAwODM1IDkuODc1OTJDMS4wMDAyMiA5LjQzNzE3IDEuMzQ5NiA5LjA3MTU0IDEuNzg0MjkgOS4wNjc0OEMyLjIyMzA0IDkuMDU5MzYgMi41ODA1NCA5LjQwODczIDIuNTkyNzIgOS44NDM0MkMyLjYwMDg1IDEwLjI4MjIgMi4yNTE0NyAxMC42Mzk3IDEuODE2NzkgMTAuNjUxOUgxLjc5NjQ3QzEuMzY1ODUgMTAuNjUxOSAxLjAxMjQxIDEwLjMwNjUgMS4wMDQyOSA5Ljg3NTkySDEuMDA4MzVaTTEuNzgwMjIgNi42NjI0OEMxLjM0MTQ3IDYuNjYyNDggMC45ODgwMzcgNi4zMDQ5OCAwLjk4ODAzNyA1Ljg2NjIzQzAuOTk2MTYyIDUuNDI3NDggMS4zNTM2NiA1LjA3NDA0IDEuNzkyNDEgNS4wODIxN0MyLjIyMzA0IDUuMDgyMTcgMi41NzY0NyA1LjQzOTY3IDIuNTc2NDcgNS44Nzg0MkMyLjU2ODM1IDYuMzE3MTcgMi4yMTg5NyA2LjY2MjQ4IDEuNzg0MjkgNi42NjI0OEgxLjc3NjE2SDEuNzgwMjJaIiBmaWxsPSIjQTlCMkJFIi8+CjxwYXRoIGQ9Ik0yMS43MDI2IDQuMjI5SDMuODIzNUMzLjY5NzU2IDEwLjIwOSAzLjg4ODUgMTQuOTA5MyA0LjMyNzI1IDE2LjQ2OTNDNC40Njk0NCAxNi42ODQ2IDUuNzY1MzcgMTguNDA3MSAxMi42MTA3IDIxLjM1NjVDMTIuNjYzNSAyMS4zODA5IDEyLjcxMjIgMjEuNDAxMiAxMi43NjUxIDIxLjQyNTZDMTkuNzQ4NSAxOC40MzU2IDIxLjA2MDcgMTYuNjg4NyAyMS4yMDI5IDE2LjQ2OTNDMjEuNjQxNiAxNC45MDUzIDIxLjgzMjYgMTAuMjA0OSAyMS43MDY2IDQuMjI5SDIxLjcwMjZaIiBmaWxsPSIjQTlCMkJFIi8+CjxwYXRoIGQ9Ik0xMi43NjExIDIxLjkzMzNDMTIuNjkyMSAyMS45MzMzIDEyLjYyNzEgMjEuOTIxMSAxMi41NjIxIDIxLjg5MjdMMTIuNDY0NiAyMS44NTJDNS41Mjk4OCAxOC44NjYxIDQuMTEyMDcgMTcuMDc4NiAzLjg5Njc1IDE2Ljc0OTVDMy44NjgzMiAxNi43MDQ5IDMuODQ4IDE2LjY1NjEgMy44MzE3NSAxNi42MDc0QzMuMzc2NzUgMTQuOTg2NCAzLjE4MTc1IDEwLjM1NTIgMy4zMTE3NSA0LjIxNjczQzMuMzE1ODIgMy45NDA0OCAzLjU0MzMyIDMuNzE3MDQgMy44MjM2MyAzLjcxNzA0SDIxLjcwMjdDMjEuOTc4OSAzLjcxNzA0IDIyLjIwNjQgMy45NDA0OCAyMi4yMTQ2IDQuMjE2NzNDMjIuMzQ0NiAxMC4zNTExIDIyLjE0OTYgMTQuOTgyNCAyMS42OTQ2IDE2LjYwNzRDMjEuNjgyNCAxNi42NTYxIDIxLjY1OCAxNi43MDQ5IDIxLjYyOTYgMTYuNzQ5NUMyMS40MTAyIDE3LjA4MjcgMTkuOTY4IDE4Ljg5NDUgMTIuOTY0MyAyMS44OTI3QzEyLjg5OTMgMjEuOTIxMSAxMi44MzAyIDIxLjkzMzMgMTIuNzY1MiAyMS45MzMzSDEyLjc2MTFaTTQuNzkwNSAxNi4yNDU4QzUuMDQyMzggMTYuNTY2NyA2LjU0OTU3IDE4LjE4NzcgMTIuNzYxMSAyMC44Njg5QzE4Ljk3MjcgMTguMTg3NyAyMC40NzU4IDE2LjU2NjcgMjAuNzMxOCAxNi4yNDU4QzIxLjEyNTggMTQuNjk4IDIxLjMwNDYgMTAuMzM4OSAyMS4yMDMgNC43MzY3M0g0LjMyMzMyQzQuMjIxNzUgMTAuMzM4OSA0LjQwMDUgMTQuNjk4IDQuNzk0NTcgMTYuMjQ1OEg0Ljc5MDVaIiBmaWxsPSIjQTlCMkJFIi8+CjxwYXRoIGQ9Ik0yMC41NDQ4IDUuMzQyMkgxMi42MjdWMjAuMjUxNkMxMi42NzE2IDIwLjI3MTkgMTIuNzE2MyAyMC4yOTIyIDEyLjc2MSAyMC4zMDg0QzE4Ljg0MjYgMTcuNzA0NCAxOS45ODQxIDE2LjE4NSAyMC4xMDYgMTUuOTk0MUMyMC40ODc5IDE0LjYzMzEgMjAuNjU0NSAxMC41NDIyIDIwLjU0NDggNS4zMzgxM1Y1LjM0MjJaIiBmaWxsPSIjQjlDM0NFIi8+CjxwYXRoIGQ9Ik00Ljk4MTQgNS4zNDIwNEM0Ljg3MTcxIDEwLjU0NjEgNS4wMzgyNyAxNC42MzcgNS40MjAxNSAxNS45OThDNS41NDIwMiAxNi4xODQ5IDYuNjcxNCAxNy42ODM5IDEyLjYzMTEgMjAuMjUxNFY1LjM0MjA0SDQuOTgxNFoiIGZpbGw9IiNDRURBRTYiLz4KPGcgb3BhY2l0eT0iMC40NCI+CjxwYXRoIGQ9Ik0yMC4xMTAzIDE1Ljk5OEMyMC40OTIyIDE0LjYzNyAyMC42NTg3IDEwLjU0NjEgMjAuNTQ5IDUuMzQyMDRIMTYuNjM2OEMxNi43NDI1IDguNjM2NzMgMTYuMjg3NSAxNy4wMTc3IDkuMTQ5NjYgMTguNjA2MUMxMC4wNzE4IDE5LjA5MzYgMTEuMjEzNCAxOS42NDIgMTIuNjMxMiAyMC4yNTU1QzEyLjY3NTkgMjAuMjc1OCAxMi43MjA2IDIwLjI5NjEgMTIuNzY1MyAyMC4zMTI0QzE4Ljg0NjggMTcuNzA4MyAxOS45ODg0IDE2LjE4ODkgMjAuMTEwMyAxNS45OThaIiBmaWxsPSIjQTZCQUQxIi8+CjwvZz4KPHBhdGggZD0iTTQuNzI5NDcgNS45MzkzQzQuNzQ1NzIgNi4zOTQzIDQuNzQ1NzIgNi44NDUyNCA0Ljc1Mzg0IDcuMzAwMjRDNC43NjE5NyA3Ljk1ODM2IDQuODE0NzggOC42MTY0OSA0Ljg2MzUzIDkuMjc0NjFDNC44OTYwMyA5LjcxMzM2IDUuMjI5MTUgMTAuMTM1OSA1LjcwNDQ3IDEwLjExNTVDNi4xMzEwMyAxMC4wOTUyIDYuNTc3OSA5Ljc0NTg2IDYuNTQ1NCA5LjI3NDYxQzYuNDk2NjUgOC42MTY0OSA2LjQ0Mzg0IDcuOTU4MzYgNi40MzU3MiA3LjMwMDI0QzYuNDI3NTkgNi44NDUyNCA2LjQyNzU5IDYuMzk0MyA2LjQxMTM0IDUuOTM5M0M2LjM5NTA5IDUuNTAwNTUgNi4wMzc1OSA1LjA3ODA1IDUuNTcwNCA1LjA5ODM2QzUuMTI3NTkgNS4xMTg2NyA0LjcxMzIyIDUuNDY4MDUgNC43Mjk0NyA1LjkzOTNaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" width="16" alt="">
+        <span class="username">示範會員　|　會員中心　|</span>
+      </a>
+      <a class="member-wrap-link" href="/Login/Off">登出</a>
+      <button class="cart-btn" type="button">
+        <i class="icon">&#128722;</i>
+        <span class="badge">3</span>
+      </button>
+    </div>
+  </div>
+  <nav class="nav-row">
+    <a href="/Home/AboutNew">關於無毒農</a>
+    <a href="/BabyFood">粥寶寶</a>
+    <a href="/Eaglebabee">益菓保</a>
+    <a href="/Activity/GreenSmoothie"><span class="new-badge">NEW!</span>綠時光</a>
+    <a href="/Products/ItemNew">產地直送(免運)</a>
+    <a href="/Products/FrozenFood">冷凍超市</a>
+    <a href="/Baby/About">等家寶寶</a>
+    <a href="/Blog/BlogNew">部落格</a>
+  </nav>
+</header>
+
+
+<div class="sb-site-container">
+  <div class="page">
+<style>
+  /* 對齊現行結帳頁的六欄結構 */
+  .co { max-width: 1080px; margin: 0 auto; padding: 24px 16px 60px; color: #454545; }
+  .co h2 { font-size: 22px; color: #33435a; margin: 0 0 4px; }
+  .co .co-sub { font-size: 14px; color: #808080; margin-bottom: 20px; }
+
+  .co .categorey-title {
+    background: #4ba83b; color: #fff; font-size: 16px; font-weight: 600;
+    padding: 8px 16px; margin-top: 20px;
+  }
+  .co .top-field {
+    display: flex; align-items: center; background: #f7f7f7;
+    border: 1px solid #dbdbdb; border-top: 0; font-size: 14px; color: #808080;
+  }
+  .co .top-field > div { padding: 8px 4px; text-align: center; }
+
+  .co .order-field-basc {
+    display: flex; align-items: center; background: #fff;
+    border: 1px solid #dbdbdb; border-top: 0; box-shadow: 1px 0 5px rgba(0,0,0,0.1);
+    font-size: 14px;
+  }
+  .co .order-field-basc > div { padding: 12px 4px; text-align: center; }
+
+  .co .field-pd { width: 34%; display: flex; align-items: center; gap: 10px; text-align: left !important; }
+  .co .field-time { width: 15%; font-size: 13px; color: #808080; }
+  .co .field-price { width: 11%; }
+  .co .field-amt { width: 14%; }
+  .co .field-total { width: 17%; font-weight: 600; }
+  .co .field-del { width: 9%; }
+
+  .co .pd-thumb {
+    width: 68px; height: 68px; flex: none; background: #f7f7f7; border: 1px solid #e5e5e5;
+    display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;
+  }
+  .co .pd-title { font-size: 15px; color: #33435a; font-weight: 600; line-height: 1.4; }
+  .co .pd-spec { font-size: 13px; color: #808080; margin-top: 2px; }
+
+  .co select { width: 65px; padding: 4px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+  .co .amt-alert { font-size: 12px; color: #eb6100; margin-top: 4px; }
+  .co .amt-fixed { font-size: 15px; }
+  .co .amt-note { font-size: 12px; color: #808080; margin-top: 2px; }
+  .co .del-btn { background: none; border: 0; color: #808080; font-size: 20px; cursor: pointer; padding: 0; }
+  .co .del-btn:hover { color: #dc4e43; }
+
+  /* 禮物列：跟一般商品同一套欄位，只有標籤與價格呈現不同 */
+  .co .gift-row { background: #fafafa; }
+  .co .gift-tag {
+    display: inline-block; background: #4ba83b; color: #fff; font-size: 12px;
+    padding: 2px 8px; border-radius: 4px; margin-bottom: 4px;
+  }
+  .co .price-origin { color: #999; text-decoration: line-through; font-size: 13px; }
+  .co .price-free { color: #dc4e43; font-weight: 600; font-size: 16px; margin-left: 4px; }
+
+  .co .freight-state {
+    border: 1px solid #dbdbdb; border-top: 0; background: #fff;
+    padding: 12px 16px; font-size: 14px;
+  }
+  .co .fs-row { display: flex; justify-content: space-between; line-height: 2; }
+  .co .fs-hint { color: #dc4e43; font-weight: 600; }
+  .co .fs-free { color: #4ba83b; font-weight: 600; }
+
+  .co .total-box {
+    margin-top: 24px; border: 1px solid #dbdbdb; background: #fff; padding: 16px 20px;
+    max-width: 420px; margin-left: auto;
+  }
+  .co .total-row { display: flex; justify-content: space-between; line-height: 2.2; font-size: 15px; }
+  .co .total-row.is-final {
+    border-top: 2px dashed #dfdfdf; margin-top: 8px; padding-top: 10px;
+    font-size: 20px; font-weight: 700; color: #dc4e43;
+  }
+  .co .next-step { text-align: right; margin-top: 20px; }
+  .co .next-step button {
+    background: #4ba83b; color: #fff; border: unset; border-radius: 5px;
+    font-size: 18px; font-weight: bold; padding: 10px 43px; cursor: pointer;
+  }
+  .gv-toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); background: rgba(0,0,0,.82); color: #fff; padding: 10px 20px; border-radius: 5px; font-size: 15px; z-index: 10000; display: none; }
+  .gv-toast.is-show { display: block; }
+</style>
+
+<div class="co">
+  <h2>確認訂單</h2>
+  <div class="co-sub">禮物券兌換的商品會以 $0 併入這張訂單，跟自己買的商品一起結帳、一起出貨。</div>
+
+  <div class="categorey-title">粥寶寶專區　常溫</div>
+
+  <div class="top-field">
+    <div class="field-pd" style="text-align:left !important;padding-left:16px;">商品</div>
+    <div class="field-time">出貨時間</div>
+    <div class="field-price">單價</div>
+    <div class="field-amt">數量</div>
+    <div class="field-total">小計</div>
+    <div class="field-del">刪除</div>
+  </div>
+
+  <section class="order-field-basc" data-row="a">
+    <div class="field-pd">
+      <div class="pd-thumb">商品圖</div>
+      <div>
+        <div class="pd-title">寶寶粥 鮮蔬雞肉</div>
+        <div class="pd-spec">規格：1 包 150g</div>
+      </div>
+    </div>
+    <div class="field-time">2026/08/10<br>~<br>2026/08/14</div>
+    <div class="field-price">$680</div>
+    <div class="field-amt">
+      <select data-qty="a">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+      <div class="amt-alert">剩餘 12 組</div>
+    </div>
+    <div class="field-total" data-sub="a">$1,360</div>
+    <div class="field-del"><button type="button" class="del-btn" data-del="a">🗑</button></div>
+  </section>
+
+  <section class="order-field-basc" data-row="b">
+    <div class="field-pd">
+      <div class="pd-thumb">商品圖</div>
+      <div>
+        <div class="pd-title">寶寶果汁 蘋果</div>
+        <div class="pd-spec">規格：1 瓶 120ml</div>
+      </div>
+    </div>
+    <div class="field-time">2026/08/10<br>~<br>2026/08/14</div>
+    <div class="field-price">$40</div>
+    <div class="field-amt">
+      <select data-qty="b">
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+      </select>
+    </div>
+    <div class="field-total" data-sub="b">$40</div>
+    <div class="field-del"><button type="button" class="del-btn" data-del="b">🗑</button></div>
+  </section>
+
+  <section class="order-field-basc gift-row" data-row="g">
+    <div class="field-pd">
+      <div class="pd-thumb">禮物圖</div>
+      <div>
+        <span class="gift-tag">禮物券兌換</span>
+        <div class="pd-title">寶寶果泥 隨手包</div>
+        <div class="pd-spec">規格：1 包（生日禮專用）</div>
+      </div>
+    </div>
+    <div class="field-time">2026/08/10<br>~<br>2026/08/14</div>
+    <div class="field-price">
+      <span class="price-origin">$199</span><span class="price-free">$0</span>
+    </div>
+    <div class="field-amt">
+      <div class="amt-fixed">1</div>
+      <div class="amt-note">數量固定</div>
+    </div>
+    <div class="field-total">$0</div>
+    <div class="field-del"><button type="button" class="del-btn" data-del="g">🗑</button></div>
+  </section>
+
+  <div class="freight-state">
+    <div class="fs-row">
+      <span>商品小計</span>
+      <span data-line-sub>$1,400</span>
+    </div>
+    <div class="fs-row">
+      <span>運費</span>
+      <span data-freight>$150</span>
+    </div>
+    <div class="fs-row" data-hint-row>
+      <span class="fs-hint" data-hint>還差 $100 即可免運</span>
+      <span></span>
+    </div>
+  </div>
+
+  <div class="total-box">
+    <div class="total-row"><span>商品小計</span><span data-t-sub>$1,400</span></div>
+    <div class="total-row"><span>禮物券折抵</span><span style="color:#808080;">—</span></div>
+    <div class="total-row"><span>運費</span><span data-t-freight>$150</span></div>
+    <div class="total-row is-final"><span>應付金額</span><span data-t-final>$1,550</span></div>
+  </div>
+
+  <div class="next-step"><button type="button" id="co-next">前往結帳</button></div>
+</div>
+
+<div class="gv-toast" id="gv-toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var PRICE = { a: 680, b: 40 };
+  var state = { a: 2, b: 1, giftIn: true };
+  var THRESHOLD = 1500, FREIGHT = 150;
+
+  function fmt(n) { return '$' + n.toLocaleString('zh-TW'); }
+
+  function toast(msg) {
+    var t = document.getElementById('gv-toast');
+    t.textContent = msg;
+    t.classList.add('is-show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function () { t.classList.remove('is-show'); }, 2800);
+  }
+
+  function render() {
+    var sub = 0;
+    ['a', 'b'].forEach(function (k) {
+      var row = document.querySelector('[data-row="' + k + '"]');
+      if (!row) return;
+      var s = PRICE[k] * state[k];
+      sub += s;
+      document.querySelector('[data-sub="' + k + '"]').textContent = fmt(s);
+    });
+
+    // 禮物是 0 元，不計入小計、也不幫忙墊免運門檻
+    var freight = sub >= THRESHOLD ? 0 : (sub > 0 ? FREIGHT : 0);
+    var diff = THRESHOLD - sub;
+
+    document.querySelector('[data-line-sub]').textContent = fmt(sub);
+    document.querySelector('[data-freight]').textContent = freight ? fmt(freight) : '免運';
+    document.querySelector('[data-t-sub]').textContent = fmt(sub);
+    document.querySelector('[data-t-freight]').textContent = freight ? fmt(freight) : '免運';
+    document.querySelector('[data-t-final]').textContent = fmt(sub + freight);
+
+    var hint = document.querySelector('[data-hint]');
+    if (freight === 0 && sub > 0) {
+      hint.textContent = '已達免運門檻';
+      hint.className = 'fs-free';
+    } else if (sub > 0) {
+      hint.textContent = '還差 ' + fmt(diff) + ' 即可免運';
+      hint.className = 'fs-hint';
+    } else {
+      hint.textContent = '';
+    }
+  }
+
+  document.querySelectorAll('[data-qty]').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+      state[sel.getAttribute('data-qty')] = Number(sel.value);
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-del]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var k = btn.getAttribute('data-del');
+      var row = document.querySelector('[data-row="' + k + '"]');
+      if (k === 'g') {
+        row.remove();
+        state.giftIn = false;
+        toast('已移除禮物，禮物券仍保留在會員中心，可以再加入一次');
+      } else {
+        row.remove();
+        state[k] = 0;
+        toast('已移除商品');
+      }
+      render();
+    });
+  });
+
+  document.getElementById('co-next').addEventListener('click', function () {
+    toast('前往填寫收件資料');
+  });
+
+  render();
+})();
+</script>
+
+  </div>
+</div>
+
+<!--
+  footer.html — 無毒農主站 footer
+  依賴：base.css、footer.css
+  圖片：images/fb.svg、line.svg、ig.svg、yt.svg、footer_logo.svg
+-->
+<footer class="gb-footer">
+  <div class="wrap">
+    <div>
+      <h4>無毒農標準</h4>
+      <a href="/Home/DailyReport">安心檢驗日報</a>
+      <a href="/Home/AboutPGS">PGS參與式驗證</a>
+      <a href="/Blog/BlogNew">無毒農部落格</a>
+    </div>
+    <div>
+      <h4>安心選購</h4>
+      <a href="/BabyFood">粥寶寶</a>
+      <a href="/Eaglebabee">益菓保</a>
+      <a href="/Products/ItemNew">產地直送</a>
+      <a href="/Products/FrozenFood">冷凍超市</a>
+    </div>
+    <div>
+      <h4>幫助/政策</h4>
+      <a href="/Home/QuestionAndAnswer">常見問題</a>
+      <a href="/Home/Privacy">隱私權政策</a>
+      <a href="/Home/TermsConditions">使用者條款</a>
+      <a href="/Home/ReturnPolicy">退貨辦法</a>
+      <a href="/Home/AboutVip">會員制度/紅利積點</a>
+    </div>
+    <div>
+      <h4>認識無毒農</h4>
+      <a href="/Home/AboutNew">關於無毒農</a>
+      <a href="/Home/AboutTeam">團隊介紹</a>
+      <a href="https://www.104.com.tw/company/1a2x6blzu5" target="_blank">人才招募</a>
+      <a href="/Baby/About">等家寶寶</a>
+    </div>
+    <div>
+      <h4>追蹤我們</h4>
+      <div class="social">
+        <a href="https://www.facebook.com/GreenBox.in.tw" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KCjxyZWN0IHg9IjAiIGZpbGw9Im5vbmUiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIvPgoKPGc+Cgo8cGF0aCBmaWxsPSIjNGJhODNiIiBkPSJNOC40NiAxOGgyLjkzdi03LjNoMi40NWwuMzctMi44NGgtMi44MlY2LjA0YzAtLjgyLjIzLTEuMzggMS40MS0xLjM4aDEuNTFWMi4xMWMtLjI2LS4wMy0xLjE1LS4xMS0yLjE5LS4xMS0yLjE4IDAtMy42NiAxLjMzLTMuNjYgMy43NnYyLjFINnYyLjg0aDIuNDZWMTh6Ii8+Cgo8L2c+Cgo8L3N2Zz4=" alt="Facebook"></a>
+        <a href="https://lin.ee/djMfdxH" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAyQzE3LjUxNDEgMiAyMiA1LjY0MDUgMjIgMTAuMTE1MkMyMiAxMS45MDU5IDIxLjMwNTYgMTMuNTE4OSAxOS44NTY1IDE1LjEwODNIMTkuODU2OUMxNy43NTg5IDE3LjUyMjkgMTMuMDY3MyAyMC40NjQyIDEyIDIwLjkxNEMxMC45NjIyIDIxLjM1MTMgMTEuMDgyNCAyMC42NjcyIDExLjEyOTkgMjAuMzk2OUMxMS4xMzEyIDIwLjM4OTIgMTEuMTMyNSAyMC4zODE5IDExLjEzMzcgMjAuMzc0OUMxMS4xNTkyIDIwLjIyNDUgMTEuMjc2NSAxOS41MTg4IDExLjI3NjUgMTkuNTE4OEMxMS4zMTAxIDE5LjI2MzQgMTEuMzQ1IDE4Ljg2NzMgMTEuMjQ0MSAxOC42MTQ2QzExLjEzMjEgMTguMzM2MyAxMC42ODg4IDE4LjE5MTggMTAuMzYzMiAxOC4xMjE0QzUuNTU3NTUgMTcuNDg2NCAyIDE0LjEyNjcgMiAxMC4xMTUyQzIgNS42NDA1IDYuNDg2MzMgMiAxMiAyWk05Ljk3MjE4IDcuOTUyODFIOS4yNjMxQzkuMTU3NjYgNy45NTI4MSA5LjA3MjA4IDguMDM4MzkgOS4wNzIwOCA4LjE0Mzc0VjEyLjUwOEM5LjA3MjA4IDEyLjYxMzUgOS4xNTc2NiAxMi42OTkgOS4yNjMxIDEyLjY5OUg5Ljk3MjE4QzEwLjA3NzcgMTIuNjk5IDEwLjE2MzEgMTIuNjEzNSAxMC4xNjMxIDEyLjUwOFY4LjE0Mzc0QzEwLjE2MzEgOC4wMzgzOSAxMC4wNzc3IDcuOTUyODEgOS45NzIxOCA3Ljk1MjgxWk04LjQ3MTg0IDEyLjUwOEM4LjQ3MTg0IDEyLjYxMzUgOC4zODYzNiAxMi42OTg5IDguMjgwOTEgMTIuNjk4OUg1LjQ3MTQyQzUuMzY1OTggMTIuNjk4OSA1LjI4MDUgMTIuNjEzNSA1LjI4MDUgMTIuNTA4VjguMTQzODFDNS4yODA1IDguMDM4MzYgNS4zNjU5OCA3Ljk1Mjg4IDUuNDcxNDIgNy45NTI4OEg2LjE4MDY5QzYuMjg1NjYgNy45NTI4OCA2LjM3MTUyIDguMDM4NzQgNi4zNzE1MiA4LjE0MzgxVjExLjYwNzlIOC4yODA5MUM4LjM4NTg5IDExLjYwNzkgOC40NzE4NCAxMS42OTM4IDguNDcxODQgMTEuNzk4N1YxMi41MDhaTTE1Ljg2MzcgMTIuNjk4OUgxOC42NzMyQzE4Ljc3ODcgMTIuNjk4OSAxOC44NjQxIDEyLjYxMzUgMTguODY0MSAxMi41MDhWMTEuNzk4N0MxOC44NjQxIDExLjY5MzggMTguNzc4MiAxMS42MDc5IDE4LjY3MzIgMTEuNjA3OUgxNi43NjM5VjEwLjg3MTVIMTguNjczMkMxOC43Nzg3IDEwLjg3MTUgMTguODY0MSAxMC43ODYgMTguODY0MSAxMC42ODA1VjkuOTcxMjhDMTguODY0MSA5Ljg2NjMgMTguNzc4MiA5Ljc4MDM1IDE4LjY3MzIgOS43ODAzNUgxNi43NjM5VjkuMDQzOUgxOC42NzMyQzE4Ljc3ODcgOS4wNDM5IDE4Ljg2NDEgOC45NTg0MiAxOC44NjQxIDguODUyOTdWOC4xNDM4MUMxOC44NjQxIDguMDM4NzQgMTguNzc4MiA3Ljk1Mjg4IDE4LjY3MzIgNy45NTI4OEgxNS44NjM3QzE1Ljc1ODMgNy45NTI4OCAxNS42NzI4IDguMDM4MzYgMTUuNjcyOCA4LjE0MzgxVjEyLjUwOEMxNS42NzI4IDEyLjYxMzUgMTUuNzU4MyAxMi42OTg5IDE1Ljg2MzcgMTIuNjk4OVpNMTQuMDkxIDcuOTUyODFIMTQuODAwMUMxNC45MDU2IDcuOTUyODEgMTQuOTkxMSA4LjAzODM5IDE0Ljk5MTEgOC4xNDM3NFYxMi41MDhDMTQuOTkxMSAxMi42MTM1IDE0LjkwNTYgMTIuNjk5IDE0LjgwMDEgMTIuNjk5SDE0LjA5NDlDMTQuMDc3NiAxMi42OTkgMTQuMDYwOSAxMi42OTY0IDE0LjA0NSAxMi42OTIyTDE0LjA0MzcgMTIuNjkyTDE0LjA0MjIgMTIuNjkxNkMxNC4wMzc3IDEyLjY5MDMgMTQuMDMzMyAxMi42ODg4IDE0LjAyOSAxMi42ODczTDE0LjAyMyAxMi42ODUxQzE0LjAxOTggMTIuNjgzOSAxNC4wMTY4IDEyLjY4MjYgMTQuMDEzNiAxMi42ODExQzE0LjAxMDUgMTIuNjc5NyAxNC4wMDc1IDEyLjY3ODIgMTQuMDA0NSAxMi42NzY2QzE0LjAwMjUgMTIuNjc1NyAxNC4wMDA3IDEyLjY3NDYgMTMuOTk4OCAxMi42NzM2QzEzLjk5NDggMTIuNjcxMyAxMy45OTA3IDEyLjY2ODkgMTMuOTg2OCAxMi42NjYzTDEzLjk4NDcgMTIuNjY0OEMxMy45NjYgMTIuNjUyMSAxMy45NDkyIDEyLjYzNjIgMTMuOTM1NCAxMi42MTY3TDExLjkzNjEgOS45MTY3NVYxMi41MDhDMTEuOTM2MSAxMi42MTM1IDExLjg1MDYgMTIuNjk5IDExLjc0NTIgMTIuNjk5SDExLjAzNkMxMC45MzA2IDEyLjY5OSAxMC44NDUxIDEyLjYxMzUgMTAuODQ1MSAxMi41MDhWOC4xNDM3NEMxMC44NDUxIDguMDM4MzkgMTAuOTMwNiA3Ljk1MjgxIDExLjAzNiA3Ljk1MjgxSDExLjc0MTJDMTEuNzQzNSA3Ljk1MjgxIDExLjc0NTYgNy45NTMwOSAxMS43NDc5IDcuOTUzMThDMTEuNzUxMyA3Ljk1MzI4IDExLjc1NDYgNy45NTMzNyAxMS43NTggNy45NTM3NUwxMS43NjgzIDcuOTU0ODdMMTEuNzc2NCA3Ljk1NjE4TDExLjc4NzcgNy45NTg2MkwxMS43OTQ2IDcuOTYwNEMxMS43OTg1IDcuOTYxNTMgMTEuODAyMyA3Ljk2Mjc0IDExLjgwNjIgNy45NjQxNUwxMS44MTI0IDcuOTY2NEMxMS44MTYxIDcuOTY3OSAxMS44MTk5IDcuOTY5NDkgMTEuODIzNSA3Ljk3MTE4TDExLjgyOTYgNy45NzQxOEMxMS44MzMyIDcuOTc1OTYgMTEuODM2NyA3Ljk3NzkzIDExLjg0MDEgNy45Nzk5OUwxMS44NDU5IDcuOTgzNDZDMTEuODQ5NSA3Ljk4NTggMTEuODUyOSA3Ljk4ODA1IDExLjg1NjEgNy45OTA0TDExLjg2MTMgNy45OTQyNEMxMS44NjQ5IDcuOTk3MTQgMTEuODY4MiA4LjAwMDA1IDExLjg3MTYgOC4wMDMwNUwxMS44NzUyIDguMDA2MzNDMTEuODc5MiA4LjAxMDA4IDExLjg4MyA4LjAxNDExIDExLjg4NjcgOC4wMTgyM0wxMS44ODc5IDguMDE5NjRDMTEuODkzNCA4LjAyNTgzIDExLjg5ODYgOC4wMzIzOSAxMS45MDMzIDguMDM5MzJMMTMuOSAxMC43MzU5VjguMTQzNzRDMTMuOSA4LjAzODM5IDEzLjk4NTUgNy45NTI4MSAxNC4wOTEgNy45NTI4MVoiIGZpbGw9IiM0YmE4M2IiLz4KPC9zdmc+" alt="LINE"></a>
+        <a href="https://www.instagram.com/greenbox_tw/" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAyQzkuMjg0IDIgOC45NDQgMi4wMTEzMyA3Ljg3NzMzIDIuMDZDNi44MTI2NyAyLjEwODY3IDYuMDg1MzMgMi4yNzggNS40NDkzMyAyLjUyNTMzQzQuNzgyNjcgMi43NzYgNC4xNzggMy4xNjkzMyAzLjY3OCAzLjY3ODY3QzMuMTY5NDggNC4xNzgwOSAyLjc3NTkxIDQuNzgyMzMgMi41MjQ2NyA1LjQ0OTMzQzIuMjc4NjcgNi4wODUzMyAyLjEwODY3IDYuODEzMzMgMi4wNiA3Ljg3OEMyLjAxMiA4Ljk0NCAyIDkuMjgzMzMgMiAxMkMyIDE0LjcxNjcgMi4wMTEzMyAxNS4wNTYgMi4wNiAxNi4xMjI3QzIuMTA4NjcgMTcuMTg3MyAyLjI3OCAxNy45MTQ3IDIuNTI1MzMgMTguNTUwN0MyLjc3NiAxOS4yMTczIDMuMTY5MzMgMTkuODIyIDMuNjc4NjcgMjAuMzIyQzQuMTc4MSAyMC44MzA1IDQuNzgyMzQgMjEuMjI0MSA1LjQ0OTMzIDIxLjQ3NTNDNi4wODUzMyAyMS43MjIgNi44MTI2NyAyMS44OTEzIDcuODc3MzMgMjEuOTRDOC45NDQgMjEuOTg4NyA5LjI4NCAyMiAxMiAyMkMxNC43MTYgMjIgMTUuMDU2IDIxLjk4ODcgMTYuMTIyNyAyMS45NEMxNy4xODczIDIxLjg5MTMgMTcuOTE0NyAyMS43MjIgMTguNTUwNyAyMS40NzQ3QzE5LjIxNzMgMjEuMjI0IDE5LjgyMiAyMC44MzA3IDIwLjMyMiAyMC4zMjEzQzIwLjgzMDUgMTkuODIxOSAyMS4yMjQxIDE5LjIxNzcgMjEuNDc1MyAxOC41NTA3QzIxLjcyMiAxNy45MTQ3IDIxLjg5MTMgMTcuMTg3MyAyMS45NCAxNi4xMjI3QzIxLjk4ODcgMTUuMDU2IDIyIDE0LjcxNiAyMiAxMkMyMiA5LjI4NCAyMS45ODg3IDguOTQ0IDIxLjk0IDcuODc3MzNDMjEuODkxMyA2LjgxMjY3IDIxLjcyMiA2LjA4NTMzIDIxLjQ3NDcgNS40NDkzM0MyMS4yMjM2IDQuNzgyMDQgMjAuODMgNC4xNzc1NSAyMC4zMjEzIDMuNjc4QzE5LjgyMTkgMy4xNjk0OCAxOS4yMTc3IDIuNzc1OTEgMTguNTUwNyAyLjUyNDY3QzE3LjkxNDcgMi4yNzg2NyAxNy4xODY3IDIuMTA4NjcgMTYuMTIyIDIuMDZDMTUuMDU2IDIuMDEyIDE0LjcxNjcgMiAxMiAyWk0xMiAzLjgwMkMxNC42NyAzLjgwMiAxNC45ODY3IDMuODEyIDE2LjA0MTMgMy44NkMxNy4wMTYgMy45MDQ2NyAxNy41NDUzIDQuMDY2NjcgMTcuODk4IDQuMjA0NjdDMTguMzY0NyA0LjM4NTMzIDE4LjY5OCA0LjYwMjY3IDE5LjA0OCA0Ljk1MkMxOS4zOTggNS4zMDIgMTkuNjE0NyA1LjYzNTMzIDE5Ljc5NTMgNi4xMDJDMTkuOTMyNyA2LjQ1NDY3IDIwLjA5NTMgNi45ODQgMjAuMTQgNy45NTg2N0MyMC4xODggOS4wMTMzMyAyMC4xOTggOS4zMyAyMC4xOTggMTJDMjAuMTk4IDE0LjY3IDIwLjE4OCAxNC45ODY3IDIwLjE0IDE2LjA0MTNDMjAuMDk1MyAxNy4wMTYgMTkuOTMzMyAxNy41NDUzIDE5Ljc5NTMgMTcuODk4QzE5LjYzNTMgMTguMzMyNCAxOS4zNzk5IDE4LjcyNTMgMTkuMDQ4IDE5LjA0OEMxOC43MjU0IDE5LjM4IDE4LjMzMjQgMTkuNjM1NCAxNy44OTggMTkuNzk1M0MxNy41NDUzIDE5LjkzMjcgMTcuMDE2IDIwLjA5NTMgMTYuMDQxMyAyMC4xNEMxNC45ODY3IDIwLjE4OCAxNC42NzA3IDIwLjE5OCAxMiAyMC4xOThDOS4zMjkzMyAyMC4xOTggOS4wMTMzMyAyMC4xODggNy45NTg2NyAyMC4xNEM2Ljk4NCAyMC4wOTUzIDYuNDU0NjcgMTkuOTMzMyA2LjEwMiAxOS43OTUzQzUuNjY3NjQgMTkuNjM1MyA1LjI3NDY3IDE5LjM3OTkgNC45NTIgMTkuMDQ4QzQuNjIwMTIgMTguNzI1MyA0LjM2NDc1IDE4LjMzMjMgNC4yMDQ2NyAxNy44OThDNC4wNjczMyAxNy41NDUzIDMuOTA0NjcgMTcuMDE2IDMuODYgMTYuMDQxM0MzLjgxMiAxNC45ODY3IDMuODAyIDE0LjY3IDMuODAyIDEyQzMuODAyIDkuMzMgMy44MTIgOS4wMTMzMyAzLjg2IDcuOTU4NjdDMy45MDQ2NyA2Ljk4NCA0LjA2NjY3IDYuNDU0NjcgNC4yMDQ2NyA2LjEwMkM0LjM4NTMzIDUuNjM1MzMgNC42MDI2NyA1LjMwMiA0Ljk1MiA0Ljk1MkM1LjI3NDYzIDQuNjIwMDMgNS42Njc2MSA0LjM2NDY1IDYuMTAyIDQuMjA0NjdDNi40NTQ2NyA0LjA2NzMzIDYuOTg0IDMuOTA0NjcgNy45NTg2NyAzLjg2QzkuMDEzMzMgMy44MTIgOS4zMyAzLjgwMiAxMiAzLjgwMloiIGZpbGw9IiM0YmE4M2IiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAxNS4zMzY3QzExLjU2MTggMTUuMzM2NyAxMS4xMjggMTUuMjUwNCAxMC43MjMxIDE1LjA4MjdDMTAuMzE4MyAxNC45MTUgOS45NTA0NyAxNC42NjkyIDkuNjQwNjQgMTQuMzU5NEM5LjMzMDggMTQuMDQ5NSA5LjA4NTAyIDEzLjY4MTcgOC45MTczNCAxMy4yNzY5QzguNzQ5NjUgMTIuODcyMSA4LjY2MzM1IDEyLjQzODIgOC42NjMzNSAxMkM4LjY2MzM1IDExLjU2MTggOC43NDk2NSAxMS4xMjc5IDguOTE3MzQgMTAuNzIzMUM5LjA4NTAyIDEwLjMxODMgOS4zMzA4IDkuOTUwNDYgOS42NDA2NCA5LjY0MDYyQzkuOTUwNDcgOS4zMzA3OCAxMC4zMTgzIDkuMDg1MDEgMTAuNzIzMSA4LjkxNzMyQzExLjEyOCA4Ljc0OTY0IDExLjU2MTggOC42NjMzMyAxMiA4LjY2MzMzQzEyLjg4NSA4LjY2MzMzIDEzLjczMzYgOS4wMTQ4NyAxNC4zNTk0IDkuNjQwNjJDMTQuOTg1MSAxMC4yNjY0IDE1LjMzNjcgMTEuMTE1MSAxNS4zMzY3IDEyQzE1LjMzNjcgMTIuODg0OSAxNC45ODUxIDEzLjczMzYgMTQuMzU5NCAxNC4zNTk0QzEzLjczMzYgMTQuOTg1MSAxMi44ODUgMTUuMzM2NyAxMiAxNS4zMzY3Wk0xMiA2Ljg2QzEwLjYzNjggNi44NiA5LjMyOTQyIDcuNDAxNTMgOC4zNjU0OSA4LjM2NTQ3QzcuNDAxNTUgOS4zMjk0MSA2Ljg2MDAyIDEwLjYzNjggNi44NjAwMiAxMkM2Ljg2MDAyIDEzLjM2MzIgNy40MDE1NSAxNC42NzA2IDguMzY1NDkgMTUuNjM0NUM5LjMyOTQyIDE2LjU5ODUgMTAuNjM2OCAxNy4xNCAxMiAxNy4xNEMxMy4zNjMyIDE3LjE0IDE0LjY3MDYgMTYuNTk4NSAxNS42MzQ1IDE1LjYzNDVDMTYuNTk4NSAxNC42NzA2IDE3LjE0IDEzLjM2MzIgMTcuMTQgMTJDMTcuMTQgMTAuNjM2OCAxNi41OTg1IDkuMzI5NDEgMTUuNjM0NSA4LjM2NTQ3QzE0LjY3MDYgNy40MDE1MyAxMy4zNjMyIDYuODYgMTIgNi44NlpNMTguNjM1MyA2Ljc2NjY3QzE4LjYzNTMgNy4wODg5IDE4LjUwNzMgNy4zOTc5NCAxOC4yNzk1IDcuNjI1OEMxOC4wNTE2IDcuODUzNjYgMTcuNzQyNiA3Ljk4MTY3IDE3LjQyMDQgNy45ODE2N0MxNy4wOTgxIDcuOTgxNjcgMTYuNzg5MSA3Ljg1MzY2IDE2LjU2MTIgNy42MjU4QzE2LjMzMzQgNy4zOTc5NCAxNi4yMDUzIDcuMDg4OSAxNi4yMDUzIDYuNzY2NjdDMTYuMjA1MyA2LjQ0NDQzIDE2LjMzMzQgNi4xMzUzOSAxNi41NjEyIDUuOTA3NTNDMTYuNzg5MSA1LjY3OTY4IDE3LjA5ODEgNS41NTE2NyAxNy40MjA0IDUuNTUxNjdDMTcuNzQyNiA1LjU1MTY3IDE4LjA1MTYgNS42Nzk2OCAxOC4yNzk1IDUuOTA3NTNDMTguNTA3MyA2LjEzNTM5IDE4LjYzNTMgNi40NDQ0MyAxOC42MzUzIDYuNzY2NjdaIiBmaWxsPSIjNGJhODNiIi8+Cjwvc3ZnPg==" alt="Instagram"></a>
+        <a href="https://www.youtube.com/channel/UC1fp9pohpxLtAVtUkQKNLHQ" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJub25lIj48cGF0aCBmaWxsPSIjNGJhODNiIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy40NzggMy4zOTljLjYuMTYxIDEuMDcyLjYzNCAxLjIzNCAxLjIzNEMxNSA1LjcyOCAxNSA4IDE1IDhzMCAyLjI3Mi0uMjg4IDMuMzY3YTEuNzU0IDEuNzU0IDAgMDEtMS4yMzQgMS4yMzRDMTIuMzgyIDEyLjg5IDggMTIuODkgOCAxMi44OXMtNC4zODIgMC01LjQ3OC0uMjg5YTEuNzU0IDEuNzU0IDAgMDEtMS4yMzQtMS4yMzRDMSAxMC4yODMgMSA4IDEgOHMwLTIuMjcyLjI4OC0zLjM2N2MuMTYyLS42LjYzNS0xLjA3MyAxLjIzNC0xLjIzNEMzLjYxOCAzLjExIDggMy4xMSA4IDMuMTFzNC4zODIgMCA1LjQ3OC4yODl6bS0zLjI0IDQuNjEybC0zLjY0NSAyLjFWNS45bDMuNjQ0IDIuMTF6IiBjbGlwLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=" alt="YouTube"></a>
+      </div>
+      <div class="info">
+        總部地址：106 臺北市大安區仁愛路四段 2 號 11 樓<br>
+        電話：(02) 2771-2900<br>
+        客服時間：<br>
+        週一至週五 09:00–18:00（不含國定假日）
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="slogan">
+      <img src="data:image/svg+xml;base64,PHN2ZyBpZD0i5ZyW5bGkXzEiIGRhdGEtbmFtZT0i5ZyW5bGkIDEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI2OS4zMyA3Ny40MSI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmY7fTwvc3R5bGU+PC9kZWZzPjx0aXRsZT5MT0dPIOeZveiJsuasvjwvdGl0bGU+PHJlY3QgY2xhc3M9ImNscy0xIiB4PSIxMDMuMDkiIHk9IjI1LjE0IiB3aWR0aD0iNS4wNCIgaGVpZ2h0PSI0OC40OCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTUuMjYgMTU0LjU0KSByb3RhdGUoLTg5LjQ4KSIvPjxwb2x5Z29uIGNsYXNzPSJjbHMtMSIgcG9pbnRzPSI4Ni43MyA0My4zOSA5MS43NyA0My40NCA5MS44NCAzNi4wMyA5OC4xMyAzNi4wOSA5OC4wOCA0My40OSAxMDMuMSA0My41NSAxMDMuMTggMzYuMTMgMTA5LjQ3IDM2LjE5IDEwOS40MSA0My42MSAxMTQuNDUgNDMuNjUgMTE0LjUyIDM2LjI0IDEyMC44MSAzNi4zIDEyMC43NSA0My43MSAxMjUuNzkgNDMuNzYgMTI1Ljg1IDM2LjM0IDEyOS45NiAzNi4zOCAxMzAuMDEgMzEuMzUgMTI1LjkgMzEuMzEgMTI1Ljk1IDI1Ljk5IDEyMC45MSAyNS45NSAxMjAuODYgMzEuMjcgMTE0LjU3IDMxLjIxIDExNC42MSAyNS44OSAxMDkuNTggMjUuODQgMTA5LjUyIDMxLjE2IDEwMy4yMyAzMS4xIDEwMy4yOCAyNS43OSA5OC4yMyAyNS43NCA5OC4xOCAzMS4wNiA5MS44OSAzMSA5MS45MiAyNS42OCA4Ni44OSAyNS42NCA4Ni44NSAzMC45NSA4MS41MyAzMC45MSA4MS40OCAzNS45NCA4Ni44IDM1Ljk4IDg2LjczIDQzLjM5Ii8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjEyOS40MyAxNS44IDg3LjE3IDE1LjggODcuMTcgMTAuOTQgODIuMTQgMTAuOTQgODIuMTMgMjAuODMgMTI5LjQzIDIwLjgzIDEyOS40MyAxNS44Ii8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjE3OC40IDI2LjIzIDE5OC45NCAyNi4yMyAxOTguOTQgMjIuMDQgMTc4LjQgMjIuMDQgMTc4LjQgMTkuMTggMjAxLjkzIDE5LjE4IDIwMS45MyAxNC44NiAxNzguNCAxNC44NiAxNzguNCAxMC45NCAxNzIuMTUgMTAuOTQgMTcyLjE1IDE0Ljg2IDE0OC4zNCAxNC44NiAxNDguMzQgMTkuMTggMTcyLjE1IDE5LjE4IDE3Mi4xNSAyMi4wNCAxNTEuNjcgMjIuMDQgMTUxLjY3IDI2LjIzIDE3Mi4xNSAyNi4yMyAxNzIuMTUgMjkuNDIgMTQ3LjIxIDI5LjQyIDE0Ny4yMSAzMy43NCAyMDMuODYgMzMuNzQgMjAzLjg2IDI5LjQyIDE3OC40IDI5LjQyIDE3OC40IDI2LjIzIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY5LjMzLDMxLjIySDIyMi42NlY2Ny41NGg2LjI1di0xNWgzLjI2djE1aDEzLjQ0VjYzLjM1aC03LjE5VjUyLjU5SDI0MGwyNi4yMywxNS4xNCwyLjA5LTMuNjMtMi42Ny0xLjU0di0xMGgzLjY3VjQ4LjRIMjI4Ljkxdi0xM2g0MC40MlpNMjU5LjQxLDU5bC0xMS02LjM2aDExWiIvPjxyZWN0IGNsYXNzPSJjbHMtMSIgeD0iMjMwLjk0IiB5PSIzOS40MyIgd2lkdGg9IjM0Ljc4IiBoZWlnaHQ9IjQuMTkiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xOTYuODIsNDAuMzhWMzYuMTlIMTU0LjczdjguMzZoLTYuMTd2NC4xOWg2LjE3djkuMTFoMzUuODR2NC45M0gxNjlWNjdoMjcuODFWNTcuODVIMjAwVjUzLjY2aC0zLjE0VjQ4Ljc0aDVWNDQuNTVoLTVabS02LjI1LDQuMTdIMTc2LjgybC00LjA3LTQuMTdoMTcuODJaTTE2MSw0MC4zOGg2LjExbC0uMS4xLDQsNC4wN0gxNjFabTAsOC4zNmgxNC4wOGw0LjgxLDQuOTJIMTYxWm0yOS41OSw0LjkyaC00LjgzbC00LjgyLTQuOTJoOS42NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNTAuNDIsMTYuNDZsMCwwYy0xLjUxLTEuOC0zLjE0LTIuNzItNC44NC0yLjczQTUuNTgsNS41OCwwLDAsMCwyNDIuMDksMTVsLTEtMS42NWMtMS41MS0yLjQxLTMuMTctMy42NC00LjkzLTMuNjUtMywwLTQuODUsMy40OS00Ljg4LDMuNTZMMjIyLjM5LDI2LjhoMzYuNzNaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY4LDI0Ljc5bC02LjU4LTExLjQzYy0xLjM5LTIuNDItMy0zLjY2LTQuNjItMy42OC0yLjc3LDAtNC40NSwzLjMtNC41OCwzLjU5bC0uNTEuODYsOS4yNSwxMC42NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik04MC4xOSw2NS44NWw0LjIsMS42OGE2Mi4zMyw2Mi4zMywwLDAsMCw2LjA3LTEyLjA4bC00LjItMS4wOEE1Ni40Miw1Ni40MiwwLDAsMSw4MC4xOSw2NS44NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik05Ni4yOSw1Ni4wNWE2NS44LDY1LjgsMCwwLDEsMS4yNiwxMWw0LjM5LS42NmE2NC4yMyw2NC4yMywwLDAsMC0xLjUtMTAuN1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMDguNjcsNTUuOTNhNjUsNjUsMCwwLDEsMy42LDExbDQuMzktLjlhNTQuMyw1NC4zLDAsMCwwLTMuOTEtMTAuODJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTIxLDU1LjY5YTk4LjA2LDk4LjA2LDAsMCwxLDYsMTEuNzJsNC4zMy0xLjg2YTEyMy40OCwxMjMuNDgsMCwwLDAtNi4zMS0xMS40OFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik02Mi4xOSwyNmgzLjQ4YS41NC41NCwwLDAsMCwuNTQtLjUybC4wNS0xLjA5YTguNDIsOC40MiwwLDAsMC0yLjIxLTUuNjNjLTEuODgtMi00LjczLTMuMTQtOC40OC0zLjI3LTMuNTktLjEyLTQuNjktMS42Mi02LjctNC4zMkM0Ni41OCw4LDQzLjQ1LDMuOCwzNSwuNDZoMGMtLjU4LS4yMy0xLS4zOC0xLS4zOGwtLjE3LDBhLjQ3LjQ3LDAsMCwwLS4xNywwLC42My42MywwLDAsMC0uMTksMGwtLjM3LjE1QzI0LDMuNTQsMjAuNzksNy45MiwxOC40MiwxMS4xMmMtMiwyLjcxLTMuMTEsNC4yLTYuNyw0LjMzLTMuNzUuMTMtNi42LDEuMjMtOC40OSwzLjI3QTguMzksOC4zOSwwLDAsMCwxLDI0LjM1bC4wNSwxLjA5YS41NC41NCwwLDAsMCwuNTQuNTJINS4xQTMzLjY0LDMzLjY0LDAsMCwwLDI4LjY0LDc3YTMyLjg3LDMyLjg3LDAsMCwwLDUsLjM4LDM0LDM0LDAsMCwwLDUtLjM4QTMzLjY0LDMzLjY0LDAsMCwwLDYyLjE5LDI2Wk00Ni42LDEyLjgxYzIuMTEsMi44NCwzLjkyLDUuMjksOC44Nyw1LjQ2LDYsLjIxLDcuNDgsMy4xOCw3Ljg1LDQuODdINDlBNDQsNDQsMCwwLDAsMzkuNzYsNiwyNC43MSwyNC43MSwwLDAsMSw0Ni42LDEyLjgxWm0wLDEwLjMzSDQwLjM0Yy45LTUuMTctMS4wOC0xMS43Mi0yLjkxLTE2LjMyQTQyLjMyLDQyLjMyLDAsMCwxLDQ2LjYzLDIzLjE0Wk0zMy44OCw0LjM1QzM1LjY5LDguMjYsMzkuMjksMTcuMTMsMzgsMjMuMTRIMjkuNzVDMjguNDcsMTcuMTMsMzIuMDcsOC4yOCwzMy44OCw0LjM1Wk0yNy40MiwyMy4xNEgyMS4xNGE0Mi4yNCw0Mi4yNCwwLDAsMSw5LjE4LTE2LjNDMjguNSwxMS40NCwyNi41MywxOCwyNy40MiwyMy4xNFpNNCwyMy4xNGE1LjU0LDUuNTQsMCwwLDEsMS4zMi0yLjVjMS4zNS0xLjQ3LDMuNTQtMi4yNiw2LjUxLTIuMzcsNC45NC0uMTcsNi43Ni0yLjYyLDguODYtNS40NmEyNC42LDI0LjYsMCwwLDEsNy44OS03LjQzLDQ0LjQ3LDQ0LjQ3LDAsMCwwLTkuOCwxNy43Nkg0Wk04LjY1LDY1LjQ3Yy42NC43NCwxLjMyLDEuNDUsMiwyLjEzQzEwLDY2LjkyLDkuMjksNjYuMjEsOC42NSw2NS40N1ptMjcuNzYsOWEzMS4yMywzMS4yMywwLDAsMS01LjQ3LDAsNC43OSw0Ljc5LDAsMCwwLC42Ni0zLjJBNC45Myw0LjkzLDAsMCwwLDI5LjIyLDY4TDI5LjA3LDY4bC0uMTcsMGEyNSwyNSwwLDAsMS0zLjgzLTEuMDhMMjYuNyw2NGwwLS4yM2E0LjE5LDQuMTksMCwwLDAtMy4zNC00LjY0TDIyLjkxLDU5bC01LjE4LDMuNTNhMjQuMzksMjQuMzksMCwwLDEtNC40MS00Ljg5SDU0YTI0LDI0LDAsMCwxLTQuMzcsNC44NUw0NC40MSw1OWwtLjQ4LjExYTQuMTcsNC4xNywwLDAsMC0zLjM0LDQuNjRsMCwuMjMsMS42MywyLjg0YTI1LDI1LDAsMCwxLTMuODMsMS4wOGwtLjE3LDBMMzguMSw2OGE0LjkzLDQuOTMsMCwwLDAtMi4zOCwzLjIzQTQuODgsNC44OCwwLDAsMCwzNi40MSw3NC40NlpNMzIuMzUsNDYuNTRBNTAuNTUsNTAuNTUsMCwwLDAsMjUsNTUuMzZIMTEuOTNBMjQuNjQsMjQuNjQsMCwwLDEsOSw0My43NWMwLS43NCwwLTEuNDguMDktMi4yMUE0Ni43NSw0Ni43NSwwLDAsMSwyMy44LDQzbC4zLTEuMWgwbC0uMywxLjFBMzYuNTUsMzYuNTUsMCwwLDEsMzIuMzUsNDYuNTRabTEuNzYtMS42MWEzNy41MiwzNy41MiwwLDAsMC05LTMuOUE5LjkyLDkuOTIsMCwwLDEsMjUsMzkuN2E4Ljg4LDguODgsMCwwLDEsMTcuNzItLjgzQTQ2LjI5LDQ2LjI5LDAsMCwwLDM0LjExLDQ0LjkzWm0xMC4zMi00LjM4YTMyLjYsMzIuNiwwLDAsMSwxMi44Ni0zLjY3LDI0LjczLDI0LjczLDAsMCwxLTEuOTMsMTguNDhIMjcuNzVBNTEuMzYsNTEuMzYsMCwwLDEsMzUsNDcuMTksNDMuNjUsNDMuNjUsMCwwLDEsNDQuNDMsNDAuNTVabS01LjUsMzMuNTdhMy41MywzLjUzLDAsMCwxLTEtMi41MiwyLjU0LDIuNTQsMCwwLDEsMS4xLTEuNTUsMjYuNzcsMjYuNzcsMCwwLDAsNS4yOC0xLjY2bDEuMTctLjUxTDQyLjg0LDYzLjJBMS44LDEuOCwwLDAsMSw0NCw2MS40M2w1LjcxLDMuOTEuNjYtLjUzQTI3LDI3LDAsMCwwLDU5LjIsMzUuMzNMNTksMzQuNTVoLS44OGEzNC4zOSwzNC4zOSwwLDAsMC0xMy4xOSwzLjI0QTExLjE2LDExLjE2LDAsMCwwLDIyLjcyLDM5LjdjMCwuMjMsMCwuNDcsMCwuN0E0Ny4xNyw0Ny4xNywwLDAsMCw4LDM5LjM1bC0uODguMTFMNyw0MC4zNGEyNS41OSwyNS41OSwwLDAsMC0uMjIsMy40MUEyNi44NSwyNi44NSwwLDAsMCwxNyw2NC44NWwuNjYuNTIsNS42OS0zLjg4YTEuODMsMS44MywwLDAsMSwxLjE3LDEuNzdMMjEuOCw2Ny45NGwxLjE3LjUxYTI2LjU3LDI2LjU3LDAsMCwwLDUuMjgsMS42NiwyLjU3LDIuNTcsMCwwLDEsMS4xLDEuNTUsMy40NCwzLjQ0LDAsMCwxLS45MywyLjQ3QTMxLDMxLDAsMCwxLDIuODIsNDMuNzcsMzAuNTIsMzAuNTIsMCwwLDEsOC44OCwyNS40Mkg1OC40YTMwLjQ1LDMwLjQ1LDAsMCwxLDYuMDYsMTguMzVBMzEsMzEsMCwwLDEsMzguOTMsNzQuMTJaIi8+PC9zdmc+" alt="無毒農 logo">
+      <span>用信任連結產地和餐桌</span>
+    </div>
+    <div class="legal">
+      <p>舒果農企業有限公司／無毒農　統編：42829375</p>
+      <p>食品業者登錄字號：A-142829375-00000-8</p>
+      <p>© 無毒農 All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
+
+
+</body>
+</html>

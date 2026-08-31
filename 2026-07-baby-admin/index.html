@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>育幼院管理 — 後台新版 (demo)</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ───── GoX Admin / base.css ─────
+   後台殼共用 reset + 全域字型 + CSS 變數 token。
+   color / spacing / radius 集中在 :root，後續元件一律 var(--gox-*) 取用，
+   不要再回填 hex。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+  color: var(--gox-text);
+  background: var(--gox-content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--gox-info); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* 整個後台 wrapper（一定要包這層才能套色） */
+.gox-page {
+  min-height: 100vh;
+  background: var(--gox-content-bg);
+  color: var(--gox-text);
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+}
+
+/* ───── GoX Admin / header.css ─────
+   固定在頂端的淺綠 header：
+     左：無毒農 logo（小張）
+     中：breadcrumb（B2B管理 > 訂單管理）
+     右：使用者快捷區（登出、通知；可選） */
+
+.gox-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--gox-header-h);
+  background: var(--gox-header-bg);
+  border-bottom: 1px solid var(--gox-header-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-family: var(--gox-font-family);
+}
+
+.gox-header .gox-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.gox-header .gox-logo img {
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  display: block;
+}
+
+/* ── breadcrumb ── */
+.gox-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gox-text-sub);
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+}
+.gox-breadcrumb a {
+  color: var(--gox-green);
+  text-decoration: none;
+}
+.gox-breadcrumb a:hover { text-decoration: underline; }
+.gox-breadcrumb .sep {
+  color: var(--gox-text-muted);
+  font-size: 12px;
+}
+.gox-breadcrumb strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* ── 右側使用者快捷區（可選）── */
+.gox-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-header-right .gox-user {
+  color: var(--gox-text);
+}
+.gox-header-right .gox-icon-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--gox-radius);
+  white-space: nowrap;
+}
+.gox-header-right .gox-user { white-space: nowrap; }
+.gox-header-right .gox-icon-btn:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--gox-text);
+}
+
+/* ───── GoX Admin / sidebar.css ─────
+   左側深灰固定側欄。支援：
+     - 一級項目（可帶 badge 紅點）
+     - 可摺疊群組（▶ / ▼）
+     - 二級項目（active 高亮）
+     - disabled 樣式 */
+
+.gox-sidebar {
+  width: var(--gox-sider-w);
+  flex-shrink: 0;
+  background: var(--gox-sider-bg);
+  color: var(--gox-sider-text);
+  padding: 8px 0;
+  font-size: var(--gox-font-size-sm);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--gox-header-h);
+  height: calc(100vh - var(--gox-header-h));
+  font-family: var(--gox-font-family);
+}
+
+/* ── 一級項目 / 群組標題 ── */
+.gox-sidebar .gox-menu-item,
+.gox-sidebar .gox-menu-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--gox-sider-text);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--gox-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  user-select: none;
+}
+.gox-sidebar .gox-menu-item:hover,
+.gox-sidebar .gox-menu-title:hover {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+
+/* disabled（demo 未開放的入口） */
+.gox-sidebar .gox-menu-item.is-disabled {
+  cursor: default;
+  color: #888;
+}
+.gox-sidebar .gox-menu-item.is-disabled:hover {
+  background: transparent;
+  color: #888;
+}
+
+/* 箭頭（▶ / ▼） */
+.gox-sidebar .gox-arrow {
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+
+/* badge 紅點 */
+.gox-sidebar .gox-badge {
+  margin-left: auto;
+  background: var(--gox-danger);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ── 摺疊群組 ── */
+.gox-sidebar .gox-menu-group.is-open .gox-menu-title {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+.gox-sidebar .gox-menu-children {
+  background: var(--gox-sider-sub-bg);
+}
+
+/* 二級項目 */
+.gox-sidebar .gox-menu-child {
+  display: block;
+  padding: 8px 14px 8px 32px;
+  color: var(--gox-sider-sub-text);
+  text-decoration: none;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-sidebar .gox-menu-child:hover {
+  background: #252530;
+  color: var(--gox-sider-active-text);
+  text-decoration: none;
+}
+.gox-sidebar .gox-menu-child.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text);
+  font-weight: 600;
+}
+
+/* ───── GoX Admin / content.css ─────
+   內容區共用元件：
+     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
+   全部用 :root 變數，不直接寫 hex。 */
+
+/* ── 主體佈局：header 下方的 sidebar + content ── */
+.gox-body {
+  display: flex;
+  min-height: calc(100vh - var(--gox-header-h));
+}
+.gox-content {
+  flex: 1;
+  min-width: 0;          /* 讓子層 table overflow 正常 */
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--gox-content-bg);
+}
+
+/* ─────────────────────────────────────────────────
+   Toolbox：工具型頁面的主要工作區容器
+   預設 960px 限寬置中（表單、設定、編輯頁讀起來舒服）
+   修飾詞依內容寬度需求調整
+   ─────────────────────────────────────────────────
+   何時用：
+     - 系統設定、個人資料、單筆編輯、單一表單
+     - 內容上下流式排列、欄位不多
+   何時不用：
+     - 列表頁（要滿寬度顯示表格）
+     - 看板、儀表板（多欄並列）
+     - 包含寬表格的編輯頁（會被切掉）
+   範例：
+     <main class="gox-content">
+       <div class="gox-toolbox">  ← 用這個
+         <h2>系統設定</h2>
+         <div class="gox-card">…</div>
+       </div>
+     </main>
+*/
+.gox-toolbox {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.gox-toolbox.is-narrow { max-width: 720px; }   /* 表單少欄位、登入頁、設定密碼 */
+.gox-toolbox.is-wide   { max-width: 1200px; }  /* 多欄表單、含中型表格 */
+.gox-toolbox.is-fluid  { max-width: none; }    /* 內容太擠時退回滿寬 */
+
+/* ─────────────────────────────────────────────────
+   Card：後台主要的「白卡片」容器
+   ───────────────────────────────────────────────── */
+.gox-card {
+  background: var(--gox-card-bg);
+  border: 1px solid var(--gox-card-border);
+  border-radius: var(--gox-radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.gox-card-title {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--gox-card-bg);
+  border-bottom: 1px solid var(--gox-card-border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gox-text);
+}
+.gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
+  background: var(--gox-green);
+  color: #fff;
+  border-bottom: 0;
+}
+.gox-card-body { padding: 16px; }
+.gox-card-body.is-table-padding { padding: 0; }     /* table 自己有 padding 時用 */
+
+/* 卡片頂端列：左標題 / 右操作按鈕 */
+.gox-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────────────────
+   Button
+   ───────────────────────────────────────────────── */
+.gox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  line-height: 1.5;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.gox-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* 主操作 — 品牌綠 */
+.gox-btn-primary {
+  background: var(--gox-green);
+  color: #fff;
+  border-color: var(--gox-green);
+}
+.gox-btn-primary:hover:not(:disabled) { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+
+/* 次操作 — 白底邊框 */
+.gox-btn-default {
+  background: #fff;
+  color: var(--gox-text);
+  border-color: #ccc;
+}
+.gox-btn-default:hover:not(:disabled) { background: #f5f5f5; border-color: var(--gox-green); color: var(--gox-green); }
+
+/* 危險 */
+.gox-btn-danger {
+  background: #fff;
+  color: var(--gox-danger);
+  border-color: var(--gox-danger);
+}
+.gox-btn-danger:hover:not(:disabled) { background: var(--gox-danger); color: #fff; }
+
+/* 列表內小按鈕（檢視 / 編輯 / 刪除） */
+.gox-btn-op {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  color: var(--gox-text);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.gox-btn-op:hover { background: #f5f5f5; text-decoration: none; }
+
+/* ─────────────────────────────────────────────────
+   Form
+   ───────────────────────────────────────────────── */
+.gox-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.gox-form-row > label {
+  min-width: 110px;
+  color: var(--gox-text);
+  font-weight: 500;
+}
+.gox-input,
+.gox-select,
+.gox-textarea {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  background: #fff;
+  color: var(--gox-text);
+  line-height: 1.5;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.gox-input:focus,
+.gox-select:focus,
+.gox-textarea:focus {
+  outline: 2px solid var(--gox-green);
+  outline-offset: -1px;
+  border-color: var(--gox-green);
+}
+.gox-input:disabled,
+.gox-select:disabled,
+.gox-textarea:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+.gox-textarea { min-height: 80px; resize: vertical; }
+
+.gox-radio-group, .gox-checkbox-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gox-hint {
+  color: var(--gox-text-muted);
+  font-size: var(--gox-font-size-xs);
+}
+
+/* ─────────────────────────────────────────────────
+   Table
+   ───────────────────────────────────────────────── */
+.gox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--gox-font-size-sm);
+  background: #fff;
+}
+.gox-table th {
+  background: #fafafa;
+  border-bottom: 1px solid var(--gox-card-border);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gox-text-sub);
+  white-space: nowrap;
+}
+.gox-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.gox-table tr:hover td { background: #fafafa; }
+.gox-table .cell-center { text-align: center; }
+.gox-table .cell-right { text-align: right; }
+.gox-table .cell-ops { white-space: nowrap; }
+.gox-table .row-error td { background: #fff1f0; }
+.gox-table .row-error:hover td { background: #ffe0de; }
+
+/* ─────────────────────────────────────────────────
+   Tab（頁籤）
+   ───────────────────────────────────────────────── */
+.gox-tab-group {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  overflow: hidden;
+}
+.gox-tab-btn {
+  padding: 6px 20px;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  border-right: 1px solid #ccc;
+  color: var(--gox-text);
+}
+.gox-tab-btn:last-child { border-right: 0; }
+.gox-tab-btn.is-active {
+  background: var(--gox-info);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────
+   Modal
+   ───────────────────────────────────────────────── */
+.gox-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.gox-modal-overlay.is-hidden { display: none; }
+[hidden] { display: none !important; }
+.gox-modal-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 480px;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+.gox-modal-box h4 { margin: 0 0 16px; font-size: 16px; }
+.gox-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ─────────────────────────────────────────────────
+   Switch / Tag
+   ───────────────────────────────────────────────── */
+.gox-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background .18s ease;
+  vertical-align: middle;
+}
+.gox-switch.is-on { background: var(--gox-green); }
+.gox-switch.is-disabled { opacity: .5; cursor: not-allowed; }
+.gox-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  transition: transform .18s ease;
+}
+.gox-switch.is-on::after { transform: translateX(18px); }
+
+.gox-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  font-weight: 600;
+  background: #f0f0f0;
+  color: var(--gox-text-sub);
+  border: 1px solid #e0e0e0;
+}
+.gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+.gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-warning { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
+.gox-tag.is-danger  { background: #fff1f0; color: var(--gox-danger); border-color: #ffccc7; }
+
+/* 溫層快速 tag（兩專案都會用） */
+.gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+
+/* ─────────────────────────────────────────────────
+   臨時彈窗（mockup-only notice）
+   外部工作（寄信、串接其他系統、複雜後台流程）用這個提示
+   視覺：黃底 + 虛線邊框 = 看就知道「正式版會拿掉」
+   ───────────────────────────────────────────────── */
+.gox-mockup-notice {
+  background: #fff8e1;
+  border: 1px solid #d4a017;
+  border-radius: var(--gox-radius);
+  padding: 10px 14px;
+  margin: 12px 0;
+  font-size: var(--gox-font-size-sm);
+  color: #7a5a00;
+  line-height: 1.6;
+}
+.gox-mockup-notice::before {
+  content: '⚠ mockup 提示';
+  display: inline-block;
+  background: #d4a017;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 2px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.gox-mockup-notice .gox-mockup-strong { font-weight: 700; color: #5a4200; }
+
+/* 同樣 idea 的 modal 版本（彈窗式提示） */
+.gox-modal-box.is-mockup {
+  border: 2px solid #d4a017;
+  background: #fffbe6;
+}
+.gox-modal-box.is-mockup h4::before {
+  content: '⚠ ';
+  color: #d4a017;
+}
+
+/* ─────────────────────────────────────────────────
+   Icon button（鉛筆 / 確認 / 取消）
+   ───────────────────────────────────────────────── */
+.gox-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gox-radius);
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  font-size: 12px;
+  font-family: inherit;
+  transition: all .15s;
+}
+.gox-icon-btn:hover {
+  background: #f0f4f8;
+  color: var(--gox-info);
+  border-color: #bcd4ea;
+}
+.gox-icon-btn.is-confirm { background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
+.gox-icon-btn.is-confirm:hover { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+.gox-icon-btn.is-cancel  { background: #fff; color: #999; border-color: #ccc; }
+.gox-icon-btn.is-cancel:hover  { background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
+
+</style>
+</head>
+<body>
+<div class="gox-page">
+<header class="gox-header">
+  <a href="#" class="gox-logo">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農">
+  </a>
+  <nav class="gox-breadcrumb">
+    <span>等家管理</span>
+    <span class="sep">&gt;</span>
+    <strong>育幼院管理</strong>
+  </nav>
+  <div class="gox-header-right">
+    <span class="gox-user">Glen Wen</span>
+    <button type="button" class="gox-icon-btn">登出</button>
+  </div>
+</header>
+
+<div class="gox-body">
+<aside class="gox-sidebar">
+  <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
+  <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">產品管理</span></div>
+  <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="index.html" class="gox-menu-child is-active">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child ">捐款名冊</a><a href="project-settings.html" class="gox-menu-child ">專案管理</a><a href="licenses.html" class="gox-menu-child ">勸募字號管理</a></div></div>
+  <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">網頁管理</span></div>
+  <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">售後服務</span></div>
+</aside>
+
+<main class="gox-content">
+<style>
+  /* 專案類型標籤配色 */
+  .ptag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; border:1px solid; white-space:nowrap; }
+  /* 進度條：半長、綠色；超額(≥100%)轉黃 */
+  .baby-bar { position:relative; height:8px; width:42px; border-radius:4px; background:#e9edf2; overflow:hidden; display:inline-block; vertical-align:middle; }
+  .baby-bar > span { position:absolute; inset:0 auto 0 0; border-radius:4px; background:var(--gox-green); }
+  .baby-bar.is-over > span { background:var(--gox-warning); }
+  .baby-pct { font-size:12px; color:var(--gox-text-sub); margin-left:8px; white-space:nowrap; }
+  /* 合作/停止狀態標籤：彩度調低 */
+  .gox-table .gox-tag.is-success { background:#eef5ef; color:#5f8a63; border-color:#cfe3cf; }
+  .gox-table .gox-tag.is-danger { background:#f6edec; color:#b26a62; border-color:#e6cecb; }
+  .baby-name-link { color:var(--gox-info); font-weight:500; cursor:pointer; }
+  .baby-name-link:hover { text-decoration:underline; }
+  .avatar { width:34px; height:34px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px; flex-shrink:0; }
+  .stat2 { line-height:1.35; }
+  .stat2 .money { font-weight:600; }
+  .stat2 .box { font-size:12px; color:var(--gox-text-sub); }
+
+  /* 頁頭：左標題 / 右「當月統計」小區塊 */
+  .page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
+  .month-stat { border:1px solid var(--gox-card-border); border-radius:8px; background:#fff; padding:10px 14px; min-width:280px; }
+  .month-stat .ms-top { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+  .month-stat .ms-top b { color:#0958d9; }
+  .month-stat .ms-row { display:flex; gap:16px; align-items:baseline; }
+  .month-stat .big { font-size:22px; font-weight:700; }
+  .month-stat select { font-size:12px; padding:2px 6px; min-height:26px; }
+  /* 右側「當月數據」欄群組：淡底 + 左分隔線；標頭可選月份 */
+  .gox-table th.stat-col, .gox-table td.stat-col { background:#f7f9fc; }
+  .gox-table th.stat-first, .gox-table td.stat-first { border-left:2px solid #b9c2cf; }
+  .stat-grouphead { color:#0958d9; font-weight:600; }
+  .stat-grouphead select { font-size:12px; padding:2px 6px; min-height:26px; margin-left:4px; }
+
+  /* 頂列：左院所區 / 右每月統計區，中間分隔線與下方表格分區對齊 */
+  .baby-toprow { display:flex; align-items:stretch; margin-bottom:12px; }
+  .tb-left { flex:1; display:flex; align-items:center; gap:8px; flex-wrap:nowrap; padding-right:14px; min-width:0; }
+  .tb-actions { margin-left:auto; display:flex; gap:8px; flex-shrink:0; }
+  .tb-right { flex:0 0 302px; width:302px; border-left:2px solid #b9c2cf; padding-left:14px; display:flex; align-items:center; }
+  .ms-card { width:100%; background:#f7f9fc; border:1px solid #dbe3ec; border-radius:8px; padding:8px 12px; }
+  .ms-card-top { font-size:12px; color:var(--gox-text-sub); display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+  .ms-card-top select { font-size:12px; padding:2px 6px; min-height:26px; }
+  .ms-line { font-size:14px; color:var(--gox-text); white-space:nowrap; }
+  .ms-line b { color:#0958d9; font-size:17px; }
+  .ms-card-row2 { display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .ms-bar { display:inline-block; width:120px; height:9px; margin:0; flex-shrink:0; }
+
+  .baby-card-head { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--gox-card-border); gap:12px; flex-wrap:wrap; }
+  .baby-card-head h3 { margin:0; font-size:16px; font-weight:600; }
+
+  /* 詳情頁：基本資料 + 介紹 左右並排 */
+  .d-cols { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+  .d-cols > .gox-card { flex:1 1 380px; min-width:0; }
+
+  .baby-detail-grid { display:grid; grid-template-columns:96px 1fr; gap:10px 14px; align-items:center; }
+  .baby-detail-grid > .lbl { color:var(--gox-text-sub); font-weight:500; }
+  .baby-photo { width:120px; height:90px; border-radius:6px; background:#eef1f6 center/cover; display:flex; align-items:center; justify-content:center; color:var(--gox-text-muted); font-size:12px; border:1px solid var(--gox-card-border); }
+  .baby-ledger { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  .baby-ledger th, .baby-ledger td { padding:8px; border-bottom:1px solid #f0f0f0; text-align:left; }
+  .baby-ledger th { color:var(--gox-text-sub); background:#fafafa; font-weight:600; }
+  .baby-ledger .pos { color:var(--gox-green); } .baby-ledger .neg { color:var(--gox-danger); }
+  .baby-donate-sum { display:flex; border:1px solid var(--gox-card-border); border-radius:6px; overflow:hidden; margin-bottom:10px; }
+  .baby-donate-sum > div { flex:1; padding:10px 12px; text-align:center; }
+  .baby-donate-sum > div + div { border-left:1px solid var(--gox-card-border); }
+  .baby-donate-sum .k { font-size:12px; color:var(--gox-text-sub); } .baby-donate-sum .v { font-size:20px; font-weight:700; margin-top:2px; }
+  .baby-donate-sum .is-total { background:#f6ffed; }
+  .baby-ck { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #eee; border-radius:4px; margin-bottom:5px; }
+  .baby-ck:hover { border-color:#b7d8ae; }
+  .baby-grp { margin:10px 0 4px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .baby-age { display:flex; gap:12px; flex-wrap:wrap; }
+  .baby-age label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--gox-text-sub); }
+  .baby-age input { width:88px; }
+  .mon-ck { display:inline-flex; align-items:center; gap:4px; margin:0 10px 6px 0; font-size:13px; }
+</style>
+
+<!-- ══════════════════ 清單檢視 ══════════════════ -->
+<div id="view-list">
+  <div class="gox-list-head" style="margin-bottom:12px;">
+    <h2 style="margin:0;font-size:18px;">育幼院管理 <span style="font-size:13px;font-weight:400;color:var(--gox-text-muted);">共 <span id="pres-count">0</span> 間</span></h2>
+  </div>
+
+  <div class="baby-toprow">
+    <div class="tb-left">
+      <input id="flt-kw" class="gox-input" placeholder="搜尋院所名稱" style="width:180px;">
+      <select id="flt-type" class="gox-select"><option value="">全部專案</option></select>
+      <button id="btn-search" class="gox-btn gox-btn-default">查詢</button>
+      <div class="tb-actions">
+        <button id="btn-open-batch" class="gox-btn gox-btn-primary">批次開需求</button>
+        <button id="btn-add-pres" class="gox-btn gox-btn-default">＋ 新增院所</button>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="ms-card">
+        <div class="ms-card-top">檢視月份 <select id="flt-month" class="gox-select"></select></div>
+        <div class="ms-card-row2">
+          <div class="baby-bar ms-bar"><span id="ms-bar-fill" style="width:0%"></span></div>
+          <span class="ms-line" id="ms-line">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gox-card">
+    <div class="gox-card-body is-table-padding">
+      <table class="gox-table">
+        <thead>
+          <tr>
+            <th style="width:44px;">編號</th>
+            <th style="width:48px;"></th>
+            <th>院所名稱</th>
+            <th>專案類型</th>
+            <th>合作／顯示</th>
+            <th class="cell-ops">操作</th>
+            <th class="cell-center stat-col stat-first" style="width:76px;">人數</th>
+            <th class="cell-center stat-col" style="width:96px;">需求(箱)</th>
+            <th class="stat-col" style="width:130px;">完成度</th>
+          </tr>
+        </thead>
+        <tbody id="pres-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 單一院所檢視 ══════════════════ -->
+<div id="view-detail" hidden>
+  <div class="gox-list-head">
+    <h2 style="margin:0;font-size:18px;">
+      <a href="#" id="btn-back" style="font-size:14px;font-weight:400;">← 育幼院管理</a>
+      <span style="margin:0 8px;color:var(--gox-text-muted);">/</span>
+      <span id="d-name-head"></span>
+    </h2>
+  </div>
+
+  <div class="d-cols">
+    <!-- 基本資料 -->
+    <div class="gox-card">
+      <h3 class="gox-card-title">基本資料</h3>
+      <div class="gox-card-body">
+        <div class="baby-detail-grid">
+          <span class="lbl">院所名稱</span><span><input class="gox-input" id="d-name" style="width:100%;max-width:260px;"></span>
+          <span class="lbl">專案類型</span><span>
+            <select class="gox-select" id="d-type" style="width:180px;"></select></span>
+          <span class="lbl">合作中</span><span><span class="gox-switch is-on" id="d-coop"></span> <span class="gox-hint" style="margin-left:8px;">關閉＝停止合作，名冊顯示警示</span></span>
+          <span class="lbl">前台顯示</span><span><span class="gox-switch is-on" id="d-show"></span> <span class="gox-hint" style="margin-left:8px;">關閉＝前台隱藏</span></span>
+          <span class="lbl">照片</span><span style="display:flex;align-items:center;gap:12px;"><span class="baby-photo">院所照片</span><button class="gox-btn gox-btn-default">更換照片</button></span>
+        </div>
+      </div>
+    </div>
+    <!-- 院所介紹 -->
+    <div class="gox-card">
+      <h3 class="gox-card-title">院所介紹</h3>
+      <div class="gox-card-body">
+        <div class="baby-detail-grid">
+          <span class="lbl">主標題</span><span><input class="gox-input" id="d-intro-title" style="width:100%;"></span>
+          <span class="lbl">副標</span><span><input class="gox-input" id="d-intro-sub" style="width:100%;"></span>
+          <span class="lbl" style="align-self:start;padding-top:6px;">內容段落</span><span><textarea class="gox-textarea" id="d-intro-body" style="width:100%;min-height:120px;"></textarea></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 每月需求 -->
+  <div class="gox-card">
+    <div class="baby-card-head">
+      <h3>每月需求與完成度</h3>
+      <div><button class="gox-btn gox-btn-primary" id="d-btn-open">＋ 開需求</button></div>
+    </div>
+    <div class="gox-card-body is-table-padding">
+      <table class="gox-table">
+        <thead><tr>
+          <th>年月</th><th class="cell-center">總人數</th><th class="cell-center">需求(箱)</th>
+          <th style="width:200px;">完成度</th><th class="cell-center">已募得</th><th class="cell-ops">操作</th>
+        </tr></thead>
+        <tbody id="d-months"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ Modal：批次開需求（多月 + 依專案分組）══════════════════ -->
+<div id="modal-batch" class="gox-modal-overlay is-hidden">
+  <div class="gox-modal-box" style="min-width:560px;">
+    <h4>批次開需求</h4>
+    <div style="font-weight:500;margin-bottom:6px;">要開哪些月份（可多選）</div>
+    <div id="batch-months" style="margin-bottom:10px;"></div>
+    <div class="gox-form-row"><label>人數怎麼帶</label>
+      <label style="font-weight:400;display:flex;align-items:center;gap:8px;min-width:auto;"><span class="gox-switch is-on" id="batch-copy"></span> 沿用上個月的人數</label>
+      <span class="gox-hint">關閉＝開空白</span></div>
+    <div style="font-weight:500;margin:8px 0 6px;">要開的院所（可依專案整批勾選）</div>
+    <div id="batch-list" style="max-height:260px;overflow:auto;"></div>
+    <div class="gox-modal-actions">
+      <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
+      <button class="gox-btn gox-btn-primary" id="batch-submit">建立</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ Modal：開需求（雙模式）══════════════════ -->
+<div id="modal-open" class="gox-modal-overlay is-hidden">
+  <div class="gox-modal-box">
+    <h4 id="om-title">開需求</h4>
+    <div class="gox-tab-group" data-tab-scope style="margin-bottom:14px;">
+      <button class="gox-tab-btn is-active" data-tab="cont">連開接下來幾個月</button>
+      <button class="gox-tab-btn" data-tab="pick">指定月份</button>
+    </div>
+    <div data-tab-panel="cont">
+      <div class="gox-form-row"><label>往後開</label>
+        <select class="gox-select" id="om-count" style="width:110px;"><option>1</option><option selected>3</option><option>6</option></select> 個月
+        <span class="gox-hint">從最近還沒開的月份起，連續開這幾個月</span></div>
+    </div>
+    <div data-tab-panel="pick" hidden>
+      <div class="gox-form-row"><label>指定月份</label><select class="gox-select" id="om-month" style="width:150px;"></select>
+        <span class="gox-hint">通常用來跳開近期、或補開過去月份</span></div>
+    </div>
+    <div style="font-weight:500;margin:6px 0 6px;">各年齡層人數（預設帶入上個月，沒有上月則為 0）</div>
+    <div class="baby-age" style="margin-bottom:6px;">
+      <label>3 歲以下<input type="number" class="gox-input" id="om-a" min="0"></label>
+      <label>3–6 歲<input type="number" class="gox-input" id="om-b" min="0"></label>
+      <label>6–12 歲<input type="number" class="gox-input" id="om-c" min="0"></label>
+      <label>12–18 歲<input type="number" class="gox-input" id="om-d" min="0"></label>
+    </div>
+    <div class="gox-hint">總人數 <b id="om-total">0</b> 人｜系統自動算需求 <b id="om-demand">每月 0 箱</b></div>
+    <div class="gox-modal-actions"><button class="gox-btn gox-btn-default" data-gox-close>取消</button><button class="gox-btn gox-btn-primary" id="om-submit">建立</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════ Modal：編輯某月需求 ══════════════════ -->
+<div id="modal-demand" class="gox-modal-overlay is-hidden">
+  <div class="gox-modal-box" style="min-width:560px;">
+    <h4 id="dm-title">編輯每月需求</h4>
+    <div style="font-weight:500;margin-bottom:6px;">各年齡層人數</div>
+    <div class="baby-age" style="margin-bottom:6px;">
+      <label>3 歲以下<input type="number" class="gox-input" id="dm-a" min="0"></label>
+      <label>3–6 歲<input type="number" class="gox-input" id="dm-b" min="0"></label>
+      <label>6–12 歲<input type="number" class="gox-input" id="dm-c" min="0"></label>
+      <label>12–18 歲<input type="number" class="gox-input" id="dm-d" min="0"></label>
+    </div>
+    <div class="gox-hint" style="margin-bottom:14px;">總人數 <b id="dm-childtotal">0</b> 人｜系統依人數自動算需求：<b id="dm-demand">—</b></div>
+    <div style="font-weight:500;margin:12px 0 6px;">已募得箱數</div>
+    <div class="baby-donate-sum">
+      <div><div class="k">捐款自動累計</div><div class="v" style="color:var(--gox-green);" id="dm-sys">0</div></div>
+      <div><div class="k">人工加減</div><div class="v" id="dm-manual">0</div></div>
+      <div class="is-total"><div class="k">目前合計</div><div class="v" id="dm-total">0</div></div>
+    </div>
+    <div class="gox-hint" style="margin-bottom:6px;">捐款成功自動累計；下面是額外的「人工加減」（每筆記得誰改、改多少、為什麼）。</div>
+    <table class="baby-ledger">
+      <thead><tr><th style="width:130px;">時間</th><th>操作人</th><th class="cell-center" style="width:70px;">加減</th><th>原因</th></tr></thead>
+      <tbody id="dm-ledger"></tbody>
+    </table>
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input class="gox-input" id="dm-adj-val" type="number" placeholder="＋或－箱數" style="width:120px;">
+      <input class="gox-input" id="dm-adj-reason" placeholder="原因（例如：紙本捐款補登）" style="flex:1;min-width:160px;">
+      <button class="gox-btn gox-btn-default" id="dm-adj-add">新增一筆</button>
+    </div>
+    <div class="gox-modal-actions"><button class="gox-btn gox-btn-default" data-gox-close>取消</button><button class="gox-btn gox-btn-primary" id="dm-save">儲存</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════ Modal：新增育幼院 ══════════════════ -->
+<div id="modal-addpres" class="gox-modal-overlay is-hidden">
+  <div class="gox-modal-box" style="min-width:560px;">
+    <h4>新增育幼院</h4>
+    <div class="gox-form-row"><label>院所名稱</label><input class="gox-input" id="ap-name" style="width:280px;"></div>
+    <div class="gox-form-row"><label>專案類型</label><select class="gox-select" id="ap-type" style="width:200px;"></select></div>
+    <div class="gox-form-row"><label>合作中</label><span class="gox-switch is-on" id="ap-coop"></span>
+      <label style="min-width:auto;margin-left:20px;">前台顯示</label><span class="gox-switch is-on" id="ap-show"></span></div>
+    <div style="font-weight:500;margin:12px 0 6px;">院所介紹（結構化）</div>
+    <div class="gox-form-row"><label>主標題</label><input class="gox-input" id="ap-title" style="flex:1;min-width:200px;"></div>
+    <div class="gox-form-row"><label>副標</label><input class="gox-input" id="ap-sub" style="flex:1;min-width:200px;"></div>
+    <div class="gox-form-row"><label>內容段落</label><textarea class="gox-textarea" id="ap-body" style="flex:1;min-width:200px;"></textarea></div>
+    <div class="gox-modal-actions"><button class="gox-btn gox-btn-default" data-gox-close>取消</button><button class="gox-btn gox-btn-primary" id="ap-submit">新增</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const MONTHS = ['2026-09','2026-08','2026-07','2026-06','2026-05'];
+  const TYPES = ['安心蔬果','豆漿鮮奶','圓夢計畫','公益修繕','聖誕捐款','快篩試劑','寶寶粥'];
+  const PT = { '安心蔬果':'#389e0d|#f6ffed|#3a8347','豆漿鮮奶':'#a37d00|#fff7d6|#93781f','圓夢計畫':'#722ed1|#f9f0ff|#6d5aa0',
+    '聖誕捐款':'#c41d7f|#fff0f6|#b04b73','聖誕禮物':'#c41d7f|#fff0f6|#b04b73','公益修繕':'#0958d9|#e6f4ff|#3a6ea8',
+    '快篩試劑':'#08979c|#e6fffb|#2c7a82','寶寶粥':'#d46b08|#fff7e6|#b26535' };
+  function ptag(t){ const [fg,bg]=(PT[t]||'#555|#eee').split('|'); return `<span class="ptag" style="color:${fg};background:${bg};border-color:${fg}55;">${t}</span>`; }
+  function ptColor(t){ return (PT[t]||'#888|#eee|#888').split('|')[2]; }
+  const KILO_PER_BOX = 5;
+  function mkLedger(sys){ return {sys:sys, manual:[]}; }
+  function calcDemandBox(a){ return Math.round(((a.a+a.b)*0.25+(a.c+a.d)*0.5)*30/KILO_PER_BOX); }
+  function childTotal(a){ return a.a+a.b+a.c+a.d; }
+  function donatedTotal(led){ return led.sys + led.manual.reduce((s,m)=>s+m.delta,0); }
+  function fmtMonth(ym){ const [y,m]=ym.split('-'); return y+' 年 '+Number(m)+' 月'; }
+  function v(s){ return document.querySelector(s).value; }
+  function bar(pct){ const over=pct>=100; return `<div class="baby-bar ${over?'is-over':''}"><span style="width:${Math.min(100,pct)}%"></span></div><span class="baby-pct">${pct}%</span>`; }
+
+  // ── 產 22 間假院所（含超額）──
+  const NAMES = ['晨光','向陽','小樹苗','溫暖','希望','陽光','幸福','天使','彩虹','微光','安康','恩典','喜樂','平安','仁愛','慈幼','育德','光明','幼幼','家家','大同','明日'];
+  const SUF = ['育幼院','兒少之家','學園','之家'];
+  const FACTORS = [0.3,0.55,1.0,1.2,0.45,0.8,1.35,0.65,0.9,1.0,0.4,0.75];
+  const PRES = {};
+  for(let i=0;i<22;i++){
+    const type = TYPES[i%TYPES.length];
+    const ages = { a:3+(i%5), b:2+(i%4), c:6+(i%9), d:1+(i%6) };
+    const dmd = calcDemandBox(ages);
+    const done07 = Math.round(dmd*FACTORS[i%FACTORS.length]);
+    const done06 = dmd;
+    PRES[i+1] = {
+      name: NAMES[i]+SUF[i%SUF.length], type, coop:(i!==7&&i!==15), show:(i!==4),
+      intro:{title:'關於'+NAMES[i], sub:'陪伴需要照顧的孩子', body:'提供生活、課業與心理支持的中長期安置。'},
+      ages,
+      months:{ '2026-07':{demand:dmd, led:mkLedger(done07)}, '2026-06':{demand:dmd, led:mkLedger(done06)} }
+    };
+  }
+
+  let curMonth='2026-07', detailId=null, editYM=null;
+  const fltMonth=document.querySelector('#flt-month');
+  function fillSel(sel,arr,fmt){ sel.innerHTML=arr.map(x=>`<option value="${x}">${fmt?fmt(x):x}</option>`).join(''); }
+  // 篩選下拉：專案類型
+  document.querySelector('#flt-type').insertAdjacentHTML('beforeend', TYPES.map(t=>`<option>${t}</option>`).join(''));
+  // 詳情/新增 專案下拉
+  fillSel(document.querySelector('#d-type'), TYPES); fillSel(document.querySelector('#ap-type'), TYPES);
+
+  function openedMonths(){ // 哪些月份至少一間院所有需求
+    const s=new Set(); Object.values(PRES).forEach(p=>Object.keys(p.months).forEach(m=>s.add(m)));
+    return MONTHS.filter(m=>s.has(m));
+  }
+  function refreshMonthSel(){ const opts=openedMonths(); if(!opts.includes(curMonth)) curMonth=opts[0]||'2026-07'; fillSel(fltMonth,opts,fmtMonth); fltMonth.value=curMonth; }
+
+  function renderList(){
+    const kw=(v('#flt-kw')||'').trim(), ft=v('#flt-type');
+    const rows=Object.entries(PRES).filter(([id,p])=>(!kw||p.name.includes(kw))&&(!ft||p.type===ft));
+    document.querySelector('#pres-count').textContent=rows.length;
+    let td=0,tdone=0;
+    document.querySelector('#pres-tbody').innerHTML = rows.map(([id,p])=>{
+      const mon=p.months[curMonth];
+      let people='—', demand='—', prog='—';
+      if(!p.coop){ prog='<span style="color:var(--gox-text-muted);">已停止合作</span>'; }
+      else if(!mon){ prog='<span class="gox-tag">未開需求</span>'; }
+      else { const done=donatedTotal(mon.led), pct=Math.round(done/mon.demand*100);
+        td+=mon.demand; tdone+=done; people=childTotal(p.ages); demand=mon.demand; prog=bar(pct); }
+      const st = `${p.coop?'<span class="gox-tag is-success">合作中</span>':'<span class="gox-tag is-danger">已停止</span>'} ${p.show?'<span class="gox-tag" style="background:#eef4ff;color:#0958d9;border-color:#c5dbf7;">顯示</span>':'<span class="gox-tag">隱藏</span>'}`;
+      const av = `<span class="avatar" style="background:${ptColor(p.type)};">${p.name.slice(0,1)}</span>`;
+      return `<tr>
+        <td>${id}</td><td>${av}</td>
+        <td><span class="baby-name-link" data-manage="${id}">${p.name}</span></td>
+        <td>${ptag(p.type)}</td>
+        <td style="white-space:nowrap;">${st}</td>
+        <td class="cell-ops"><a href="#" class="gox-btn-op" data-manage="${id}">管理</a></td>
+        <td class="cell-center stat-col stat-first">${people}</td>
+        <td class="cell-center stat-col">${demand}</td>
+        <td class="stat-col">${prog}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--gox-text-muted);">查無院所</td></tr>`;
+    // 右上統計
+    const mon = curMonth ? Number(curMonth.split('-')[1])+'月' : '';
+    const pct = td>0 ? Math.round(tdone/td*100) : 0;
+    document.querySelector('#ms-line').innerHTML = td>0
+      ? `<b>${pct}%</b> (${tdone}/${td}箱)`
+      : `尚未開需求`;
+    const fill = document.querySelector('#ms-bar-fill');
+    fill.style.width = Math.min(100,pct)+'%';
+    fill.style.background = pct>=100 ? 'var(--gox-warning)' : 'var(--gox-green)';
+  }
+
+  function renderMonths(){
+    const p=PRES[detailId]; const yms=Object.keys(p.months).sort().reverse();
+    document.querySelector('#d-months').innerHTML = yms.map(ym=>{
+      const mon=p.months[ym], done=donatedTotal(mon.led), pct=Math.round(done/mon.demand*100);
+      const manual=mon.led.manual.reduce((s,m)=>s+m.delta,0);
+      const note=manual?` <span style="font-size:12px;color:var(--gox-text-muted);">含人工 ${manual>0?'+':''}${manual}</span>`:'';
+      return `<tr><td>${fmtMonth(ym)}</td><td class="cell-center">${childTotal(p.ages)}</td>
+        <td class="cell-center">${mon.demand}</td><td>${bar(pct)}</td>
+        <td class="cell-center">${done} 箱${note}</td>
+        <td class="cell-ops"><a href="#" class="gox-btn-op" data-edit-month="${ym}">編輯</a></td></tr>`;
+    }).join('') || `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--gox-text-muted);">尚未建立需求</td></tr>`;
+  }
+
+  function openDetail(id){ detailId=id; const p=PRES[id];
+    document.querySelector('#d-name-head').textContent=p.name;
+    document.querySelector('#d-name').value=p.name; document.querySelector('#d-type').value=p.type;
+    document.querySelector('#d-coop').classList.toggle('is-on',p.coop);
+    document.querySelector('#d-show').classList.toggle('is-on',p.show);
+    document.querySelector('#d-intro-title').value=p.intro.title;
+    document.querySelector('#d-intro-sub').value=p.intro.sub;
+    document.querySelector('#d-intro-body').value=p.intro.body;
+    renderMonths();
+    document.querySelector('#view-list').setAttribute('hidden','');
+    document.querySelector('#view-detail').removeAttribute('hidden'); window.scrollTo(0,0);
+  }
+
+  // 編輯需求
+  function openDemand(ym){ editYM=ym; const p=PRES[detailId];
+    document.querySelector('#dm-title').textContent=`編輯每月需求 — ${p.name}　${fmtMonth(ym)}`;
+    document.querySelector('#dm-a').value=p.ages.a; document.querySelector('#dm-b').value=p.ages.b;
+    document.querySelector('#dm-c').value=p.ages.c; document.querySelector('#dm-d').value=p.ages.d;
+    dmRecalc(); dmLedger(); window.gox.openModal('#modal-demand'); }
+  function dmRecalc(){ const a={a:+v('#dm-a')||0,b:+v('#dm-b')||0,c:+v('#dm-c')||0,d:+v('#dm-d')||0};
+    document.querySelector('#dm-childtotal').textContent=childTotal(a);
+    document.querySelector('#dm-demand').textContent=`每月 ${calcDemandBox(a)} 箱（≈ ${calcDemandBox(a)*KILO_PER_BOX} 斤）`; }
+  function dmLedger(){ const led=PRES[detailId].months[editYM].led;
+    document.querySelector('#dm-ledger').innerHTML = led.manual.length
+      ? led.manual.map(m=>`<tr><td>${m.time}</td><td>${m.who}</td><td class="cell-center ${m.delta>=0?'pos':'neg'}">${m.delta>=0?'+':''}${m.delta}</td><td>${m.reason||'—'}</td></tr>`).join('')
+      : `<tr><td colspan="4" style="text-align:center;color:var(--gox-text-muted);padding:12px;">尚無人工加減</td></tr>`;
+    const manual=led.manual.reduce((s,m)=>s+m.delta,0);
+    document.querySelector('#dm-sys').textContent=led.sys;
+    document.querySelector('#dm-manual').textContent=(manual>0?'+':'')+manual;
+    document.querySelector('#dm-total').textContent=led.sys+manual; }
+
+  // 開需求（雙模式）
+  function lastMonthAges(p){ const yms=Object.keys(p.months).sort().reverse(); return yms.length?p.ages:{a:0,b:0,c:0,d:0}; }
+  function openOpen(){ const p=PRES[detailId]; const base=lastMonthAges(p);
+    document.querySelector('#om-a').value=base.a; document.querySelector('#om-b').value=base.b;
+    document.querySelector('#om-c').value=base.c; document.querySelector('#om-d').value=base.d;
+    const notOpened=MONTHS.filter(m=>!p.months[m]).sort();
+    fillSel(document.querySelector('#om-month'), notOpened, fmtMonth);
+    omRecalc(); window.gox.openModal('#modal-open'); }
+  function omRecalc(){ const a={a:+v('#om-a')||0,b:+v('#om-b')||0,c:+v('#om-c')||0,d:+v('#om-d')||0};
+    document.querySelector('#om-total').textContent=childTotal(a);
+    document.querySelector('#om-demand').textContent=`每月 ${calcDemandBox(a)} 箱`; }
+  function currentTab(){ const b=document.querySelector('#modal-open .gox-tab-btn.is-active'); return b?b.dataset.tab:'cont'; }
+
+  // 批次開需求（多月 + 依專案分組）
+  function openBatch(){
+    document.querySelector('#batch-months').innerHTML = MONTHS.slice().sort().map((m,i)=>
+      `<label class="mon-ck"><input type="checkbox" class="bm-ck" value="${m}" ${m===curMonth?'checked':''}> ${fmtMonth(m)}</label>`).join('');
+    const groups={}; Object.entries(PRES).forEach(([id,p])=>{ if(!p.coop) return; (groups[p.type]=groups[p.type]||[]).push([id,p]); });
+    document.querySelector('#batch-list').innerHTML = Object.entries(groups).map(([type,arr])=>`
+      <div class="baby-grp">${ptag(type)} <label style="font-weight:400;font-size:13px;"><input type="checkbox" class="bg-ck" data-type="${type}" checked> 整批</label></div>
+      ${arr.map(([id,p])=>`<label class="baby-ck"><input type="checkbox" class="bp-ck" data-type="${type}" value="${id}" checked> ${p.name}</label>`).join('')}
+    `).join('');
+    window.gox.openModal('#modal-batch');
+  }
+
+  // 新增院所
+  function openAddPres(){ ['#ap-name','#ap-title','#ap-sub','#ap-body'].forEach(s=>document.querySelector(s).value='');
+    document.querySelector('#ap-type').value=TYPES[0];
+    document.querySelector('#ap-coop').classList.add('is-on'); document.querySelector('#ap-show').classList.add('is-on');
+    window.gox.openModal('#modal-addpres'); }
+
+  // ── 事件 ──
+  document.addEventListener('click',(e)=>{
+    const mg=e.target.closest('[data-manage]'); if(mg){ e.preventDefault(); openDetail(mg.dataset.manage); return; }
+    const em=e.target.closest('[data-edit-month]'); if(em){ e.preventDefault(); openDemand(em.dataset.editMonth); return; }
+  });
+  document.querySelector('#btn-back').addEventListener('click',(e)=>{ e.preventDefault();
+    document.querySelector('#view-detail').setAttribute('hidden',''); document.querySelector('#view-list').removeAttribute('hidden'); renderList(); });
+  document.querySelector('#btn-search').addEventListener('click', renderList);
+  document.querySelector('#flt-kw').addEventListener('keydown',(e)=>{ if(e.key==='Enter') renderList(); });
+  document.querySelector('#flt-type').addEventListener('change', renderList);
+  fltMonth.addEventListener('change',()=>{ curMonth=fltMonth.value; renderList(); });
+
+  document.addEventListener('gox:switch',(e)=>{ if(!detailId) return;
+    if(e.target.id==='d-coop'){ PRES[detailId].coop=e.detail.on; window.gox.toast(`已${e.detail.on?'恢復':'停止'}合作`); }
+    if(e.target.id==='d-show'){ PRES[detailId].show=e.detail.on; } });
+
+  document.querySelector('#btn-open-batch').addEventListener('click', openBatch);
+  document.querySelector('#btn-add-pres').addEventListener('click', openAddPres);
+  document.querySelector('#d-btn-open').addEventListener('click', openOpen);
+
+  // 批次：整批勾選連動
+  document.addEventListener('change',(e)=>{
+    const g=e.target.closest('.bg-ck'); if(g){ document.querySelectorAll(`.bp-ck[data-type="${g.dataset.type}"]`).forEach(c=>c.checked=g.checked); }
+  });
+  document.querySelector('#batch-submit').addEventListener('click',()=>{
+    const months=[...document.querySelectorAll('.bm-ck:checked')].map(c=>c.value);
+    const ids=[...document.querySelectorAll('.bp-ck:checked')].map(c=>c.value);
+    if(!months.length){ window.gox.toast('請至少選一個月份'); return; }
+    if(!ids.length){ window.gox.toast('請至少選一間院所'); return; }
+    const copy=document.querySelector('#batch-copy').classList.contains('is-on');
+    ids.forEach(id=>{ const p=PRES[id]; months.forEach(m=>{ if(!p.months[m]) p.months[m]={demand:calcDemandBox(p.ages),led:mkLedger(0)}; }); });
+    refreshMonthSel();
+    window.gox.closeModal('#modal-batch');
+    window.gox.toast(`已為 ${ids.length} 間院所開 ${months.length} 個月的需求${copy?'（沿用上月人數）':'（空白）'}`);
+    renderList();
+  });
+
+  document.querySelectorAll('#om-a,#om-b,#om-c,#om-d').forEach(el=>el.addEventListener('input', omRecalc));
+  document.querySelector('#om-submit').addEventListener('click',()=>{
+    const p=PRES[detailId]; const ages={a:+v('#om-a')||0,b:+v('#om-b')||0,c:+v('#om-c')||0,d:+v('#om-d')||0};
+    p.ages=ages;
+    if(currentTab()==='cont'){
+      const n=+v('#om-count'); const notOpened=MONTHS.filter(m=>!p.months[m]).sort(); const pick=notOpened.slice(0,n);
+      if(!pick.length){ window.gox.toast('近期月份都開過了'); return; }
+      pick.forEach(m=>p.months[m]={demand:calcDemandBox(ages),led:mkLedger(0)});
+      window.gox.toast(`已連開 ${pick.length} 個月需求`);
+    } else {
+      const m=v('#om-month'); if(!m){ window.gox.toast('沒有可開的月份'); return; }
+      p.months[m]={demand:calcDemandBox(ages),led:mkLedger(0)}; window.gox.toast(`已開 ${fmtMonth(m)} 需求`);
+    }
+    window.gox.closeModal('#modal-open'); renderMonths();
+  });
+
+  document.querySelectorAll('#dm-a,#dm-b,#dm-c,#dm-d').forEach(el=>el.addEventListener('input', dmRecalc));
+  document.querySelector('#dm-adj-add').addEventListener('click',()=>{
+    const val=parseInt(v('#dm-adj-val'),10); const reason=v('#dm-adj-reason').trim();
+    if(!val){ window.gox.toast('請輸入＋或－箱數'); return; }
+    PRES[detailId].months[editYM].led.manual.push({time:'2026-07-29 14:30',who:'Glen Wen',delta:val,reason});
+    document.querySelector('#dm-adj-val').value=''; document.querySelector('#dm-adj-reason').value=''; dmLedger();
+    window.gox.toast('已新增一筆人工加減');
+  });
+  document.querySelector('#dm-save').addEventListener('click',()=>{
+    const p=PRES[detailId]; p.ages={a:+v('#dm-a')||0,b:+v('#dm-b')||0,c:+v('#dm-c')||0,d:+v('#dm-d')||0};
+    p.months[editYM].demand=calcDemandBox(p.ages);
+    window.gox.closeModal('#modal-demand'); renderMonths(); window.gox.toast('已儲存'); });
+
+  document.querySelector('#ap-submit').addEventListener('click',()=>{
+    const name=v('#ap-name').trim(); if(!name){ window.gox.toast('請填院所名稱'); return; }
+    const id=Math.max(...Object.keys(PRES).map(Number))+1;
+    PRES[id]={ name, type:v('#ap-type'), coop:document.querySelector('#ap-coop').classList.contains('is-on'),
+      show:document.querySelector('#ap-show').classList.contains('is-on'),
+      intro:{title:v('#ap-title'),sub:v('#ap-sub'),body:v('#ap-body')}, ages:{a:0,b:0,c:0,d:0}, months:{} };
+    window.gox.closeModal('#modal-addpres'); renderList(); window.gox.toast(`已新增「${name}」`);
+  });
+
+  window.__setScenario=function(key){
+    // s1：把 8、9 月也開好（示範多月已開）；s2：只留到 7 月
+    if(key==='s1'){ Object.values(PRES).forEach(p=>{ ['2026-08','2026-09'].forEach(m=>{ if(!p.months[m]) p.months[m]={demand:calcDemandBox(p.ages),led:mkLedger(Math.round(calcDemandBox(p.ages)*0.5))}; }); }); }
+    else { Object.values(PRES).forEach(p=>{ delete p.months['2026-08']; delete p.months['2026-09']; }); }
+    refreshMonthSel(); curMonth = key==='s1'?'2026-08':'2026-07'; fltMonth.value=curMonth; renderList();
+  };
+
+  refreshMonthSel(); renderList();
+})();
+</script>
+
+<!-- 開發者情境面板 -->
+<style>
+  #baby-dev-toggle { position:fixed; bottom:20px; left:20px; z-index:99998; background:#722ed1; color:#fff; border:0; border-radius:999px; padding:8px 16px; font-size:13px; font-family:'Noto Sans TC',sans-serif; cursor:pointer; box-shadow:0 4px 12px rgba(114,46,209,.35); }
+  #baby-dev-panel { position:fixed; bottom:20px; left:20px; z-index:99998; width:280px; background:#fff; border:1px solid #d3adf7; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.15); font-family:'Noto Sans TC',sans-serif; font-size:13px; }
+  #baby-dev-panel.is-hidden { display:none; }
+  #baby-dev-panel .dev-head { background:#f9f0ff; border-bottom:1px solid #efdbff; border-radius:8px 8px 0 0; padding:8px 12px; display:flex; align-items:center; gap:6px; color:#722ed1; }
+  #baby-dev-panel .dev-head strong { color:#531dab; } #baby-dev-panel .dev-head .dev-tag { background:#722ed1; color:#fff; font-size:10px; padding:1px 6px; border-radius:3px; }
+  #baby-dev-panel .dev-head .dev-close { margin-left:auto; background:transparent; border:0; color:#722ed1; font-size:18px; cursor:pointer; padding:0 4px; }
+  #baby-dev-panel .dev-body { padding:10px 12px; } #baby-dev-panel .dev-hint { color:#888; font-size:12px; margin:0 0 8px; }
+  .dev-scenario { display:flex; align-items:flex-start; gap:8px; border:1px solid #f0f0f0; border-radius:4px; padding:8px 10px; cursor:pointer; margin-bottom:6px; }
+  .dev-scenario:hover { border-color:#b37feb; } .dev-scenario.is-active { border-color:#722ed1; background:#f9f0ff; }
+  .dev-scenario input { margin-top:2px; } .dev-scenario-title { font-weight:600; color:#262626; } .dev-scenario-desc { color:#666; font-size:12px; margin-top:2px; }
+</style>
+<button id="baby-dev-toggle" type="button">🧪 切換情境</button>
+<div id="baby-dev-panel" class="is-hidden">
+  <div class="dev-head"><strong>情境切換</strong><span class="dev-tag">demo</span><button type="button" class="dev-close" id="baby-dev-close">×</button></div>
+  <div class="dev-body"><p class="dev-hint">demo 用，正式版會拿掉。</p>
+    <label class="dev-scenario is-active"><input type="radio" name="sc" value="s2" checked><div><div class="dev-scenario-title">1. 只開到 7 月</div><div class="dev-scenario-desc">8、9 月尚未開需求</div></div></label>
+    <label class="dev-scenario"><input type="radio" name="sc" value="s1"><div><div class="dev-scenario-title">2. 已開到 9 月</div><div class="dev-scenario-desc">示範多月已開、可切月份看</div></div></label>
+  </div>
+</div>
+<script>
+(function(){
+  document.querySelector('#baby-dev-toggle').addEventListener('click',()=>{ document.querySelector('#baby-dev-panel').classList.remove('is-hidden'); document.querySelector('#baby-dev-toggle').style.display='none'; });
+  document.querySelector('#baby-dev-close').addEventListener('click',()=>{ document.querySelector('#baby-dev-panel').classList.add('is-hidden'); document.querySelector('#baby-dev-toggle').style.display=''; });
+  document.querySelectorAll('.dev-scenario input').forEach(inp=>inp.addEventListener('change',()=>{ document.querySelectorAll('.dev-scenario').forEach(el=>el.classList.remove('is-active')); inp.closest('.dev-scenario').classList.add('is-active'); if(window.__setScenario) window.__setScenario(inp.value); }));
+  document.querySelectorAll('.dev-scenario').forEach(l=>l.addEventListener('click',(e)=>{ if(e.target.tagName==='INPUT')return; const i=l.querySelector('input'); if(i&&!i.checked){ i.checked=true; i.dispatchEvent(new Event('change')); } }));
+})();
+</script>
+
+</main>
+</div>
+</div>
+<script>
+/* ───── GoX Admin / gox-interactions.js ─────
+   後台殼共用的「元件級互動」。
+   由 build_prototype.py 自動內聯到輸出 HTML，呼叫者寫對 class 就會動。
+
+   覆蓋範圍（你不用為這些再寫 JS）：
+     - .gox-switch         click  → toggle .is-on
+     - .gox-tab-btn        click  → 同 .gox-tab-group 內切 .is-active
+     - .gox-menu-title     click  → toggle 父 .gox-menu-group .is-open + 箭頭
+     - [data-gox-open]     click  → 顯示 #target modal（移除 .is-hidden）
+     - [data-gox-close]    click  → 隱藏所屬 .gox-modal-overlay
+     - .gox-modal-overlay  click  → 點背景關（除非有 data-gox-no-overlay-close）
+     - .gox-icon-btn.is-confirm/.is-cancel click → 觸發 [data-gox-target] 的 confirm/cancel CustomEvent
+     - .gox-menu-child     click  → 同 .gox-sidebar 內切 .is-active
+
+   不覆蓋（你要自己寫）：
+     - 篩選 / 排序 / 搜尋
+     - 狀態機（pending → confirmed → done 之類）
+     - 跨元件聯動
+     - 表單送出 / 假 API 回傳
+   ➜ 在 content_html 裡寫 <script>，用 DOMContentLoaded 包起來。
+*/
+(function () {
+  'use strict';
+
+  function on(el, ev, fn) { el.addEventListener(ev, fn); }
+  function delegate(root, ev, selector, fn) {
+    on(root, ev, (e) => {
+      const t = e.target.closest(selector);
+      if (t && root.contains(t)) fn(e, t);
+    });
+  }
+
+  function init() {
+    const root = document;
+
+    // ── Switch ─────────────────────────────────
+    delegate(root, 'click', '.gox-switch', (e, el) => {
+      if (el.classList.contains('is-disabled')) return;
+      el.classList.toggle('is-on');
+      el.dispatchEvent(new CustomEvent('gox:switch', {
+        bubbles: true,
+        detail: { on: el.classList.contains('is-on') },
+      }));
+    });
+
+    // ── Tab group ───────────────────────────────
+    delegate(root, 'click', '.gox-tab-group .gox-tab-btn', (e, btn) => {
+      const group = btn.closest('.gox-tab-group');
+      group.querySelectorAll('.gox-tab-btn').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const key = btn.dataset.tab;
+      group.dispatchEvent(new CustomEvent('gox:tab', {
+        bubbles: true,
+        detail: { tab: key, btn },
+      }));
+      // 若有 data-tab，自動切 [data-tab-panel] 顯示
+      if (key) {
+        const scope = btn.closest('[data-tab-scope]') || document;
+        scope.querySelectorAll('[data-tab-panel]').forEach((p) => {
+          p.hidden = p.dataset.tabPanel !== key;
+        });
+      }
+    });
+
+    // ── Sidebar menu group 摺疊 ──────────────────
+    delegate(root, 'click', '.gox-menu-title', (e, btn) => {
+      const group = btn.closest('.gox-menu-group');
+      if (!group) return;
+      group.classList.toggle('is-open');
+      const arrow = btn.querySelector('.gox-arrow');
+      if (arrow) arrow.textContent = group.classList.contains('is-open') ? '▼' : '▶';
+    });
+
+    // ── Sidebar menu child active ────────────────
+    delegate(root, 'click', '.gox-sidebar .gox-menu-child', (e, link) => {
+      // 不阻止預設行為（讓 href 還能跳）；但若是 href="#" 純 demo，做 active 切換
+      if (link.getAttribute('href') === '#') e.preventDefault();
+      const side = link.closest('.gox-sidebar');
+      side.querySelectorAll('.gox-menu-child.is-active').forEach((a) => a.classList.remove('is-active'));
+      link.classList.add('is-active');
+    });
+
+    // ── Modal open ──────────────────────────────
+    delegate(root, 'click', '[data-gox-open]', (e, btn) => {
+      const sel = btn.dataset.goxOpen;
+      const target = sel && document.querySelector(sel);
+      if (target) target.classList.remove('is-hidden');
+    });
+
+    // ── Modal close（按鈕） ─────────────────────
+    delegate(root, 'click', '[data-gox-close]', (e, btn) => {
+      const modal = btn.closest('.gox-modal-overlay');
+      if (modal) modal.classList.add('is-hidden');
+    });
+
+    // ── Modal close（點背景） ───────────────────
+    delegate(root, 'click', '.gox-modal-overlay', (e, overlay) => {
+      if (overlay.dataset.goxNoOverlayClose !== undefined) return;
+      if (e.target === overlay) overlay.classList.add('is-hidden');
+    });
+
+    // ── ESC 關 modal ────────────────────────────
+    on(document, 'keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const opens = document.querySelectorAll('.gox-modal-overlay:not(.is-hidden)');
+      opens.forEach((m) => {
+        if (m.dataset.goxNoOverlayClose === undefined) m.classList.add('is-hidden');
+      });
+    });
+
+    // ── Icon button confirm / cancel ─────────────
+    delegate(root, 'click', '.gox-icon-btn.is-confirm, .gox-icon-btn.is-cancel', (e, btn) => {
+      const kind = btn.classList.contains('is-confirm') ? 'confirm' : 'cancel';
+      const targetSel = btn.dataset.goxTarget;
+      const target = targetSel ? document.querySelector(targetSel) : btn.closest('[data-gox-editable]');
+      if (target) {
+        target.dispatchEvent(new CustomEvent('gox:' + kind, { bubbles: true }));
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // 暴露給頁面級腳本使用（如「按下查詢」這種頁面級互動）
+  window.gox = window.gox || {};
+  window.gox.openModal  = (sel) => { const t = document.querySelector(sel); if (t) t.classList.remove('is-hidden'); };
+  window.gox.closeModal = (sel) => { const t = document.querySelector(sel); if (t) t.classList.add('is-hidden'); };
+  window.gox.toast = (msg) => {
+    // 簡易 toast（自動消失）
+    let host = document.querySelector('#gox-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'gox-toast-host';
+      host.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+      document.body.appendChild(host);
+    }
+    const t = document.createElement('div');
+    t.className = 'gox-toast';
+    t.textContent = msg;
+    t.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.2);';
+    host.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
+    setTimeout(() => t.remove(), 2200);
+  };
+})();
+
+</script>
+</body>
+</html>

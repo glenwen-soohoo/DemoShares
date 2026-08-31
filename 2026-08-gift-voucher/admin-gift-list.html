@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>禮物券管理 (demo)</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ───── GoX Admin / base.css ─────
+   後台殼共用 reset + 全域字型 + CSS 變數 token。
+   color / spacing / radius 集中在 :root，後續元件一律 var(--gox-*) 取用，
+   不要再回填 hex。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+  color: var(--gox-text);
+  background: var(--gox-content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--gox-info); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* 整個後台 wrapper（一定要包這層才能套色） */
+.gox-page {
+  min-height: 100vh;
+  background: var(--gox-content-bg);
+  color: var(--gox-text);
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+}
+
+/* ───── GoX Admin / header.css ─────
+   固定在頂端的淺綠 header：
+     左：無毒農 logo（小張）
+     中：breadcrumb（B2B管理 > 訂單管理）
+     右：使用者快捷區（登出、通知；可選） */
+
+.gox-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--gox-header-h);
+  background: var(--gox-header-bg);
+  border-bottom: 1px solid var(--gox-header-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-family: var(--gox-font-family);
+}
+
+.gox-header .gox-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.gox-header .gox-logo img {
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  display: block;
+}
+
+/* ── breadcrumb ── */
+.gox-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gox-text-sub);
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+}
+.gox-breadcrumb a {
+  color: var(--gox-green);
+  text-decoration: none;
+}
+.gox-breadcrumb a:hover { text-decoration: underline; }
+.gox-breadcrumb .sep {
+  color: var(--gox-text-muted);
+  font-size: 12px;
+}
+.gox-breadcrumb strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* ── 右側使用者快捷區（可選）── */
+.gox-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-header-right .gox-user {
+  color: var(--gox-text);
+}
+.gox-header-right .gox-icon-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--gox-radius);
+  white-space: nowrap;
+}
+.gox-header-right .gox-user { white-space: nowrap; }
+.gox-header-right .gox-icon-btn:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--gox-text);
+}
+
+/* ───── GoX Admin / sidebar.css ─────
+   左側深灰固定側欄。支援：
+     - 一級項目（可帶 badge 紅點）
+     - 可摺疊群組（▶ / ▼）
+     - 二級項目（active 高亮）
+     - disabled 樣式 */
+
+.gox-sidebar {
+  width: var(--gox-sider-w);
+  flex-shrink: 0;
+  background: var(--gox-sider-bg);
+  color: var(--gox-sider-text);
+  padding: 8px 0;
+  font-size: var(--gox-font-size-sm);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--gox-header-h);
+  height: calc(100vh - var(--gox-header-h));
+  font-family: var(--gox-font-family);
+}
+
+/* ── 一級項目 / 群組標題 ── */
+.gox-sidebar .gox-menu-item,
+.gox-sidebar .gox-menu-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--gox-sider-text);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--gox-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  user-select: none;
+}
+.gox-sidebar .gox-menu-item:hover,
+.gox-sidebar .gox-menu-title:hover {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+
+/* disabled（demo 未開放的入口） */
+.gox-sidebar .gox-menu-item.is-disabled {
+  cursor: default;
+  color: #888;
+}
+.gox-sidebar .gox-menu-item.is-disabled:hover {
+  background: transparent;
+  color: #888;
+}
+
+/* 箭頭（▶ / ▼） */
+.gox-sidebar .gox-arrow {
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+
+/* badge 紅點 */
+.gox-sidebar .gox-badge {
+  margin-left: auto;
+  background: var(--gox-danger);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ── 摺疊群組 ── */
+.gox-sidebar .gox-menu-group.is-open .gox-menu-title {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+.gox-sidebar .gox-menu-children {
+  background: var(--gox-sider-sub-bg);
+}
+
+/* 二級項目 */
+.gox-sidebar .gox-menu-child {
+  display: block;
+  padding: 8px 14px 8px 32px;
+  color: var(--gox-sider-sub-text);
+  text-decoration: none;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-sidebar .gox-menu-child:hover {
+  background: #252530;
+  color: var(--gox-sider-active-text);
+  text-decoration: none;
+}
+.gox-sidebar .gox-menu-child.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text);
+  font-weight: 600;
+}
+
+/* ───── GoX Admin / content.css ─────
+   內容區共用元件：
+     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
+   全部用 :root 變數，不直接寫 hex。 */
+
+/* ── 主體佈局：header 下方的 sidebar + content ── */
+.gox-body {
+  display: flex;
+  min-height: calc(100vh - var(--gox-header-h));
+}
+.gox-content {
+  flex: 1;
+  min-width: 0;          /* 讓子層 table overflow 正常 */
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--gox-content-bg);
+}
+
+/* ─────────────────────────────────────────────────
+   Toolbox：工具型頁面的主要工作區容器
+   預設 960px 限寬置中（表單、設定、編輯頁讀起來舒服）
+   修飾詞依內容寬度需求調整
+   ─────────────────────────────────────────────────
+   何時用：
+     - 系統設定、個人資料、單筆編輯、單一表單
+     - 內容上下流式排列、欄位不多
+   何時不用：
+     - 列表頁（要滿寬度顯示表格）
+     - 看板、儀表板（多欄並列）
+     - 包含寬表格的編輯頁（會被切掉）
+   範例：
+     <main class="gox-content">
+       <div class="gox-toolbox">  ← 用這個
+         <h2>系統設定</h2>
+         <div class="gox-card">…</div>
+       </div>
+     </main>
+*/
+.gox-toolbox {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.gox-toolbox.is-narrow { max-width: 720px; }   /* 表單少欄位、登入頁、設定密碼 */
+.gox-toolbox.is-wide   { max-width: 1200px; }  /* 多欄表單、含中型表格 */
+.gox-toolbox.is-fluid  { max-width: none; }    /* 內容太擠時退回滿寬 */
+
+/* ─────────────────────────────────────────────────
+   Card：後台主要的「白卡片」容器
+   ───────────────────────────────────────────────── */
+.gox-card {
+  background: var(--gox-card-bg);
+  border: 1px solid var(--gox-card-border);
+  border-radius: var(--gox-radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.gox-card-title {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--gox-card-bg);
+  border-bottom: 1px solid var(--gox-card-border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gox-text);
+}
+.gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
+  background: var(--gox-green);
+  color: #fff;
+  border-bottom: 0;
+}
+.gox-card-body { padding: 16px; }
+.gox-card-body.is-table-padding { padding: 0; }     /* table 自己有 padding 時用 */
+
+/* 卡片頂端列：左標題 / 右操作按鈕 */
+.gox-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────────────────
+   Button
+   ───────────────────────────────────────────────── */
+.gox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  line-height: 1.5;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.gox-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* 主操作 — 品牌綠 */
+.gox-btn-primary {
+  background: var(--gox-green);
+  color: #fff;
+  border-color: var(--gox-green);
+}
+.gox-btn-primary:hover:not(:disabled) { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+
+/* 次操作 — 白底邊框 */
+.gox-btn-default {
+  background: #fff;
+  color: var(--gox-text);
+  border-color: #ccc;
+}
+.gox-btn-default:hover:not(:disabled) { background: #f5f5f5; border-color: var(--gox-green); color: var(--gox-green); }
+
+/* 危險 */
+.gox-btn-danger {
+  background: #fff;
+  color: var(--gox-danger);
+  border-color: var(--gox-danger);
+}
+.gox-btn-danger:hover:not(:disabled) { background: var(--gox-danger); color: #fff; }
+
+/* 列表內小按鈕（檢視 / 編輯 / 刪除） */
+.gox-btn-op {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  color: var(--gox-text);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.gox-btn-op:hover { background: #f5f5f5; text-decoration: none; }
+
+/* ─────────────────────────────────────────────────
+   Form
+   ───────────────────────────────────────────────── */
+.gox-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.gox-form-row > label {
+  min-width: 110px;
+  color: var(--gox-text);
+  font-weight: 500;
+}
+.gox-input,
+.gox-select,
+.gox-textarea {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  background: #fff;
+  color: var(--gox-text);
+  line-height: 1.5;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.gox-input:focus,
+.gox-select:focus,
+.gox-textarea:focus {
+  outline: 2px solid var(--gox-green);
+  outline-offset: -1px;
+  border-color: var(--gox-green);
+}
+.gox-input:disabled,
+.gox-select:disabled,
+.gox-textarea:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+.gox-textarea { min-height: 80px; resize: vertical; }
+
+.gox-radio-group, .gox-checkbox-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gox-hint {
+  color: var(--gox-text-muted);
+  font-size: var(--gox-font-size-xs);
+}
+
+/* ─────────────────────────────────────────────────
+   Table
+   ───────────────────────────────────────────────── */
+.gox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--gox-font-size-sm);
+  background: #fff;
+}
+.gox-table th {
+  background: #fafafa;
+  border-bottom: 1px solid var(--gox-card-border);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gox-text-sub);
+  white-space: nowrap;
+}
+.gox-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.gox-table tr:hover td { background: #fafafa; }
+.gox-table .cell-center { text-align: center; }
+.gox-table .cell-right { text-align: right; }
+.gox-table .cell-ops { white-space: nowrap; }
+.gox-table .row-error td { background: #fff1f0; }
+.gox-table .row-error:hover td { background: #ffe0de; }
+
+/* ─────────────────────────────────────────────────
+   Tab（頁籤）
+   ───────────────────────────────────────────────── */
+.gox-tab-group {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  overflow: hidden;
+}
+.gox-tab-btn {
+  padding: 6px 20px;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  border-right: 1px solid #ccc;
+  color: var(--gox-text);
+}
+.gox-tab-btn:last-child { border-right: 0; }
+.gox-tab-btn.is-active {
+  background: var(--gox-info);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────
+   Modal
+   ───────────────────────────────────────────────── */
+.gox-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.gox-modal-overlay.is-hidden { display: none; }
+[hidden] { display: none !important; }
+.gox-modal-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 480px;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+.gox-modal-box h4 { margin: 0 0 16px; font-size: 16px; }
+.gox-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ─────────────────────────────────────────────────
+   Switch / Tag
+   ───────────────────────────────────────────────── */
+.gox-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background .18s ease;
+  vertical-align: middle;
+}
+.gox-switch.is-on { background: var(--gox-green); }
+.gox-switch.is-disabled { opacity: .5; cursor: not-allowed; }
+.gox-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  transition: transform .18s ease;
+}
+.gox-switch.is-on::after { transform: translateX(18px); }
+
+.gox-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  font-weight: 600;
+  background: #f0f0f0;
+  color: var(--gox-text-sub);
+  border: 1px solid #e0e0e0;
+}
+.gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+.gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-warning { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
+.gox-tag.is-danger  { background: #fff1f0; color: var(--gox-danger); border-color: #ffccc7; }
+
+/* 溫層快速 tag（兩專案都會用） */
+.gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+
+/* ─────────────────────────────────────────────────
+   Icon button（鉛筆 / 確認 / 取消）
+   ───────────────────────────────────────────────── */
+.gox-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gox-radius);
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  font-size: 12px;
+  font-family: inherit;
+  transition: all .15s;
+}
+.gox-icon-btn:hover {
+  background: #f0f4f8;
+  color: var(--gox-info);
+  border-color: #bcd4ea;
+}
+.gox-icon-btn.is-confirm { background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
+.gox-icon-btn.is-confirm:hover { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+.gox-icon-btn.is-cancel  { background: #fff; color: #999; border-color: #ccc; }
+.gox-icon-btn.is-cancel:hover  { background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
+
+/* ─────────────────────────────────────────────────
+   通用工具 class
+   ───────────────────────────────────────────────── */
+/* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
+.is-hidden { display: none; }
+
+</style>
+</head>
+<body>
+<div class="gox-page">
+<header class="gox-header">
+  <a href="#" class="gox-logo">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農">
+  </a>
+  <nav class="gox-breadcrumb">
+    <strong>禮物券管理</strong>
+  </nav>
+  <div class="gox-header-right">
+    <span class="gox-user">示範帳號</span>
+    <button type="button" class="gox-icon-btn">登出</button>
+  </div>
+</header>
+
+<div class="gox-body">
+<aside class="gox-sidebar">
+  <a href="admin-gift-list.html" class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">禮物券管理</span></a>
+</aside>
+
+<main class="gox-content">
+<style>
+  .gv-filter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .gv-filter .gox-input { width: 280px; }
+  .gv-filter .gox-select { width: 140px; }
+  .gv-sub { color: var(--gox-text-muted); font-size: 12px; font-weight: normal; margin-left: 8px; }
+  .gv-id { color: var(--gox-text-muted); font-size: 12px; margin-left: 6px; }
+  .gv-name { color: var(--gox-text); }
+  .gv-spec { color: var(--gox-text-sub); }
+  .gv-num { font-variant-numeric: tabular-nums; }
+  .gv-warn-num { color: var(--gox-danger); font-weight: 600; }
+  .gv-shortage { display: block; color: var(--gox-danger); font-size: 12px; margin-top: 2px; }
+  .gv-empty { padding: 32px 16px; text-align: center; color: var(--gox-text-muted); }
+</style>
+
+<div class="gox-list-head">
+  <h2>禮物券管理<span class="gv-sub" id="gv-count"></span></h2>
+  <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-new">新增禮物</button>
+</div>
+
+<div class="gox-card">
+  <div class="gox-card-body">
+    <div class="gv-filter">
+      <input type="text" class="gox-input" id="gv-kw" placeholder="搜尋產品名稱／產品 ID／規格 ID">
+      <select class="gox-select" id="gv-status">
+        <option value="all">全部狀態</option>
+        <option value="on">贈送中</option>
+        <option value="off">已停止贈送</option>
+      </select>
+      <button type="button" class="gox-btn gox-btn-default" id="gv-btn-search">查詢</button>
+    </div>
+
+    <table class="gox-table">
+      <thead>
+        <tr>
+          <th>禮物產品名</th>
+          <th>禮物規格</th>
+          <th class="cell-center" style="width:80px;">上架</th>
+          <th class="cell-right" style="width:100px;">庫存</th>
+          <th class="cell-right" style="width:140px;">未使用券數</th>
+          <th class="cell-center" style="width:90px;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="gv-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var gifts = [
+    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13 },
+    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 45 },
+    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 260, unused: 3 },
+    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0 }
+  ];
+
+  function render() {
+    var kw = document.getElementById('gv-kw').value.trim();
+    var status = document.getElementById('gv-status').value;
+    var rows = gifts.filter(function (g) {
+      var hitKw = !kw || (g.product + ' ' + g.productId + ' ' + g.specId + ' ' + g.spec).indexOf(kw) >= 0;
+      var hitStatus = status === 'all' || (status === 'on') === g.listed;
+      return hitKw && hitStatus;
+    });
+
+    document.getElementById('gv-count').textContent = '共 ' + rows.length + ' 筆禮物';
+
+    var tbody = document.getElementById('gv-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="gv-empty">沒有符合條件的禮物</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(function (g) {
+      var shortage = g.unused > g.stock;
+      return '<tr>' +
+        '<td><span class="gv-name">' + g.product + '</span><span class="gv-id">#' + g.productId + '</span></td>' +
+        '<td><span class="gv-spec">' + g.spec + '</span><span class="gv-id">#' + g.specId + '</span></td>' +
+        '<td class="cell-center"><span class="gox-switch' + (g.listed ? ' is-on' : '') + '" data-gv-toggle="' + g.id + '"></span></td>' +
+        '<td class="cell-right gv-num' + (shortage ? ' gv-warn-num' : '') + '">' + g.stock + '</td>' +
+        '<td class="cell-right gv-num">' + g.unused +
+          (shortage ? '<span class="gv-shortage">超出庫存 ' + (g.unused - g.stock) + ' 張</span>' : '') +
+        '</td>' +
+        '<td class="cell-center"><button type="button" class="gox-btn gox-btn-op" data-gv-view="' + g.id + '">查看</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('gv-btn-search').addEventListener('click', render);
+  document.getElementById('gv-kw').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') render();
+  });
+  document.getElementById('gv-status').addEventListener('change', render);
+
+  document.getElementById('gv-btn-new').addEventListener('click', function () {
+    location.href = 'admin-gift-create.html';
+  });
+
+  document.getElementById('gv-tbody').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-gv-view]');
+    if (btn) {
+      location.href = 'admin-gift-detail.html?id=' + btn.getAttribute('data-gv-view');
+    }
+  });
+
+  document.addEventListener('gox:switch', function (e) {
+    var sw = e.target.closest('[data-gv-toggle]');
+    if (!sw) return;
+    var id = Number(sw.getAttribute('data-gv-toggle'));
+    var g = gifts.filter(function (x) { return x.id === id; })[0];
+    if (!g) return;
+    g.listed = e.detail.on;
+    window.gox.toast(g.listed ? ('已開始贈送「' + g.product + '」') : ('已停止贈送「' + g.product + '」'));
+  });
+
+  render();
+})();
+</script>
+
+</main>
+</div>
+</div>
+<script>
+/* ───── GoX Admin / gox-interactions.js ─────
+   後台殼共用的「元件級互動」。
+   由 build_prototype.py 自動內聯到輸出 HTML，呼叫者寫對 class 就會動。
+
+   覆蓋範圍（你不用為這些再寫 JS）：
+     - .gox-switch         click  → toggle .is-on
+     - .gox-tab-btn        click  → 同 .gox-tab-group 內切 .is-active
+     - .gox-menu-title     click  → toggle 父 .gox-menu-group .is-open + 箭頭
+     - [data-gox-open]     click  → 顯示 #target modal（移除 .is-hidden）
+     - [data-gox-close]    click  → 隱藏所屬 .gox-modal-overlay
+     - .gox-modal-overlay  click  → 點背景關（除非有 data-gox-no-overlay-close）
+     - .gox-icon-btn.is-confirm/.is-cancel click → 觸發 [data-gox-target] 的 confirm/cancel CustomEvent
+     - .gox-menu-child     click  → 同 .gox-sidebar 內切 .is-active
+
+   不覆蓋（你要自己寫）：
+     - 篩選 / 排序 / 搜尋
+     - 狀態機（pending → confirmed → done 之類）
+     - 跨元件聯動
+     - 表單送出 / 假 API 回傳
+   ➜ 在 content_html 裡寫 <script>，用 DOMContentLoaded 包起來。
+*/
+(function () {
+  'use strict';
+
+  function on(el, ev, fn) { el.addEventListener(ev, fn); }
+  function delegate(root, ev, selector, fn) {
+    on(root, ev, (e) => {
+      const t = e.target.closest(selector);
+      if (t && root.contains(t)) fn(e, t);
+    });
+  }
+
+  function init() {
+    const root = document;
+
+    // ── Switch ─────────────────────────────────
+    delegate(root, 'click', '.gox-switch', (e, el) => {
+      if (el.classList.contains('is-disabled')) return;
+      el.classList.toggle('is-on');
+      el.dispatchEvent(new CustomEvent('gox:switch', {
+        bubbles: true,
+        detail: { on: el.classList.contains('is-on') },
+      }));
+    });
+
+    // ── Tab group ───────────────────────────────
+    delegate(root, 'click', '.gox-tab-group .gox-tab-btn', (e, btn) => {
+      const group = btn.closest('.gox-tab-group');
+      group.querySelectorAll('.gox-tab-btn').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const key = btn.dataset.tab;
+      group.dispatchEvent(new CustomEvent('gox:tab', {
+        bubbles: true,
+        detail: { tab: key, btn },
+      }));
+      // 若有 data-tab，自動切 [data-tab-panel] 顯示
+      if (key) {
+        const scope = btn.closest('[data-tab-scope]') || document;
+        scope.querySelectorAll('[data-tab-panel]').forEach((p) => {
+          p.hidden = p.dataset.tabPanel !== key;
+        });
+      }
+    });
+
+    // ── Sidebar menu group 摺疊 ──────────────────
+    delegate(root, 'click', '.gox-menu-title', (e, btn) => {
+      const group = btn.closest('.gox-menu-group');
+      if (!group) return;
+      group.classList.toggle('is-open');
+      const arrow = btn.querySelector('.gox-arrow');
+      if (arrow) arrow.textContent = group.classList.contains('is-open') ? '▼' : '▶';
+    });
+
+    // ── Sidebar menu child active ────────────────
+    delegate(root, 'click', '.gox-sidebar .gox-menu-child', (e, link) => {
+      // 不阻止預設行為（讓 href 還能跳）；但若是 href="#" 純 demo，做 active 切換
+      if (link.getAttribute('href') === '#') e.preventDefault();
+      const side = link.closest('.gox-sidebar');
+      side.querySelectorAll('.gox-menu-child.is-active').forEach((a) => a.classList.remove('is-active'));
+      link.classList.add('is-active');
+    });
+
+    // ── Modal open ──────────────────────────────
+    delegate(root, 'click', '[data-gox-open]', (e, btn) => {
+      const sel = btn.dataset.goxOpen;
+      const target = sel && document.querySelector(sel);
+      if (target) target.classList.remove('is-hidden');
+    });
+
+    // ── Modal close（按鈕） ─────────────────────
+    delegate(root, 'click', '[data-gox-close]', (e, btn) => {
+      const modal = btn.closest('.gox-modal-overlay');
+      if (modal) modal.classList.add('is-hidden');
+    });
+
+    // ── Modal close（點背景） ───────────────────
+    delegate(root, 'click', '.gox-modal-overlay', (e, overlay) => {
+      if (overlay.dataset.goxNoOverlayClose !== undefined) return;
+      if (e.target === overlay) overlay.classList.add('is-hidden');
+    });
+
+    // ── ESC 關 modal ────────────────────────────
+    on(document, 'keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const opens = document.querySelectorAll('.gox-modal-overlay:not(.is-hidden)');
+      opens.forEach((m) => {
+        if (m.dataset.goxNoOverlayClose === undefined) m.classList.add('is-hidden');
+      });
+    });
+
+    // ── Icon button confirm / cancel ─────────────
+    delegate(root, 'click', '.gox-icon-btn.is-confirm, .gox-icon-btn.is-cancel', (e, btn) => {
+      const kind = btn.classList.contains('is-confirm') ? 'confirm' : 'cancel';
+      const targetSel = btn.dataset.goxTarget;
+      const target = targetSel ? document.querySelector(targetSel) : btn.closest('[data-gox-editable]');
+      if (target) {
+        target.dispatchEvent(new CustomEvent('gox:' + kind, { bubbles: true }));
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // 暴露給頁面級腳本使用（如「按下查詢」這種頁面級互動）
+  window.gox = window.gox || {};
+  window.gox.openModal  = (sel) => { const t = document.querySelector(sel); if (t) t.classList.remove('is-hidden'); };
+  window.gox.closeModal = (sel) => { const t = document.querySelector(sel); if (t) t.classList.add('is-hidden'); };
+  window.gox.toast = (msg) => {
+    // 簡易 toast（自動消失）
+    let host = document.querySelector('#gox-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'gox-toast-host';
+      host.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+      document.body.appendChild(host);
+    }
+    const t = document.createElement('div');
+    t.className = 'gox-toast';
+    t.textContent = msg;
+    t.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.2);';
+    host.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
+    setTimeout(() => t.remove(), 2200);
+  };
+})();
+
+</script>
+</body>
+</html>

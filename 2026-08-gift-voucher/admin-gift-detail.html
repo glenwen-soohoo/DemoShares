@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>禮物明細 — 後台 demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ───── GoX Admin / base.css ─────
+   後台殼共用 reset + 全域字型 + CSS 變數 token。
+   color / spacing / radius 集中在 :root，後續元件一律 var(--gox-*) 取用，
+   不要再回填 hex。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+  color: var(--gox-text);
+  background: var(--gox-content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--gox-info); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* 整個後台 wrapper（一定要包這層才能套色） */
+.gox-page {
+  min-height: 100vh;
+  background: var(--gox-content-bg);
+  color: var(--gox-text);
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+}
+
+/* ───── GoX Admin / header.css ─────
+   固定在頂端的淺綠 header：
+     左：無毒農 logo（小張）
+     中：breadcrumb（B2B管理 > 訂單管理）
+     右：使用者快捷區（登出、通知；可選） */
+
+.gox-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--gox-header-h);
+  background: var(--gox-header-bg);
+  border-bottom: 1px solid var(--gox-header-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-family: var(--gox-font-family);
+}
+
+.gox-header .gox-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.gox-header .gox-logo img {
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  display: block;
+}
+
+/* ── breadcrumb ── */
+.gox-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gox-text-sub);
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+}
+.gox-breadcrumb a {
+  color: var(--gox-green);
+  text-decoration: none;
+}
+.gox-breadcrumb a:hover { text-decoration: underline; }
+.gox-breadcrumb .sep {
+  color: var(--gox-text-muted);
+  font-size: 12px;
+}
+.gox-breadcrumb strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* ── 右側使用者快捷區（可選）── */
+.gox-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-header-right .gox-user {
+  color: var(--gox-text);
+}
+.gox-header-right .gox-icon-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--gox-radius);
+  white-space: nowrap;
+}
+.gox-header-right .gox-user { white-space: nowrap; }
+.gox-header-right .gox-icon-btn:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--gox-text);
+}
+
+/* ───── GoX Admin / sidebar.css ─────
+   左側深灰固定側欄。支援：
+     - 一級項目（可帶 badge 紅點）
+     - 可摺疊群組（▶ / ▼）
+     - 二級項目（active 高亮）
+     - disabled 樣式 */
+
+.gox-sidebar {
+  width: var(--gox-sider-w);
+  flex-shrink: 0;
+  background: var(--gox-sider-bg);
+  color: var(--gox-sider-text);
+  padding: 8px 0;
+  font-size: var(--gox-font-size-sm);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--gox-header-h);
+  height: calc(100vh - var(--gox-header-h));
+  font-family: var(--gox-font-family);
+}
+
+/* ── 一級項目 / 群組標題 ── */
+.gox-sidebar .gox-menu-item,
+.gox-sidebar .gox-menu-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--gox-sider-text);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--gox-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  user-select: none;
+}
+.gox-sidebar .gox-menu-item:hover,
+.gox-sidebar .gox-menu-title:hover {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+
+/* disabled（demo 未開放的入口） */
+.gox-sidebar .gox-menu-item.is-disabled {
+  cursor: default;
+  color: #888;
+}
+.gox-sidebar .gox-menu-item.is-disabled:hover {
+  background: transparent;
+  color: #888;
+}
+
+/* 箭頭（▶ / ▼） */
+.gox-sidebar .gox-arrow {
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+
+/* badge 紅點 */
+.gox-sidebar .gox-badge {
+  margin-left: auto;
+  background: var(--gox-danger);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ── 摺疊群組 ── */
+.gox-sidebar .gox-menu-group.is-open .gox-menu-title {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+.gox-sidebar .gox-menu-children {
+  background: var(--gox-sider-sub-bg);
+}
+
+/* 二級項目 */
+.gox-sidebar .gox-menu-child {
+  display: block;
+  padding: 8px 14px 8px 32px;
+  color: var(--gox-sider-sub-text);
+  text-decoration: none;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-sidebar .gox-menu-child:hover {
+  background: #252530;
+  color: var(--gox-sider-active-text);
+  text-decoration: none;
+}
+.gox-sidebar .gox-menu-child.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text);
+  font-weight: 600;
+}
+
+/* ───── GoX Admin / content.css ─────
+   內容區共用元件：
+     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
+   全部用 :root 變數，不直接寫 hex。 */
+
+/* ── 主體佈局：header 下方的 sidebar + content ── */
+.gox-body {
+  display: flex;
+  min-height: calc(100vh - var(--gox-header-h));
+}
+.gox-content {
+  flex: 1;
+  min-width: 0;          /* 讓子層 table overflow 正常 */
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--gox-content-bg);
+}
+
+/* ─────────────────────────────────────────────────
+   Toolbox：工具型頁面的主要工作區容器
+   預設 960px 限寬置中（表單、設定、編輯頁讀起來舒服）
+   修飾詞依內容寬度需求調整
+   ─────────────────────────────────────────────────
+   何時用：
+     - 系統設定、個人資料、單筆編輯、單一表單
+     - 內容上下流式排列、欄位不多
+   何時不用：
+     - 列表頁（要滿寬度顯示表格）
+     - 看板、儀表板（多欄並列）
+     - 包含寬表格的編輯頁（會被切掉）
+   範例：
+     <main class="gox-content">
+       <div class="gox-toolbox">  ← 用這個
+         <h2>系統設定</h2>
+         <div class="gox-card">…</div>
+       </div>
+     </main>
+*/
+.gox-toolbox {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.gox-toolbox.is-narrow { max-width: 720px; }   /* 表單少欄位、登入頁、設定密碼 */
+.gox-toolbox.is-wide   { max-width: 1200px; }  /* 多欄表單、含中型表格 */
+.gox-toolbox.is-fluid  { max-width: none; }    /* 內容太擠時退回滿寬 */
+
+/* ─────────────────────────────────────────────────
+   Card：後台主要的「白卡片」容器
+   ───────────────────────────────────────────────── */
+.gox-card {
+  background: var(--gox-card-bg);
+  border: 1px solid var(--gox-card-border);
+  border-radius: var(--gox-radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.gox-card-title {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--gox-card-bg);
+  border-bottom: 1px solid var(--gox-card-border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gox-text);
+}
+.gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
+  background: var(--gox-green);
+  color: #fff;
+  border-bottom: 0;
+}
+.gox-card-body { padding: 16px; }
+.gox-card-body.is-table-padding { padding: 0; }     /* table 自己有 padding 時用 */
+
+/* 卡片頂端列：左標題 / 右操作按鈕 */
+.gox-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────────────────
+   Button
+   ───────────────────────────────────────────────── */
+.gox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  line-height: 1.5;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.gox-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* 主操作 — 品牌綠 */
+.gox-btn-primary {
+  background: var(--gox-green);
+  color: #fff;
+  border-color: var(--gox-green);
+}
+.gox-btn-primary:hover:not(:disabled) { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+
+/* 次操作 — 白底邊框 */
+.gox-btn-default {
+  background: #fff;
+  color: var(--gox-text);
+  border-color: #ccc;
+}
+.gox-btn-default:hover:not(:disabled) { background: #f5f5f5; border-color: var(--gox-green); color: var(--gox-green); }
+
+/* 危險 */
+.gox-btn-danger {
+  background: #fff;
+  color: var(--gox-danger);
+  border-color: var(--gox-danger);
+}
+.gox-btn-danger:hover:not(:disabled) { background: var(--gox-danger); color: #fff; }
+
+/* 列表內小按鈕（檢視 / 編輯 / 刪除） */
+.gox-btn-op {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  color: var(--gox-text);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.gox-btn-op:hover { background: #f5f5f5; text-decoration: none; }
+
+/* ─────────────────────────────────────────────────
+   Form
+   ───────────────────────────────────────────────── */
+.gox-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.gox-form-row > label {
+  min-width: 110px;
+  color: var(--gox-text);
+  font-weight: 500;
+}
+.gox-input,
+.gox-select,
+.gox-textarea {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  background: #fff;
+  color: var(--gox-text);
+  line-height: 1.5;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.gox-input:focus,
+.gox-select:focus,
+.gox-textarea:focus {
+  outline: 2px solid var(--gox-green);
+  outline-offset: -1px;
+  border-color: var(--gox-green);
+}
+.gox-input:disabled,
+.gox-select:disabled,
+.gox-textarea:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+.gox-textarea { min-height: 80px; resize: vertical; }
+
+.gox-radio-group, .gox-checkbox-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gox-hint {
+  color: var(--gox-text-muted);
+  font-size: var(--gox-font-size-xs);
+}
+
+/* ─────────────────────────────────────────────────
+   Table
+   ───────────────────────────────────────────────── */
+.gox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--gox-font-size-sm);
+  background: #fff;
+}
+.gox-table th {
+  background: #fafafa;
+  border-bottom: 1px solid var(--gox-card-border);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gox-text-sub);
+  white-space: nowrap;
+}
+.gox-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.gox-table tr:hover td { background: #fafafa; }
+.gox-table .cell-center { text-align: center; }
+.gox-table .cell-right { text-align: right; }
+.gox-table .cell-ops { white-space: nowrap; }
+.gox-table .row-error td { background: #fff1f0; }
+.gox-table .row-error:hover td { background: #ffe0de; }
+
+/* ─────────────────────────────────────────────────
+   Tab（頁籤）
+   ───────────────────────────────────────────────── */
+.gox-tab-group {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  overflow: hidden;
+}
+.gox-tab-btn {
+  padding: 6px 20px;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  border-right: 1px solid #ccc;
+  color: var(--gox-text);
+}
+.gox-tab-btn:last-child { border-right: 0; }
+.gox-tab-btn.is-active {
+  background: var(--gox-info);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────
+   Modal
+   ───────────────────────────────────────────────── */
+.gox-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.gox-modal-overlay.is-hidden { display: none; }
+[hidden] { display: none !important; }
+.gox-modal-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 480px;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+.gox-modal-box h4 { margin: 0 0 16px; font-size: 16px; }
+.gox-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ─────────────────────────────────────────────────
+   Switch / Tag
+   ───────────────────────────────────────────────── */
+.gox-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background .18s ease;
+  vertical-align: middle;
+}
+.gox-switch.is-on { background: var(--gox-green); }
+.gox-switch.is-disabled { opacity: .5; cursor: not-allowed; }
+.gox-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  transition: transform .18s ease;
+}
+.gox-switch.is-on::after { transform: translateX(18px); }
+
+.gox-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  font-weight: 600;
+  background: #f0f0f0;
+  color: var(--gox-text-sub);
+  border: 1px solid #e0e0e0;
+}
+.gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+.gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-warning { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
+.gox-tag.is-danger  { background: #fff1f0; color: var(--gox-danger); border-color: #ffccc7; }
+
+/* 溫層快速 tag（兩專案都會用） */
+.gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+
+/* ─────────────────────────────────────────────────
+   Icon button（鉛筆 / 確認 / 取消）
+   ───────────────────────────────────────────────── */
+.gox-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gox-radius);
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  font-size: 12px;
+  font-family: inherit;
+  transition: all .15s;
+}
+.gox-icon-btn:hover {
+  background: #f0f4f8;
+  color: var(--gox-info);
+  border-color: #bcd4ea;
+}
+.gox-icon-btn.is-confirm { background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
+.gox-icon-btn.is-confirm:hover { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+.gox-icon-btn.is-cancel  { background: #fff; color: #999; border-color: #ccc; }
+.gox-icon-btn.is-cancel:hover  { background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
+
+/* ─────────────────────────────────────────────────
+   通用工具 class
+   ───────────────────────────────────────────────── */
+/* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
+.is-hidden { display: none; }
+
+</style>
+</head>
+<body>
+<div class="gox-page">
+<header class="gox-header">
+  <a href="#" class="gox-logo">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農">
+  </a>
+  <nav class="gox-breadcrumb">
+    <a href="admin-gift-list.html">禮物券管理</a>
+    <span class="sep">&gt;</span>
+    <strong>禮物明細</strong>
+  </nav>
+  <div class="gox-header-right">
+    <span class="gox-user">示範帳號</span>
+    <button type="button" class="gox-icon-btn">登出</button>
+  </div>
+</header>
+
+<div class="gox-body">
+<aside class="gox-sidebar">
+  <a href="admin-gift-list.html" class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">禮物券管理</span></a>
+</aside>
+
+<main class="gox-content">
+<style>
+  .gv-info { display: flex; gap: 20px; }
+  .gv-pic { width: 88px; height: 88px; flex: none; border-radius: var(--gox-radius); border: 1px solid var(--gox-card-border); background: #f7f7f7; display: flex; align-items: center; justify-content: center; color: var(--gox-text-muted); font-size: 12px; }
+  .gv-pinfo { flex: 1; }
+  .gv-pname { font-size: 16px; font-weight: 600; color: var(--gox-text); margin-bottom: 4px; }
+  .gv-pname .gv-sep-dot { color: var(--gox-text-muted); margin: 0 4px; font-weight: normal; }
+  .gv-pname .gv-id { color: var(--gox-text-muted); font-size: 12px; font-weight: normal; margin-left: 6px; }
+  .gv-pmeta { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 13px; color: var(--gox-text-sub); margin-top: 8px; }
+  .gv-pmeta div span { color: var(--gox-text-muted); margin-right: 4px; }
+
+  .gv-highlight { display: flex; gap: 12px; flex: none; }
+  .gv-hl-box { width: 160px; padding: 12px 16px; border-radius: var(--gox-radius-lg); border: 1px solid var(--gox-card-border); background: #fafafa; }
+  .gv-hl-box.is-alert { border-color: var(--gox-danger); background: #fdf2f1; }
+  .gv-hl-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .gv-hl-num { font-size: 26px; font-weight: 600; color: var(--gox-text); font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .gv-hl-box.is-alert .gv-hl-num { color: var(--gox-danger); }
+  .gv-hl-note { font-size: 12px; color: var(--gox-danger); margin-top: 4px; }
+
+  .gv-edit-stock-btn { background: #fff; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
+    cursor: pointer; color: var(--gox-text-sub); font-size: 12px; padding: 2px 10px; line-height: 1.6; }
+  .gv-edit-stock-btn:hover { border-color: var(--gox-green); color: var(--gox-green); }
+  .gv-stock-edit { display: none; align-items: center; gap: 4px; }
+  .gv-stock-edit.is-shown { display: flex; }
+  .gv-stock-edit input { width: 72px; padding: 4px 8px; font-size: 16px; border: 1px solid var(--gox-info); border-radius: var(--gox-radius); font-variant-numeric: tabular-nums; }
+  .gv-icon-ok, .gv-icon-cancel { border: 0; background: transparent; cursor: pointer; font-size: 15px; padding: 2px 4px; line-height: 1; }
+  .gv-icon-ok { color: var(--gox-green); }
+  .gv-icon-cancel { color: var(--gox-text-muted); }
+  .gv-stock-view.is-hidden { display: none; }
+
+  .gv-edit-form { display: none; }
+  .gv-edit-form.is-shown { display: block; }
+  .gv-view.is-hidden { display: none; }
+  .gv-readonly-product { display: flex; gap: 16px; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius); margin-bottom: 20px; }
+  .gv-readonly-product .gv-pic { width: 56px; height: 56px; }
+  .gv-ro-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 2px; }
+  .gv-ro-name { font-size: 14px; font-weight: 600; color: var(--gox-text); }
+  .gv-ro-meta { font-size: 12px; color: var(--gox-text-sub); margin-top: 4px; }
+  .gv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .gv-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+  .gv-row:last-of-type { margin-bottom: 0; }
+  .gv-span-3 { grid-column: span 3; }
+  .gv-span-4 { grid-column: span 4; }
+  .gv-field textarea.gox-input { resize: vertical; font-family: inherit; line-height: 1.7; }
+  .gv-grid .gv-col-2 { grid-column: span 2; }
+  .gv-field label { display: block; font-size: 13px; color: var(--gox-text-sub); margin-bottom: 4px; }
+  .gv-field .gox-input, .gv-field .gox-select { width: 100%; }
+  .gv-field-hint { font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
+  .gv-checks { display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
+  .gv-checks label { font-size: 13px; color: var(--gox-text-sub); display: flex; align-items: center; gap: 6px; }
+  .gv-edit-bar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
+
+  .gv-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--gox-card-border); }
+  .gv-filter-part { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .gv-filter-part label { font-size: 13px; color: var(--gox-text-sub); }
+  .gv-filter-part .gox-input { width: 146px; }
+  .gv-filter-part .gv-sep { color: var(--gox-text-muted); }
+  .gv-stats-part { display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap; }
+  .gv-stat-inline { display: flex; align-items: baseline; gap: 6px; }
+  .gv-stat-inline span { font-size: 12px; color: var(--gox-text-muted); white-space: nowrap; }
+  .gv-stat-inline b { font-size: 18px; font-weight: 600; color: var(--gox-text); font-variant-numeric: tabular-nums; }
+
+  .gv-rate { font-variant-numeric: tabular-nums; }
+  .gv-rate b { color: var(--gox-text); }
+  .gv-rate span { color: var(--gox-text-muted); }
+  .gv-num { font-variant-numeric: tabular-nums; }
+  .gv-code { font-family: 'Consolas', 'Menlo', monospace; font-size: 12px; color: var(--gox-text-sub); background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+  .gv-date-sub { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 2px; }
+  .gv-row-ended td { color: var(--gox-text-muted); }
+  .gv-row-ended .gv-rate b { color: var(--gox-text-sub); }
+  .gv-note { font-size: 12px; color: var(--gox-text-sub); }
+  .gv-note-fail { color: var(--gox-danger); }
+  .gv-note-none { color: var(--gox-text-muted); }
+  .gv-empty { padding: 32px 16px; text-align: center; color: var(--gox-text-muted); }
+  .gv-head-actions { display: flex; gap: 8px; }
+
+  .gv-modal-field { margin-bottom: 16px; }
+  .gv-modal-field label { display: block; font-size: 13px; color: var(--gox-text-sub); margin-bottom: 4px; }
+  .gv-modal-field .gox-input, .gv-modal-field .gox-select, .gv-modal-field .gox-textarea { width: 100%; }
+  .gv-radio-line { display: flex; gap: 20px; margin-bottom: 8px; }
+  .gv-radio-line label { font-size: 13px; color: var(--gox-text-sub); display: flex; align-items: center; gap: 6px; }
+  .gv-expire-input.is-hidden { display: none; }
+  .gv-modal-wide { width: 880px; max-width: calc(100vw - 48px); }
+  .gv-roster-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; font-size: 13px; color: var(--gox-text-sub); flex-wrap: wrap; }
+  .gv-roster-head b { color: var(--gox-text); }
+  .gv-roster-scroll { max-height: 340px; overflow-y: auto; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius); }
+  .gv-roster-scroll table { margin: 0; }
+  .gv-roster-scroll thead th { position: sticky; top: 0; background: #fafafa; z-index: 1; }
+  .gv-sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
+  .gv-sum-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 2px; }
+  .gv-sum-num { font-size: 18px; font-weight: 600; color: var(--gox-text); font-variant-numeric: tabular-nums; }
+  .gv-sum-num.is-green { color: var(--gox-green); }
+  .gv-rule-body { font-size: 14px; line-height: 1.9; color: var(--gox-text-sub); }
+  .gv-rule-body h4 { font-size: 14px; color: var(--gox-text); margin: 16px 0 4px; }
+  .gv-rule-body h4:first-child { margin-top: 0; }
+  .gv-rule-body ul { margin: 0; padding-left: 20px; }
+  .gv-rule-body li { margin-bottom: 4px; }
+</style>
+
+<div class="gox-list-head">
+  <h2>禮物明細</h2>
+  <div class="gv-head-actions">
+    <button type="button" class="gox-btn gox-btn-default" id="gv-back">回列表</button>
+    <button type="button" class="gox-btn gox-btn-primary" id="gv-edit">編輯</button>
+  </div>
+</div>
+
+<div class="gox-card">
+  <div class="gox-card-body">
+    <div class="gv-view" id="gv-view">
+      <div class="gv-info">
+        <div class="gv-pic">商品圖</div>
+        <div class="gv-pinfo">
+          <div class="gv-pname">
+            <span id="gv-pname"></span><span class="gv-id" id="gv-pid"></span>
+            <span class="gv-sep-dot">・</span>
+            <span id="gv-spec"></span><span class="gv-id" id="gv-specid"></span>
+            <span class="gox-tag" id="gv-status" style="margin-left:8px;"></span>
+          </div>
+          <div class="gv-pmeta">
+            <div><span>產線</span><b id="gv-line"></b></div>
+            <div><span>溫層</span><b id="gv-temp"></b></div>
+            <div><span>原價</span><b id="gv-price"></b></div>
+          </div>
+          <div class="gv-pmeta">
+            <div><span>贈送期間</span><b id="gv-period"></b></div>
+          </div>
+        </div>
+        <div class="gv-highlight">
+          <div class="gv-hl-box" id="gv-box-stock">
+            <div class="gv-hl-label">
+              <span>剩餘庫存</span>
+              <button type="button" class="gv-edit-stock-btn" id="gv-stock-pencil">編輯</button>
+            </div>
+            <div class="gv-stock-view" id="gv-stock-view"><div class="gv-hl-num" id="gv-stock"></div></div>
+            <div class="gv-stock-edit" id="gv-stock-edit">
+              <input type="number" id="gv-stock-input" min="0">
+              <button type="button" class="gv-icon-ok" id="gv-stock-ok" aria-label="確認">✓</button>
+              <button type="button" class="gv-icon-cancel" id="gv-stock-cancel" aria-label="取消">✕</button>
+            </div>
+          </div>
+          <div class="gv-hl-box" id="gv-box-unused">
+            <div class="gv-hl-label"><span>未兌換有效券</span></div>
+            <div class="gv-hl-num" id="gv-unused"></div>
+            <div class="gv-hl-note" id="gv-shortage" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gv-edit-form" id="gv-edit-form">
+      <div class="gv-readonly-product">
+        <div class="gv-pic">商品圖</div>
+        <div>
+          <div class="gv-ro-label">綁定產品（不可變更）</div>
+          <div class="gv-ro-name" id="gv-e-pname"></div>
+          <div class="gv-ro-meta" id="gv-e-pmeta"></div>
+        </div>
+      </div>
+        <div class="gv-row">
+          <div class="gv-field gv-span-3">
+            <label>規格描述</label>
+            <input type="text" class="gox-input" id="gv-e-desc">
+          </div>
+          <div class="gv-field">
+            <label>庫存</label>
+            <input type="number" class="gox-input" id="gv-e-stock">
+            <div class="gv-field-hint">庫存不足時客人無法兌換（目前未兌換有效券 <b id="gv-e-unused"></b> 張）</div>
+          </div>
+        </div>
+
+        <div class="gv-row">
+          <div class="gv-field">
+            <label>規格量</label>
+            <input type="number" class="gox-input" id="gv-e-qty" value="1" min="1">
+          </div>
+          <div class="gv-field">
+            <label>單位</label>
+            <select class="gox-select" id="gv-e-unit">
+              <option>包</option>
+              <option>盒</option>
+              <option>組</option>
+              <option>入</option>
+            </select>
+          </div>
+          <div class="gv-field">
+            <label>產品原價</label>
+            <input type="number" class="gox-input" id="gv-e-price">
+            <div class="gv-field-hint">僅用刪除線劃掉顯示，實際為 0 元</div>
+          </div>
+          <div class="gv-field">
+            <label>成本</label>
+            <input type="number" class="gox-input" id="gv-e-cost" placeholder="選填">
+          </div>
+        </div>
+
+        <div class="gv-row">
+          <div class="gv-field">
+            <label>開始贈送</label>
+            <input type="date" class="gox-input" id="gv-e-start">
+            <div class="gv-field-hint">同時作為預計出貨日</div>
+          </div>
+          <div class="gv-field">
+            <label>結束贈送</label>
+            <input type="date" class="gox-input" id="gv-e-end">
+          </div>
+        </div>
+
+        <div class="gv-row">
+          <div class="gv-field gv-span-4">
+            <label>活動說明</label>
+            <textarea class="gox-input" id="gv-e-note" rows="3"></textarea>
+            <div class="gv-field-hint">會顯示在前台會員中心的禮物券說明彈窗裡</div>
+          </div>
+        </div>
+
+
+      <div class="gv-checks">
+        <label><input type="checkbox" id="gv-e-listed"> 上架（可開始贈送）</label>
+        <label><input type="checkbox" id="gv-e-cod" checked> 可貨到付款</label>
+      </div>
+      <div class="gv-edit-bar">
+        <button type="button" class="gox-btn gox-btn-default" id="gv-e-cancel">取消</button>
+        <button type="button" class="gox-btn gox-btn-primary" id="gv-e-save">儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gox-list-head" id="gv-voucher-head">
+  <h2 style="font-size:16px;">禮物券<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
+  <div class="gv-head-actions">
+    <button type="button" class="gox-btn gox-btn-default" id="gv-btn-rule" style="display:none;">查看生日券發放規則</button>
+    <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">手動發券</button>
+  </div>
+</div>
+
+<div class="gox-card" id="gv-voucher-card">
+  <div class="gox-card-body">
+    <div class="gv-toolbar">
+      <div class="gv-filter-part">
+        <label>發放日期</label>
+        <input type="date" class="gox-input" id="gv-f-start">
+        <span class="gv-sep">～</span>
+        <input type="date" class="gox-input" id="gv-f-end">
+        <button type="button" class="gox-btn gox-btn-default" id="gv-f-search">查詢</button>
+        <button type="button" class="gox-btn gox-btn-op" id="gv-f-all">顯示全部</button>
+      </div>
+      <div class="gv-stats-part">
+        <div class="gv-stat-inline"><span>總發放</span><b id="gv-s-issued"></b></div>
+        <div class="gv-stat-inline"><span>總使用</span><b id="gv-s-used"></b></div>
+        <div class="gv-stat-inline"><span>總過期</span><b id="gv-s-expired"></b></div>
+        <div class="gv-stat-inline"><span>使用率</span><b id="gv-s-rate"></b></div>
+      </div>
+    </div>
+
+    <table class="gox-table">
+      <thead>
+        <tr>
+          <th style="width:110px;">券代碼</th>
+          <th>券名</th>
+          <th style="width:110px;">發放時間</th>
+          <th style="width:130px;">有效期限</th>
+          <th class="cell-right" style="width:150px;">使用／發放（使用率）</th>
+          <th class="cell-right" style="width:100px;">未兌換</th>
+          <th style="width:145px;">備註</th>
+          <th class="cell-center" style="width:56px;">啟用</th>
+          <th class="cell-center" style="width:92px;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="gv-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="gox-modal-overlay is-hidden" id="gv-issue-modal">
+  <div class="gox-modal-box">
+    <div class="gox-card-title">手動發券</div>
+    <div class="gox-card-body">
+      <div class="gv-modal-field"><label>券名</label><input type="text" class="gox-input" id="gv-i-name" placeholder="例：中秋加碼場"></div>
+      <div class="gv-modal-field">
+        <label>有效期限</label>
+        <div class="gv-radio-line">
+          <label><input type="radio" name="gv-expire" value="days" checked> 發券日起算</label>
+          <label><input type="radio" name="gv-expire" value="fixed"> 固定到期日</label>
+        </div>
+        <div id="gv-expire-days"><input type="number" class="gox-input" id="gv-i-days" value="14" min="1"><div style="font-size:12px;color:var(--gox-text-muted);margin-top:4px;">天內有效</div></div>
+        <div id="gv-expire-fixed" class="gv-expire-input is-hidden"><input type="date" class="gox-input" id="gv-i-date"></div>
+      </div>
+      <div class="gv-modal-field">
+        <label>發放對象</label>
+        <textarea class="gox-textarea" id="gv-i-members" rows="3" placeholder="一行一個會員帳號"></textarea>
+        <div style="font-size:12px;color:var(--gox-text-muted);margin-top:4px;">目前剩餘庫存 <b id="gv-i-stock"></b>，發券數量請勿超過庫存</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
+        <button type="button" class="gox-btn gox-btn-primary" id="gv-i-ok">發送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gox-modal-overlay is-hidden" id="gv-roster-modal">
+  <div class="gox-modal-box gv-modal-wide">
+    <div class="gox-card-title">發放名單</div>
+    <div class="gox-card-body">
+      <div class="gv-roster-head">
+        <div>券代碼 <b id="gv-r-code"></b></div>
+        <div>券名 <b id="gv-r-name"></b></div>
+        <div>發放時間 <b id="gv-r-date"></b></div>
+        <div>有效期限 <b id="gv-r-expire"></b></div>
+      </div>
+      <div class="gv-roster-scroll">
+        <table class="gox-table">
+          <thead>
+            <tr>
+              <th style="width:130px;">會員帳號</th>
+              <th style="width:100px;">發券時間</th>
+              <th style="width:90px;">狀態</th>
+              <th style="width:100px;">使用時間</th>
+              <th style="width:110px;">訂單編號</th>
+              <th class="cell-right" style="width:100px;">訂單金額</th>
+              <th style="width:110px;">簡訊</th>
+            </tr>
+          </thead>
+          <tbody id="gv-r-tbody"></tbody>
+        </table>
+      </div>
+      <div class="gv-sum">
+        <div><div class="gv-sum-label">發放張數</div><div class="gv-sum-num" id="gv-r-total"></div></div>
+        <div><div class="gv-sum-label">已使用</div><div class="gv-sum-num" id="gv-r-used"></div></div>
+        <div><div class="gv-sum-label">訂單總金額</div><div class="gv-sum-num is-green" id="gv-r-amount"></div></div>
+        <div><div class="gv-sum-label">平均客單價</div><div class="gv-sum-num" id="gv-r-avg"></div></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>關閉</button>
+        <button type="button" class="gox-btn gox-btn-primary" id="gv-r-export">匯出名單</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gox-modal-overlay is-hidden" id="gv-rule-modal">
+  <div class="gox-modal-box">
+    <div class="gox-card-title">生日券發放規則</div>
+    <div class="gox-card-body">
+      <div class="gv-rule-body">
+        <h4>什麼時候發</h4>
+        <ul><li>每週一上午自動執行，不需要人工操作</li><li>每執行一次就是列表上的一批，券代碼開頭是 BD</li></ul>
+        <h4>發給誰</h4>
+        <ul>
+          <li>當週滿一歲的寶寶（週一到週日）</li>
+          <li>之前錯過的也會補發：只要還沒發過、而且登記時間沒有太晚，都會在下一批補上</li>
+          <li>寶寶超過一歲之後才登記的不發</li>
+          <li>每個寶寶一生只發一次</li>
+          <li>雙胞胎各發一張，兩張可以在同一筆訂單一起用</li>
+        </ul>
+        <h4>效期</h4>
+        <ul><li>發券日起算 14 天，到期自動失效</li><li>到期前不另外提醒</li></ul>
+        <h4>簡訊</h4>
+        <ul>
+          <li>與發券同一批送出，一位媽媽只會收到一封（雙胞胎不會收到兩封）</li>
+          <li>會員帳號不是手機號碼的收不到簡訊，但券還是會發</li>
+          <li>發送結果顯示在列表的備註欄</li>
+        </ul>
+        <h4>活動暫停</h4>
+        <ul><li>把禮物「上架」關掉就會停止發新的券</li><li>已經發出去的券不受影響</li></ul>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>關閉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var AMOUNTS = [1580, 150, 2340, 1650, 150, 1890, 1520, 3200, 150, 1740, 2100, 1620, 980, 2450, 150];
+
+  function bd(date, issued, used, unused, smsSent, smsFail) {
+    return { code: 'BD-' + date.slice(2).replace(/-/g, ''), name: '寶寶生日禮', issuedAt: date,
+      expire: addDays(date, 14), used: used, issued: issued, unused: unused,
+      active: unused > 0, ended: unused === 0, sms: { sent: smsSent, failed: smsFail } };
+  }
+
+  function ymd(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function addDays(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return ymd(d); }
+  function addMonths(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setMonth(d.getMonth() + n); return ymd(d); }
+  function today() { return ymd(new Date()); }
+  function fmt(n) { return n.toLocaleString('zh-TW'); }
+
+  var DEFAULT_NOTE = '活動期間限定，逾期自動失效。每筆訂單可同時使用多張禮物券。';
+  var DATA = {
+    '1': {
+      product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021,
+      qty: 1, unit: '包', cost: 120, line: '粥寶寶專區', temp: '常溫', price: 199, start: '2026-06-01', end: '2026-12-31',
+      listed: true, stock: 84, hasAutoRule: true,
+      note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。',
+      types: [
+        bd('2026-08-03', 12, 3,  9, 11, 1),
+        bd('2026-07-27',  9, 5,  4,  9, 0),
+        bd('2026-07-20', 15, 12, 0, 13, 2),
+        bd('2026-07-13', 11, 9,  0, 11, 0),
+        bd('2026-07-06',  8, 7,  0,  7, 1),
+        bd('2026-06-29', 14, 11, 0, 13, 1),
+        bd('2026-06-22', 10, 8,  0, 10, 0),
+        bd('2026-06-15', 13, 10, 0, 12, 1),
+        bd('2026-06-08',  9, 8,  0,  9, 0),
+        bd('2026-06-01', 11, 9,  0, 10, 1),
+        bd('2026-05-25', 12, 9,  0, 12, 0),
+        bd('2026-05-18',  7, 6,  0,  7, 0),
+        bd('2026-05-11', 10, 7,  0,  9, 1),
+        bd('2026-05-04',  8, 6,  0,  8, 0),
+        bd('2026-04-27', 12, 10, 0, 11, 1),
+        bd('2026-04-20',  9, 7,  0,  9, 0)
+      ]
+    },
+    '2': {
+      product: '有機米餅 二入', productId: 77412, spec: '中秋禮專用', specId: 176035,
+      qty: 2, unit: '入', cost: 90, line: '粥寶寶專區', temp: '常溫', price: 149, start: '2026-08-01', end: '2026-09-30',
+      listed: true, stock: 12, hasAutoRule: false,
+      types: [
+        { code: 'MF-260801', name: '中秋限定禮', issuedAt: '2026-08-01', expire: '2026-09-15', used: 128, issued: 200, unused: 40, active: true, ended: false, sms: null },
+        { code: 'MF-260820', name: '中秋加碼場', issuedAt: '2026-08-20', expire: '2026-09-03', used: 12,  issued: 60,  unused: 5,  active: true, ended: false, sms: null }
+      ]
+    },
+    '3': {
+      product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988,
+      qty: 1, unit: '包', cost: 55, line: '粥寶寶專區', temp: '冷凍', price: 89, start: '2026-01-01', end: '2026-12-31',
+      listed: true, stock: 260, hasAutoRule: false,
+      types: [
+        { code: 'CS-260715', name: '客服補償券', issuedAt: '2026-07-15', expire: '2026-08-14', used: 47, issued: 52, unused: 3, active: true, ended: false, sms: null }
+      ]
+    },
+    '4': {
+      product: '果乾禮盒 綜合', productId: 76950, spec: '週年慶禮專用', specId: 175640,
+      qty: 1, unit: '盒', cost: 240, line: '產地直送', temp: '常溫', price: 380, start: '2025-10-01', end: '2025-11-30',
+      listed: false, stock: 0, hasAutoRule: false,
+      types: [
+        { code: 'AN-251001', name: '週年慶禮', issuedAt: '2025-10-01', expire: '2025-11-30', used: 310, issued: 400, unused: 0, active: false, ended: true, sms: null }
+      ]
+    }
+  };
+
+  var id = (location.search.match(/[?&]id=(\d+)/) || [])[1] || '1';
+  var g = DATA[id] || DATA['1'];
+
+  function totalUnused() {
+    return g.types.reduce(function (s, t) { return s + t.unused; }, 0);
+  }
+
+  function filtered() {
+    var s = document.getElementById('gv-f-start').value;
+    var e = document.getElementById('gv-f-end').value;
+    return g.types.filter(function (t) {
+      if (s && t.issuedAt < s) return false;
+      if (e && t.issuedAt > e) return false;
+      return true;
+    });
+  }
+
+  function renderView() {
+    document.getElementById('gv-pname').textContent = g.product;
+    document.getElementById('gv-pid').textContent = '#' + g.productId;
+    document.getElementById('gv-spec').textContent = g.spec;
+    document.getElementById('gv-specid').textContent = '#' + g.specId;
+    document.getElementById('gv-line').textContent = g.line;
+    document.getElementById('gv-temp').textContent = g.temp;
+    document.getElementById('gv-price').textContent = '$' + g.price;
+    document.getElementById('gv-period').textContent = g.start + ' ～ ' + g.end;
+    var tag = document.getElementById('gv-status');
+    tag.textContent = g.listed ? '贈送中' : '已停止贈送';
+    tag.className = 'gox-tag ' + (g.listed ? 'is-success' : 'is-frozen');
+
+    var unused = totalUnused();
+    document.getElementById('gv-stock').textContent = g.stock;
+    document.getElementById('gv-unused').textContent = unused;
+    document.getElementById('gv-i-stock').textContent = g.stock;
+
+    var box = document.getElementById('gv-box-unused');
+    var sn = document.getElementById('gv-shortage');
+    if (unused > g.stock) {
+      box.classList.add('is-alert');
+      sn.textContent = '超出庫存 ' + (unused - g.stock) + ' 張';
+      sn.style.display = '';
+    } else {
+      box.classList.remove('is-alert');
+      sn.style.display = 'none';
+    }
+  }
+
+  function renderStats(rows) {
+    var issued = rows.reduce(function (s, t) { return s + t.issued; }, 0);
+    var used = rows.reduce(function (s, t) { return s + t.used; }, 0);
+    var unused = rows.reduce(function (s, t) { return s + t.unused; }, 0);
+    var expired = issued - used - unused;
+    document.getElementById('gv-s-issued').textContent = issued;
+    document.getElementById('gv-s-used').textContent = used;
+    document.getElementById('gv-s-expired').textContent = expired;
+    document.getElementById('gv-s-rate').textContent = issued ? Math.round(used / issued * 100) + '%' : '—';
+  }
+
+  function noteCell(t) {
+    if (!t.sms) return '<span class="gv-note gv-note-none">—</span>';
+    var s = '<span class="gv-note">簡訊 ' + t.sms.sent + ' 則已送出';
+    if (t.sms.failed) s += '<br><span class="gv-note-fail">' + t.sms.failed + ' 則號碼無效</span>';
+    return s + '</span>';
+  }
+
+  function renderTypes() {
+    var rows = filtered();
+    document.getElementById('gv-tcount').textContent = '共 ' + rows.length + ' 批';
+    renderStats(rows);
+
+    var tbody = document.getElementById('gv-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="gv-empty">這段期間沒有發放紀錄</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function (t) {
+      var i = g.types.indexOf(t);
+      var rate = Math.round(t.used / t.issued * 100);
+      var sw = t.ended
+        ? '<span class="gox-switch is-disabled"></span>'
+        : '<span class="gox-switch' + (t.active ? ' is-on' : '') + '" data-gv-vtoggle="' + i + '"></span>';
+      return '<tr' + (t.ended ? ' class="gv-row-ended"' : '') + '>' +
+        '<td><span class="gv-code">' + t.code + '</span></td>' +
+        '<td>' + t.name + '</td>' +
+        '<td>' + t.issuedAt + '</td>' +
+        '<td>' + t.expire + (t.ended ? '<span class="gv-date-sub">已結束</span>' : '') + '</td>' +
+        '<td class="cell-right gv-rate"><b>' + t.used + '</b><span> / ' + t.issued + '（' + rate + '%）</span></td>' +
+        '<td class="cell-right gv-num">' + t.unused + '</td>' +
+        '<td>' + noteCell(t) + '</td>' +
+        '<td class="cell-center">' + sw + '</td>' +
+        '<td class="cell-center"><button type="button" class="gox-btn gox-btn-op" data-gv-roster="' + i + '">查看名單</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function buildRoster(t) {
+    var list = [];
+    for (var i = 0; i < t.issued; i++) {
+      var isUsed = i < t.used;
+      var smsFail = t.sms && i >= (t.issued - t.sms.failed);
+      list.push({
+        member: 'demo_user_' + String(i + 1).padStart(3, '0'),
+        issuedAt: t.issuedAt, used: isUsed,
+        usedAt: isUsed ? addDays(t.issuedAt, (i % 9) + 1) : null,
+        order: isUsed ? 'DEMO-' + String(1000 + i) : null,
+        amount: isUsed ? AMOUNTS[i % AMOUNTS.length] : 0,
+        expired: !isUsed && t.ended,
+        sms: t.sms ? (smsFail ? 'fail' : 'ok') : null
+      });
+    }
+    return list;
+  }
+
+  function openRoster(idx) {
+    var t = g.types[idx];
+    var list = buildRoster(t);
+    document.getElementById('gv-r-code').textContent = t.code;
+    document.getElementById('gv-r-name').textContent = t.name;
+    document.getElementById('gv-r-date').textContent = t.issuedAt;
+    document.getElementById('gv-r-expire').textContent = t.expire;
+    document.getElementById('gv-r-tbody').innerHTML = list.map(function (r) {
+      var statusTag = r.used ? '<span class="gox-tag is-success">已使用</span>'
+        : (r.expired ? '<span class="gox-tag is-frozen">已過期</span>' : '<span class="gox-tag is-info">未使用</span>');
+      var smsCell = r.sms === null ? '<span class="gv-note-none">—</span>'
+        : (r.sms === 'ok' ? '已送出' : '<span class="gv-note-fail">號碼無效</span>');
+      return '<tr><td>' + r.member + '</td><td>' + r.issuedAt + '</td><td>' + statusTag + '</td>' +
+        '<td>' + (r.usedAt || '—') + '</td><td>' + (r.order || '—') + '</td>' +
+        '<td class="cell-right gv-num">' + (r.amount ? '$' + fmt(r.amount) : '—') + '</td>' +
+        '<td>' + smsCell + '</td></tr>';
+    }).join('');
+    var usedList = list.filter(function (r) { return r.used; });
+    var total = usedList.reduce(function (s, r) { return s + r.amount; }, 0);
+    document.getElementById('gv-r-total').textContent = t.issued + ' 張';
+    document.getElementById('gv-r-used').textContent = usedList.length + ' 張';
+    document.getElementById('gv-r-amount').textContent = '$' + fmt(total);
+    document.getElementById('gv-r-avg').textContent = usedList.length ? ('$' + fmt(Math.round(total / usedList.length))) : '—';
+    document.getElementById('gv-roster-modal').classList.remove('is-hidden');
+  }
+
+  // ---- 庫存快速編輯 ----
+  function openStockEdit() {
+    document.getElementById('gv-stock-input').value = g.stock;
+    document.getElementById('gv-stock-view').classList.add('is-hidden');
+    document.getElementById('gv-stock-edit').classList.add('is-shown');
+    document.getElementById('gv-stock-pencil').style.visibility = 'hidden';
+    document.getElementById('gv-stock-input').focus();
+    document.getElementById('gv-stock-input').select();
+  }
+  function closeStockEdit() {
+    document.getElementById('gv-stock-view').classList.remove('is-hidden');
+    document.getElementById('gv-stock-edit').classList.remove('is-shown');
+    document.getElementById('gv-stock-pencil').style.visibility = '';
+  }
+  document.getElementById('gv-stock-pencil').addEventListener('click', openStockEdit);
+  document.getElementById('gv-stock-cancel').addEventListener('click', closeStockEdit);
+  document.getElementById('gv-stock-ok').addEventListener('click', function () {
+    var v = Number(document.getElementById('gv-stock-input').value);
+    if (!(v >= 0)) { window.gox.toast('庫存不能小於 0'); return; }
+    var old = g.stock;
+    g.stock = v;
+    renderView(); closeStockEdit();
+    window.gox.toast('庫存已從 ' + old + ' 改為 ' + v);
+  });
+  document.getElementById('gv-stock-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('gv-stock-ok').click();
+    if (e.key === 'Escape') closeStockEdit();
+  });
+
+  // ---- 完整編輯 ----
+  function enterEdit() {
+    document.getElementById('gv-e-pname').textContent = g.product + '（#' + g.productId + '）';
+    document.getElementById('gv-e-pmeta').textContent = g.line + '　|　' + g.temp + '　|　規格 ID #' + g.specId;
+    document.getElementById('gv-e-desc').value = g.spec;
+    document.getElementById('gv-e-stock').value = g.stock;
+    document.getElementById('gv-e-unused').textContent = totalUnused();
+    document.getElementById('gv-e-qty').value = g.qty;
+    document.getElementById('gv-e-unit').value = g.unit;
+    document.getElementById('gv-e-cost').value = g.cost;
+    document.getElementById('gv-e-price').value = g.price;
+    document.getElementById('gv-e-start').value = g.start;
+    document.getElementById('gv-e-end').value = g.end;
+    document.getElementById('gv-e-note').value = g.note || DEFAULT_NOTE;
+    document.getElementById('gv-e-listed').checked = g.listed;
+    document.getElementById('gv-view').classList.add('is-hidden');
+    document.getElementById('gv-edit-form').classList.add('is-shown');
+    document.getElementById('gv-edit').style.display = 'none';
+    document.getElementById('gv-voucher-head').style.display = 'none';
+    document.getElementById('gv-voucher-card').style.display = 'none';
+  }
+  function exitEdit() {
+    document.getElementById('gv-view').classList.remove('is-hidden');
+    document.getElementById('gv-edit-form').classList.remove('is-shown');
+    document.getElementById('gv-edit').style.display = '';
+    document.getElementById('gv-voucher-head').style.display = '';
+    document.getElementById('gv-voucher-card').style.display = '';
+  }
+  document.getElementById('gv-edit').addEventListener('click', enterEdit);
+  document.getElementById('gv-e-cancel').addEventListener('click', exitEdit);
+  document.getElementById('gv-e-save').addEventListener('click', function () {
+    var desc = document.getElementById('gv-e-desc').value.trim();
+    var stock = Number(document.getElementById('gv-e-stock').value);
+    if (!desc) { window.gox.toast('請填寫規格描述'); return; }
+    if (!(stock >= 0)) { window.gox.toast('請填寫庫存'); return; }
+    g.spec = desc; g.stock = stock;
+    g.price = Number(document.getElementById('gv-e-price').value) || g.price;
+    g.qty = Number(document.getElementById('gv-e-qty').value) || g.qty;
+    g.unit = document.getElementById('gv-e-unit').value || g.unit;
+    g.cost = Number(document.getElementById('gv-e-cost').value) || g.cost;
+    g.start = document.getElementById('gv-e-start').value || g.start;
+    g.end = document.getElementById('gv-e-end').value || g.end;
+    g.note = document.getElementById('gv-e-note').value.trim();
+    g.listed = document.getElementById('gv-e-listed').checked;
+    renderView(); exitEdit();
+    window.gox.toast('已儲存「' + g.spec + '」');
+  });
+
+  // ---- 篩選 ----
+  document.getElementById('gv-f-search').addEventListener('click', renderTypes);
+  document.getElementById('gv-f-all').addEventListener('click', function () {
+    document.getElementById('gv-f-start').value = '';
+    document.getElementById('gv-f-end').value = '';
+    renderTypes();
+  });
+
+  document.getElementById('gv-tbody').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-gv-roster]');
+    if (btn) openRoster(Number(btn.getAttribute('data-gv-roster')));
+  });
+
+  document.addEventListener('gox:switch', function (e) {
+    var sw = e.target.closest('[data-gv-vtoggle]');
+    if (!sw) return;
+    var t = g.types[Number(sw.getAttribute('data-gv-vtoggle'))];
+    t.active = e.detail.on;
+    window.gox.toast(t.active ? ('已啟用 ' + t.code) : ('已關閉 ' + t.code + '，客人無法再兌換'));
+  });
+
+  document.getElementById('gv-r-export').addEventListener('click', function () {
+    window.gox.toast('名單產生中，完成後會寄到你的信箱');
+  });
+
+  if (g.hasAutoRule) document.getElementById('gv-btn-rule').style.display = '';
+  document.getElementById('gv-btn-rule').addEventListener('click', function () {
+    document.getElementById('gv-rule-modal').classList.remove('is-hidden');
+  });
+  document.getElementById('gv-btn-issue').addEventListener('click', function () {
+    document.getElementById('gv-issue-modal').classList.remove('is-hidden');
+  });
+  document.querySelectorAll('input[name="gv-expire"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var isDays = document.querySelector('input[name="gv-expire"]:checked').value === 'days';
+      document.getElementById('gv-expire-days').classList.toggle('is-hidden', !isDays);
+      document.getElementById('gv-expire-fixed').classList.toggle('is-hidden', isDays);
+    });
+  });
+  document.getElementById('gv-i-ok').addEventListener('click', function () {
+    var name = document.getElementById('gv-i-name').value.trim();
+    var members = document.getElementById('gv-i-members').value.trim();
+    if (!name) { window.gox.toast('請填寫券名'); return; }
+    if (!members) { window.gox.toast('請填寫發放對象'); return; }
+    var count = members.split('\n').filter(function (x) { return x.trim(); }).length;
+    if (count > g.stock) { window.gox.toast('發券數量 ' + count + ' 張已超過剩餘庫存 ' + g.stock); return; }
+    var isDays = document.querySelector('input[name="gv-expire"]:checked').value === 'days';
+    var start = today();
+    var expire = isDays ? addDays(start, Number(document.getElementById('gv-i-days').value) || 14)
+                        : (document.getElementById('gv-i-date').value || addDays(start, 14));
+    g.types.unshift({
+      code: 'MN-' + start.slice(2).replace(/-/g, ''), name: name, issuedAt: start, expire: expire,
+      used: 0, issued: count, unused: count, active: true, ended: false, sms: null
+    });
+    document.getElementById('gv-issue-modal').classList.add('is-hidden');
+    document.getElementById('gv-i-name').value = '';
+    document.getElementById('gv-i-members').value = '';
+    renderView(); renderTypes();
+    window.gox.toast('已發送 ' + count + ' 張「' + name + '」');
+  });
+
+  document.getElementById('gv-back').addEventListener('click', function () {
+    location.href = 'admin-gift-list.html';
+  });
+
+  // 預設篩最近三個月
+  document.getElementById('gv-f-start').value = addMonths(today(), -3);
+  document.getElementById('gv-f-end').value = today();
+
+  renderView();
+  renderTypes();
+})();
+</script>
+
+</main>
+</div>
+</div>
+<script>
+/* ───── GoX Admin / gox-interactions.js ─────
+   後台殼共用的「元件級互動」。
+   由 build_prototype.py 自動內聯到輸出 HTML，呼叫者寫對 class 就會動。
+
+   覆蓋範圍（你不用為這些再寫 JS）：
+     - .gox-switch         click  → toggle .is-on
+     - .gox-tab-btn        click  → 同 .gox-tab-group 內切 .is-active
+     - .gox-menu-title     click  → toggle 父 .gox-menu-group .is-open + 箭頭
+     - [data-gox-open]     click  → 顯示 #target modal（移除 .is-hidden）
+     - [data-gox-close]    click  → 隱藏所屬 .gox-modal-overlay
+     - .gox-modal-overlay  click  → 點背景關（除非有 data-gox-no-overlay-close）
+     - .gox-icon-btn.is-confirm/.is-cancel click → 觸發 [data-gox-target] 的 confirm/cancel CustomEvent
+     - .gox-menu-child     click  → 同 .gox-sidebar 內切 .is-active
+
+   不覆蓋（你要自己寫）：
+     - 篩選 / 排序 / 搜尋
+     - 狀態機（pending → confirmed → done 之類）
+     - 跨元件聯動
+     - 表單送出 / 假 API 回傳
+   ➜ 在 content_html 裡寫 <script>，用 DOMContentLoaded 包起來。
+*/
+(function () {
+  'use strict';
+
+  function on(el, ev, fn) { el.addEventListener(ev, fn); }
+  function delegate(root, ev, selector, fn) {
+    on(root, ev, (e) => {
+      const t = e.target.closest(selector);
+      if (t && root.contains(t)) fn(e, t);
+    });
+  }
+
+  function init() {
+    const root = document;
+
+    // ── Switch ─────────────────────────────────
+    delegate(root, 'click', '.gox-switch', (e, el) => {
+      if (el.classList.contains('is-disabled')) return;
+      el.classList.toggle('is-on');
+      el.dispatchEvent(new CustomEvent('gox:switch', {
+        bubbles: true,
+        detail: { on: el.classList.contains('is-on') },
+      }));
+    });
+
+    // ── Tab group ───────────────────────────────
+    delegate(root, 'click', '.gox-tab-group .gox-tab-btn', (e, btn) => {
+      const group = btn.closest('.gox-tab-group');
+      group.querySelectorAll('.gox-tab-btn').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const key = btn.dataset.tab;
+      group.dispatchEvent(new CustomEvent('gox:tab', {
+        bubbles: true,
+        detail: { tab: key, btn },
+      }));
+      // 若有 data-tab，自動切 [data-tab-panel] 顯示
+      if (key) {
+        const scope = btn.closest('[data-tab-scope]') || document;
+        scope.querySelectorAll('[data-tab-panel]').forEach((p) => {
+          p.hidden = p.dataset.tabPanel !== key;
+        });
+      }
+    });
+
+    // ── Sidebar menu group 摺疊 ──────────────────
+    delegate(root, 'click', '.gox-menu-title', (e, btn) => {
+      const group = btn.closest('.gox-menu-group');
+      if (!group) return;
+      group.classList.toggle('is-open');
+      const arrow = btn.querySelector('.gox-arrow');
+      if (arrow) arrow.textContent = group.classList.contains('is-open') ? '▼' : '▶';
+    });
+
+    // ── Sidebar menu child active ────────────────
+    delegate(root, 'click', '.gox-sidebar .gox-menu-child', (e, link) => {
+      // 不阻止預設行為（讓 href 還能跳）；但若是 href="#" 純 demo，做 active 切換
+      if (link.getAttribute('href') === '#') e.preventDefault();
+      const side = link.closest('.gox-sidebar');
+      side.querySelectorAll('.gox-menu-child.is-active').forEach((a) => a.classList.remove('is-active'));
+      link.classList.add('is-active');
+    });
+
+    // ── Modal open ──────────────────────────────
+    delegate(root, 'click', '[data-gox-open]', (e, btn) => {
+      const sel = btn.dataset.goxOpen;
+      const target = sel && document.querySelector(sel);
+      if (target) target.classList.remove('is-hidden');
+    });
+
+    // ── Modal close（按鈕） ─────────────────────
+    delegate(root, 'click', '[data-gox-close]', (e, btn) => {
+      const modal = btn.closest('.gox-modal-overlay');
+      if (modal) modal.classList.add('is-hidden');
+    });
+
+    // ── Modal close（點背景） ───────────────────
+    delegate(root, 'click', '.gox-modal-overlay', (e, overlay) => {
+      if (overlay.dataset.goxNoOverlayClose !== undefined) return;
+      if (e.target === overlay) overlay.classList.add('is-hidden');
+    });
+
+    // ── ESC 關 modal ────────────────────────────
+    on(document, 'keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const opens = document.querySelectorAll('.gox-modal-overlay:not(.is-hidden)');
+      opens.forEach((m) => {
+        if (m.dataset.goxNoOverlayClose === undefined) m.classList.add('is-hidden');
+      });
+    });
+
+    // ── Icon button confirm / cancel ─────────────
+    delegate(root, 'click', '.gox-icon-btn.is-confirm, .gox-icon-btn.is-cancel', (e, btn) => {
+      const kind = btn.classList.contains('is-confirm') ? 'confirm' : 'cancel';
+      const targetSel = btn.dataset.goxTarget;
+      const target = targetSel ? document.querySelector(targetSel) : btn.closest('[data-gox-editable]');
+      if (target) {
+        target.dispatchEvent(new CustomEvent('gox:' + kind, { bubbles: true }));
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // 暴露給頁面級腳本使用（如「按下查詢」這種頁面級互動）
+  window.gox = window.gox || {};
+  window.gox.openModal  = (sel) => { const t = document.querySelector(sel); if (t) t.classList.remove('is-hidden'); };
+  window.gox.closeModal = (sel) => { const t = document.querySelector(sel); if (t) t.classList.add('is-hidden'); };
+  window.gox.toast = (msg) => {
+    // 簡易 toast（自動消失）
+    let host = document.querySelector('#gox-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'gox-toast-host';
+      host.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+      document.body.appendChild(host);
+    }
+    const t = document.createElement('div');
+    t.className = 'gox-toast';
+    t.textContent = msg;
+    t.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.2);';
+    host.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
+    setTimeout(() => t.remove(), 2200);
+  };
+})();
+
+</script>
+</body>
+</html>
