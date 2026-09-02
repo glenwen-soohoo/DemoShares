@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<title>禮物券 會員中心（優化版 2） — demo</title>
+<title>禮物券 會員中心（B 版・到期優先） — demo</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -477,270 +477,245 @@ img { vertical-align: middle; }
 
 <div class="right_content">
 <style>
-  /* 優化版 2
-     ── 會員資料＋錢包合併成一塊淡綠底
-     ── 禮物券／優惠券用低彩度綠標題列，內容區淺灰，項目白色浮起
-     ── 字級一律不小於現況（現況內文 18px） */
-  .mc3 {
-    color: #33435a; font-size: 18px; max-width: 1080px; margin: 0 auto;
-    --green: #4ba83b;        /* 主綠：按鈕 */
-    --green-head: #578949;   /* 低彩度綠：面板標題列 */
-    --green-soft: #eef5ec;   /* 淡綠：會員區底色 */
-    --gray-body: #f5f6f5;    /* 內容區淺灰 */
-    --line: #e5e5e5;
-  }
-  .mc3 *, .mc3 *::before, .mc3 *::after { box-sizing: border-box; }
-  .mc3 h1 { font-size: 28px; font-weight: 700; margin: 0 0 20px; color: #33435a; }
+  /* ── B 版：以「到期」為主軸重組資訊架構 ──
+     色票與字型沿用無毒農既有（#4ba83b 主綠 / #22ac38 會員綠 / #caa940 hover 金
+     / #dc4e43 警示紅 / #33435a 主文字 / #e5e5e5 邊框，Noto Sans TC）
+     UI/UX 準則採用：焦點框、44px 觸控、空狀態帶行動、錨點連結、reduced-motion、標題階層 */
 
-  /* ── 會員資料 ＋ 錢包（同一塊，淡綠底） ── */
-  .mc3 .member {
-    background: var(--green-soft); border: 1px solid #dbe8d7; border-radius: 8px;
-    padding: 20px; margin-bottom: 20px;
+  .mb {
+    color: #33435a; font-size: 18px; line-height: 1.7; max-width: 1080px; margin: 0 auto;
+    --green: #4ba83b; --green-dk: #3f8f32; --member: #22ac38;
+    --gold: #caa940; --red: #dc4e43; --line: #e5e5e5; --muted: #808080;
   }
-  .mc3 .profile { display: flex; gap: 20px; align-items: stretch; flex-wrap: wrap; }
+  .mb *, .mb *::before, .mb *::after { box-sizing: border-box; }
 
-  /* 頭像：之後依會員等級換圖，改 background-image 即可（VIP / VVIP / 一般各一張） */
-  .mc3 .avatar {
-    width: 132px; flex: none; align-self: stretch; min-height: 132px;
-    border-radius: 8px; background: var(--green); background-size: cover; background-position: center;
+  .mb :focus-visible { outline: 3px solid #1a73c7; outline-offset: 2px; border-radius: 4px; }
+
+  .mb h1 { font-size: 28px; font-weight: 700; margin: 0 0 24px; }
+  .mb h2 {
+    font-size: 22px; font-weight: 700; margin: 0;
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  .mb h2 .cnt { font-size: 17px; font-weight: 400; color: var(--muted); }
+  .mb h3 { font-size: 19px; font-weight: 700; margin: 0; }
+
+  .mb section { margin-bottom: 20px; scroll-margin-top: 24px; }
+
+  /* 身分＋錢包：一塊淡綠底 */
+  .mb .idblock {
+    background: #eef5ec; border: 1px solid #dbe8d7; border-radius: 8px;
+    padding: 20px 24px; margin-bottom: 28px;
+  }
+  .mb .idblock .wallet { margin-top: 20px; }
+  .mb .idblock .w-item { background: #fff; border-color: #fff; }
+
+  /* 其餘段落：內容區留白，分段的重量放在標題
+     標題 = 短豎條（品牌色）＋ 深色字 ＋ 全寬細線；比純文字有份量，比色塊安靜 */
+  .mb .pnl { margin-bottom: 32px; }
+  .mb .pnl-head {
+    background: none; padding: 0 0 12px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .mb .pnl-head h2 {
+    font-size: 22px; color: #33435a; display: flex; align-items: center; gap: 10px;
+  }
+  .mb .pnl-head h2::before {
+    content: ''; width: 4px; height: 20px; border-radius: 2px;
+    background: var(--green); flex: none;
+  }
+  .mb .pnl-head .cnt { color: var(--muted); font-size: 16px; }
+  .mb .pnl-body { background: none; padding: 20px 0 0; }
+
+  /* 唯一帶顏色的段落：即將到期（豎條與標題轉金色，內容區一樣不上底色）*/
+  .mb .pnl.is-due .pnl-head h2 { color: #8a6d1f; }
+  .mb .pnl.is-due .pnl-head h2::before { background: var(--gold); }
+  .mb .pnl.is-due .pnl-head .cnt { color: #a08540; }
+
+  /* ── 身分 ── */
+  .mb .who { display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap; }
+  .mb .ava {
+    width: 120px; flex: none; align-self: stretch; min-height: 120px; border-radius: 8px;
+    background: var(--green); background-size: cover; background-position: center;
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 30px; font-weight: 700; letter-spacing: 2px;
+    color: #fff; font-size: 28px; font-weight: 700; letter-spacing: 2px;
   }
-  .mc3 .profile-main { flex: 1; min-width: 300px; display: flex; flex-direction: column; justify-content: center; }
-  .mc3 .name-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .mc3 .name { font-size: 24px; font-weight: 700; }
-  .mc3 .lv-tag {
-    font-size: 18px; font-weight: 700; color: #fff; background: #22ac38;
-    padding: 4px 16px; border-radius: 999px; letter-spacing: 1px;
+  .mb .who-main { flex: 1; min-width: 300px; display: flex; flex-direction: column; justify-content: center; }
+  .mb .who-name { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .mb .who-name .n { font-size: 24px; font-weight: 700; }
+  .mb .tag-vip {
+    background: var(--member); color: #fff; font-size: 17px; font-weight: 700;
+    padding: 3px 14px; border-radius: 999px; letter-spacing: 1px;
   }
-  .mc3 .lv-since { font-size: 16px; color: #7d8a79; }
+  .mb .who-name .since { font-size: 16px; color: var(--muted); }
+  .mb .spend { margin-top: 12px; font-size: 18px; }
+  .mb .spend .note { font-size: 15px; color: var(--muted); }
+  .mb .bar { height: 10px; border-radius: 999px; background: #dbe8d7; overflow: hidden; margin: 10px 0 8px; }
+  .mb .bar > i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
+  .mb .spend-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
 
-  .mc3 .progress-block { margin-top: 16px; }
-  .mc3 .progress-label { display: flex; justify-content: space-between; gap: 12px; font-size: 18px; color: #5c6a58; margin-bottom: 8px; flex-wrap: wrap; }
-  .mc3 .progress-label b { color: #33435a; font-size: 20px; }
-  .mc3 .bar { height: 12px; border-radius: 999px; background: #dbe8d7; overflow: hidden; }
-  .mc3 .bar > i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
-  .mc3 .progress-foot { display: flex; justify-content: space-between; gap: 12px; font-size: 16px; color: #7d8a79; margin-top: 8px; }
-  .mc3 .progress-foot a { color: #3f7d33; text-decoration: none; }
-  .mc3 .btn-rule {
-    background: #fff; color: #3f7d33; border: 1px solid #b7d3ae; border-radius: 6px;
-    font-size: 16px; font-weight: 600; padding: 6px 16px; cursor: pointer; font-family: inherit;
-  }
-  .mc3 .btn-rule:hover { background: #f4faf3; border-color: var(--green); }
-  .mc3 .lv-note { font-size: 15px; color: #7d8a79; font-weight: 400; white-space: nowrap; }
-  .mc3 .progress-foot a:hover { text-decoration: underline; }
-
-  /* 錢包：兩張白卡片浮在淡綠底上 */
-  .mc3 .wallet { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
-  .mc3 .wallet-item {
-    background: #fff; border-radius: 8px; padding: 16px 20px;
+  /* ── 錢包 ── */
+  .mb .wallet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px; }
+  .mb .w-item {
+    border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   }
-  .mc3 .stat-label { font-size: 18px; color: #808080; margin-bottom: 4px; }
-  .mc3 .stat-num { font-size: 34px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
-  .mc3 .stat-num small { font-size: 18px; font-weight: 500; color: #808080; margin-left: 4px; }
-  .mc3 .stat-warn { display: block; font-size: 16px; color: #caa940; margin-top: 4px; }
-  .mc3 .btn-record {
-    background: #fff; color: var(--green); border: 1px solid var(--green); border-radius: 6px;
-    font-size: 17px; font-weight: 600; padding: 8px 20px; cursor: pointer; white-space: nowrap;
-  }
-  .mc3 .btn-record:hover { background: #f4faf3; }
+  .mb .w-label { font-size: 17px; color: var(--muted); }
+  .mb .w-num { font-size: 30px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .mb .w-num small { font-size: 17px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .mb .w-warn { display: block; font-size: 15px; color: var(--gold); }
 
-  /* ── 面板：低彩度綠標題列 + 淺灰內容區 ── */
-  .mc3 .panel {
-    border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 20px;
+  /* ── 即將到期 ── */
+  .mb .due-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 12px; }
+  .mb .due-item {
+    background: #fff; border: 1px solid #ecd9ac; border-radius: 8px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
   }
-  .mc3 .panel-head {
-    background: var(--green-head); color: #fff;
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 12px 20px;
+  .mb .due-days {
+    flex: none; width: 62px; height: 62px; border-radius: 8px; background: #fdf6e6;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #8a6d1f; line-height: 1.15;
   }
-  .mc3 .panel-head h2 { font-size: 20px; font-weight: 700; margin: 0; color: #fff; }
-  .mc3 .panel-head .meta { font-size: 16px; color: rgba(255,255,255,.88); }
-  .mc3 .panel-body { background: var(--gray-body); padding: 20px; }
+  .mb .due-days b { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mb .due-days span { font-size: 13px; }
+  .mb .due-body { min-width: 0; }
+  .mb .due-name { font-size: 17px; font-weight: 600; }
+  .mb .due-meta { font-size: 15px; color: var(--muted); }
+
+  /* ── 券類型標籤（統一格式） ── */
+  .mb .kind { font-size: 14px; border-radius: 4px; padding: 2px 9px; font-weight: 600; white-space: nowrap; }
+  .mb .kind-gift { background: #eaf4e7; color: #35702a; }
+  .mb .kind-coupon { background: #fdeeec; color: #a8332a; }
 
   /* ── 禮物券 ── */
-  .mc3 .gv-empty { color: #999; font-size: 18px; padding: 12px 0; }
-  .mc3 .gv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: 16px; }
-  .mc3 .gv-card {
-    background: #fff; border: 1px solid #ebebeb; border-radius: 8px; padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06); display: flex; flex-direction: column;
+  .mb .gv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 16px; }
+  .mb .gv {
+    border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column;
   }
-  .mc3 .gv-card.is-soon { border-color: #e8c98a; background: #fffdf6; }
-  .mc3 .gv-card.is-added { border-color: #cfe4c9; background: #f7fbf6; }
-  .mc3 .gv-thumb {
-    width: 100%; height: 112px; border-radius: 6px; background: #f0f2f0;
-    display: flex; align-items: center; justify-content: center; color: #9bb59b; font-size: 16px; margin-bottom: 12px;
+  .mb .gv.is-soon { border-color: #e8c98a; background: #fffdf6; }
+  .mb .gv.is-added { border-color: #cfe4c9; background: #f7fbf6; }
+  .mb .gv.is-oos { background: #fafafa; }
+  .mb .gv-pic {
+    width: 100%; height: 110px; border-radius: 6px; background: #f2f4f2;
+    display: flex; align-items: center; justify-content: center; color: #9bb59b; font-size: 15px; margin-bottom: 12px;
   }
-  .mc3 .gv-name { font-size: 19px; font-weight: 600; line-height: 1.4; }
-  .mc3 .gv-exp { font-size: 17px; color: #808080; margin-top: 4px; }
-  .mc3 .gv-exp.is-soon { color: #caa940; font-weight: 600; }
-  .mc3 .gv-code { font-size: 15px; color: #b0b0b0; margin-top: 4px; margin-bottom: 12px; }
-  .mc3 .gv-actions { margin-top: auto; }
-  .mc3 .btn-use {
-    width: 100%; background: var(--green); color: #fff; border: 0; border-radius: 6px;
-    font-size: 18px; font-weight: 600; padding: 12px; cursor: pointer;
+  .mb .gv.is-oos .gv-pic { opacity: .5; }
+  .mb .gv-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .mb .gv-name { font-size: 18px; font-weight: 600; line-height: 1.4; }
+  .mb .gv.is-oos .gv-name { color: #8a8a8a; }
+  .mb .gv-exp { font-size: 16px; color: var(--muted); }
+  .mb .gv-exp.is-soon { color: var(--gold); font-weight: 600; }
+  .mb .gv-code { font-size: 14px; color: #b0b0b0; margin-bottom: 12px; }
+  .mb .gv-act { margin-top: auto; }
+
+  /* ── 按鈕：最小 44px 高 ── */
+  .mb .btn {
+    min-height: 44px; padding: 10px 20px; border-radius: 6px; font-family: inherit;
+    font-size: 17px; font-weight: 600; cursor: pointer; border: 1px solid transparent;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   }
-  .mc3 .btn-use:hover { background: #3f8f32; }
-  .mc3 .btn-added {
-    width: 100%; background: #f4faf3; color: var(--green); border: 1px solid #cfe4c9; border-radius: 6px;
-    font-size: 18px; font-weight: 600; padding: 12px; cursor: default;
-  }
-  /* 暫時缺貨：整張卡片降階，按鈕不可按 */
-  .mc3 .gv-card.is-oos { background: #fafafa; border-color: #e5e5e5; box-shadow: none; }
-  .mc3 .gv-card.is-oos .gv-thumb { opacity: .5; }
-  .mc3 .gv-card.is-oos .gv-name { color: #8a8a8a; }
-  .mc3 .gv-flag {
-    display: inline-block; font-size: 15px; background: #ececec; color: #767676;
-    border-radius: 4px; padding: 4px 12px; margin-top: 8px;
-  }
-  .mc3 .btn-oos {
-    width: 100%; background: #f0f0f0; color: #999; border: 1px solid #e0e0e0; border-radius: 6px;
-    font-size: 18px; font-weight: 600; padding: 12px; cursor: not-allowed;
-  }
+  .mb .btn-main { background: var(--green); color: #fff; }
+  .mb .btn-main:hover { background: var(--green-dk); }
+  .mb .btn-line { background: #fff; color: var(--green); border-color: var(--green); }
+  .mb .btn-line:hover { background: #f4faf3; }
+  .mb .btn-quiet { background: #fff; color: #55606e; border-color: #d5d9de; }
+  .mb .btn-quiet:hover { border-color: #9aa3ad; color: #33435a; }
+  .mb .btn-done { background: #f4faf3; color: var(--green); border-color: #cfe4c9; cursor: default; }
+  .mb .btn-off { background: #f0f0f0; color: #999; border-color: #e0e0e0; cursor: not-allowed; }
+  .mb .btn-full { width: 100%; }
 
   /* ── 優惠券 ── */
-  .mc3 .cp-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .mc3 .cp-filter button {
-    background: #fff; border: 1px solid #dcdcdc; border-radius: 999px; color: #666;
-    font-size: 16px; padding: 8px 16px; cursor: pointer;
+  .mb .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .mb .filters button {
+    min-height: 44px; padding: 8px 18px; border-radius: 999px; border: 1px solid #d5d9de;
+    background: #fff; color: #55606e; font-size: 16px; cursor: pointer; font-family: inherit;
   }
-  .mc3 .cp-filter button.is-on { border-color: var(--green); color: var(--green); background: #f4faf3; font-weight: 600; }
+  .mb .filters button.is-on { border-color: var(--green); color: var(--green); background: #f4faf3; font-weight: 600; }
 
-  .mc3 .cp-card {
-    background: #fff; border: 1px solid #ebebeb; border-radius: 8px; margin-bottom: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  .mb .cp { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
+  .mb .cp.is-soon { border-color: #e8c98a; background: #fffdf6; }
+  .mb .cp-head { display: flex; align-items: center; gap: 8px; padding-right: 18px; }
+  .mb .cp-head .cp-bar { flex: 1; min-width: 0; }
+  .mb .cp-merge { min-height: 40px; padding: 8px 16px; font-size: 16px; flex: none; }
+  .mb .cp-bar {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer;
+    min-height: 44px; width: 100%; background: none; border: 0; font-family: inherit; text-align: left;
   }
-  .mc3 .cp-card:last-child { margin-bottom: 0; }
-  .mc3 .cp-card.is-soon { border-color: #e8c98a; background: #fffdf6; }
+  .mb .cp-bar:hover .cp-name { text-decoration: underline; }
+  .mb .cp-name { font-size: 18px; font-weight: 700; color: #35702a; }
+  .mb .cp-left { font-size: 16px; color: var(--muted); white-space: nowrap; }
+  .mb .cp-face { margin-left: auto; font-size: 21px; font-weight: 700; color: var(--red); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .mb .cp-arrow { color: #999; font-size: 15px; flex: none; transition: transform .2s; }
+  .mb .cp.is-open .cp-arrow { transform: rotate(180deg); }
+  .mb .cp-body { display: none; padding: 0 18px 16px; }
+  .mb .cp.is-open .cp-body { display: block; }
 
-  .mc3 .cp-bar { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; }
-  .mc3 .cp-bar:hover .cp-title { text-decoration: underline; }
-  .mc3 .cp-title { font-size: 19px; font-weight: 700; color: #3f7d33; line-height: 1.4; min-width: 0; }
-  .mc3 #cp-wheel-list .cp-remain { font-size: 18px; color: #454545; font-weight: 600; white-space: normal; }
-  .mc3 #cp-wheel-list .btn-merge { margin-left: auto; }
-  .mc3 .cp-remain { font-size: 16px; color: #808080; font-weight: 400; white-space: nowrap; }
-  .mc3 .cp-face {
-    font-size: 22px; font-weight: 700; color: #dc4e43; white-space: nowrap;
-    margin-left: auto; font-variant-numeric: tabular-nums;
-  }
-  .mc3 .cp-arrow { color: #999; font-size: 16px; flex: none; transition: transform .15s; }
-  .mc3 .cp-card.is-open .cp-arrow { transform: rotate(180deg); }
+  .mb .tickets { border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+  .mb .tk { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 11px 14px; font-size: 16px; }
+  .mb .tk + .tk { border-top: 1px solid #f0f0f0; }
+  .mb .tk:nth-child(odd) { background: #fafbfa; }
+  .mb .tk-face { font-weight: 700; color: var(--red); width: 5.5em; flex: none; font-variant-numeric: tabular-nums; }
+  .mb .tk-exp { color: #454545; font-variant-numeric: tabular-nums; }
+  .mb .tk-exp.is-soon { color: var(--gold); font-weight: 600; }
+  .mb .tk-code { color: #b0b0b0; font-size: 15px; margin-left: auto; font-variant-numeric: tabular-nums; }
 
-  .mc3 .cp-detail { display: none; padding: 0 20px 16px; }
-  .mc3 .cp-card.is-open .cp-detail { display: block; }
-  .mc3 .cp-note {
-    font-size: 17px; color: #dc4e43; line-height: 1.7;
-    padding: 12px 16px; background: #fdf4f3; border-radius: 6px; margin-bottom: 16px;
-  }
-  .mc3 .cp-sub { font-size: 16px; color: #999; margin-bottom: 8px; }
-  .mc3 .cp-tickets { border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden; margin-bottom: 16px; }
-  .mc3 .cp-ticket { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 12px 16px; font-size: 17px; }
-  .mc3 .cp-ticket + .cp-ticket { border-top: 1px solid #f0f0f0; }
-  .mc3 .cp-ticket:nth-child(odd) { background: #fafbfa; }
-  .mc3 .cp-t-face { font-weight: 700; color: #dc4e43; width: 5.5em; flex: none; font-variant-numeric: tabular-nums; }
-  .mc3 .cp-t-exp { color: #454545; font-variant-numeric: tabular-nums; }
-  .mc3 .cp-t-exp.is-soon { color: #caa940; font-weight: 600; }
-  .mc3 .cp-t-code { color: #b0b0b0; font-size: 16px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .mb .kv { display: flex; gap: 12px; font-size: 17px; line-height: 1.8; }
+  .mb .kv + .kv { margin-top: 2px; }
+  .mb .kv .k { color: #999; width: 5.5em; flex: none; font-size: 16px; }
+  .mb .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mb .chip { font-size: 15px; background: #eef4ec; color: #4a7a41; border-radius: 4px; padding: 3px 10px; }
+  .mb .chip.is-all { background: #f2f2f2; color: var(--muted); }
+  .mb .cp-note { font-size: 16px; color: var(--red); line-height: 1.7; padding: 11px 14px; background: #fdf4f3; border-radius: 6px; margin-bottom: 14px; }
 
-  .mc3 .cp-row { display: flex; gap: 12px; font-size: 18px; line-height: 1.8; align-items: baseline; }
-  .mc3 .cp-row + .cp-row { margin-top: 4px; }
-  .mc3 .cp-row .k { color: #999; width: 5.5em; flex: none; font-size: 17px; }
-  .mc3 .cp-row .v { color: #454545; min-width: 0; }
-  .mc3 .cp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .mc3 .cp-chip { font-size: 16px; background: #eef4ec; color: #4a7a41; border-radius: 4px; padding: 4px 12px; line-height: 1.6; }
-  .mc3 .cp-chip.is-all { background: #f2f2f2; color: #808080; }
+  .mb .wheel { margin-top: 28px; padding-top: 20px; border-top: 2px dashed #dcdcdc; }
+  .mb .wheel h3 { color: #35702a; margin-bottom: 12px; }
 
-  .mc3 .btn-merge {
-    background: var(--green); color: #fff; border: 0; border-radius: 6px;
-    font-size: 16px; font-weight: 600; padding: 8px 16px; cursor: pointer; white-space: nowrap;
-  }
-  .mc3 .btn-merge:hover { background: #3f8f32; }
-  .mc3 .cp-empty { color: #999; font-size: 18px; padding: 12px 0; }
+  /* ── 空狀態：帶一個出口 ── */
+  .mb .empty { border: 1px dashed #d5d9de; border-radius: 8px; padding: 32px 24px; text-align: center; }
+  .mb .empty p { margin: 0 0 16px; color: var(--muted); font-size: 17px; }
 
-  /* 產品回饋輪盤：獨立段落 */
-  .mc3 .cp-wheel { margin-top: 24px; padding-top: 20px; border-top: 2px dashed #dcdcdc; }
-  .mc3 .cp-wheel-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
-  .mc3 .cp-wheel-head h3 { font-size: 19px; font-weight: 700; margin: 0; color: #3f7d33; }
-  .mc3 .cp-wheel-sum { font-size: 16px; color: #808080; margin-left: auto; }
-
-  @media (max-width: 720px) {
-    .mc3 .wallet { grid-template-columns: 1fr; }
-    .mc3 .avatar { width: 100%; min-height: 160px; }
-    .mc3 .cp-bar { flex-wrap: wrap; }
-    .mc3 .cp-face { margin-left: 0; }
-    .mc3 .cp-arrow { margin-left: auto; }
-    .mc3 .cp-row { flex-direction: column; gap: 0; }
-    .mc3 .cp-row .k { width: auto; }
-    .mc3 .cp-t-code { margin-left: 0; width: 100%; }
+  @media (prefers-reduced-motion: reduce) {
+    .mb * { transition: none !important; animation: none !important; }
   }
 
   /* 左選單微調（不動結構、不縮小字級） */
   .left_menu .menu_member ul li { margin-bottom: 12px; }
 
   /* ── 彈窗 ── */
-  .gv-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-  .gv-mask.is-open { display: flex; }
-  .gv-dialog { background: #fff; width: 480px; max-width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
-  .gv-dialog.is-wide { width: 800px; }
-  .gv-dialog-head {
-    background: #578949; color: #fff; padding: 12px 20px;
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  }
-  .gv-dialog-head h3 { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
-  .gv-dialog-head .sum { font-size: 16px; color: rgba(255,255,255,.88); margin-left: auto; margin-right: 12px; }
-  .gv-close { background: transparent; border: 0; color: #fff; font-size: 24px; line-height: 1; cursor: pointer; padding: 0 4px; flex: none; }
-  .gv-close:hover { color: rgba(255,255,255,.7); }
-  .gv-dialog-body { padding: 20px; }
-  .gv-dialog-pic { width: 160px; height: 160px; margin: 0 auto 16px; border-radius: 8px; background: #f0f2f0; display: flex; align-items: center; justify-content: center; color: #9bb59b; font-size: 16px; }
-  .gv-dialog-name { font-size: 21px; font-weight: 700; text-align: center; }
-  .gv-dialog-spec { font-size: 17px; color: #808080; margin-top: 4px; text-align: center; }
-  .gv-dialog-note { font-size: 17px; color: #555; line-height: 1.8; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
-  .gv-dialog-note h4 { margin: 0 0 4px; font-size: 18px; color: #33435a; }
-  .gv-dialog-foot { padding: 0 20px 20px; display: flex; gap: 8px; }
-  .gv-dialog-foot button { flex: 1; border-radius: 6px; font-size: 18px; font-weight: 600; padding: 12px; cursor: pointer; }
-  .gv-btn-cancel { background: #fff; border: 1px solid #ddd; color: #666; }
-  .gv-btn-ok { background: #4ba83b; border: 0; color: #fff; }
+  .mbk { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+  .mbk.is-open { display: flex; }
+  .mbd { background: #fff; width: 520px; max-width: 100%; max-height: 84vh; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .mbd.is-wide { width: 780px; }
+  .mbd-h { padding: 18px 22px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .mbd-h h3 { font-size: 20px; }
+  .mbd-h .sum { font-size: 16px; color: var(--muted); margin-left: auto; margin-right: 8px; }
+  .mbd-x { background: none; border: 0; font-size: 26px; line-height: 1; color: #999; cursor: pointer; padding: 0 6px; min-width: 44px; min-height: 44px; }
+  .mbd-x:hover { color: #333; }
+  .mbd-b { padding: 20px 22px; overflow-y: auto; }
+  .mbd-f { padding: 16px 22px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
 
-  .lv-table { width: 100%; border-collapse: collapse; font-size: 17px; }
-  .lv-table th, .lv-table td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-  .lv-table th { background: #fafbfa; color: #808080; font-weight: 600; font-size: 16px; }
-  .lv-table td.num, .lv-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .lv-table tr.is-now { background: #f4faf3; font-weight: 600; }
-  .lv-table .now-tag { font-size: 14px; background: #22ac38; color: #fff; border-radius: 4px; padding: 1px 8px; margin-left: 8px; font-weight: 600; }
+  .mb-pic { width: 150px; height: 150px; margin: 0 auto 14px; border-radius: 8px; background: #f2f4f2; display: flex; align-items: center; justify-content: center; color: #9bb59b; font-size: 15px; }
+  .mb-dname { font-size: 20px; font-weight: 700; text-align: center; }
+  .mb-dspec { font-size: 16px; color: var(--muted); text-align: center; margin-top: 4px; }
+  .mb-dnote { font-size: 16px; color: #555; line-height: 1.8; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+  .mb-dnote h4 { margin: 0 0 4px; font-size: 17px; color: #33435a; }
 
-  .rec-scroll { max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
-  .rec-table { width: 100%; border-collapse: collapse; font-size: 17px; }
-  .rec-table th, .rec-table td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-  .rec-table th { background: #fafbfa; color: #808080; font-weight: 600; position: sticky; top: 0; font-size: 16px; }
-  .rec-table tbody tr:nth-child(odd) { background: #fafbfa; }
-  .rec-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .rec-plus { color: #4ba83b; font-weight: 600; }
-  .rec-minus { color: #dc4e43; font-weight: 600; }
+  .mb-tbl { width: 100%; border-collapse: collapse; font-size: 16px; }
+  .mb-tbl th, .mb-tbl td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+  .mb-tbl th { background: #fafbfa; color: var(--muted); font-weight: 600; font-size: 15px; position: sticky; top: 0; }
+  .mb-tbl tbody tr:nth-child(odd) { background: #fafbfa; }
+  .mb-tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .mb-plus { color: var(--green); font-weight: 600; }
+  .mb-minus { color: var(--red); font-weight: 600; }
+  .mb-now { background: #f7faf6 !important; }
+  .mb-scroll { max-height: 380px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
 
-  .merge-table { width: 100%; border-collapse: collapse; font-size: 17px; margin-bottom: 16px; }
-  .merge-table th, .merge-table td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; text-align: left; }
-  .merge-table th { color: #808080; font-weight: 600; font-size: 16px; }
-  .merge-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .merge-sum { font-size: 18px; line-height: 2; color: #454545; padding-top: 12px; border-top: 1px solid #f0f0f0; }
-  .merge-sum b { color: #dc4e43; }
-  .merge-drop { color: #999; }
+  .mb-toast { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); background: rgba(0,0,0,.82); color: #fff; padding: 12px 24px; border-radius: 6px; font-size: 16px; z-index: 10002; display: none; }
+  .mb-toast.is-show { display: block; }
 
-
-  /* 開發者面板（只在 demo 用，正式頁面不會有） */
-  #devbar {
-    position: fixed; right: 16px; bottom: 16px; z-index: 10001;
-    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
-  }
-  #devbar .toggle {
-    background: #33435a; color: #fff; border: 0; border-radius: 999px;
-    font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25);
-    font-family: inherit;
-  }
-  #devbar .box {
-    display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px;
-    box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 280px; margin-bottom: 8px;
-  }
+  /* 開發者面板 */
+  #devbar { position: fixed; right: 16px; bottom: 16px; z-index: 10001; font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; }
+  #devbar .toggle { background: #33435a; color: #fff; border: 0; border-radius: 999px; font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); font-family: inherit; min-height: 44px; }
+  #devbar .box { display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 280px; margin-bottom: 8px; }
   #devbar.is-open .box { display: block; }
   #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #33435a; }
   #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
@@ -748,608 +723,508 @@ img { vertical-align: middle; }
   #devbar .grp:last-child { margin-bottom: 0; }
   #devbar .grp-t { font-size: 13px; font-weight: 600; color: #55606e; margin-bottom: 6px; }
   #devbar .seg { display: flex; border: 1px solid #d5d9de; border-radius: 6px; overflow: hidden; }
-  #devbar .seg button {
-    flex: 1; border: 0; background: #fff; color: #55606e; font-size: 13px;
-    padding: 6px 4px; cursor: pointer; font-family: inherit;
-  }
+  #devbar .seg button { flex: 1; border: 0; background: #fff; color: #55606e; font-size: 13px; padding: 8px 4px; cursor: pointer; font-family: inherit; }
   #devbar .seg button + button { border-left: 1px solid #d5d9de; }
   #devbar .seg button.is-on { background: #33435a; color: #fff; font-weight: 600; }
-  .gv-toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); background: rgba(0,0,0,.82); color: #fff; padding: 12px 24px; border-radius: 6px; font-size: 17px; z-index: 10000; display: none; }
-  .gv-toast.is-show { display: block; }
 </style>
 
-<div class="mc3">
+<div class="mb">
 
   <h1>會員中心</h1>
 
-  <!-- 會員資料 ＋ 錢包 -->
-  <div class="member">
-    <div class="profile">
-      <!-- 頭像：之後依等級換圖，換 background-image 即可 -->
-      <div class="avatar" id="mc-avatar">VIP</div>
-      <div class="profile-main">
-        <div class="name-row">
-          <span class="name">示範會員</span>
-          <span class="lv-tag">VIP</span>
-          <span class="lv-since">2025/03/12 升等</span>
+  <!-- 身分 -->
+  <section class="idblock" aria-labelledby="s-who">
+    <h2 id="s-who" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">會員身分與錢包</h2>
+    <div class="who">
+      <div class="ava">VIP</div>
+      <div class="who-main">
+        <div class="who-name">
+          <span class="n">示範會員</span>
+          <span class="tag-vip">VIP</span>
+          <span class="since">2025/03/12 升等</span>
         </div>
-        <div class="progress-block">
-          <div class="progress-label">
-            <span>本年度消費 <b>$12,650</b> <span class="lv-note">（於商品到貨後第 3-5 天計算升等）</span></span>
-            <span>距離 VVIP 還差 <b>$7,350</b></span>
-          </div>
-          <div class="bar"><i style="width:63%"></i></div>
-          <div class="progress-foot">
-            <span>去年消費 $18,420</span>
-            <button type="button" class="btn-rule" id="lv-rule">查看升等規則</button>
-          </div>
+        <div class="spend">
+          本年度消費 <strong>$12,650</strong>
+          <span class="note">（於商品到貨後第 3-5 天計算升等）</span>
+        </div>
+        <div class="bar"><i style="width:63%"></i></div>
+        <div class="spend-foot">
+          <span>距離 VVIP 還差 <strong style="color:#33435a;">$7,350</strong>　去年消費 $18,420</span>
+          <button type="button" class="btn btn-quiet" id="lv-rule">查看升等規則</button>
         </div>
       </div>
     </div>
 
     <div class="wallet">
-      <div class="wallet-item">
+      <div class="w-item">
         <div>
-          <div class="stat-label">購物金</div>
-          <div class="stat-num">120<small>元</small></div>
+          <div class="w-label">購物金</div>
+          <div class="w-num"><span id="bal-bonus">120</span><small>元</small></div>
         </div>
-        <button type="button" class="btn-record" data-record="bonus">歷史紀錄</button>
+        <button type="button" class="btn btn-quiet" data-rec="bonus">歷史紀錄</button>
       </div>
-      <div class="wallet-item">
+      <div class="w-item">
         <div>
-          <div class="stat-label">紅利點數</div>
-          <div class="stat-num">840<small>點</small></div>
-          <span class="stat-warn">120 點將於 09/30 到期</span>
+          <div class="w-label">紅利點數</div>
+          <div class="w-num"><span id="bal-point">840</span><small>點</small></div>
+          <span class="w-warn">120 點將於 09/30 到期</span>
         </div>
-        <button type="button" class="btn-record" data-record="point">歷史紀錄</button>
+        <button type="button" class="btn btn-quiet" data-rec="point">歷史紀錄</button>
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- 即將到期（跨券別） -->
+  <section id="due" class="pnl is-due" style="display:none;" aria-labelledby="s-due">
+    <div class="pnl-head"><h2 id="s-due">即將到期</h2><span class="cnt" id="due-cnt"></span></div>
+    <div class="pnl-body"><div class="due-grid" id="due-list"></div></div>
+  </section>
 
   <!-- 禮物券 -->
-  <div class="panel">
-    <div class="panel-head">
-      <h2>我的禮物券</h2>
-      <span class="meta" id="gv-meta">2 張可用</span>
-    </div>
-    <div class="panel-body">
-      <div class="gv-empty" id="gv-empty" style="display:none;">目前沒有可用的禮物券。</div>
-      <div class="gv-grid" id="gv-list">
-        <div class="gv-card" data-gv="1">
-          <div class="gv-thumb">禮物圖</div>
-          <div class="gv-name">寶寶果泥 隨手包</div>
-          <div class="gv-exp">08/17 到期，剩 11 天</div>
-          <div class="gv-code">BD-260803</div>
-          <div class="gv-actions">
-            <button type="button" class="btn-use" data-gv-use="1">使用</button>
-          </div>
-        </div>
-        <div class="gv-card is-soon" data-gv="2">
-          <div class="gv-thumb">禮物圖</div>
-          <div class="gv-name">有機米餅 二入</div>
-          <div class="gv-exp is-soon">08/09 到期，剩 3 天</div>
-          <div class="gv-code">MF-260801</div>
-          <div class="gv-actions">
-            <button type="button" class="btn-use" data-gv-use="2">使用</button>
-          </div>
-        </div>
-        <div class="gv-card is-oos" data-gv="3">
-          <div class="gv-thumb">禮物圖</div>
-          <div class="gv-name">季節果乾 隨手包</div>
-          <div class="gv-exp">09/12 到期，剩 37 天</div>
-          <div class="gv-code">SF-260806</div>
-          <div><span class="gv-flag">暫時缺貨</span></div>
-          <div class="gv-actions" style="margin-top:12px;">
-            <button type="button" class="btn-oos" disabled>暫時缺貨</button>
-          </div>
-        </div>
+  <section id="gifts" class="pnl" aria-labelledby="s-gift">
+    <div class="pnl-head"><h2 id="s-gift">我的禮物券</h2><span class="cnt" id="gv-cnt"></span></div>
+    <div class="pnl-body">
+      <div class="gv-grid" id="gv-list"></div>
+      <div class="empty" id="gv-empty" style="display:none;">
+        <p>目前沒有可用的禮物券。生日禮與活動禮會直接發到這裡。</p>
+        <a class="btn btn-line" href="#">看看有什麼活動</a>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- 優惠券 -->
-  <div class="panel">
-    <div class="panel-head">
-      <h2>優惠券</h2>
-      <span class="meta" id="cp-meta"></span>
+  <section id="coupons" class="pnl" aria-labelledby="s-cp">
+    <div class="pnl-head"><h2 id="s-cp">優惠券</h2><span class="cnt" id="cp-cnt"></span></div>
+    <div class="pnl-body">
+    <div class="filters" id="cp-filters">
+      <button type="button" class="is-on" data-f="all">全部</button>
+      <button type="button" data-f="soon">即將到期</button>
+      <button type="button" data-f="line">限定產線</button>
+      <button type="button" data-f="free">不限產線</button>
     </div>
-    <div class="panel-body">
-      <div class="cp-filter" id="cp-filter">
-        <button type="button" class="is-on" data-cf="all">全部</button>
-        <button type="button" data-cf="soon">即將到期</button>
-        <button type="button" data-cf="line">限定產線</button>
-        <button type="button" data-cf="free">不限產線</button>
-      </div>
-      <div id="cp-list"></div>
+    <div id="cp-list"></div>
 
-      <div class="cp-wheel" id="cp-wheel" style="display:none;">
-        <div class="cp-wheel-head">
-          <h3>產品回饋輪盤</h3>
-        </div>
-        <div id="cp-wheel-list"></div>
-      </div>
+    <div class="wheel" id="wheel" style="display:none;">
+      <h3>產品回饋輪盤</h3>
+      <div id="wheel-list"></div>
     </div>
-  </div>
+    </div>
+  </section>
 
 </div>
 
-<div class="gv-mask" id="gv-mask">
-  <div class="gv-dialog">
-    <div class="gv-dialog-head">
-      <h3>禮物說明</h3>
-      <button type="button" class="gv-close" data-close-gift>&times;</button>
+<!-- 禮物說明 -->
+<div class="mbk" id="k-gift">
+  <div class="mbd" role="dialog" aria-modal="true" aria-labelledby="k-gift-t">
+    <div class="mbd-h"><h3 id="k-gift-t">禮物說明</h3><button type="button" class="mbd-x" data-close>&times;</button></div>
+    <div class="mbd-b">
+      <div class="mb-pic">禮物圖</div>
+      <div class="mb-dname" id="gd-name"></div>
+      <div class="mb-dspec" id="gd-spec"></div>
+      <div class="mb-dnote"><h4>活動說明</h4><div id="gd-note"></div></div>
     </div>
-    <div class="gv-dialog-body">
-      <div class="gv-dialog-pic">禮物圖</div>
-      <div class="gv-dialog-name" id="gv-d-name"></div>
-      <div class="gv-dialog-spec" id="gv-d-spec"></div>
-      <div class="gv-dialog-note">
-        <h4>活動說明</h4>
-        <div id="gv-d-note"></div>
-      </div>
-    </div>
-    <div class="gv-dialog-foot">
-      <button type="button" class="gv-btn-cancel" data-close-gift>關閉</button>
-      <button type="button" class="gv-btn-ok" id="gv-d-ok">加入菜籃</button>
+    <div class="mbd-f">
+      <button type="button" class="btn btn-quiet" data-close>關閉</button>
+      <button type="button" class="btn btn-main" id="gd-ok">加入菜籃</button>
     </div>
   </div>
 </div>
 
-<div class="gv-mask" id="rec-mask">
-  <div class="gv-dialog is-wide">
-    <div class="gv-dialog-head">
-      <h3 id="rec-title">歷史紀錄</h3>
-      <span class="sum" id="rec-sum"></span>
-      <button type="button" class="gv-close" data-close-rec>&times;</button>
-    </div>
-    <div class="gv-dialog-body">
-      <div class="rec-scroll">
-        <table class="rec-table">
-          <thead>
-            <tr><th style="width:150px;">訂單編號</th><th style="width:90px;" class="num">計算</th><th>備註</th><th style="width:170px;">建立時間</th></tr>
-          </thead>
-          <tbody id="rec-tbody"></tbody>
+<!-- 歷史紀錄 -->
+<div class="mbk" id="k-rec">
+  <div class="mbd is-wide" role="dialog" aria-modal="true" aria-labelledby="k-rec-t">
+    <div class="mbd-h"><h3 id="k-rec-t">歷史紀錄</h3><span class="sum" id="rec-sum"></span><button type="button" class="mbd-x" data-close>&times;</button></div>
+    <div class="mbd-b">
+      <div class="mb-scroll">
+        <table class="mb-tbl">
+          <thead><tr><th style="width:150px;">訂單編號</th><th style="width:90px;" class="num">計算</th><th>備註</th><th style="width:150px;">建立時間</th></tr></thead>
+          <tbody id="rec-body"></tbody>
         </table>
       </div>
     </div>
-    <div class="gv-dialog-foot">
-      <button type="button" class="gv-btn-cancel" data-close-rec>關閉</button>
-    </div>
+    <div class="mbd-f"><button type="button" class="btn btn-quiet" data-close>關閉</button></div>
   </div>
 </div>
 
-<div class="gv-mask" id="merge-mask">
-  <div class="gv-dialog">
-    <div class="gv-dialog-head">
-      <h3>合併優惠券</h3>
-      <button type="button" class="gv-close" data-close-merge>&times;</button>
-    </div>
-    <div class="gv-dialog-body">
-      <p style="margin:0 0 16px;font-size:17px;color:#454545;line-height:1.8;">
-        可將產品回饋輪盤優惠券 5、10、20、50 面額的券合併至 100 元，並移除超過的金額。使用期限為合併後 90 天。
-      </p>
-      <table class="merge-table">
-        <thead><tr><th>面額</th><th class="num">張數</th><th class="num">小計</th></tr></thead>
-        <tbody id="merge-tbody"></tbody>
-      </table>
-      <div class="merge-sum" id="merge-sum"></div>
-    </div>
-    <div class="gv-dialog-foot">
-      <button type="button" class="gv-btn-cancel" data-close-merge>取消</button>
-      <button type="button" class="gv-btn-ok" data-close-merge>確認合併</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="gv-mask" id="lv-mask">
-  <div class="gv-dialog">
-    <div class="gv-dialog-head">
-      <h3>會員升等規則</h3>
-      <button type="button" class="gv-close" data-close-lv>&times;</button>
-    </div>
-    <div class="gv-dialog-body">
-      <table class="lv-table">
+<!-- 升等規則 -->
+<div class="mbk" id="k-lv">
+  <div class="mbd" role="dialog" aria-modal="true" aria-labelledby="k-lv-t">
+    <div class="mbd-h"><h3 id="k-lv-t">會員升等規則</h3><button type="button" class="mbd-x" data-close>&times;</button></div>
+    <div class="mbd-b">
+      <table class="mb-tbl">
         <thead><tr><th>等級</th><th class="num">年度消費門檻</th><th>主要權益</th></tr></thead>
         <tbody>
           <tr><td>一般會員</td><td class="num">—</td><td>紅利回饋 1%</td></tr>
-          <tr class="is-now"><td>VIP<span class="now-tag">目前</span></td><td class="num">$10,000</td><td>紅利回饋 2%、專屬折價券</td></tr>
+          <tr class="mb-now"><td>VIP<span class="tag-vip" style="font-size:13px;padding:1px 8px;margin-left:6px;">目前</span></td><td class="num">$10,000</td><td>紅利回饋 2%、專屬折價券</td></tr>
           <tr><td>VVIP</td><td class="num">$20,000</td><td>紅利回饋 3%、生日禮、優先出貨</td></tr>
           <tr><td>SVIP</td><td class="num">$50,000</td><td>紅利回饋 5%、專屬客服</td></tr>
         </tbody>
       </table>
-      <div class="gv-dialog-note">
-        <h4>怎麼算</h4>
+      <div class="mb-dnote"><h4>怎麼算</h4>
         <div>以<strong>當年度 1/1 ～ 12/31</strong> 的累計消費金額計算。金額於<strong>商品到貨後第 3～5 天</strong>入帳，取消或退貨的訂單會扣回。等級自升等日起維持一年。</div>
       </div>
     </div>
-    <div class="gv-dialog-foot">
-      <button type="button" class="gv-btn-cancel" data-close-lv>關閉</button>
+    <div class="mbd-f"><button type="button" class="btn btn-quiet" data-close>關閉</button></div>
+  </div>
+</div>
+
+<!-- 合併輪盤券 -->
+<div class="mbk" id="k-merge">
+  <div class="mbd" role="dialog" aria-modal="true" aria-labelledby="k-merge-t">
+    <div class="mbd-h"><h3 id="k-merge-t">合併優惠券</h3><button type="button" class="mbd-x" data-close>&times;</button></div>
+    <div class="mbd-b">
+      <p style="margin:0 0 16px;font-size:16px;line-height:1.8;">可將產品回饋輪盤優惠券 5、10、20、50 面額的券合併至 100 元，並移除超過的金額。使用期限為合併後 90 天。</p>
+      <table class="mb-tbl">
+        <thead><tr><th>面額</th><th class="num">張數</th><th class="num">小計</th></tr></thead>
+        <tbody id="merge-body"></tbody>
+      </table>
+      <div id="merge-sum" style="font-size:17px;line-height:2;padding-top:12px;"></div>
+    </div>
+    <div class="mbd-f">
+      <button type="button" class="btn btn-quiet" data-close>取消</button>
+      <button type="button" class="btn btn-main" data-close>確認合併</button>
     </div>
   </div>
 </div>
-<div class="gv-toast" id="gv-toast"></div>
+
+<div class="mb-toast" id="toast"></div>
+
 <div id="devbar">
   <div class="box">
     <h4>開發者面板</h4>
     <p class="cap">切換資料狀態看畫面怎麼變，重新整理就還原。</p>
-    <div class="grp">
-      <div class="grp-t">優惠券</div>
-      <div class="seg" data-dev="cp">
-        <button type="button" class="is-on" data-v="full">有</button>
-        <button type="button" data-v="none">一張都沒有</button>
-      </div>
-    </div>
-    <div class="grp">
-      <div class="grp-t">產品回饋輪盤</div>
-      <div class="seg" data-dev="wheel">
-        <button type="button" class="is-on" data-v="have">有</button>
-        <button type="button" data-v="none">沒有</button>
-      </div>
-    </div>
-    <div class="grp">
-      <div class="grp-t">禮物券</div>
-      <div class="seg" data-dev="gv">
-        <button type="button" class="is-on" data-v="full">有（含缺貨）</button>
-        <button type="button" data-v="none">一張都沒有</button>
-      </div>
-    </div>
+    <div class="grp"><div class="grp-t">優惠券</div>
+      <div class="seg" data-dev="cp"><button type="button" class="is-on" data-v="full">有</button><button type="button" data-v="none">一張都沒有</button></div></div>
+    <div class="grp"><div class="grp-t">產品回饋輪盤</div>
+      <div class="seg" data-dev="wheel"><button type="button" class="is-on" data-v="have">有</button><button type="button" data-v="none">沒有</button></div></div>
+    <div class="grp"><div class="grp-t">禮物券</div>
+      <div class="seg" data-dev="gv"><button type="button" class="is-on" data-v="full">有（含缺貨）</button><button type="button" data-v="none">一張都沒有</button></div></div>
   </div>
   <button type="button" class="toggle">開發者面板</button>
 </div>
-
 
 <script>
 (function () {
   'use strict';
 
-  var GIFTS = {
-    '1': { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
-           note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。' },
-    '2': { name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
-           note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' },
-    '3': { name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
-           note: '訂單回饋禮，依當季供貨情況出貨。券於有效期限內可兌換，補貨後即可加入菜籃。' }
-  };
+  var TODAY = new Date(2026, 7, 6);
+  var SOON = 30;
+
+  var GIFTS = [
+    { id: '1', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）', code: 'BD-260803', end: '2026/08/17', oos: false,
+      note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。' },
+    { id: '2', name: '有機米餅 二入', spec: '2 入（中秋禮專用）', code: 'MF-260801', end: '2026/08/09', oos: false,
+      note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' },
+    { id: '3', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）', code: 'SF-260806', end: '2026/09/12', oos: true,
+      note: '訂單回饋禮，依當季供貨情況出貨。券於有效期限內可兌換，補貨後即可加入菜籃。' }
+  ];
 
   var ALL_LINES = ['產地直送', '快速到貨', '冷凍專區', '粥寶寶專區', '綠時光專區', '益菓保'];
-  var COUPONS = [
-    { name: '誠摯期待相見券', faceLabel: '150 元', min: null, lines: ['產地直送', '冷凍專區'],
-      tickets: [{ face: '150 元', start: '2026/07/27 00:00:00', end: '2026/08/31 23:59:59', code: 'CP-2607270001' }] },
-    { name: '滿滿期待相見券', faceLabel: '150 元', min: null, lines: ['產地直送', '冷凍專區'],
-      tickets: [{ face: '150 元', start: '2026/07/27 00:00:00', end: '2026/08/31 23:59:59', code: 'CP-2607270002' }] },
-    { name: '深深期待相見券', faceLabel: '150 元', min: null, lines: ['產地直送', '冷凍專區'],
-      tickets: [{ face: '150 元', start: '2026/07/27 00:00:00', end: '2026/08/31 23:59:59', code: 'CP-2607270003' }] },
-    { name: '中秋轉盤-$100 折價券', faceLabel: '100 元', min: null, lines: ['產地直送', '冷凍專區'],
-      tickets: [{ face: '100 元', start: '2026/08/01 00:00:00', end: '2026/09/30 23:59:59', code: 'MA-2608010017' }] },
-    { name: '中秋轉盤-$20 折價券', faceLabel: '20 元', min: null, lines: ['產地直送', '冷凍專區'],
-      tickets: [{ face: '20 元', start: '2026/08/01 00:00:00', end: '2026/09/30 23:59:59', code: 'MA-2608010018' }] },
-    { name: '自動測試用-面額', faceLabel: '20 元', min: 100, lines: ALL_LINES, bulk: 50,
-      tickets: [{ face: '20 元', start: '2026/06/25 00:00:00', end: '2030/12/31 23:59:59', code: '同批 50 張' }] },
-    { name: '自動測試用-折數', faceLabel: '9 折', min: 100, lines: ALL_LINES, bulk: 41,
-      tickets: [{ face: '9 折', start: '2026/06/25 00:00:00', end: '2030/12/31 23:59:59', code: '同批 41 張' }] },
-    { name: '產品回饋輪盤', faceLabel: '5～50 元', min: null, lines: ALL_LINES, action: 'merge',
+  var COUPONS_SRC = [
+    { name: '誠摯期待相見券', face: '150 元', min: null, lines: ['產地直送', '冷凍專區'],
+      tk: [{ f: '150 元', s: '2026/07/27 00:00:00', e: '2026/08/31 23:59:59', c: 'CP-2607270001' }] },
+    { name: '滿滿期待相見券', face: '150 元', min: null, lines: ['產地直送', '冷凍專區'],
+      tk: [{ f: '150 元', s: '2026/07/27 00:00:00', e: '2026/08/31 23:59:59', c: 'CP-2607270002' }] },
+    { name: '深深期待相見券', face: '150 元', min: null, lines: ['產地直送', '冷凍專區'],
+      tk: [{ f: '150 元', s: '2026/07/27 00:00:00', e: '2026/08/31 23:59:59', c: 'CP-2607270003' }] },
+    { name: '中秋轉盤-$100 折價券', face: '100 元', min: null, lines: ['產地直送', '冷凍專區'],
+      tk: [{ f: '100 元', s: '2026/08/01 00:00:00', e: '2026/09/30 23:59:59', c: 'MA-2608010017' }] },
+    { name: '中秋轉盤-$20 折價券', face: '20 元', min: null, lines: ['產地直送', '冷凍專區'],
+      tk: [{ f: '20 元', s: '2026/08/01 00:00:00', e: '2026/09/30 23:59:59', c: 'MA-2608010018' }] },
+    { name: '自動測試用-面額', face: '20 元', min: 100, lines: ALL_LINES, bulk: 50,
+      tk: [{ f: '20 元', s: '2026/06/25 00:00:00', e: '2030/12/31 23:59:59', c: '同批 50 張' }] },
+    { name: '自動測試用-折數', face: '9 折', min: 100, lines: ALL_LINES, bulk: 41,
+      tk: [{ f: '9 折', s: '2026/06/25 00:00:00', e: '2030/12/31 23:59:59', c: '同批 41 張' }] },
+    { name: '產品回饋輪盤', face: '5～50 元', min: null, lines: ALL_LINES, wheel: true,
       note: '可將產品回饋輪盤優惠券 5、10、20、50 面額的券合併至 100 元並移除超過金額，使用期限為合併後 90 天',
-      tickets: [
-        { face: '50 元', start: '2026/07/08 01:50:57', end: '2026/10/08 01:50:57', code: 'RW-2607080031', v: 50 },
-        { face: '20 元', start: '2026/07/15 09:12:04', end: '2026/10/15 09:12:04', code: 'RW-2607150042', v: 20 },
-        { face: '20 元', start: '2026/07/22 20:31:18', end: '2026/10/22 20:31:18', code: 'RW-2607220055', v: 20 },
-        { face: '10 元', start: '2026/07/29 11:04:36', end: '2026/10/29 11:04:36', code: 'RW-2607290068', v: 10 },
-        { face: '5 元',  start: '2026/08/02 18:47:52', end: '2026/11/02 18:47:52', code: 'RW-2608020074', v: 5 },
-        { face: '5 元',  start: '2026/08/05 08:22:09', end: '2026/11/05 08:22:09', code: 'RW-2608050081', v: 5 }
+      tk: [
+        { f: '50 元', s: '2026/07/08 01:50:57', e: '2026/10/08 01:50:57', c: 'RW-2607080031', v: 50 },
+        { f: '20 元', s: '2026/07/15 09:12:04', e: '2026/10/15 09:12:04', c: 'RW-2607150042', v: 20 },
+        { f: '20 元', s: '2026/07/22 20:31:18', e: '2026/10/22 20:31:18', c: 'RW-2607220055', v: 20 },
+        { f: '10 元', s: '2026/07/29 11:04:36', e: '2026/10/29 11:04:36', c: 'RW-2607290068', v: 10 },
+        { f: '5 元',  s: '2026/08/02 18:47:52', e: '2026/11/02 18:47:52', c: 'RW-2608020074', v: 5 },
+        { f: '5 元',  s: '2026/08/05 08:22:09', e: '2026/11/05 08:22:09', c: 'RW-2608050081', v: 5 }
       ] }
   ];
 
-  var TODAY = new Date(2026, 7, 6);
-  function daysLeft(endStr) {
-    var p = endStr.split(' ')[0].split('/');
+  var RECORDS = {
+    bonus: { title: '購物金・歷史紀錄', unit: '元', bal: 'bal-bonus', rows: [
+      ['260728751188', -100, '訂單使用購物金。', '2026/07/28 16:41'],
+      ['260712750988', -100, '訂單使用購物金。', '2026/07/12 09:05'],
+      ['260630750871', 170, '客服調整優惠方案，退還購物金', '2026/06/30 18:40'],
+      ['260618750804', -30, '訂單使用購物金。', '2026/06/18 20:11'],
+      ['—', 100, '活動贈送', '2026/05/02 08:30']
+    ]},
+    point: { title: '紅利點數・歷史紀錄', unit: '點', bal: 'bal-point', rows: [
+      ['260728751188', 126, '消費累積', '2026/07/28 16:41'],
+      ['260712750988', 88, '消費累積', '2026/07/12 09:05'],
+      ['—', -200, '兌換商品', '2026/06/15 11:30'],
+      ['—', 120, '生日禮贈點', '2026/03/12 08:00'],
+      ['—', -50, '點數到期', '2026/01/31 23:59']
+    ]}
+  };
+
+  var COUPONS = COUPONS_SRC.slice();
+  var filter = 'all';
+  var added = {};
+  var dev = { cp: 'full', wheel: 'have', gv: 'full' };
+  var current = null;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function toast(m) {
+    var t = $('toast'); t.textContent = m; t.classList.add('is-show');
+    clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-show'); }, 2800);
+  }
+  function days(ymd) {
+    var p = ymd.split(' ')[0].split('/');
     return Math.ceil((new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])) - TODAY) / 86400000);
   }
-  function count(c) { return c.bulk || c.tickets.length; }
-  function soonest(c) {
+  function cnt(c) { return c.bulk || c.tk.length; }
+  function minDays(c) {
     var m = 99999;
-    for (var i = 0; i < c.tickets.length; i++) m = Math.min(m, daysLeft(c.tickets[i].end));
+    for (var i = 0; i < c.tk.length; i++) m = Math.min(m, days(c.tk[i].e));
     return m;
   }
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function isAllLines(c) { return c.lines.length >= ALL_LINES.length; }
 
-  function couponHtml(c, idx, hideName) {
-    var soon = soonest(c) <= 30;
-    var isAll = c.lines.length >= ALL_LINES.length;
+  /* ── 即將到期：禮物券與優惠券混在一起排 ── */
+  function renderDue() {
+    var rows = [];
+    if (dev.gv === 'full') {
+      for (var i = 0; i < GIFTS.length; i++) {
+        var g = GIFTS[i], d = days(g.end);
+        if (d <= SOON && !g.oos && !added[g.id]) rows.push({ d: d, kind: 'gift', name: g.name, meta: g.end + ' 到期・' + g.code });
+      }
+    }
+    for (var j = 0; j < COUPONS.length; j++) {
+      var c = COUPONS[j], cd = minDays(c);
+      if (cd <= SOON) rows.push({ d: cd, kind: 'coupon', name: c.name, meta: c.face + '・剩 ' + cnt(c) + ' 張' });
+    }
+    rows.sort(function (a, b) { return a.d - b.d; });
 
-    var h = '<div class="cp-card' + (soon ? ' is-soon' : '') + (hideName ? ' is-open' : '') + '" data-idx="' + idx + '">';
-    h += '<div class="cp-bar" data-toggle>';
-    if (hideName) {
-      h += '<span class="cp-remain">共有 ' + count(c) + ' 張券，金額包含 ' + esc(c.faceLabel) + '</span>';
+    var box = $('due');
+    if (!rows.length) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    $('due-cnt').textContent = rows.length + ' 張，最快 ' + rows[0].d + ' 天後失效';
+    $('due-list').innerHTML = rows.map(function (r) {
+      return '<div class="due-item">'
+        + '<div class="due-days"><b>' + r.d + '</b><span>天後失效</span></div>'
+        + '<div class="due-body">'
+        + '<div class="due-name">' + esc(r.name) + '</div>'
+        + '<div class="due-meta"><span class="kind kind-' + r.kind + '">'
+        + (r.kind === 'gift' ? '禮物券' : '優惠券') + '</span> ' + esc(r.meta) + '</div>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  /* ── 禮物券 ── */
+  function renderGifts() {
+    var list = dev.gv === 'full' ? GIFTS : [];
+    if (!list.length) {
+      $('gv-list').innerHTML = '';
+      $('gv-list').style.display = 'none';
+      $('gv-empty').style.display = '';
+      $('gv-cnt').textContent = '沒有可用的券';
+      return;
+    }
+    $('gv-list').style.display = '';
+    $('gv-empty').style.display = 'none';
+
+    $('gv-list').innerHTML = list.map(function (g) {
+      var d = days(g.end), soon = d <= SOON && !g.oos;
+      var cls = 'gv' + (g.oos ? ' is-oos' : (added[g.id] ? ' is-added' : (soon ? ' is-soon' : '')));
+      var btn = g.oos
+        ? '<button type="button" class="btn btn-off btn-full" disabled>暫時缺貨</button>'
+        : (added[g.id]
+            ? '<button type="button" class="btn btn-done btn-full" disabled>已加入</button>'
+            : '<button type="button" class="btn btn-main btn-full" data-use="' + g.id + '">使用</button>');
+      return '<div class="gv ' + cls.replace('gv ', '') + '">'
+        + '<div class="gv-pic">禮物圖</div>'
+        + '<div class="gv-top"><span class="kind kind-gift">禮物券</span>'
+        + (g.oos ? '<span class="kind" style="background:#ececec;color:#767676;">暫時缺貨</span>' : '') + '</div>'
+        + '<div class="gv-name">' + esc(g.name) + '</div>'
+        + '<div class="gv-exp' + (soon ? ' is-soon' : '') + '">' + esc(g.end) + ' 到期，剩 ' + d + ' 天</div>'
+        + '<div class="gv-code">' + esc(g.code) + '</div>'
+        + '<div class="gv-act">' + btn + '</div>'
+        + '</div>';
+    }).join('');
+
+    var oos = 0, n = 0;
+    for (var i = 0; i < list.length; i++) { if (list[i].oos) oos++; else if (added[list[i].id]) n++; }
+    var parts = ['可用 ' + (list.length - oos - n) + ' 張'];
+    if (n) parts.push('已加入 ' + n + ' 張');
+    if (oos) parts.push('缺貨 ' + oos + ' 張');
+    $('gv-cnt').textContent = parts.join('・');
+  }
+
+  /* ── 優惠券 ── */
+  function couponHtml(c, i, bare) {
+    var soon = minDays(c) <= SOON;
+    var h = '<div class="cp' + (soon ? ' is-soon' : '') + (bare ? ' is-open' : '') + '" data-i="' + i + '">';
+    h += '<div class="cp-head">';
+    h += '<button type="button" class="cp-bar" data-toggle aria-expanded="' + (bare ? 'true' : 'false') + '">';
+    if (bare) {
+      h += '<span class="cp-left" style="font-size:18px;color:#454545;font-weight:600;">共有 ' + cnt(c) + ' 張券，金額包含 ' + esc(c.face) + '</span>';
     } else {
-      h += '<span class="cp-title">' + esc(c.name) + '</span>';
-      h += '<span class="cp-remain">剩餘 ' + count(c) + ' 張</span>';
-      h += '<span class="cp-face">' + esc(c.faceLabel) + '</span>';
+      h += '<span class="cp-name">' + esc(c.name) + '</span>';
+      h += '<span class="cp-left">剩餘 ' + cnt(c) + ' 張</span>';
+      h += '<span class="cp-face">' + esc(c.face) + '</span>';
     }
-    if (c.action === 'merge') h += '<button type="button" class="btn-merge" data-merge>我要合併優惠券</button>';
     h += '<span class="cp-arrow">&#9660;</span>';
+    h += '</button>';
+    if (c.wheel) h += '<button type="button" class="btn btn-main cp-merge" data-merge>我要合併優惠券</button>';
     h += '</div>';
 
-    h += '<div class="cp-detail">';
+    h += '<div class="cp-body">';
     if (c.note) h += '<div class="cp-note">' + esc(c.note) + '</div>';
-    h += '<div class="cp-tickets">';
-    for (var i = 0; i < c.tickets.length; i++) {
-      var t = c.tickets[i], left = daysLeft(t.end), ts = left <= 30;
-      h += '<div class="cp-ticket">';
-      h += '<span class="cp-t-face">' + esc(t.face) + '</span>';
-      h += '<span class="cp-t-exp' + (ts ? ' is-soon' : '') + '">' + esc(t.start) + ' ～ ' + esc(t.end)
-         + (ts ? '（剩 ' + left + ' 天）' : '') + '</span>';
-      h += '<span class="cp-t-code">' + esc(t.code) + '</span>';
-      h += '</div>';
+    h += '<div class="tickets">';
+    for (var t = 0; t < c.tk.length; t++) {
+      var k = c.tk[t], d = days(k.e), ts = d <= SOON;
+      h += '<div class="tk"><span class="tk-face">' + esc(k.f) + '</span>'
+        + '<span class="tk-exp' + (ts ? ' is-soon' : '') + '">' + esc(k.s) + ' ～ ' + esc(k.e)
+        + (ts ? '（剩 ' + d + ' 天）' : '') + '</span>'
+        + '<span class="tk-code">' + esc(k.c) + '</span></div>';
     }
     h += '</div>';
-    h += '<div class="cp-row"><span class="k">低消門檻</span><span class="v">'
-       + (c.min ? '滿 ' + c.min + ' 元可用' : '無低消') + '</span></div>';
-    h += '<div class="cp-row"><span class="k">限定產線</span><span class="v"><span class="cp-chips">'
-       + (isAll ? '<span class="cp-chip is-all">全部產線適用</span>'
-                : c.lines.map(function (l) { return '<span class="cp-chip">' + esc(l) + '</span>'; }).join(''))
-       + '</span></span></div>';
+    h += '<div class="kv"><span class="k">使用門檻</span><span>' + (c.min ? '滿 ' + c.min + ' 元可用' : '無門檻') + '</span></div>';
+    h += '<div class="kv"><span class="k">限定產線</span><span class="chips">'
+      + (isAllLines(c) ? '<span class="chip is-all">全部產線適用</span>'
+                       : c.lines.map(function (l) { return '<span class="chip">' + esc(l) + '</span>'; }).join(''))
+      + '</span></div>';
     h += '</div></div>';
     return h;
   }
 
-  var filter = 'all';
-  function isWheel(c) { return c.action === 'merge'; }
-
   function renderCoupons() {
-    var list = [], wheel = [];
+    var main = [], wheel = [];
     for (var i = 0; i < COUPONS.length; i++) {
-      var c = COUPONS[i], isAll = c.lines.length >= ALL_LINES.length;
-      if (filter === 'soon' && soonest(c) > 30) continue;
-      if (filter === 'line' && isAll) continue;
-      if (filter === 'free' && !isAll) continue;
-      (isWheel(c) ? wheel : list).push({ c: c, i: i });
+      var c = COUPONS[i];
+      if (filter === 'soon' && minDays(c) > SOON) continue;
+      if (filter === 'line' && isAllLines(c)) continue;
+      if (filter === 'free' && !isAllLines(c)) continue;
+      (c.wheel ? wheel : main).push({ c: c, i: i });
     }
-
-    var total = 0, kinds = 0;
+    var kinds = 0, total = 0;
     for (var j = 0; j < COUPONS.length; j++) {
-      if (isWheel(COUPONS[j])) continue;
-      total += count(COUPONS[j]); kinds++;
+      if (COUPONS[j].wheel) continue;
+      kinds++; total += cnt(COUPONS[j]);
     }
-    document.getElementById('cp-meta').textContent =
-      filter === 'all' ? (kinds + ' 種、共 ' + total + ' 張')
-                       : ('篩出 ' + list.length + ' 種（全部 ' + kinds + ' 種）');
+    $('cp-cnt').textContent = kinds ? (kinds + ' 種・共 ' + total + ' 張') : '沒有可用的券';
+    $('cp-list').innerHTML = main.length
+      ? main.map(function (x) { return couponHtml(x.c, x.i); }).join('')
+      : '<div class="empty"><p>' + (kinds ? '這個條件下沒有可用的優惠券。' : '目前沒有優惠券。填寫商品回饋就能領。') + '</p>'
+        + (kinds ? '<button type="button" class="btn btn-line" data-reset>看全部優惠券</button>'
+                 : '<a class="btn btn-line" href="#">前往回饋填寫</a>') + '</div>';
 
-    document.getElementById('cp-list').innerHTML = list.length
-      ? list.map(function (x) { return couponHtml(x.c, x.i); }).join('')
-      : '<div class="cp-empty">' + (kinds ? '這個條件下沒有可用的優惠券。' : '目前沒有優惠券。') + '</div>';
-
-    // 產品回饋輪盤：一張都沒有就整段不顯示
-    var box = document.getElementById('cp-wheel');
-    if (!wheel.length) {
-      box.style.display = 'none';
-      document.getElementById('cp-wheel-list').innerHTML = '';
-    } else {
-      box.style.display = '';
-      document.getElementById('cp-wheel-list').innerHTML =
-        wheel.map(function (x) { return couponHtml(x.c, x.i, true); }).join('');
+    var wbox = $('wheel');
+    if (!wheel.length) { wbox.style.display = 'none'; $('wheel-list').innerHTML = ''; }
+    else {
+      wbox.style.display = '';
+      $('wheel-list').innerHTML = wheel.map(function (x) { return couponHtml(x.c, x.i, true); }).join('');
     }
   }
 
-  var cfBtns = document.querySelectorAll('#cp-filter button');
-  for (var f = 0; f < cfBtns.length; f++) {
-    (function (b) {
-      b.addEventListener('click', function () {
-        for (var i = 0; i < cfBtns.length; i++) cfBtns[i].classList.remove('is-on');
-        b.classList.add('is-on');
-        filter = b.getAttribute('data-cf');
-        renderCoupons();
-      });
-    })(cfBtns[f]);
-  }
+  function renderAll() { renderGifts(); renderCoupons(); renderDue(); }
 
-  document.getElementById('cp-wheel-list').addEventListener('click', couponClick);
-  document.getElementById('cp-list').addEventListener('click', couponClick);
-  function couponClick(e) {
-    var card = e.target.closest('.cp-card');
-    if (!card) return;
-    if (e.target.closest('[data-merge]')) { openMerge(COUPONS[Number(card.getAttribute('data-idx'))]); return; }
-    if (e.target.closest('[data-toggle]')) card.classList.toggle('is-open');
+  /* ── 彈窗 ── */
+  function open(id) { $(id).classList.add('is-open'); }
+  function closeAll() {
+    var ms = document.querySelectorAll('.mbk');
+    for (var i = 0; i < ms.length; i++) ms[i].classList.remove('is-open');
   }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-close]')) { closeAll(); return; }
+    if (e.target.classList && e.target.classList.contains('mbk')) closeAll();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+
+  function openRec(k) {
+    var r = RECORDS[k];
+    $('k-rec-t').textContent = r.title;
+    $('rec-sum').textContent = '目前 ' + $(r.bal).textContent + ' ' + r.unit;
+    $('rec-body').innerHTML = r.rows.map(function (row) {
+      var v = row[1];
+      return '<tr><td>' + esc(row[0]) + '</td><td class="num ' + (v > 0 ? 'mb-plus' : 'mb-minus') + '">'
+        + (v > 0 ? '+' : '') + v + '</td><td>' + esc(row[2]) + '</td><td>' + esc(row[3]) + '</td></tr>';
+    }).join('');
+    open('k-rec');
+  }
+  var recBtns = document.querySelectorAll('[data-rec]');
+  for (var rb = 0; rb < recBtns.length; rb++) {
+    (function (b) { b.addEventListener('click', function () { openRec(b.getAttribute('data-rec')); }); })(recBtns[rb]);
+  }
+  $('lv-rule').addEventListener('click', function () { open('k-lv'); });
 
   function openMerge(c) {
-    var groups = {}, order = [];
-    for (var i = 0; i < c.tickets.length; i++) {
-      var t = c.tickets[i];
-      if (!groups[t.v]) { groups[t.v] = 0; order.push(t.v); }
-      groups[t.v]++;
+    var g = {}, order = [], total = 0;
+    for (var i = 0; i < c.tk.length; i++) {
+      var v = c.tk[i].v;
+      if (!g[v]) { g[v] = 0; order.push(v); }
+      g[v]++;
     }
     order.sort(function (a, b) { return b - a; });
-    var html = '', total = 0;
-    for (var k = 0; k < order.length; k++) {
-      var v = order[k], n = groups[v];
-      total += v * n;
-      html += '<tr><td>' + v + ' 元</td><td class="num">' + n + ' 張</td><td class="num">' + (v * n) + ' 元</td></tr>';
-    }
-    document.getElementById('merge-tbody').innerHTML = html;
-    var sum = '<div>合計 <b>' + total + ' 元</b>（' + c.tickets.length + ' 張）</div>';
-    sum += total >= 100
-      ? '<div>合併後：<b>100 元 × 1 張</b><span class="merge-drop">，超過的 ' + (total - 100) + ' 元會被移除</span></div>'
-      : '<div>還差 <b>' + (100 - total) + ' 元</b>才能合併成 100 元券</div>';
-    document.getElementById('merge-sum').innerHTML = sum;
-    document.getElementById('merge-mask').classList.add('is-open');
+    $('merge-body').innerHTML = order.map(function (v) {
+      total += v * g[v];
+      return '<tr><td>' + v + ' 元</td><td class="num">' + g[v] + ' 張</td><td class="num">' + (v * g[v]) + ' 元</td></tr>';
+    }).join('');
+    $('merge-sum').innerHTML = '合計 <strong style="color:#dc4e43;">' + total + ' 元</strong>（' + c.tk.length + ' 張）<br>'
+      + (total >= 100
+          ? '合併後：<strong style="color:#dc4e43;">100 元 × 1 張</strong><span style="color:#999;">，超過的 ' + (total - 100) + ' 元會被移除</span>'
+          : '還差 <strong style="color:#dc4e43;">' + (100 - total) + ' 元</strong>才能合併');
+    open('k-merge');
   }
 
-  var RECORDS = {
-    bonus: {
-      title: '購物金-歷史紀錄', sum: '目前餘額 $120',
-      rows: [
-        ['260728751042', -100, '訂單使用購物金。', '2026/07/28 14:22'],
-        ['260712750988', -100, '訂單使用購物金。', '2026/07/12 09:05'],
-        ['260630750871', 170, '客服調整優惠方案，退還購物金', '2026/06/30 18:40'],
-        ['260618750804', -30, '訂單使用購物金。', '2026/06/18 20:11'],
-        ['260605750742', 20, '訂單取消退回購物金', '2026/06/05 13:47'],
-        ['260529750688', -50, '訂單使用購物金。', '2026/05/29 10:12'],
-        ['260514750611', -20, '訂單使用購物金。', '2026/05/14 21:38'],
-        ['260502750577', 100, '活動贈送', '2026/05/02 08:30']
-      ]
-    },
-    point: {
-      title: '紅利點數-歷史紀錄', sum: '目前 840 點，其中 120 點將於 09/30 到期',
-      rows: [
-        ['260728751042', 126, '消費累積', '2026/07/28 14:22'],
-        ['260712750988', 88, '消費累積', '2026/07/12 09:05'],
-        ['—', -200, '兌換商品', '2026/06/15 11:30'],
-        ['260618750804', 245, '消費累積', '2026/06/18 20:11'],
-        ['—', 120, '生日禮贈點', '2026/03/12 08:00'],
-        ['260302750412', 61, '消費累積', '2026/03/02 19:55'],
-        ['—', -50, '點數到期', '2026/01/31 23:59']
-      ]
-    }
-  };
-
-  var current = null;
-  var added = {};
-
-  function toast(msg) {
-    var t = document.getElementById('gv-toast');
-    t.textContent = msg;
-    t.classList.add('is-show');
-    clearTimeout(t._t);
-    t._t = setTimeout(function () { t.classList.remove('is-show'); }, 2800);
-  }
-
-  function refreshMeta() {
-    var total = document.querySelectorAll('#gv-list .gv-card').length;
-    if (!total) { document.getElementById('gv-meta').textContent = '沒有可用的券'; return; }
-    var oos = document.querySelectorAll('#gv-list .gv-card.is-oos').length;
-    var n = 0, k;
-    for (k in added) { if (added[k]) n++; }
-    var parts = ['可用 ' + (total - oos - n) + ' 張'];
-    if (n) parts.push('已加入 ' + n + ' 張');
-    if (oos) parts.push('缺貨 ' + oos + ' 張');
-    document.getElementById('gv-meta').textContent = parts.join('・');
-  }
-
-  function setAdded(id) {
-    if (added[id]) return;
-    added[id] = true;
-    var card = document.querySelector('.gv-card[data-gv="' + id + '"]');
-    if (!card) return;
-    card.classList.add('is-added');
-    var btn = card.querySelector('.gv-actions button');
-    btn.className = 'btn-added';
-    btn.textContent = '已加入';
-    btn.disabled = true;
-    btn.removeAttribute('data-gv-use');
+  /* ── 互動 ── */
+  $('gv-list').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-use]');
+    if (!b) return;
+    current = b.getAttribute('data-use');
+    var g = GIFTS.filter(function (x) { return x.id === current; })[0];
+    $('gd-name').textContent = g.name;
+    $('gd-spec').textContent = '規格：' + g.spec;
+    $('gd-note').textContent = g.note;
+    open('k-gift');
+  });
+  $('gd-ok').addEventListener('click', function () {
+    closeAll();
+    added[current] = true;
     var badge = document.querySelector('.badge');
     if (badge) badge.textContent = String(Number(badge.textContent || 0) + 1);
-    refreshMeta();
-  }
-
-  function openGift(id) {
-    current = id;
-    var g = GIFTS[id];
-    document.getElementById('gv-d-name').textContent = g.name;
-    document.getElementById('gv-d-spec').textContent = '規格：' + g.spec;
-    document.getElementById('gv-d-note').textContent = g.note;
-    document.getElementById('gv-d-ok').style.display = added[id] ? 'none' : '';
-    document.getElementById('gv-mask').classList.add('is-open');
-  }
-
-  document.getElementById('gv-list').addEventListener('click', function (e) {
-    var use = e.target.closest('[data-gv-use]');
-    if (use) openGift(use.getAttribute('data-gv-use'));
+    renderAll();
+    var g = GIFTS.filter(function (x) { return x.id === current; })[0];
+    toast('已將「' + g.name + '」加入菜籃');
   });
 
-  function bindClose(sel) {
-    var els = document.querySelectorAll(sel);
-    for (var i = 0; i < els.length; i++) {
-      els[i].addEventListener('click', function () {
-        var mask = this.closest('.gv-mask');
-        if (mask) mask.classList.remove('is-open');
-      });
+  function couponClick(e) {
+    var m = e.target.closest('[data-merge]');
+    if (m) { e.stopPropagation(); openMerge(COUPONS[Number(m.closest('.cp').getAttribute('data-i'))]); return; }
+    var t = e.target.closest('[data-toggle]');
+    if (t) { var open = t.closest('.cp').classList.toggle('is-open'); t.setAttribute('aria-expanded', open ? 'true' : 'false'); return; }
+    var r = e.target.closest('[data-reset]');
+    if (r) {
+      filter = 'all';
+      var fb = document.querySelectorAll('#cp-filters button');
+      for (var i = 0; i < fb.length; i++) fb[i].classList.toggle('is-on', fb[i].getAttribute('data-f') === 'all');
+      renderCoupons();
     }
   }
-  bindClose('[data-close-gift]');
-  bindClose('[data-close-rec]');
-  bindClose('[data-close-merge]');
+  $('cp-list').addEventListener('click', couponClick);
+  $('wheel-list').addEventListener('click', couponClick);
 
-  var masks = document.querySelectorAll('.gv-mask');
-  for (var mi = 0; mi < masks.length; mi++) {
-    masks[mi].addEventListener('click', function (e) {
-      if (e.target === this) this.classList.remove('is-open');
-    });
-  }
-
-  document.getElementById('gv-d-ok').addEventListener('click', function () {
-    document.getElementById('gv-mask').classList.remove('is-open');
-    setAdded(current);
-    toast('已將「' + GIFTS[current].name + '」加入菜籃');
+  $('cp-filters').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-f]');
+    if (!b) return;
+    var all = this.querySelectorAll('button');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('is-on');
+    b.classList.add('is-on');
+    filter = b.getAttribute('data-f');
+    renderCoupons();
   });
-
-  var recBtns = document.querySelectorAll('[data-record]');
-  for (var j2 = 0; j2 < recBtns.length; j2++) {
-    (function (b) {
-      b.addEventListener('click', function () {
-        var r = RECORDS[b.getAttribute('data-record')];
-        document.getElementById('rec-title').textContent = r.title;
-        document.getElementById('rec-sum').textContent = r.sum;
-        var html = '';
-        for (var x = 0; x < r.rows.length; x++) {
-          var row = r.rows[x], v = row[1];
-          html += '<tr><td>' + row[0] + '</td><td class="num ' + (v > 0 ? 'rec-plus' : 'rec-minus') + '">'
-                + (v > 0 ? '+' : '') + v + '</td><td>' + row[2] + '</td><td>' + row[3] + '</td></tr>';
-        }
-        document.getElementById('rec-tbody').innerHTML = html;
-        document.getElementById('rec-mask').classList.add('is-open');
-      });
-    })(recBtns[j2]);
-  }
 
   /* ── 開發者面板 ── */
-  var ALL_COUPONS = COUPONS.slice();
-  var GV_CARDS = [];
-  (function () {
-    var cards = document.querySelectorAll('#gv-list .gv-card');
-    for (var i = 0; i < cards.length; i++) GV_CARDS.push(cards[i]);
-  })();
-
-  var devState = { cp: 'full', wheel: 'have', gv: 'full' };
-
-  function applyDev() {
-    COUPONS.length = 0;
-    for (var i = 0; i < ALL_COUPONS.length; i++) {
-      var c = ALL_COUPONS[i];
-      if (devState.cp === 'none' && !isWheel(c)) continue;
-      if (devState.wheel === 'none' && isWheel(c)) continue;
-      COUPONS.push(c);
-    }
-    renderCoupons();
-
-    var list = document.getElementById('gv-list');
-    list.innerHTML = '';
-    if (devState.gv === 'full') {
-      for (var g = 0; g < GV_CARDS.length; g++) list.appendChild(GV_CARDS[g]);
-    }
-    list.style.display = devState.gv === 'full' ? '' : 'none';
-    document.getElementById('gv-empty').style.display = devState.gv === 'full' ? 'none' : '';
-    for (var k in added) delete added[k];
-    var badge = document.querySelector('.badge');
-    if (badge) badge.textContent = '0';
-    refreshMeta();
-  }
-
-  var bar = document.getElementById('devbar');
+  var bar = $('devbar');
   bar.querySelector('.toggle').addEventListener('click', function () { bar.classList.toggle('is-open'); });
-
-  document.getElementById('lv-rule').addEventListener('click', function () {
-    document.getElementById('lv-mask').classList.add('is-open');
-  });
-  var lvCloses = document.querySelectorAll('[data-close-lv]');
-  for (var lc = 0; lc < lvCloses.length; lc++) {
-    lvCloses[lc].addEventListener('click', function () {
-      document.getElementById('lv-mask').classList.remove('is-open');
-    });
-  }
-  document.getElementById('lv-mask').addEventListener('click', function (e) {
-    if (e.target === this) this.classList.remove('is-open');
-  });
   bar.addEventListener('click', function (e) {
     var b = e.target.closest('.seg button');
     if (!b) return;
@@ -1357,12 +1232,20 @@ img { vertical-align: middle; }
     var all = seg.querySelectorAll('button');
     for (var i = 0; i < all.length; i++) all[i].classList.remove('is-on');
     b.classList.add('is-on');
-    devState[key] = b.getAttribute('data-v');
-    applyDev();
+    dev[key] = b.getAttribute('data-v');
+
+    COUPONS = COUPONS_SRC.filter(function (c) {
+      if (dev.cp === 'none' && !c.wheel) return false;
+      if (dev.wheel === 'none' && c.wheel) return false;
+      return true;
+    });
+    added = {};
+    var badge = document.querySelector('.badge');
+    if (badge) badge.textContent = '0';
+    renderAll();
   });
 
-  renderCoupons();
-  refreshMeta();
+  renderAll();
 })();
 </script>
 

@@ -1025,7 +1025,7 @@ a:hover { text-decoration: underline; }
     <div class="gox-card-body">
       <div class="gv-rule-body">
         <h4>什麼時候發</h4>
-        <ul><li>每週一上午自動執行，不需要人工操作</li><li><b>不會每次都建一個新的券</b> —— 生日禮固定用列表上這一個券持續發放，每張發出去的券依發券日各自算到期日</li></ul>
+        <ul><li>每週一上午自動執行，不需要人工操作</li><li>每執行一次就是列表上的一批，券代碼開頭是 BD</li></ul>
         <h4>發給誰</h4>
         <ul>
           <li>當週滿一歲的寶寶（週一到週日）</li>
@@ -1058,13 +1058,10 @@ a:hover { text-decoration: underline; }
 
   var AMOUNTS = [1580, 150, 2340, 1650, 150, 1890, 1520, 3200, 150, 1740, 2100, 1620, 980, 2450, 150];
 
-  // 生日禮不會每週建新券，而是「同一個券」持續發放，每張券依發券日各自算到期日。
-  // 所以列表上永遠只佔一列。recurring=true 時，發放時間與有效期限改顯示規則而非固定日期。
-  function bdRecurring(issued, used, unused, smsSent, smsFail) {
-    return { code: 'BD-BABY', name: '寶寶生日禮', recurring: true,
-      issuedAt: '2026-04-20', issueRule: '每週一自動', expire: null, expireRule: '發券日起 14 天',
-      used: used, issued: issued, unused: unused,
-      active: true, ended: false, sms: { sent: smsSent, failed: smsFail } };
+  function bd(date, issued, used, unused, smsSent, smsFail) {
+    return { code: 'BD-' + date.slice(2).replace(/-/g, ''), name: '寶寶生日禮', issuedAt: date,
+      expire: addDays(date, 14), used: used, issued: issued, unused: unused,
+      active: unused > 0, ended: unused === 0, sms: { sent: smsSent, failed: smsFail } };
   }
 
   function ymd(d) {
@@ -1083,7 +1080,22 @@ a:hover { text-decoration: underline; }
       listed: true, stock: 84, hasAutoRule: true,
       note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。',
       types: [
-          bdRecurring(170, 127, 13, 161, 10)
+        bd('2026-08-03', 12, 3,  9, 11, 1),
+        bd('2026-07-27',  9, 5,  4,  9, 0),
+        bd('2026-07-20', 15, 12, 0, 13, 2),
+        bd('2026-07-13', 11, 9,  0, 11, 0),
+        bd('2026-07-06',  8, 7,  0,  7, 1),
+        bd('2026-06-29', 14, 11, 0, 13, 1),
+        bd('2026-06-22', 10, 8,  0, 10, 0),
+        bd('2026-06-15', 13, 10, 0, 12, 1),
+        bd('2026-06-08',  9, 8,  0,  9, 0),
+        bd('2026-06-01', 11, 9,  0, 10, 1),
+        bd('2026-05-25', 12, 9,  0, 12, 0),
+        bd('2026-05-18',  7, 6,  0,  7, 0),
+        bd('2026-05-11', 10, 7,  0,  9, 1),
+        bd('2026-05-04',  8, 6,  0,  8, 0),
+        bd('2026-04-27', 12, 10, 0, 11, 1),
+        bd('2026-04-20',  9, 7,  0,  9, 0)
       ]
     },
     '2': {
@@ -1124,8 +1136,6 @@ a:hover { text-decoration: underline; }
     var s = document.getElementById('gv-f-start').value;
     var e = document.getElementById('gv-f-end').value;
     return g.types.filter(function (t) {
-      // 持續發放的券（生日禮）不受期間篩選排除：它一直在發，任何查詢期間都該看得到
-      if (t.recurring) return true;
       if (s && t.issuedAt < s) return false;
       if (e && t.issuedAt > e) return false;
       return true;
@@ -1182,7 +1192,7 @@ a:hover { text-decoration: underline; }
 
   function renderTypes() {
     var rows = filtered();
-    document.getElementById('gv-tcount').textContent = '共 ' + rows.length + ' 個券';
+    document.getElementById('gv-tcount').textContent = '共 ' + rows.length + ' 批';
     renderStats(rows);
 
     var tbody = document.getElementById('gv-tbody');
@@ -1199,12 +1209,8 @@ a:hover { text-decoration: underline; }
       return '<tr' + (t.ended ? ' class="gv-row-ended"' : '') + '>' +
         '<td><span class="gv-code">' + t.code + '</span></td>' +
         '<td>' + t.name + '</td>' +
-        '<td>' + (t.recurring
-            ? t.issueRule + '<span class="gv-date-sub">首次 ' + t.issuedAt + '</span>'
-            : t.issuedAt) + '</td>' +
-        '<td>' + (t.recurring
-            ? t.expireRule
-            : t.expire + (t.ended ? '<span class="gv-date-sub">已結束</span>' : '')) + '</td>' +
+        '<td>' + t.issuedAt + '</td>' +
+        '<td>' + t.expire + (t.ended ? '<span class="gv-date-sub">已結束</span>' : '') + '</td>' +
         '<td class="cell-right gv-rate"><b>' + t.used + '</b><span> / ' + t.issued + '（' + rate + '%）</span></td>' +
         '<td class="cell-right gv-num">' + t.unused + '</td>' +
         '<td>' + noteCell(t) + '</td>' +
@@ -1219,15 +1225,13 @@ a:hover { text-decoration: underline; }
     for (var i = 0; i < t.issued; i++) {
       var isUsed = i < t.used;
       var smsFail = t.sms && i >= (t.issued - t.sms.failed);
-      // 生日禮持續發放，名單裡每張券的發放日要分散在各週（每週約 10 張）
-      var issuedOn = t.recurring ? addDays(t.issuedAt, Math.floor(i / 10) * 7) : t.issuedAt;
       list.push({
         member: 'demo_user_' + String(i + 1).padStart(3, '0'),
-        issuedAt: issuedOn, used: isUsed,
-        usedAt: isUsed ? addDays(issuedOn, (i % 9) + 1) : null,
+        issuedAt: t.issuedAt, used: isUsed,
+        usedAt: isUsed ? addDays(t.issuedAt, (i % 9) + 1) : null,
         order: isUsed ? 'DEMO-' + String(1000 + i) : null,
         amount: isUsed ? AMOUNTS[i % AMOUNTS.length] : 0,
-        expired: !isUsed && (t.ended || (t.recurring && i < t.issued - t.unused)),
+        expired: !isUsed && t.ended,
         sms: t.sms ? (smsFail ? 'fail' : 'ok') : null
       });
     }

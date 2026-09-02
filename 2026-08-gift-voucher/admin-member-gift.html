@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>會員頁 禮物券區塊 — 後台 demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ───── GoX Admin / base.css ─────
+   後台殼共用 reset + 全域字型 + CSS 變數 token。
+   color / spacing / radius 集中在 :root，後續元件一律 var(--gox-*) 取用，
+   不要再回填 hex。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+  color: var(--gox-text);
+  background: var(--gox-content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--gox-info); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* 整個後台 wrapper（一定要包這層才能套色） */
+.gox-page {
+  min-height: 100vh;
+  background: var(--gox-content-bg);
+  color: var(--gox-text);
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+}
+
+/* ───── GoX Admin / header.css ─────
+   固定在頂端的淺綠 header：
+     左：無毒農 logo（小張）
+     中：breadcrumb（B2B管理 > 訂單管理）
+     右：使用者快捷區（登出、通知；可選） */
+
+.gox-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--gox-header-h);
+  background: var(--gox-header-bg);
+  border-bottom: 1px solid var(--gox-header-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-family: var(--gox-font-family);
+}
+
+.gox-header .gox-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.gox-header .gox-logo img {
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  display: block;
+}
+
+/* ── breadcrumb ── */
+.gox-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gox-text-sub);
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+}
+.gox-breadcrumb a {
+  color: var(--gox-green);
+  text-decoration: none;
+}
+.gox-breadcrumb a:hover { text-decoration: underline; }
+.gox-breadcrumb .sep {
+  color: var(--gox-text-muted);
+  font-size: 12px;
+}
+.gox-breadcrumb strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* ── 右側使用者快捷區（可選）── */
+.gox-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-header-right .gox-user {
+  color: var(--gox-text);
+}
+.gox-header-right .gox-icon-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--gox-radius);
+  white-space: nowrap;
+}
+.gox-header-right .gox-user { white-space: nowrap; }
+.gox-header-right .gox-icon-btn:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--gox-text);
+}
+
+/* ───── GoX Admin / sidebar.css ─────
+   左側深灰固定側欄。支援：
+     - 一級項目（可帶 badge 紅點）
+     - 可摺疊群組（▶ / ▼）
+     - 二級項目（active 高亮）
+     - disabled 樣式 */
+
+.gox-sidebar {
+  width: var(--gox-sider-w);
+  flex-shrink: 0;
+  background: var(--gox-sider-bg);
+  color: var(--gox-sider-text);
+  padding: 8px 0;
+  font-size: var(--gox-font-size-sm);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--gox-header-h);
+  height: calc(100vh - var(--gox-header-h));
+  font-family: var(--gox-font-family);
+}
+
+/* ── 一級項目 / 群組標題 ── */
+.gox-sidebar .gox-menu-item,
+.gox-sidebar .gox-menu-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--gox-sider-text);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--gox-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  user-select: none;
+}
+.gox-sidebar .gox-menu-item:hover,
+.gox-sidebar .gox-menu-title:hover {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+
+/* disabled（demo 未開放的入口） */
+.gox-sidebar .gox-menu-item.is-disabled {
+  cursor: default;
+  color: #888;
+}
+.gox-sidebar .gox-menu-item.is-disabled:hover {
+  background: transparent;
+  color: #888;
+}
+
+/* 一級項目 active（無子項目、可直接點的頁面，例如「獨立平台」）
+   字色用 !important 壓過腳本給一級項的 inline color:inherit，對齊二級 active 的 bisque */
+.gox-sidebar .gox-menu-item.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text) !important;
+  font-weight: 600;
+}
+
+/* 箭頭（▶ / ▼） */
+.gox-sidebar .gox-arrow {
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+
+/* badge 紅點 */
+.gox-sidebar .gox-badge {
+  margin-left: auto;
+  background: var(--gox-danger);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ── 摺疊群組 ── */
+.gox-sidebar .gox-menu-group.is-open .gox-menu-title {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+.gox-sidebar .gox-menu-children {
+  background: var(--gox-sider-sub-bg);
+}
+
+/* 二級項目 */
+.gox-sidebar .gox-menu-child {
+  display: block;
+  padding: 8px 14px 8px 32px;
+  color: var(--gox-sider-sub-text);
+  text-decoration: none;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-sidebar .gox-menu-child:hover {
+  background: #252530;
+  color: var(--gox-sider-active-text);
+  text-decoration: none;
+}
+.gox-sidebar .gox-menu-child.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text);
+  font-weight: 600;
+}
+
+/* ───── GoX Admin / content.css ─────
+   內容區共用元件：
+     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
+   全部用 :root 變數，不直接寫 hex。 */
+
+/* ── 主體佈局：header 下方的 sidebar + content ── */
+.gox-body {
+  display: flex;
+  min-height: calc(100vh - var(--gox-header-h));
+}
+.gox-content {
+  flex: 1;
+  min-width: 0;          /* 讓子層 table overflow 正常 */
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--gox-content-bg);
+}
+
+/* ─────────────────────────────────────────────────
+   Toolbox：工具型頁面的主要工作區容器
+   預設 960px 限寬置中（表單、設定、編輯頁讀起來舒服）
+   修飾詞依內容寬度需求調整
+   ─────────────────────────────────────────────────
+   何時用：
+     - 系統設定、個人資料、單筆編輯、單一表單
+     - 內容上下流式排列、欄位不多
+   何時不用：
+     - 列表頁（要滿寬度顯示表格）
+     - 看板、儀表板（多欄並列）
+     - 包含寬表格的編輯頁（會被切掉）
+   範例：
+     <main class="gox-content">
+       <div class="gox-toolbox">  ← 用這個
+         <h2>系統設定</h2>
+         <div class="gox-card">…</div>
+       </div>
+     </main>
+*/
+.gox-toolbox {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.gox-toolbox.is-narrow { max-width: 720px; }   /* 表單少欄位、登入頁、設定密碼 */
+.gox-toolbox.is-wide   { max-width: 1200px; }  /* 多欄表單、含中型表格 */
+.gox-toolbox.is-fluid  { max-width: none; }    /* 內容太擠時退回滿寬 */
+
+/* ─────────────────────────────────────────────────
+   Card：後台主要的「白卡片」容器
+   ───────────────────────────────────────────────── */
+.gox-card {
+  background: var(--gox-card-bg);
+  border: 1px solid var(--gox-card-border);
+  border-radius: var(--gox-radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.gox-card-title {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--gox-card-bg);
+  border-bottom: 1px solid var(--gox-card-border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gox-text);
+}
+.gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
+  background: var(--gox-green);
+  color: #fff;
+  border-bottom: 0;
+}
+.gox-card-body { padding: 16px; }
+.gox-card-body.is-table-padding { padding: 0; }     /* table 自己有 padding 時用 */
+
+/* 卡片頂端列：左標題 / 右操作按鈕 */
+.gox-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────────────────
+   Button
+   ───────────────────────────────────────────────── */
+.gox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  line-height: 1.5;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.gox-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* 主操作 — 品牌綠 */
+.gox-btn-primary {
+  background: var(--gox-green);
+  color: #fff;
+  border-color: var(--gox-green);
+}
+.gox-btn-primary:hover:not(:disabled) { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+
+/* 次操作 — 白底邊框 */
+.gox-btn-default {
+  background: #fff;
+  color: var(--gox-text);
+  border-color: #ccc;
+}
+.gox-btn-default:hover:not(:disabled) { background: #f5f5f5; border-color: var(--gox-green); color: var(--gox-green); }
+
+/* 危險 */
+.gox-btn-danger {
+  background: #fff;
+  color: var(--gox-danger);
+  border-color: var(--gox-danger);
+}
+.gox-btn-danger:hover:not(:disabled) { background: var(--gox-danger); color: #fff; }
+
+/* 列表內小按鈕（檢視 / 編輯 / 刪除） */
+.gox-btn-op {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  color: var(--gox-text);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.gox-btn-op:hover { background: #f5f5f5; text-decoration: none; }
+
+/* ─────────────────────────────────────────────────
+   Form
+   ───────────────────────────────────────────────── */
+.gox-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.gox-form-row > label {
+  min-width: 110px;
+  color: var(--gox-text);
+  font-weight: 500;
+}
+.gox-input,
+.gox-select,
+.gox-textarea {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  background: #fff;
+  color: var(--gox-text);
+  line-height: 1.5;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.gox-input:focus,
+.gox-select:focus,
+.gox-textarea:focus {
+  outline: 2px solid var(--gox-green);
+  outline-offset: -1px;
+  border-color: var(--gox-green);
+}
+.gox-input:disabled,
+.gox-select:disabled,
+.gox-textarea:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+.gox-textarea { min-height: 80px; resize: vertical; }
+
+.gox-radio-group, .gox-checkbox-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gox-hint {
+  color: var(--gox-text-muted);
+  font-size: var(--gox-font-size-xs);
+}
+
+/* ─────────────────────────────────────────────────
+   Table
+   ───────────────────────────────────────────────── */
+.gox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--gox-font-size-sm);
+  background: #fff;
+}
+.gox-table th {
+  background: #fafafa;
+  border-bottom: 1px solid var(--gox-card-border);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gox-text-sub);
+  white-space: nowrap;
+}
+.gox-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.gox-table tr:hover td { background: #fafafa; }
+.gox-table .cell-center { text-align: center; }
+.gox-table .cell-right { text-align: right; }
+.gox-table .cell-ops { white-space: nowrap; }
+.gox-table .row-error td { background: #fff1f0; }
+.gox-table .row-error:hover td { background: #ffe0de; }
+
+/* ─────────────────────────────────────────────────
+   Tab（頁籤）
+   ───────────────────────────────────────────────── */
+.gox-tab-group {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  overflow: hidden;
+}
+.gox-tab-btn {
+  padding: 6px 20px;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  border-right: 1px solid #ccc;
+  color: var(--gox-text);
+}
+.gox-tab-btn:last-child { border-right: 0; }
+.gox-tab-btn.is-active {
+  background: var(--gox-info);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────
+   Modal
+   ───────────────────────────────────────────────── */
+.gox-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.gox-modal-overlay.is-hidden { display: none; }
+[hidden] { display: none !important; }
+.gox-modal-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 480px;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+.gox-modal-box h4 { margin: 0 0 16px; font-size: 16px; }
+.gox-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ─────────────────────────────────────────────────
+   Switch / Tag
+   ───────────────────────────────────────────────── */
+.gox-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background .18s ease;
+  vertical-align: middle;
+}
+.gox-switch.is-on { background: var(--gox-green); }
+.gox-switch.is-disabled { opacity: .5; cursor: not-allowed; }
+.gox-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  transition: transform .18s ease;
+}
+.gox-switch.is-on::after { transform: translateX(18px); }
+
+.gox-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  font-weight: 600;
+  background: #f0f0f0;
+  color: var(--gox-text-sub);
+  border: 1px solid #e0e0e0;
+}
+.gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+.gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-warning { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
+.gox-tag.is-danger  { background: #fff1f0; color: var(--gox-danger); border-color: #ffccc7; }
+
+/* 溫層快速 tag（兩專案都會用） */
+.gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+
+/* ─────────────────────────────────────────────────
+   Icon button（鉛筆 / 確認 / 取消）
+   ───────────────────────────────────────────────── */
+.gox-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gox-radius);
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  font-size: 12px;
+  font-family: inherit;
+  transition: all .15s;
+}
+.gox-icon-btn:hover {
+  background: #f0f4f8;
+  color: var(--gox-info);
+  border-color: #bcd4ea;
+}
+.gox-icon-btn.is-confirm { background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
+.gox-icon-btn.is-confirm:hover { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+.gox-icon-btn.is-cancel  { background: #fff; color: #999; border-color: #ccc; }
+.gox-icon-btn.is-cancel:hover  { background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
+
+/* ─────────────────────────────────────────────────
+   通用工具 class
+   ───────────────────────────────────────────────── */
+/* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
+.is-hidden { display: none; }
+
+</style>
+</head>
+<body>
+<div class="gox-page">
+<header class="gox-header">
+  <a href="#" class="gox-logo">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農">
+  </a>
+  <nav class="gox-breadcrumb">
+    <a href="#">會員管理</a>
+    <span class="sep">&gt;</span>
+    <strong>會員編輯</strong>
+  </nav>
+  <div class="gox-header-right">
+    <span class="gox-user">示範帳號</span>
+    <button type="button" class="gox-icon-btn">登出</button>
+  </div>
+</header>
+
+<div class="gox-body">
+<aside class="gox-sidebar">
+  <div class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
+  <div class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
+  <a href="admin-gift-list.html" class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">禮物券管理</span></a>
+</aside>
+
+<main class="gox-content">
+<style>
+  /* ── 卡片版型沿用訂單頁 ──
+     來源：Areas/GoX/Views/Orders/_OrderAmountSection.cshtml
+           白底圓角卡片 ＋ #008000 綠底白字置中標題列 ＋ .amt2026-btn 系列
+     欄位內容照 Areas/GoX/Views/Volunteers/Edit.cshtml 現況補齊 */
+
+  .mem { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; font-size: 14px; color: #333; line-height: 1.6; max-width: 1320px; margin: 0 auto; }
+  .mem *, .mem *::before, .mem *::after { box-sizing: border-box; }
+
+  .mem h1 { font-size: 20px; margin: 0 0 4px; font-weight: 700; }
+  .mem .sub { color: #888; font-size: 13px; margin: 0 0 16px; }
+
+  /* 放不下兩欄就自動換行，左欄永遠不會被壓到 560px 以下 */
+  /* 上半兩欄：夠寬才並排，中間留 48px 並畫一條分隔線（線置中，兩側各 24px） */
+  .mtop  { display: grid; grid-template-columns: 1fr; align-items: start; }
+  .mtop > div + div { margin-top: 24px; }
+  @media (min-width: 1330px) {
+    .mtop { grid-template-columns: 1fr 1fr; }
+    .mtop > div + div { margin-top: 0; border-left: 1px solid #e6e6e6; padding-left: 24px; }
+    .mtop > div:first-child { padding-right: 24px; }
+  }
+  .mpair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 0 16px; align-items: start; }
+  .mtop > div, .mpair > div { min-width: 0; }
+
+  .mcard {
+    background: #fff; border: 1px solid #e6e6e6; border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,.04), 0 2px 6px 0 rgba(0,0,0,.03);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .mcard-head {
+    background: #008000; color: #fff; font-size: 16px; font-weight: 600;
+    padding: 12px 16px; display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .mcard-head .head-right { position: absolute; right: 12px; display: flex; gap: 6px; }
+  .mcard-body { padding: 20px 24px; }
+
+  .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+  .mfull { grid-column: 1 / -1; }
+  .mrow { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; }
+  .mlabel { width: 100px; flex: none; color: #333; padding-top: 5px; font-size: 13px; }
+  .mlabel .req { color: #dc4e43; }
+  .mval { flex: 1; min-width: 0; }
+  .mstatic { padding-top: 5px; color: #333; }
+  .mhint { color: #888; font-size: 12px; margin-top: 4px; }
+  .mhint.is-warn { color: #b8860b; }
+
+  .minput, .mselect, .mtextarea {
+    padding: 5px 8px; border: 1px solid #dcdfe6; border-radius: 4px;
+    font-family: inherit; font-size: 14px; background: #fff; width: 100%;
+  }
+  .minput:disabled { background: #f5f5f5; color: #666; }
+  .minput.is-s { width: 110px; }
+  .minput.is-m { width: 155px; }
+  .mtextarea { resize: vertical; }
+  .mchecks { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 5px; }
+  .mchecks label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .minline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mdivider { border: 0; border-top: 1px dashed #e6e6e6; margin: 14px 0; }
+  .msection-label { font-weight: 600; color: #333; margin: 0 0 10px; }
+
+  .amt2026-btn { padding: 4px 12px; font-size: 13px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; font-family: inherit; line-height: 1.5; background: #fff; }
+  .amt2026-btn-default { border-color: #dcdfe6; color: #333; }
+  .amt2026-btn-default:hover { background: #f5f7fa; }
+  .amt2026-btn-primary { background: #4ba83b; color: #fff; border-color: #4ba83b; }
+  .amt2026-btn-primary:hover { background: #3d8c30; }
+  .amt2026-btn-danger { background: #fff; color: #dc4e43; border-color: #dc4e43; }
+  .amt2026-btn-danger:hover { background: #fdf2f1; }
+  .amt2026-btn-ghost { border-color: rgba(255,255,255,.6); color: #fff; background: transparent; }
+  .amt2026-btn-ghost:hover { background: rgba(255,255,255,.14); }
+  .btn-save { padding: 8px 30px; border: 0; border-radius: 5px; font-size: 16px; color: #fff; background: #008000; cursor: pointer; font-family: inherit; }
+  .btn-save:hover { background: #006a00; }
+
+  .msubhead { font-size: 15px; font-weight: 700; color: #008000; border-bottom: 2px solid #d9ecd5; padding-bottom: 6px; margin: 0 0 12px; }
+  .msec + .msec { margin-top: 28px; }
+  .msave-row { margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; text-align: right; }
+
+  .mseg { display: inline-flex; border: 1px solid #dcdfe6; border-radius: 4px; overflow: hidden; flex: none; }
+  .mseg button { border: 0; background: #fff; color: #666; font-size: 13px; padding: 5px 12px; cursor: pointer; font-family: inherit; }
+  .mseg button + button { border-left: 1px solid #dcdfe6; }
+  .mseg button.is-on { background: #4ba83b; color: #fff; }
+
+  .mfold { display: none; }
+  .mfold.is-open { display: block; }
+
+  .mtable { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .mtable th, .mtable td { padding: 8px 10px; border-bottom: 1px solid #e6e6e6; text-align: left; }
+  .mtable th { background: #fafafa; font-weight: 600; color: #666; }
+  .mtable td.is-c, .mtable th.is-c { text-align: center; }
+  .mtable td.is-r, .mtable th.is-r { text-align: right; font-variant-numeric: tabular-nums; }
+  .mtable tbody tr:nth-child(odd) { background: #fafbfa; }
+  .mtable a { color: #4ba83b; }
+  .mcode { font-family: Consolas, 'Courier New', monospace; font-size: 12px; color: #555; }
+  .msub { display: block; color: #999; font-size: 11px; }
+  .mscroll { overflow-x: auto; }
+
+  .mst { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 12px; white-space: nowrap; }
+  .mst-unused  { background: #eef7ec; color: #2f6b26; }
+  .mst-used    { background: #f0f0f0; color: #666; }
+  .mst-expired { background: #fdecea; color: #b3261e; }
+  .mst-void    { background: #f5f5f5; color: #999; text-decoration: line-through; }
+  .mplus  { color: #4ba83b; font-weight: 600; }
+  .mminus { color: #dc4e43; font-weight: 600; }
+  .mnew   { background: #f7faf6 !important; }
+
+  .baby-lines .baby-line { display: flex; align-items: center; gap: 12px; padding: 5px 0; }
+  .baby-err td { color: #dc4e43; font-size: 12px; background: #fdf2f1 !important; }
+  .baby-editing td { background: #f7faf6 !important; }
+  .baby-editing .minput { width: 100%; }
+  #baby-body td:last-child { white-space: nowrap; }
+  .baby-lines .baby-line + .baby-line { border-top: 1px dashed #eee; }
+  .baby-lines .b-name { min-width: 5em; font-weight: 600; }
+  .baby-lines .b-date { font-variant-numeric: tabular-nums; color: #454545; }
+  .baby-lines .b-tag { font-size: 11px; color: #999; }
+
+  #rec-table:not(.has-op) .rec-op { display: none; }
+  .rec-revoked td { color: #aaa; }
+  .rec-revoked .mminus, .rec-revoked .mplus { color: #aaa; }
+  .rec-form td { background: #f7faf6 !important; }
+  .rec-form .minline { gap: 8px; }
+
+  .mfe { color: #dc4e43; font-size: 12px; margin-top: 4px; display: none; }
+  .mfe.is-on { display: block; }
+  .mval.has-err .minput, .mval.has-err .mselect { border-color: #dc4e43; background: #fdf2f1; }
+  .mval.has-err .mlabel { color: #dc4e43; }
+  .mrow.has-err .mlabel { color: #dc4e43; font-weight: 600; }
+  .merr { color: #dc4e43; font-size: 12px; margin-top: 4px; display: none; }
+  .merr.is-on { display: block; }
+  .mempty { color: #888; padding: 8px 0; }
+
+  .mbal { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .mbal .num { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .mtoolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .mtoolbar label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .msummary { margin-left: auto; color: #888; font-size: 13px; }
+  .mfoot-note { color: #888; font-size: 12px; margin-top: 8px; }
+
+  .mmask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
+  .mmask.is-open { display: flex; }
+  .mbox { background: #fff; border-radius: 6px; width: 100%; max-width: 720px; max-height: 82vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+  .mbox.is-narrow { max-width: 440px; }
+  .mbox-head { background: #008000; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 600; }
+  .mbox-close { background: transparent; border: 0; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; padding: 0 4px; }
+  .mbox-body { padding: 16px 20px; overflow-y: auto; }
+  .mbox-foot { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #eee; }
+
+  .mtoast-host { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .mtoast { background: rgba(0,0,0,.78); color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+
+  @media (max-width: 720px) { .mem .mgrid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="mem">
+
+  <h1>會員編輯</h1>
+  <p class="sub">會員編號 900005　示範會員</p>
+
+  <div class="mcard">
+    <div class="mcard-head">基本資料</div>
+    <div class="mcard-body">
+      <div class="mtop">
+        <div>
+          <div class="msubhead">會員資料</div>
+          <div class="mgrid">
+            <div class="mrow"><div class="mlabel">會員編號</div><div class="mval"><div class="mstatic">900005</div></div></div>
+            <div class="mrow"><div class="mlabel">註冊方式</div><div class="mval"><div class="mstatic">手機註冊</div></div></div>
+
+            <div class="mrow"><div class="mlabel">姓名<span class="req">*</span></div><div class="mval"><input type="text" class="minput" value="示範會員"></div></div>
+            <div class="mrow"><div class="mlabel">性別</div><div class="mval">
+              <select class="mselect"><option>女</option><option selected>男</option><option>不透露</option></select>
+            </div></div>
+
+            <div class="mrow"><div class="mlabel">帳號（手機）<span class="req">*</span></div><div class="mval"><input type="text" class="minput" value="0900000008"></div></div>
+            <div class="mrow"><div class="mlabel">信箱</div><div class="mval"><input type="text" class="minput" value="demo@example.com"></div></div>
+
+            <div class="mrow"><div class="mlabel">生日</div><div class="mval"><input type="date" class="minput is-m" value="1990-05-12"></div></div>
+            <div class="mrow"><div class="mlabel">會員等級</div><div class="mval"><div class="mstatic">VIP　<span style="color:#888;font-size:12px;">2025/03/12 升等</span></div></div></div>
+
+            <div class="mrow"><div class="mlabel">密碼</div><div class="mval">
+              <div class="minline">
+                <button type="button" class="amt2026-btn amt2026-btn-default" id="pw-open">重設密碼</button>
+                <span class="mhint" style="margin:0;" id="pw-hint">上次變更 2025/03/12</span>
+              </div>
+            </div></div>
+            <div class="mrow"><div class="mlabel">黑名單</div><div class="mval">
+              <div class="minline">
+                <span class="mstatic" id="bl-state">未列入</span>
+                <button type="button" class="amt2026-btn amt2026-btn-danger" id="bl-toggle">列入黑名單</button>
+              </div>
+            </div></div>
+
+            <div class="mrow mfull"><div class="mlabel">寶寶生日</div><div class="mval">
+              <div class="minline" style="align-items:flex-start;">
+                <div class="baby-lines" id="baby-lines"></div>
+                <div class="mhint" id="baby-none" style="display:none;margin:5px 0 0;">此會員尚未登記寶寶資料。</div>
+                <button type="button" class="amt2026-btn amt2026-btn-default" id="baby-open">編輯</button>
+              </div>
+            </div></div>
+
+            <hr class="mdivider mfull">
+
+            <div class="mrow mfull">
+              <div class="mlabel">會員備註</div>
+              <div class="mval">
+                <textarea class="mtextarea" rows="3" placeholder="會員備註，例：不吃木瓜"></textarea>
+                <div class="mchecks"><label><input type="checkbox"> 覆蓋今日以後的訂單</label></div>
+              </div>
+            </div>
+
+            <hr class="mdivider mfull">
+
+            <div class="mrow"><div class="mlabel">註冊時間</div><div class="mval"><div class="mstatic">2024/11/02 09:31</div></div></div>
+            <div class="mrow"><div class="mlabel">更新時間</div><div class="mval"><div class="mstatic">2026/08/03 11:20</div></div></div>
+            <div class="mrow mfull"><div class="mlabel">最後修改者</div><div class="mval"><div class="mstatic">客服 A012</div></div></div>
+          </div>
+        
+        </div>
+        <div>
+          <div class="msec">
+            <div class="msubhead">物流資訊</div>
+          <div class="mrow"><div class="mlabel">禁止貨到付款</div><div class="mval">
+            <div class="mchecks">
+              <label><input type="checkbox" id="cod-stop"> 啟用</label>
+              <span class="mstatic" id="cod-date" style="padding-top:0;">解除日期：2026/10/01 09:36:27</span>
+            </div>
+            <div class="mchecks"><label><input type="checkbox" id="cod-perm"> 永久啟用</label></div>
+          </div></div>
+
+          <div class="mrow"><div class="mlabel">禁止現金自取</div><div class="mval">
+            <div class="mchecks">
+              <label><input type="checkbox" id="pick-stop"> 啟用</label>
+              <span class="mstatic" style="padding-top:0;">解除日期：2026/10/01 09:36:27</span>
+            </div>
+          </div></div>
+
+          <div class="mrow"><div class="mlabel">地址</div><div class="mval">
+            <div class="minline" style="margin-bottom:8px;">
+              <select class="mselect" style="width:130px;"><option>縣市</option><option selected>台東縣</option><option>台北市</option></select>
+              <select class="mselect" style="width:150px;"><option>鄉鎮市區</option><option selected>池上鄉</option><option>關山鎮</option></select>
+            </div>
+            <input type="text" class="minput" value="台東縣池上鄉忠孝路269號">
+          </div></div>
+
+          <div class="mrow"><div class="mlabel">收件時間</div><div class="mval">
+            <div class="mchecks">
+              <label><input type="radio" name="recv" value="1"> 早上 08:00~12:00</label>
+              <label><input type="radio" name="recv" value="2"> 下午 12:00~17:00</label>
+              <label><input type="radio" name="recv" value="3"> 晚上 17:00~20:00</label>
+              <label><input type="radio" name="recv" value="4" checked> 不指定</label>
+            </div>
+          </div></div>
+
+          <div class="mrow"><div class="mlabel">出貨備註</div><div class="mval">
+            <textarea class="mtextarea" rows="4" placeholder="出貨單上的備註，例：管理員可代收，假日不再家。"></textarea>
+          </div></div>
+        
+          </div>
+          <div class="msec">
+            <div class="msubhead">特殊紀錄</div>
+          <div class="mrow"><div class="mlabel">新增紀錄</div><div class="mval">
+            <textarea class="mtextarea" id="ir-text" rows="3" maxlength="500" placeholder="內部備註，客人看不到"></textarea>
+            <div style="margin-top:8px;"><button type="button" class="amt2026-btn amt2026-btn-primary" id="ir-add">新增</button></div>
+          </div></div>
+          <div class="mscroll">
+            <table class="mtable">
+              <thead><tr><th>特殊紀錄</th><th style="width:110px;" class="is-c">新增時間</th><th style="width:80px;" class="is-c">人員</th></tr></thead>
+              <tbody id="ir-body">
+                <tr><td>曾反映生日禮簡訊沒收到，已補發</td><td class="is-c">2026/08/03 11:20</td><td class="is-c">客服 A012</td></tr>
+                <tr><td>指定收貨時間 13:00 前，超過請改隔日</td><td class="is-c">2026/05/14 16:02</td><td class="is-c">客服 B004</td></tr>
+              </tbody>
+            </table>
+          </div>
+        
+          </div>
+        </div>
+      </div>
+      <div class="msave-row"><button type="button" class="btn-save" id="save">儲存</button></div>
+    </div>
+  </div>
+
+  <!-- ── 購物金 ｜ 紅利點數 ── -->
+  <div class="mpair">
+    <div>
+      <div class="mcard">
+        <div class="mcard-head">
+          購物金
+          <div class="head-right">
+            <button type="button" class="amt2026-btn amt2026-btn-ghost" data-rec="bonus">歷史紀錄</button>
+            <button type="button" class="amt2026-btn amt2026-btn-ghost" data-fold="bonus-form" data-open-text="贈送／扣除" data-close-text="收起">贈送／扣除</button>
+          </div>
+        </div>
+        <div class="mcard-body">
+          <div class="mbal"><span class="num" id="bonus-bal">120</span><span>元</span></div>
+          <div class="mfold" id="bonus-form">
+            <hr class="mdivider">
+            <div class="mrow" data-field="bonus-amt"><div class="mlabel">增減金額<span class="req">*</span></div><div class="mval">
+              <input type="number" class="minput is-s" id="bonus-amt" placeholder="0">
+              <div class="mhint">負數為扣除</div>
+              <div class="mfe" data-fe="bonus-amt"></div>
+            </div></div>
+            <div class="mrow"><div class="mlabel">訂單編號</div><div class="mval"><input type="text" class="minput is-m" id="bonus-order" placeholder="可不填"></div></div>
+            <div class="mrow" data-field="bonus-reason"><div class="mlabel">原因<span class="req">*</span></div><div class="mval">
+              <input type="text" class="minput" id="bonus-reason" placeholder="贈送／扣除購物金的原因">
+              <div class="mfe" data-fe="bonus-reason"></div>
+            </div></div>
+            <div style="margin-top:12px;text-align:right;"><button type="button" class="amt2026-btn amt2026-btn-primary" id="bonus-send">送出購物金異動</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="mcard">
+        <div class="mcard-head">
+          紅利點數
+          <div class="head-right">
+            <button type="button" class="amt2026-btn amt2026-btn-ghost" data-rec="point">歷史紀錄與收回</button>
+            <button type="button" class="amt2026-btn amt2026-btn-ghost" data-fold="rp-form" data-open-text="發放點數" data-close-text="收起">發放點數</button>
+          </div>
+        </div>
+        <div class="mcard-body">
+          <div class="mbal"><span class="num" id="rp-bal">840</span><span>點</span>
+            <span class="mhint is-warn" style="margin:0;">120 點將於 2026/09/30 到期</span></div>
+          <div class="mfold" id="rp-form">
+            <hr class="mdivider">
+            <div class="mrow" data-field="rp-amt"><div class="mlabel">點數<span class="req">*</span></div><div class="mval">
+              <input type="number" class="minput is-s" id="rp-amt" placeholder="0">
+              <div class="mfe" data-fe="rp-amt"></div>
+            </div></div>
+            <div class="mrow" data-field="rp-range"><div class="mlabel">使用期限<span class="req">*</span></div><div class="mval">
+              <div class="minline">
+                <input type="date" class="minput is-m" id="rp-start" value="2026-08-06">
+                <span>至</span>
+                <input type="date" class="minput is-m" id="rp-end" value="2026-12-31">
+              </div>
+              <div class="mfe" data-fe="rp-range"></div>
+            </div></div>
+            <div class="mrow" data-field="rp-reason"><div class="mlabel">發放原因<span class="req">*</span></div><div class="mval">
+              <input type="text" class="minput" id="rp-reason" placeholder="必填">
+              <div class="mfe" data-fe="rp-reason"></div>
+            </div></div>
+            <div style="margin-top:12px;text-align:right;"><button type="button" class="amt2026-btn amt2026-btn-primary" id="rp-send">發送紅利點數</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 優惠券 ── -->
+  <div class="mcard">
+    <div class="mcard-head">
+      優惠券
+      <div class="head-right">
+        <button type="button" class="amt2026-btn amt2026-btn-ghost" data-fold="cp-form" data-open-text="發送優惠券" data-close-text="收起">發送優惠券</button>
+      </div>
+    </div>
+    <div class="mcard-body">
+      <div class="mtoolbar">
+        <label><input type="checkbox" id="cp-showall"> 顯示已用完與已過期的</label>
+        <span class="msummary" id="cp-summary"></span>
+      </div>
+      <div class="mscroll">
+        <table class="mtable">
+          <thead>
+            <tr>
+              <th style="width:26%;">券名</th>
+              <th style="width:10%;" class="is-r">面額</th>
+              <th style="width:8%;" class="is-c">剩餘</th>
+              <th style="width:12%;" class="is-r">使用門檻</th>
+              <th style="width:20%;" class="is-c">使用期限</th>
+              <th style="width:18%;">限定產線</th>
+              <th style="width:8%;" class="is-c">狀態</th>
+            </tr>
+          </thead>
+          <tbody id="cp-body"></tbody>
+        </table>
+      </div>
+      <div class="mfoot-note" id="cp-note"></div>
+
+      <div class="mfold" id="cp-form">
+        <hr class="mdivider">
+        <div class="msection-label">發送優惠券</div>
+        <div class="mgrid">
+          <div class="mrow"><div class="mlabel">券值<span class="req">*</span></div><div class="mval">
+            <div class="minline">
+              <div class="mseg" id="cp-type">
+                <button type="button" class="is-on" data-cptype="amount">金額型</button>
+                <button type="button" data-cptype="rate">折數型</button>
+              </div>
+              <input type="number" class="minput is-s" id="cp-price" placeholder="0">
+              <span class="mhint" style="margin:0;" id="cp-unit">元</span>
+            </div>
+            <div class="mhint" id="cp-pct-hint" style="display:none;">八折輸入 80、八五折輸入 85</div>
+          </div></div>
+          <div class="mrow"><div class="mlabel">使用門檻</div><div class="mval">
+            <input type="number" class="minput is-s" id="cp-min" placeholder="非必填">
+            <div class="mhint">訂單金額滿這個數字才能用，留空表示不限</div>
+          </div></div>
+          <div class="mrow"><div class="mlabel">使用期限<span class="req">*</span></div><div class="mval">
+            <div class="minline">
+              <input type="date" class="minput is-m" id="cp-start" value="2026-08-06">
+              <span>至</span>
+              <input type="date" class="minput is-m" id="cp-end" value="2026-09-30">
+            </div>
+            <div class="mhint">結束日設 2026/09/30，實際到 2026/09/30 23:59:59</div>
+          </div></div>
+          <div class="mrow"><div class="mlabel">券名<span class="req">*</span></div><div class="mval"><input type="text" class="minput" id="cp-name" placeholder="必填"></div></div>
+          <div class="mrow mfull"><div class="mlabel">限定產線</div><div class="mval">
+            <div class="mchecks" id="cp-lines">
+              <label><input type="checkbox" id="cp-all" checked> 全部</label>
+              <label><input type="checkbox" class="cp-line" value="產地直送"> 產地直送</label>
+              <label><input type="checkbox" class="cp-line" value="快速到貨"> 快速到貨</label>
+              <label><input type="checkbox" class="cp-line" value="冷凍專區"> 冷凍</label>
+              <label><input type="checkbox" class="cp-line" value="箱類"> 箱類</label>
+              <label><input type="checkbox" class="cp-line" value="粥寶寶專區"> 粥寶寶</label>
+              <label><input type="checkbox" class="cp-line" value="益菓保"> 益菓保</label>
+            </div>
+            <div class="merr" id="cp-err">券值與券名為必填。</div>
+          </div></div>
+        </div>
+        <div style="margin-top:12px;text-align:right;"><button type="button" class="amt2026-btn amt2026-btn-primary" id="cp-send">發送優惠券</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 禮物券（接手大冰箱券的位置）── -->
+  <div class="mcard">
+    <div class="mcard-head">禮物券</div>
+    <div class="mcard-body">
+      <div class="mtoolbar">
+        <label><input type="checkbox" id="gv-showall"> 顯示已使用與已過期的</label>
+        <span class="msummary" id="gv-summary"></span>
+      </div>
+      <div id="gv-wrap" class="mscroll">
+        <table class="mtable">
+          <thead>
+            <tr>
+              <th style="width:22%;">禮物名稱</th>
+              <th style="width:16%;">券號</th>
+              <th style="width:10%;" class="is-c">狀態</th>
+              <th style="width:13%;" class="is-c">到期日</th>
+              <th style="width:22%;">發放來源</th>
+              <th style="width:17%;" class="is-c">使用的訂單編號</th>
+            </tr>
+          </thead>
+          <tbody id="gv-body"></tbody>
+        </table>
+      </div>
+      <div class="mempty" id="gv-empty" style="display:none;">目前沒有可顯示的禮物券。</div>
+      <div class="mfoot-note" id="gv-note"></div>
+    </div>
+  </div>
+
+
+</div>
+
+<!-- 歷史紀錄 -->
+<div class="mmask" id="rec-mask">
+  <div class="mbox">
+    <div class="mbox-head"><span id="rec-title">歷史紀錄</span><button type="button" class="mbox-close" data-close>&times;</button></div>
+    <div class="mbox-body">
+      <table class="mtable" id="rec-table" style="margin-top:0;">
+        <thead><tr>
+          <th style="width:140px;">訂單編號</th>
+          <th style="width:80px;" class="is-r">計算</th>
+          <th>備註</th>
+          <th style="width:140px;" class="is-c">建立時間</th>
+          <th class="rec-op" style="width:80px;" class="is-c">操作</th>
+        </tr></thead>
+        <tbody id="rec-body"></tbody>
+      </table>
+    </div>
+    <div class="mbox-foot"><button type="button" class="amt2026-btn amt2026-btn-default" data-close>關閉</button></div>
+  </div>
+</div>
+
+<!-- 寶寶資料（列表：新增／編輯／刪除） -->
+<div class="mmask" id="baby-mask">
+  <div class="mbox">
+    <div class="mbox-head">
+      <span>寶寶資料</span>
+      <span style="display:flex;align-items:center;gap:10px;">
+        <button type="button" class="amt2026-btn amt2026-btn-ghost" id="baby-add">新增寶寶</button>
+        <button type="button" class="mbox-close" data-baby-close>&times;</button>
+      </span>
+    </div>
+    <div class="mbox-body">
+      <table class="mtable" style="margin-top:0;">
+        <thead>
+          <tr>
+            <th style="width:15%;">小名</th>
+            <th style="width:16%;" class="is-c">生日</th>
+            <th style="width:19%;" class="is-c">初次填寫時間</th>
+            <th style="width:28%;">生日禮</th>
+            <th style="width:22%;" class="is-c">操作</th>
+          </tr>
+        </thead>
+        <tbody id="baby-body"></tbody>
+      </table>
+      <div class="mempty" id="baby-empty" style="display:none;">此會員尚未登記寶寶資料。</div>
+      <div id="baby-warn" style="display:none;margin-top:12px;padding:10px 12px;background:#fff9e6;border-left:3px solid #ffd591;color:#874d00;font-size:13px;line-height:1.7;">
+        此寶寶已發過生日禮，修改生日<strong>不會重新發放</strong>，也<strong>不會收回已發的券</strong>。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 重設密碼 -->
+<div class="mmask" id="pw-mask">
+  <div class="mbox is-narrow">
+    <div class="mbox-head"><span>重設密碼</span><button type="button" class="mbox-close" data-pw-close>&times;</button></div>
+    <div class="mbox-body">
+      <div class="mrow"><div class="mlabel">新密碼<span class="req">*</span></div><div class="mval"><input type="password" class="minput" id="pw-new"></div></div>
+      <div class="mrow"><div class="mlabel">確認密碼<span class="req">*</span></div><div class="mval">
+        <input type="password" class="minput" id="pw-confirm">
+        <div class="merr" id="pw-err"></div>
+      </div></div>
+    </div>
+    <div class="mbox-foot">
+      <button type="button" class="amt2026-btn amt2026-btn-default" data-pw-close>取消</button>
+      <button type="button" class="amt2026-btn amt2026-btn-primary" id="pw-save">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="mtoast-host" id="toast-host"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function toast(msg) {
+    var el = document.createElement('div');
+    el.className = 'mtoast';
+    el.textContent = msg;
+    $('toast-host').appendChild(el);
+    setTimeout(function () { el.remove(); }, 3400);
+  }
+  var NOW = '2026/08/06 15:40';
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function todayIso() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function nowStamp() {
+    var d = new Date();
+    return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate())
+      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  /* ── 收合 ── */
+  var folds = document.querySelectorAll('[data-fold]');
+  for (var f = 0; f < folds.length; f++) {
+    (function (b) {
+      b.addEventListener('click', function () {
+        var box = $(b.getAttribute('data-fold'));
+        var open = box.classList.toggle('is-open');
+        b.textContent = open ? b.getAttribute('data-close-text') : b.getAttribute('data-open-text');
+      });
+    })(folds[f]);
+  }
+
+  /* ── 優惠券持有清單 ── */
+  var COUPONS = [
+    { name: '誠摯期待相見券', face: '150 元', left: 1, min: '', s: '2026/07/27', e: '2026/08/31', lines: '產地直送、冷凍專區', st: 'unused' },
+    { name: '中秋轉盤-$100 折價券', face: '100 元', left: 1, min: '', s: '2026/08/01', e: '2026/09/30', lines: '產地直送、冷凍專區', st: 'unused' },
+    { name: '自動測試用-面額', face: '20 元', left: 50, min: '100', s: '2026/06/25', e: '2030/12/31', lines: '全部產線', st: 'unused' },
+    { name: '自動測試用-折數', face: '9 折', left: 41, min: '100', s: '2026/06/25', e: '2030/12/31', lines: '全部產線', st: 'unused' },
+    { name: '產品回饋輪盤', face: '5～50 元', left: 6, min: '', s: '2026/07/08', e: '2026/11/05', lines: '全部產線', st: 'unused' },
+    { name: '中秋轉盤-$20 折價券', face: '20 元', left: 0, min: '', s: '2026/08/01', e: '2026/09/30', lines: '產地直送、冷凍專區', st: 'used' },
+    { name: '端午限定折價券', face: '80 元', left: 0, min: '600', s: '2026/05/20', e: '2026/06/20', lines: '產地直送', st: 'expired' },
+    { name: '新客首購券', face: '50 元', left: 0, min: '300', s: '2024/11/02', e: '2024/12/02', lines: '全部產線', st: 'expired' }
+  ];
+  var ST = { unused: ['可用', 'mst-unused'], used: ['已用完', 'mst-used'], expired: ['已過期', 'mst-expired'], "void": ['已作廢', 'mst-void'] };
+
+  function renderCoupon() {
+    var showAll = $('cp-showall').checked;
+    var list = showAll ? COUPONS : COUPONS.filter(function (c) { return c.st === 'unused'; });
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i], s = ST[c.st];
+      html += '<tr' + (c.isNew ? ' class="mnew"' : '') + '>'
+        + '<td>' + esc(c.name) + '</td>'
+        + '<td class="is-r">' + esc(c.face) + '</td>'
+        + '<td class="is-c">' + (c.left || '—') + '</td>'
+        + '<td class="is-r">' + (c.min ? c.min + ' 元' : '無') + '</td>'
+        + '<td class="is-c">' + esc(c.s) + ' ～ ' + esc(c.e) + '</td>'
+        + '<td>' + esc(c.lines) + '</td>'
+        + '<td class="is-c"><span class="mst ' + s[1] + '">' + s[0] + '</span></td>'
+        + '</tr>';
+    }
+    $('cp-body').innerHTML = html || '<tr><td colspan="7" style="color:#888;text-align:center;">沒有可顯示的優惠券。</td></tr>';
+    var n = { unused: 0, used: 0, expired: 0 }, total = 0;
+    for (var j = 0; j < COUPONS.length; j++) { n[COUPONS[j].st]++; total += COUPONS[j].left; }
+    $('cp-summary').textContent = '可用 ' + n.unused + ' 種（共 ' + total + ' 張）';
+    var hidden = COUPONS.length - list.length;
+    $('cp-note').textContent = hidden ? '另有 ' + hidden + ' 種已用完或已過期的沒有顯示。' : '';
+  }
+  $('cp-showall').addEventListener('change', renderCoupon);
+  renderCoupon();
+
+  /* ── 禮物券 ── */
+  var ROWS = [
+    { name: '寶寶果泥 隨手包', code: 'BD-260803-0052', st: 'unused',  end: '2026/08/17', src: '排程', sub: '粥寶生日禮', order: '' },
+    { name: '季節果乾 隨手包', code: 'SF-260806-0011', st: 'unused',  end: '2026/09/12', src: '人工', sub: '客服 A012・補償未收到簡訊', order: '' },
+    { name: '有機米餅 二入',   code: 'MF-260728-0107', st: 'used',    end: '2026/08/02', src: '人工', sub: '客服 A012', order: '260728751188' },
+    { name: '寶寶果泥 隨手包', code: 'BD-260727-0041', st: 'used',    end: '2026/08/10', src: '排程', sub: '粥寶生日禮', order: '260728751188' },
+    { name: '寶寶果泥 隨手包', code: 'BD-260615-0338', st: 'expired', end: '2026/06/29', src: '排程', sub: '粥寶生日禮', order: '' },
+    { name: '中秋米禮 一盒',   code: 'MC-260520-0204', st: 'used',    end: '2026/06/03', src: '排程', sub: '中秋檔期滿額贈', order: '260522750433' },
+    { name: '寶寶果泥 隨手包', code: 'BD-260504-0176', st: 'expired', end: '2026/05/18', src: '排程', sub: '粥寶生日禮', order: '' }
+  ];
+  var GST = { unused: ['未使用', 'mst-unused'], used: ['已使用', 'mst-used'], expired: ['已過期', 'mst-expired'], "void": ['已作廢', 'mst-void'] };
+
+  function renderGift() {
+    var showAll = $('gv-showall').checked;
+    var list = showAll ? ROWS : ROWS.filter(function (r) { return r.st === 'unused'; });
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i], s = GST[r.st];
+      html += '<tr>'
+        + '<td>' + esc(r.name) + '</td>'
+        + '<td><span class="mcode">' + esc(r.code) + '</span></td>'
+        + '<td class="is-c"><span class="mst ' + s[1] + '">' + s[0] + '</span></td>'
+        + '<td class="is-c">' + esc(r.end) + '</td>'
+        + '<td>' + esc(r.src) + '<span class="msub">' + esc(r.sub) + '</span></td>'
+        + '<td class="is-c">' + (r.order ? '<a href="admin-order-refund-gift.html">' + esc(r.order) + '</a>' : '—') + '</td>'
+        + '</tr>';
+    }
+    $('gv-body').innerHTML = html;
+    $('gv-wrap').style.display = list.length ? '' : 'none';
+    $('gv-empty').style.display = list.length ? 'none' : '';
+    var n = { unused: 0, used: 0, expired: 0 };
+    for (var j = 0; j < ROWS.length; j++) n[ROWS[j].st]++;
+    $('gv-summary').textContent = '未使用 ' + n.unused + '　已使用 ' + n.used + '　已過期 ' + n.expired;
+    var hidden = ROWS.length - list.length;
+    $('gv-note').textContent = hidden ? '另有 ' + hidden + ' 張已使用或已過期的沒有顯示。' : '';
+  }
+  $('gv-showall').addEventListener('change', renderGift);
+  renderGift();
+
+  /* ── 歷史紀錄（購物金／紅利的唯一去處，發放完就寫進這裡）── */
+  var RECORDS = {
+    bonus: { title: '購物金-歷史紀錄', unit: '元', bal: 'bonus-bal', rows: [
+      ['260728751188', -100, '訂單使用購物金。', '2026/07/28 16:41'],
+      ['260712750988', -100, '訂單使用購物金。', '2026/07/12 09:05'],
+      ['260630750871', 170, '客服調整優惠方案，退還購物金', '2026/06/30 18:40'],
+      ['260618750804', -30, '訂單使用購物金。', '2026/06/18 20:11'],
+      ['260605750742', 20, '訂單取消退回購物金', '2026/06/05 13:47'],
+      ['—', 100, '活動贈送', '2026/05/02 08:30']
+    ]},
+    point: { title: '紅利點數-歷史紀錄', titleRevoke: '紅利點數-歷史紀錄與收回', revoke: true, unit: '點', bal: 'rp-bal', rows: [
+      ['260728751188', 126, '消費累積', '2026/07/28 16:41'],
+      ['260712750988', 88, '消費累積', '2026/07/12 09:05'],
+      ['—', -200, '兌換商品', '2026/06/15 11:30'],
+      ['260618750804', 245, '消費累積', '2026/06/18 20:11'],
+      ['—', 120, '生日禮贈點', '2026/03/12 08:00'],
+      ['—', -50, '點數到期', '2026/01/31 23:59']
+    ]}
+  };
+  var recKey = null;
+  function renderRec() {
+    var r = RECORDS[recKey];
+    var canRevoke = !!r.revoke;
+    $('rec-title').textContent = (canRevoke ? r.titleRevoke : r.title)
+      + '（' + $(r.bal).textContent + ' ' + r.unit + '）';
+    $('rec-table').classList.toggle('has-op', canRevoke);
+    var html = '';
+    for (var i = 0; i < r.rows.length; i++) {
+      var row = r.rows[i], v = row[1], revoked = row[5];
+      var cls = [];
+      if (row[4]) cls.push('mnew');
+      if (revoked) cls.push('rec-revoked');
+      html += '<tr' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>'
+            + '<td>' + esc(row[0]) + '</td>'
+            + '<td class="is-r ' + (v > 0 ? 'mplus' : 'mminus') + '">' + (v > 0 ? '+' : '') + v + '</td>'
+            + '<td>' + esc(row[2]) + (revoked ? '　<span style="color:#b3261e;">已收回</span>' : '') + '</td>'
+            + '<td class="is-c">' + esc(row[3]) + '</td>'
+            + '<td class="rec-op is-c">'
+            + (canRevoke && v > 0 && !revoked
+                ? '<button type="button" class="amt2026-btn amt2026-btn-danger" data-revoke="' + i + '">收回</button>'
+                : '')
+            + '</td></tr>';
+    }
+    $('rec-body').innerHTML = html;
+  }
+  function openRec(key) {
+    recKey = key;
+    renderRec();
+    $('rec-mask').classList.add('is-open');
+  }
+
+  $('rec-body').addEventListener('click', function (e) {
+    var rv = e.target.closest('[data-revoke]');
+    if (rv) {
+      var idx = Number(rv.getAttribute('data-revoke'));
+      var tr = rv.closest('tr');
+      if (tr.nextElementSibling && tr.nextElementSibling.classList.contains('rec-form')) return;
+      var form = document.createElement('tr');
+      form.className = 'rec-form';
+      form.innerHTML = '<td colspan="5">'
+        + '<div class="minline"><span style="font-size:13px;">收回原因</span>'
+        + '<input type="text" class="minput" style="width:280px;" data-rv-reason placeholder="必填，例：訂單取消、誤發">'
+        + '<button type="button" class="amt2026-btn amt2026-btn-primary" data-rv-ok="' + idx + '">確認收回</button>'
+        + '<button type="button" class="amt2026-btn amt2026-btn-default" data-rv-cancel>取消</button></div>'
+        + '<div class="mfe" data-rv-err>請填寫收回原因。</div></td>';
+      tr.after(form);
+      form.querySelector('[data-rv-reason]').focus();
+      return;
+    }
+    if (e.target.closest('[data-rv-cancel]')) { e.target.closest('tr').remove(); return; }
+    var ok = e.target.closest('[data-rv-ok]');
+    if (ok) {
+      var form = ok.closest('tr');
+      var reason = form.querySelector('[data-rv-reason]').value.trim();
+      var err = form.querySelector('[data-rv-err]');
+      err.classList.toggle('is-on', !reason);
+      if (!reason) return;
+      var i = Number(ok.getAttribute('data-rv-ok'));
+      var r = RECORDS[recKey], row = r.rows[i];
+      row[5] = true;
+      $(r.bal).textContent = Number($(r.bal).textContent) - row[1];
+      r.rows.unshift(['—', -row[1], '客服收回：' + reason + '（原紀錄 ' + row[3] + '）', NOW, true, false]);
+      renderRec();
+      toast('已收回 ' + row[1] + ' ' + r.unit);
+    }
+  });
+  var recBtns = document.querySelectorAll('[data-rec]');
+  for (var i = 0; i < recBtns.length; i++) {
+    (function (b) { b.addEventListener('click', function () { openRec(b.getAttribute('data-rec')); }); })(recBtns[i]);
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-close]')) $('rec-mask').classList.remove('is-open');
+    if (e.target === $('rec-mask')) $('rec-mask').classList.remove('is-open');
+  });
+
+  /* ── 發放紅利點數：寫進歷史紀錄，畫面上不留浮動列 ── */
+  function setFieldErr(key, msg) {
+    var row = document.querySelector('[data-field="' + key + '"]');
+    var fe = document.querySelector('[data-fe="' + key + '"]');
+    if (!row) return;
+    row.classList.toggle('has-err', !!msg);
+    row.querySelector('.mval').classList.toggle('has-err', !!msg);
+    if (fe) { fe.textContent = msg || ''; fe.classList.toggle('is-on', !!msg); }
+  }
+  function firstBad(list) {
+    for (var i = 0; i < list.length; i++) if (list[i][1]) return list[i][0];
+    return null;
+  }
+  function applyErrs(list) {
+    for (var i = 0; i < list.length; i++) setFieldErr(list[i][0], list[i][1]);
+    var f = firstBad(list);
+    if (f) {
+      var el = document.querySelector('[data-field="' + f + '"] .minput');
+      if (el) el.focus();
+    }
+    return !!f;
+  }
+
+  $('rp-send').addEventListener('click', function () {
+    var amt = Number($('rp-amt').value);
+    var s = $('rp-start').value, e2 = $('rp-end').value;
+    var reason = $('rp-reason').value.trim();
+    var bad = applyErrs([
+      ['rp-amt', $('rp-amt').value.trim() === '' ? '請填寫點數' : (!(amt > 0) ? '點數要大於 0' : '')],
+      ['rp-range', (!s || !e2) ? '請填寫完整的使用期限' : (s > e2 ? '結束日不能早於開始日' : '')],
+      ['rp-reason', reason ? '' : '請填寫發放原因']
+    ]);
+    if (bad) return;
+    $('rp-bal').textContent = Number($('rp-bal').textContent) + amt;
+    RECORDS.point.rows.unshift(['—', amt, reason + '（效期 ' + s.replace(/-/g, '/') + ' ～ ' + e2.replace(/-/g, '/') + '）', NOW, true, false]);
+    $('rp-amt').value = ''; $('rp-reason').value = '';
+    applyErrs([['rp-amt', ''], ['rp-range', ''], ['rp-reason', '']]);
+    openRec('point');
+    toast('已發放 ' + amt + ' 點');
+  });
+
+  /* ── 購物金異動 ── */
+  $('bonus-send').addEventListener('click', function () {
+    var amt = Number($('bonus-amt').value);
+    var reason = $('bonus-reason').value.trim();
+    var bad = applyErrs([
+      ['bonus-amt', $('bonus-amt').value.trim() === '' ? '請填寫增減金額' : (!amt ? '金額不能為 0' : '')],
+      ['bonus-reason', reason ? '' : '請填寫原因']
+    ]);
+    if (bad) return;
+    $('bonus-bal').textContent = Number($('bonus-bal').textContent) + amt;
+    var order = $('bonus-order').value.trim();
+    RECORDS.bonus.rows.unshift([order || '—', amt, reason, NOW, true, false]);
+    $('bonus-amt').value = ''; $('bonus-reason').value = ''; $('bonus-order').value = '';
+    applyErrs([['bonus-amt', ''], ['bonus-reason', '']]);
+    openRec('bonus');
+    toast((amt > 0 ? '已贈送 ' : '已扣除 ') + Math.abs(amt) + ' 元');
+  });
+
+  /* ── 發送優惠券：直接進持有清單 ── */
+  var cpType = 'amount';
+  var segBtns = document.querySelectorAll('#cp-type button');
+  for (var sb = 0; sb < segBtns.length; sb++) {
+    (function (b) {
+      b.addEventListener('click', function () {
+        for (var k = 0; k < segBtns.length; k++) segBtns[k].classList.remove('is-on');
+        b.classList.add('is-on');
+        cpType = b.getAttribute('data-cptype');
+        $('cp-unit').textContent = cpType === 'rate' ? '％' : '元';
+        $('cp-pct-hint').style.display = cpType === 'rate' ? '' : 'none';
+      });
+    })(segBtns[sb]);
+  }
+  $('cp-all').addEventListener('change', function () {
+    var on = this.checked, ls = document.querySelectorAll('.cp-line');
+    for (var i = 0; i < ls.length; i++) { ls[i].checked = false; ls[i].disabled = on; }
+  });
+  (function () { var ls = document.querySelectorAll('.cp-line'); for (var i = 0; i < ls.length; i++) ls[i].disabled = true; })();
+
+  $('cp-send').addEventListener('click', function () {
+    var price = Number($('cp-price').value);
+    var name = $('cp-name').value.trim();
+    var bad = !(price > 0) || !name;
+    $('cp-err').classList.toggle('is-on', bad);
+    if (bad) return;
+    var pct = (cpType === 'rate'), lines = [];
+    if ($('cp-all').checked) { lines = ['全部產線']; }
+    else {
+      var ls = document.querySelectorAll('.cp-line');
+      for (var i = 0; i < ls.length; i++) if (ls[i].checked) lines.push(ls[i].value);
+      if (!lines.length) lines = ['全部產線'];
+    }
+    COUPONS.unshift({
+      name: name, face: pct ? (price / 10) + ' 折' : price + ' 元', left: 1,
+      min: $('cp-min').value, s: $('cp-start').value.replace(/-/g, '/'), e: $('cp-end').value.replace(/-/g, '/'),
+      lines: lines.join('、'), st: 'unused', isNew: true
+    });
+    renderCoupon();
+    $('cp-price').value = ''; $('cp-name').value = ''; $('cp-min').value = '';
+    $('cp-form').classList.remove('is-open');
+    document.querySelector('[data-fold="cp-form"]').textContent = '發送優惠券';
+    toast('已發送優惠券「' + name + '」');
+  });
+
+  /* ── 重設密碼 ── */
+  $('pw-open').addEventListener('click', function () {
+    $('pw-new').value = ''; $('pw-confirm').value = '';
+    $('pw-err').classList.remove('is-on');
+    $('pw-mask').classList.add('is-open');
+  });
+  var pwCloses = document.querySelectorAll('[data-pw-close]');
+  for (var pc = 0; pc < pwCloses.length; pc++) {
+    pwCloses[pc].addEventListener('click', function () { $('pw-mask').classList.remove('is-open'); });
+  }
+  $('pw-mask').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('is-open'); });
+  $('pw-save').addEventListener('click', function () {
+    var a = $('pw-new').value, b = $('pw-confirm').value, err = $('pw-err');
+    if (!a || !b) { err.textContent = '兩個欄位都要填。'; err.classList.add('is-on'); return; }
+    if (a.length < 6) { err.textContent = '密碼至少 6 個字元。'; err.classList.add('is-on'); return; }
+    if (a !== b) { err.textContent = '兩次輸入的密碼不一致。'; err.classList.add('is-on'); return; }
+    err.classList.remove('is-on');
+    $('pw-mask').classList.remove('is-open');
+    $('pw-hint').textContent = '上次變更 2026/08/06';
+    toast('密碼已重設');
+  });
+
+  /* ── 特殊紀錄 ── */
+  $('ir-add').addEventListener('click', function () {
+    var t = $('ir-text').value.trim();
+    if (!t) { toast('請先填寫內容'); return; }
+    var tr = document.createElement('tr');
+    tr.className = 'mnew';
+    tr.innerHTML = '<td>' + esc(t) + '</td><td class="is-c">' + NOW + '</td><td class="is-c">示範帳號</td>';
+    $('ir-body').insertBefore(tr, $('ir-body').firstChild);
+    $('ir-text').value = '';
+    toast('已新增特殊紀錄');
+  });
+
+  /* 寶寶生日（生日禮）—— 欄位只顯示，一顆編輯開列表彈窗 */
+  var BABIES = [
+    { id: 1, name: '小豆', birth: '2025-08-12', created: '2025/09/01 10:22', voucher: 'BD-260803-0052', issued: '2026/08/03' },
+    { id: 2, name: '小米', birth: '2025-08-12', created: '2025/09/01 10:22', voucher: 'BD-260803-0053', issued: '2026/08/03' },
+    { id: 3, name: '小圓', birth: '2026-03-20', created: '2026/04/02 14:05', voucher: '', issued: '' }
+  ];
+  var babyEdit = null;   // null=沒在編 / 數字=該筆 id / 0=新增中
+  var babyErr = '';
+
+  function babyById(id) {
+    for (var i = 0; i < BABIES.length; i++) if (BABIES[i].id === id) return BABIES[i];
+    return null;
+  }
+  function babyStatus(b) {
+    return b.voucher
+      ? '<span class="mst mst-used">已發</span>　<a href="admin-gift-detail.html"><span class="mcode">' + esc(b.voucher) + '</span></a><span class="msub">發放日 ' + esc(b.issued) + '</span>'
+      : '<span class="mst mst-unused">未發</span><span class="msub">滿一歲當週的週一自動發放</span>';
+  }
+
+  /* 欄位上的唯讀多行 */
+  function renderBabyField() {
+    var html = '';
+    for (var i = 0; i < BABIES.length; i++) {
+      var b = BABIES[i];
+      html += '<div class="baby-line">'
+        + '<span class="b-name">' + esc(b.name) + '</span>'
+        + '<span class="b-date">' + esc(b.birth.replace(/-/g, '/')) + '</span>'
+        + '<span class="b-tag">' + (b.voucher ? '生日禮已發' : '生日禮未發') + '</span>'
+        + '</div>';
+    }
+    $('baby-lines').innerHTML = html;
+    $('baby-lines').style.display = BABIES.length ? '' : 'none';
+    $('baby-none').style.display = BABIES.length ? 'none' : '';
+  }
+
+  /* 彈窗列表 */
+  function renderBabyList() {
+    var html = '';
+    for (var i = 0; i < BABIES.length; i++) {
+      var b = BABIES[i];
+      if (babyEdit === b.id) {
+        html += '<tr class="baby-editing">'
+          + '<td><input type="text" class="minput" data-e-name value="' + esc(b.name) + '"></td>'
+          + '<td><input type="date" class="minput" data-e-birth max="' + todayIso() + '" value="' + esc(b.birth) + '"></td>'
+          + '<td class="is-c">' + esc(b.created) + '</td>'
+          + '<td>' + babyStatus(b) + '</td>'
+          + '<td class="is-c"><button type="button" class="amt2026-btn amt2026-btn-primary" data-e-save>儲存</button> '
+          + '<button type="button" class="amt2026-btn amt2026-btn-default" data-e-cancel>取消</button></td></tr>';
+        if (babyErr) html += '<tr class="baby-err"><td colspan="5">' + esc(babyErr) + '</td></tr>';
+      } else {
+        html += '<tr>'
+          + '<td>' + esc(b.name) + '</td>'
+          + '<td class="is-c">' + esc(b.birth.replace(/-/g, '/')) + '</td>'
+          + '<td class="is-c">' + esc(b.created) + '</td>'
+          + '<td>' + babyStatus(b) + '</td>'
+          + '<td class="is-c"><button type="button" class="amt2026-btn amt2026-btn-default" data-b-edit="' + b.id + '">編輯</button> '
+          + '<button type="button" class="amt2026-btn amt2026-btn-danger" data-b-del="' + b.id + '">刪除</button></td></tr>';
+      }
+    }
+    if (babyEdit === 0) {
+      html += '<tr class="baby-editing">'
+        + '<td><input type="text" class="minput" data-e-name placeholder="必填"></td>'
+        + '<td><input type="date" class="minput" data-e-birth max="' + todayIso() + '"></td>'
+        + '<td class="is-c" style="color:#888;">儲存後產生</td>'
+        + '<td><span class="mst mst-unused">未發</span></td>'
+        + '<td class="is-c"><button type="button" class="amt2026-btn amt2026-btn-primary" data-e-save>儲存</button> '
+        + '<button type="button" class="amt2026-btn amt2026-btn-default" data-e-cancel>取消</button></td></tr>';
+      if (babyErr) html += '<tr class="baby-err"><td colspan="5">' + esc(babyErr) + '</td></tr>';
+    }
+    $('baby-body').innerHTML = html;
+    $('baby-empty').style.display = (BABIES.length || babyEdit === 0) ? 'none' : '';
+    /* 三筆上限是前台的限制，後台不擋（三胞胎以上由客服代建） */
+    var busy = babyEdit !== null;
+    $('baby-add').disabled = busy;
+    $('baby-add').style.opacity = busy ? '.5' : '';
+    var editingIssued = babyEdit && babyById(babyEdit) && babyById(babyEdit).voucher;
+    $('baby-warn').style.display = editingIssued ? '' : 'none';
+    var f = $('baby-body').querySelector('[data-e-name]');
+    if (f) f.focus();
+  }
+
+  $('baby-open').addEventListener('click', function () {
+    babyEdit = null; babyErr = '';
+    renderBabyList();
+    $('baby-mask').classList.add('is-open');
+  });
+
+  $('baby-add').addEventListener('click', function () {
+    if (this.disabled) return;
+    babyEdit = 0; babyErr = '';
+    renderBabyList();
+  });
+
+  $('baby-body').addEventListener('click', function (e) {
+    var ed = e.target.closest('[data-b-edit]');
+    if (ed) { babyEdit = Number(ed.getAttribute('data-b-edit')); babyErr = ''; renderBabyList(); return; }
+
+    var dl = e.target.closest('[data-b-del]');
+    if (dl) {
+      var id = Number(dl.getAttribute('data-b-del'));
+      var b = babyById(id);
+      BABIES = BABIES.filter(function (x) { return x.id !== id; });
+      babyEdit = null; babyErr = '';
+      renderBabyList(); renderBabyField();
+      toast('已刪除「' + b.name + '」（軟刪，紀錄操作人與時間）');
+      return;
+    }
+
+    if (e.target.closest('[data-e-cancel]')) { babyEdit = null; babyErr = ''; renderBabyList(); return; }
+
+    if (e.target.closest('[data-e-save]')) {
+      var row = e.target.closest('tr');
+      var nameEl = row.querySelector('[data-e-name]');
+      var birthEl = row.querySelector('[data-e-birth]');
+      var name = nameEl.value.trim();
+      var birth = birthEl.value;
+
+      /* 驗證失敗時只換錯誤訊息，不重繪整張表 —— 重繪會把已經打好的字清掉 */
+      function fail(msg, el) {
+        var er = row.nextElementSibling;
+        if (!er || !er.classList.contains('baby-err')) {
+          er = document.createElement('tr');
+          er.className = 'baby-err';
+          er.innerHTML = '<td colspan="5"></td>';
+          row.after(er);
+        }
+        er.firstChild.textContent = msg;
+        babyErr = msg;
+        el.focus();
+      }
+      if (!name) { fail('請填寫小名。', nameEl); return; }
+      if (!birth) { fail('請填寫生日。', birthEl); return; }
+      if (birth > todayIso()) { fail('生日不能晚於今天（' + todayIso().replace(/-/g, '/') + '）。', birthEl); return; }
+      if (babyEdit === 0) {
+        var maxId = 0;
+        for (var i = 0; i < BABIES.length; i++) maxId = Math.max(maxId, BABIES[i].id);
+        BABIES.push({ id: maxId + 1, name: name, birth: birth, created: nowStamp(), voucher: '', issued: '' });
+        toast('已新增寶寶「' + name + '」');
+      } else {
+        var t = babyById(babyEdit);
+        t.name = name; t.birth = birth;
+        toast('已修改「' + name + '」的資料');
+      }
+      babyEdit = null; babyErr = '';
+      renderBabyList(); renderBabyField();
+    }
+  });
+
+  var babyCloses = document.querySelectorAll('[data-baby-close]');
+  for (var bc = 0; bc < babyCloses.length; bc++) {
+    babyCloses[bc].addEventListener('click', function () { $('baby-mask').classList.remove('is-open'); });
+  }
+  $('baby-mask').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('is-open'); });
+
+  renderBabyField();
+
+  /* ── 黑名單 ── */
+  $('bl-toggle').addEventListener('click', function () {
+    var on = $('bl-state').textContent === '已列入';
+    $('bl-state').textContent = on ? '未列入' : '已列入';
+    $('bl-state').style.color = on ? '' : '#dc4e43';
+    this.textContent = on ? '列入黑名單' : '移出黑名單';
+    this.className = on ? 'amt2026-btn amt2026-btn-danger' : 'amt2026-btn amt2026-btn-default';
+    toast(on ? '已移出黑名單' : '已列入黑名單');
+  });
+
+  $('cod-perm').addEventListener('change', function () {
+    $('cod-date').style.display = this.checked ? 'none' : '';
+  });
+
+  $('save').addEventListener('click', function () { toast('已儲存會員資料'); });
+})();
+</script>
+
+</main>
+</div>
+</div>
+<script>
+/* ───── GoX Admin / gox-interactions.js ─────
+   後台殼共用的「元件級互動」。
+   由 build_prototype.py 自動內聯到輸出 HTML，呼叫者寫對 class 就會動。
+
+   覆蓋範圍（你不用為這些再寫 JS）：
+     - .gox-switch         click  → toggle .is-on
+     - .gox-tab-btn        click  → 同 .gox-tab-group 內切 .is-active
+     - .gox-menu-title     click  → toggle 父 .gox-menu-group .is-open + 箭頭
+     - [data-gox-open]     click  → 顯示 #target modal（移除 .is-hidden）
+     - [data-gox-close]    click  → 隱藏所屬 .gox-modal-overlay
+     - .gox-modal-overlay  click  → 點背景關（除非有 data-gox-no-overlay-close）
+     - .gox-icon-btn.is-confirm/.is-cancel click → 觸發 [data-gox-target] 的 confirm/cancel CustomEvent
+     - .gox-menu-child     click  → 同 .gox-sidebar 內切 .is-active
+
+   不覆蓋（你要自己寫）：
+     - 篩選 / 排序 / 搜尋
+     - 狀態機（pending → confirmed → done 之類）
+     - 跨元件聯動
+     - 表單送出 / 假 API 回傳
+   ➜ 在 content_html 裡寫 <script>，用 DOMContentLoaded 包起來。
+*/
+(function () {
+  'use strict';
+
+  function on(el, ev, fn) { el.addEventListener(ev, fn); }
+  function delegate(root, ev, selector, fn) {
+    on(root, ev, (e) => {
+      const t = e.target.closest(selector);
+      if (t && root.contains(t)) fn(e, t);
+    });
+  }
+
+  function init() {
+    const root = document;
+
+    // ── Switch ─────────────────────────────────
+    delegate(root, 'click', '.gox-switch', (e, el) => {
+      if (el.classList.contains('is-disabled')) return;
+      el.classList.toggle('is-on');
+      el.dispatchEvent(new CustomEvent('gox:switch', {
+        bubbles: true,
+        detail: { on: el.classList.contains('is-on') },
+      }));
+    });
+
+    // ── Tab group ───────────────────────────────
+    delegate(root, 'click', '.gox-tab-group .gox-tab-btn', (e, btn) => {
+      const group = btn.closest('.gox-tab-group');
+      group.querySelectorAll('.gox-tab-btn').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const key = btn.dataset.tab;
+      group.dispatchEvent(new CustomEvent('gox:tab', {
+        bubbles: true,
+        detail: { tab: key, btn },
+      }));
+      // 若有 data-tab，自動切 [data-tab-panel] 顯示
+      if (key) {
+        const scope = btn.closest('[data-tab-scope]') || document;
+        scope.querySelectorAll('[data-tab-panel]').forEach((p) => {
+          p.hidden = p.dataset.tabPanel !== key;
+        });
+      }
+    });
+
+    // ── Sidebar menu group 摺疊 ──────────────────
+    delegate(root, 'click', '.gox-menu-title', (e, btn) => {
+      const group = btn.closest('.gox-menu-group');
+      if (!group) return;
+      group.classList.toggle('is-open');
+      const arrow = btn.querySelector('.gox-arrow');
+      if (arrow) arrow.textContent = group.classList.contains('is-open') ? '▼' : '▶';
+    });
+
+    // ── Sidebar menu child active ────────────────
+    delegate(root, 'click', '.gox-sidebar .gox-menu-child', (e, link) => {
+      // 不阻止預設行為（讓 href 還能跳）；但若是 href="#" 純 demo，做 active 切換
+      if (link.getAttribute('href') === '#') e.preventDefault();
+      const side = link.closest('.gox-sidebar');
+      side.querySelectorAll('.gox-menu-child.is-active').forEach((a) => a.classList.remove('is-active'));
+      link.classList.add('is-active');
+    });
+
+    // ── Modal open ──────────────────────────────
+    delegate(root, 'click', '[data-gox-open]', (e, btn) => {
+      const sel = btn.dataset.goxOpen;
+      const target = sel && document.querySelector(sel);
+      if (target) target.classList.remove('is-hidden');
+    });
+
+    // ── Modal close（按鈕） ─────────────────────
+    delegate(root, 'click', '[data-gox-close]', (e, btn) => {
+      const modal = btn.closest('.gox-modal-overlay');
+      if (modal) modal.classList.add('is-hidden');
+    });
+
+    // ── Modal close（點背景） ───────────────────
+    delegate(root, 'click', '.gox-modal-overlay', (e, overlay) => {
+      if (overlay.dataset.goxNoOverlayClose !== undefined) return;
+      if (e.target === overlay) overlay.classList.add('is-hidden');
+    });
+
+    // ── ESC 關 modal ────────────────────────────
+    on(document, 'keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const opens = document.querySelectorAll('.gox-modal-overlay:not(.is-hidden)');
+      opens.forEach((m) => {
+        if (m.dataset.goxNoOverlayClose === undefined) m.classList.add('is-hidden');
+      });
+    });
+
+    // ── Icon button confirm / cancel ─────────────
+    delegate(root, 'click', '.gox-icon-btn.is-confirm, .gox-icon-btn.is-cancel', (e, btn) => {
+      const kind = btn.classList.contains('is-confirm') ? 'confirm' : 'cancel';
+      const targetSel = btn.dataset.goxTarget;
+      const target = targetSel ? document.querySelector(targetSel) : btn.closest('[data-gox-editable]');
+      if (target) {
+        target.dispatchEvent(new CustomEvent('gox:' + kind, { bubbles: true }));
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // 暴露給頁面級腳本使用（如「按下查詢」這種頁面級互動）
+  window.gox = window.gox || {};
+  window.gox.openModal  = (sel) => { const t = document.querySelector(sel); if (t) t.classList.remove('is-hidden'); };
+  window.gox.closeModal = (sel) => { const t = document.querySelector(sel); if (t) t.classList.add('is-hidden'); };
+  window.gox.toast = (msg) => {
+    // 簡易 toast（自動消失）
+    let host = document.querySelector('#gox-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'gox-toast-host';
+      host.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+      document.body.appendChild(host);
+    }
+    const t = document.createElement('div');
+    t.className = 'gox-toast';
+    t.textContent = msg;
+    t.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.2);';
+    host.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
+    setTimeout(() => t.remove(), 2200);
+  };
+})();
+
+</script>
+
+</body>
+</html>

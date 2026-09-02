@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<title>禮物券 會員中心（優化版 2） — demo</title>
+<title>禮物券 會員中心（C 版） — demo</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -482,21 +482,24 @@ img { vertical-align: middle; }
      ── 禮物券／優惠券用低彩度綠標題列，內容區淺灰，項目白色浮起
      ── 字級一律不小於現況（現況內文 18px） */
   .mc3 {
-    color: #33435a; font-size: 18px; max-width: 1080px; margin: 0 auto;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    color: var(--text); font-size: 18px; max-width: 1080px; margin: 0 auto;
+    /* GreenBox Design System V1.9 */
     --green: #4ba83b;        /* 主綠：按鈕 */
-    --green-head: #578949;   /* 低彩度綠：面板標題列 */
-    --green-soft: #eef5ec;   /* 淡綠：會員區底色 */
-    --gray-body: #f5f6f5;    /* 內容區淺灰 */
-    --line: #e5e5e5;
+    --green-dark: #008000;   /* 深綠：標題 */
+    --green-soft: #EFF5E5;   /* pale-green */
+    --gold: #CAA940;
+    --warn: #dc4e43;
+    --text: #1a1a1a;
+    --text-2: #595757;
+    --muted: #999;
+    --line: #e0e4e6;
   }
   .mc3 *, .mc3 *::before, .mc3 *::after { box-sizing: border-box; }
-  .mc3 h1 { font-size: 28px; font-weight: 700; margin: 0 0 20px; color: #33435a; }
+  .mc3 h1 { font-size: 30px; font-weight: 700; margin: 0 0 20px; color: var(--text); }
 
   /* ── 會員資料 ＋ 錢包（同一塊，淡綠底） ── */
-  .mc3 .member {
-    background: var(--green-soft); border: 1px solid #dbe8d7; border-radius: 8px;
-    padding: 20px; margin-bottom: 20px;
-  }
+  .mc3 .member { background: none; border: 0; padding: 0; margin: 0; }
   .mc3 .profile { display: flex; gap: 20px; align-items: stretch; flex-wrap: wrap; }
 
   /* 頭像：之後依會員等級換圖，改 background-image 即可（VIP / VVIP / 一般各一張） */
@@ -517,8 +520,8 @@ img { vertical-align: middle; }
 
   .mc3 .progress-block { margin-top: 16px; }
   .mc3 .progress-label { display: flex; justify-content: space-between; gap: 12px; font-size: 18px; color: #5c6a58; margin-bottom: 8px; flex-wrap: wrap; }
-  .mc3 .progress-label b { color: #33435a; font-size: 20px; }
-  .mc3 .bar { height: 12px; border-radius: 999px; background: #dbe8d7; overflow: hidden; }
+  .mc3 .progress-label b { color: var(--text); font-size: 20px; }
+  .mc3 .bar { height: 12px; border-radius: 999px; background: #ececec; overflow: hidden; }
   .mc3 .bar > i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
   .mc3 .progress-foot { display: flex; justify-content: space-between; gap: 12px; font-size: 16px; color: #7d8a79; margin-top: 8px; }
   .mc3 .progress-foot a { color: #3f7d33; text-decoration: none; }
@@ -531,15 +534,15 @@ img { vertical-align: middle; }
   .mc3 .progress-foot a:hover { text-decoration: underline; }
 
   /* 錢包：兩張白卡片浮在淡綠底上 */
-  .mc3 .wallet { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .mc3 .wallet { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0 0; }
   .mc3 .wallet-item {
-    background: #fff; border-radius: 8px; padding: 16px 20px;
+    background: var(--green-soft); border: 1px solid #d7e4c8; border-radius: 8px; padding: 16px 20px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   }
-  .mc3 .stat-label { font-size: 18px; color: #808080; margin-bottom: 4px; }
+  .mc3 .stat-label { font-size: 18px; color: var(--muted); margin-bottom: 4px; }
   .mc3 .stat-num { font-size: 34px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
-  .mc3 .stat-num small { font-size: 18px; font-weight: 500; color: #808080; margin-left: 4px; }
-  .mc3 .stat-warn { display: block; font-size: 16px; color: #caa940; margin-top: 4px; }
+  .mc3 .stat-num small { font-size: 18px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .mc3 .stat-warn { display: block; font-size: 16px; color: var(--gold); margin-top: 4px; }
   .mc3 .btn-record {
     background: #fff; color: var(--green); border: 1px solid var(--green); border-radius: 6px;
     font-size: 17px; font-weight: 600; padding: 8px 20px; cursor: pointer; white-space: nowrap;
@@ -547,24 +550,24 @@ img { vertical-align: middle; }
   .mc3 .btn-record:hover { background: #f4faf3; }
 
   /* ── 面板：低彩度綠標題列 + 淺灰內容區 ── */
-  .mc3 .panel {
-    border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 20px;
-  }
+  /* 段落標題：4px 品牌色短豎條 ＋ 深色字 ＋ 1px 細線；內容區不上底色 */
+  .mc3 .panel { margin: 56px 0 0; }
   .mc3 .panel-head {
-    background: var(--green-head); color: #fff;
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 12px 20px;
+    background: none; padding: 0 0 12px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   }
-  .mc3 .panel-head h2 { font-size: 20px; font-weight: 700; margin: 0; color: #fff; }
-  .mc3 .panel-head .meta { font-size: 16px; color: rgba(255,255,255,.88); }
-  .mc3 .panel-body { background: var(--gray-body); padding: 20px; }
+  .mc3 .panel-head h2 {
+    margin: 0; font-size: 26px; font-weight: 700; color: var(--green-dark);
+  }
+  .mc3 .panel-head .meta { font-size: 16px; color: var(--muted); }
+  .mc3 .panel-body { background: none; padding: 20px 0 0; }
 
   /* ── 禮物券 ── */
   .mc3 .gv-empty { color: #999; font-size: 18px; padding: 12px 0; }
   .mc3 .gv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: 16px; }
   .mc3 .gv-card {
-    background: #fff; border: 1px solid #ebebeb; border-radius: 8px; padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06); display: flex; flex-direction: column;
+    background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 16px;
+    display: flex; flex-direction: column;
   }
   .mc3 .gv-card.is-soon { border-color: #e8c98a; background: #fffdf6; }
   .mc3 .gv-card.is-added { border-color: #cfe4c9; background: #f7fbf6; }
@@ -573,8 +576,8 @@ img { vertical-align: middle; }
     display: flex; align-items: center; justify-content: center; color: #9bb59b; font-size: 16px; margin-bottom: 12px;
   }
   .mc3 .gv-name { font-size: 19px; font-weight: 600; line-height: 1.4; }
-  .mc3 .gv-exp { font-size: 17px; color: #808080; margin-top: 4px; }
-  .mc3 .gv-exp.is-soon { color: #caa940; font-weight: 600; }
+  .mc3 .gv-exp { font-size: 17px; color: var(--muted); margin-top: 4px; }
+  .mc3 .gv-exp.is-soon { color: var(--gold); font-weight: 600; }
   .mc3 .gv-code { font-size: 15px; color: #b0b0b0; margin-top: 4px; margin-bottom: 12px; }
   .mc3 .gv-actions { margin-top: auto; }
   .mc3 .btn-use {
@@ -587,7 +590,7 @@ img { vertical-align: middle; }
     font-size: 18px; font-weight: 600; padding: 12px; cursor: default;
   }
   /* 暫時缺貨：整張卡片降階，按鈕不可按 */
-  .mc3 .gv-card.is-oos { background: #fafafa; border-color: #e5e5e5; box-shadow: none; }
+  .mc3 .gv-card.is-oos { background: #fafafa; border-color: var(--line); box-shadow: none; }
   .mc3 .gv-card.is-oos .gv-thumb { opacity: .5; }
   .mc3 .gv-card.is-oos .gv-name { color: #8a8a8a; }
   .mc3 .gv-flag {
@@ -600,16 +603,8 @@ img { vertical-align: middle; }
   }
 
   /* ── 優惠券 ── */
-  .mc3 .cp-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .mc3 .cp-filter button {
-    background: #fff; border: 1px solid #dcdcdc; border-radius: 999px; color: #666;
-    font-size: 16px; padding: 8px 16px; cursor: pointer;
-  }
-  .mc3 .cp-filter button.is-on { border-color: var(--green); color: var(--green); background: #f4faf3; font-weight: 600; }
-
   .mc3 .cp-card {
-    background: #fff; border: 1px solid #ebebeb; border-radius: 8px; margin-bottom: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px;
   }
   .mc3 .cp-card:last-child { margin-bottom: 0; }
   .mc3 .cp-card.is-soon { border-color: #e8c98a; background: #fffdf6; }
@@ -619,7 +614,7 @@ img { vertical-align: middle; }
   .mc3 .cp-title { font-size: 19px; font-weight: 700; color: #3f7d33; line-height: 1.4; min-width: 0; }
   .mc3 #cp-wheel-list .cp-remain { font-size: 18px; color: #454545; font-weight: 600; white-space: normal; }
   .mc3 #cp-wheel-list .btn-merge { margin-left: auto; }
-  .mc3 .cp-remain { font-size: 16px; color: #808080; font-weight: 400; white-space: nowrap; }
+  .mc3 .cp-remain { font-size: 16px; color: var(--muted); font-weight: 400; white-space: nowrap; }
   .mc3 .cp-face {
     font-size: 22px; font-weight: 700; color: #dc4e43; white-space: nowrap;
     margin-left: auto; font-variant-numeric: tabular-nums;
@@ -640,7 +635,7 @@ img { vertical-align: middle; }
   .mc3 .cp-ticket:nth-child(odd) { background: #fafbfa; }
   .mc3 .cp-t-face { font-weight: 700; color: #dc4e43; width: 5.5em; flex: none; font-variant-numeric: tabular-nums; }
   .mc3 .cp-t-exp { color: #454545; font-variant-numeric: tabular-nums; }
-  .mc3 .cp-t-exp.is-soon { color: #caa940; font-weight: 600; }
+  .mc3 .cp-t-exp.is-soon { color: var(--gold); font-weight: 600; }
   .mc3 .cp-t-code { color: #b0b0b0; font-size: 16px; margin-left: auto; font-variant-numeric: tabular-nums; }
 
   .mc3 .cp-row { display: flex; gap: 12px; font-size: 18px; line-height: 1.8; align-items: baseline; }
@@ -649,7 +644,7 @@ img { vertical-align: middle; }
   .mc3 .cp-row .v { color: #454545; min-width: 0; }
   .mc3 .cp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .mc3 .cp-chip { font-size: 16px; background: #eef4ec; color: #4a7a41; border-radius: 4px; padding: 4px 12px; line-height: 1.6; }
-  .mc3 .cp-chip.is-all { background: #f2f2f2; color: #808080; }
+  .mc3 .cp-chip.is-all { background: #f2f2f2; color: var(--muted); }
 
   .mc3 .btn-merge {
     background: var(--green); color: #fff; border: 0; border-radius: 6px;
@@ -662,7 +657,7 @@ img { vertical-align: middle; }
   .mc3 .cp-wheel { margin-top: 24px; padding-top: 20px; border-top: 2px dashed #dcdcdc; }
   .mc3 .cp-wheel-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
   .mc3 .cp-wheel-head h3 { font-size: 19px; font-weight: 700; margin: 0; color: #3f7d33; }
-  .mc3 .cp-wheel-sum { font-size: 16px; color: #808080; margin-left: auto; }
+  .mc3 .cp-wheel-sum { font-size: 16px; color: var(--muted); margin-left: auto; }
 
   @media (max-width: 720px) {
     .mc3 .wallet { grid-template-columns: 1fr; }
@@ -694,9 +689,9 @@ img { vertical-align: middle; }
   .gv-dialog-body { padding: 20px; }
   .gv-dialog-pic { width: 160px; height: 160px; margin: 0 auto 16px; border-radius: 8px; background: #f0f2f0; display: flex; align-items: center; justify-content: center; color: #9bb59b; font-size: 16px; }
   .gv-dialog-name { font-size: 21px; font-weight: 700; text-align: center; }
-  .gv-dialog-spec { font-size: 17px; color: #808080; margin-top: 4px; text-align: center; }
+  .gv-dialog-spec { font-size: 17px; color: var(--muted); margin-top: 4px; text-align: center; }
   .gv-dialog-note { font-size: 17px; color: #555; line-height: 1.8; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
-  .gv-dialog-note h4 { margin: 0 0 4px; font-size: 18px; color: #33435a; }
+  .gv-dialog-note h4 { margin: 0 0 4px; font-size: 18px; color: var(--text); }
   .gv-dialog-foot { padding: 0 20px 20px; display: flex; gap: 8px; }
   .gv-dialog-foot button { flex: 1; border-radius: 6px; font-size: 18px; font-weight: 600; padding: 12px; cursor: pointer; }
   .gv-btn-cancel { background: #fff; border: 1px solid #ddd; color: #666; }
@@ -704,7 +699,7 @@ img { vertical-align: middle; }
 
   .lv-table { width: 100%; border-collapse: collapse; font-size: 17px; }
   .lv-table th, .lv-table td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-  .lv-table th { background: #fafbfa; color: #808080; font-weight: 600; font-size: 16px; }
+  .lv-table th { background: #fafbfa; color: var(--muted); font-weight: 600; font-size: 16px; }
   .lv-table td.num, .lv-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .lv-table tr.is-now { background: #f4faf3; font-weight: 600; }
   .lv-table .now-tag { font-size: 14px; background: #22ac38; color: #fff; border-radius: 4px; padding: 1px 8px; margin-left: 8px; font-weight: 600; }
@@ -712,7 +707,7 @@ img { vertical-align: middle; }
   .rec-scroll { max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
   .rec-table { width: 100%; border-collapse: collapse; font-size: 17px; }
   .rec-table th, .rec-table td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-  .rec-table th { background: #fafbfa; color: #808080; font-weight: 600; position: sticky; top: 0; font-size: 16px; }
+  .rec-table th { background: #fafbfa; color: var(--muted); font-weight: 600; position: sticky; top: 0; font-size: 16px; }
   .rec-table tbody tr:nth-child(odd) { background: #fafbfa; }
   .rec-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .rec-plus { color: #4ba83b; font-weight: 600; }
@@ -720,7 +715,7 @@ img { vertical-align: middle; }
 
   .merge-table { width: 100%; border-collapse: collapse; font-size: 17px; margin-bottom: 16px; }
   .merge-table th, .merge-table td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; text-align: left; }
-  .merge-table th { color: #808080; font-weight: 600; font-size: 16px; }
+  .merge-table th { color: var(--muted); font-weight: 600; font-size: 16px; }
   .merge-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .merge-sum { font-size: 18px; line-height: 2; color: #454545; padding-top: 12px; border-top: 1px solid #f0f0f0; }
   .merge-sum b { color: #dc4e43; }
@@ -733,7 +728,7 @@ img { vertical-align: middle; }
     font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
   }
   #devbar .toggle {
-    background: #33435a; color: #fff; border: 0; border-radius: 999px;
+    background: var(--text); color: #fff; border: 0; border-radius: 999px;
     font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25);
     font-family: inherit;
   }
@@ -742,7 +737,7 @@ img { vertical-align: middle; }
     box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 280px; margin-bottom: 8px;
   }
   #devbar.is-open .box { display: block; }
-  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #33435a; }
+  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--text); }
   #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
   #devbar .grp { margin-bottom: 12px; }
   #devbar .grp:last-child { margin-bottom: 0; }
@@ -753,7 +748,7 @@ img { vertical-align: middle; }
     padding: 6px 4px; cursor: pointer; font-family: inherit;
   }
   #devbar .seg button + button { border-left: 1px solid #d5d9de; }
-  #devbar .seg button.is-on { background: #33435a; color: #fff; font-weight: 600; }
+  #devbar .seg button.is-on { background: var(--text); color: #fff; font-weight: 600; }
   .gv-toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); background: rgba(0,0,0,.82); color: #fff; padding: 12px 24px; border-radius: 6px; font-size: 17px; z-index: 10000; display: none; }
   .gv-toast.is-show { display: block; }
 </style>
@@ -854,12 +849,6 @@ img { vertical-align: middle; }
       <span class="meta" id="cp-meta"></span>
     </div>
     <div class="panel-body">
-      <div class="cp-filter" id="cp-filter">
-        <button type="button" class="is-on" data-cf="all">全部</button>
-        <button type="button" data-cf="soon">即將到期</button>
-        <button type="button" data-cf="line">限定產線</button>
-        <button type="button" data-cf="free">不限產線</button>
-      </div>
       <div id="cp-list"></div>
 
       <div class="cp-wheel" id="cp-wheel" style="display:none;">
@@ -1111,9 +1100,7 @@ img { vertical-align: middle; }
       if (isWheel(COUPONS[j])) continue;
       total += count(COUPONS[j]); kinds++;
     }
-    document.getElementById('cp-meta').textContent =
-      filter === 'all' ? (kinds + ' 種、共 ' + total + ' 張')
-                       : ('篩出 ' + list.length + ' 種（全部 ' + kinds + ' 種）');
+    document.getElementById('cp-meta').textContent = kinds ? (kinds + ' 種、共 ' + total + ' 張') : '沒有可用的券';
 
     document.getElementById('cp-list').innerHTML = list.length
       ? list.map(function (x) { return couponHtml(x.c, x.i); }).join('')
@@ -1131,17 +1118,6 @@ img { vertical-align: middle; }
     }
   }
 
-  var cfBtns = document.querySelectorAll('#cp-filter button');
-  for (var f = 0; f < cfBtns.length; f++) {
-    (function (b) {
-      b.addEventListener('click', function () {
-        for (var i = 0; i < cfBtns.length; i++) cfBtns[i].classList.remove('is-on');
-        b.classList.add('is-on');
-        filter = b.getAttribute('data-cf');
-        renderCoupons();
-      });
-    })(cfBtns[f]);
-  }
 
   document.getElementById('cp-wheel-list').addEventListener('click', couponClick);
   document.getElementById('cp-list').addEventListener('click', couponClick);
