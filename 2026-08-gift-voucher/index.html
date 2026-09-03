@@ -10,28 +10,35 @@
   body {
     margin: 0; padding: 60px 20px;
     font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
-    font-size: 16px; line-height: 1.7; color: #333; background: #f1f2f7;
+    font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fafbfb;
   }
-  .wrap { max-width: 860px; margin: 0 auto; }
-  h1 { font-size: 24px; margin: 0 0 4px; }
-  .sub { color: #888; font-size: 14px; margin: 0 0 32px; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 30px; margin: 0 0 4px; color: #008000; }
+  .sub { color: #999; font-size: 14px; margin: 0 0 40px; }
+
+  h2 {
+    font-size: 26px; font-weight: 700; color: #008000; margin: 0 0 4px;
+  }
+  .group { margin-bottom: 56px; }
+  .group:last-child { margin-bottom: 0; }
+  .group-note { color: #595757; font-size: 14px; margin: 0 0 20px; }
 
   .entries { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   @media (max-width: 760px) { .entries { grid-template-columns: 1fr; } }
   .entry {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: #fff; border: 1px solid #e6e6e6; border-radius: 8px;
-    padding: 36px 20px; text-decoration: none; color: inherit; text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    background: #fff; border: 1px solid #e0e4e6; border-radius: 4px;
+    padding: 32px 20px; text-decoration: none; color: inherit; text-align: center;
     transition: border-color .15s, box-shadow .15s, transform .15s;
   }
   .entry:hover { border-color: #4ba83b; box-shadow: 0 4px 14px rgba(0,0,0,.08); transform: translateY(-2px); }
   .entry-icon {
-    width: 56px; height: 56px; border-radius: 50%; background: #eef7ec; color: #4ba83b;
+    width: 56px; height: 56px; border-radius: 50%; background: #EFF5E5; color: #008000;
     display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700;
     margin-bottom: 14px;
   }
-  .entry-name { font-size: 18px; font-weight: 600; color: #4ba83b; margin-bottom: 4px; }
-  .entry-desc { font-size: 14px; color: #666; line-height: 1.6; }
+  .entry-name { font-size: 18px; font-weight: 700; color: #008000; margin-bottom: 4px; }
+  .entry-desc { font-size: 14px; color: #595757; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -40,47 +47,58 @@
   <h1>禮物券 demo</h1>
   <p class="sub">2026-08</p>
 
-  <div class="entries">
-    <a class="entry" href="admin-gift-list.html">
-      <div class="entry-icon">後</div>
-      <div class="entry-name">後台</div>
-      <div class="entry-desc">禮物與禮物券的管理介面</div>
-    </a>
-    <a class="entry" href="member-center-new2.html">
-      <div class="entry-icon">員</div>
-      <div class="entry-name">前台會員中心</div>
-      <div class="entry-desc">客人看到與使用禮物券的地方</div>
-    </a>
-    <a class="entry" href="member-center-c.html">
-      <div class="entry-icon">C</div>
-      <div class="entry-name">會員中心・C 版</div>
-      <div class="entry-desc">A 版的架構，換成 B 版的段落標題、內容區不上底色</div>
-    </a>
-    <a class="entry" href="member-center-b.html">
-      <div class="entry-icon">B</div>
-      <div class="entry-name">會員中心・B 版</div>
-      <div class="entry-desc">同一份內容的另一種資訊架構，以到期為主軸</div>
+  <div class="group">
+    <h2>前台</h2>
+    <p class="group-note">客人會看到的畫面</p>
+    <div class="entries">
+      <a class="entry" href="member-center-c.html">
+        <div class="entry-icon">員</div>
+        <div class="entry-name">會員中心</div>
+        <div class="entry-desc">客人看到與使用禮物券的地方</div>
+      </a>
+      <a class="entry" href="member-baby-profile.html">
+        <div class="entry-icon">寶</div>
+        <div class="entry-name">個人資料・寶寶資料</div>
+        <div class="entry-desc">客人填寶寶小名與生日，送出後不可改，最多 3 位</div>
+      </a>
+      <a class="entry" href="checkout-finish-baby.html">
+      <div class="entry-icon">完</div>
+      <div class="entry-name">結帳完成頁・填寫寶寶生日</div>
+      <div class="entry-desc">六個完成頁都要加的按鈕，兩個條件都成立才出現</div>
     </a>
     <a class="entry" href="checkout-cart.html">
-      <div class="entry-icon">車</div>
-      <div class="entry-name">加入購物車</div>
-      <div class="entry-desc">禮物進購物車後的樣子與金額計算</div>
-    </a>
-    <a class="entry" href="admin-order-refund-gift.html">
-      <div class="entry-icon">退</div>
-      <div class="entry-name">訂單頁・返還禮物券</div>
-      <div class="entry-desc">客服在既有的返還訂單優惠裡把券退還給客人</div>
-    </a>
-    <a class="entry" href="admin-product-spec.html">
-      <div class="entry-icon">規</div>
-      <div class="entry-name">產品編輯・規格設定</div>
-      <div class="entry-desc">規格分頁多一個「贈品與禮物」，勾選多一個「設為禮物」</div>
-    </a>
-    <a class="entry" href="admin-member-gift.html">
-      <div class="entry-icon">卡</div>
-      <div class="entry-name">會員頁・禮物券區塊</div>
-      <div class="entry-desc">客服從會員查他手上的券，接手大冰箱券的位置</div>
-    </a>
+        <div class="entry-icon">車</div>
+        <div class="entry-name">加入購物車</div>
+        <div class="entry-desc">禮物進購物車後的樣子與金額計算</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>後台</h2>
+    <p class="group-note">同事操作的畫面。禮物券管理是新開的 3 頁，其餘三項是加在既有頁面上</p>
+    <div class="entries">
+      <a class="entry" href="admin-gift-list.html">
+        <div class="entry-icon">券</div>
+        <div class="entry-name">禮物券管理</div>
+        <div class="entry-desc">禮物列表、新增禮物、禮物明細共 3 頁</div>
+      </a>
+      <a class="entry" href="admin-product-spec.html">
+        <div class="entry-icon">規</div>
+        <div class="entry-name">產品編輯・規格設定</div>
+        <div class="entry-desc">規格分頁多一個「贈品與禮物」，勾選多一個「設為禮物」</div>
+      </a>
+      <a class="entry" href="admin-order-refund-gift.html">
+        <div class="entry-icon">退</div>
+        <div class="entry-name">訂單頁・返還禮物券</div>
+        <div class="entry-desc">客服在既有的返還訂單優惠裡把券退還給客人</div>
+      </a>
+      <a class="entry" href="admin-member-gift.html">
+        <div class="entry-icon">卡</div>
+        <div class="entry-name">會員頁・禮物券區塊</div>
+        <div class="entry-desc">客服從會員查他手上的券，接手大冰箱券的位置</div>
+      </a>
+    </div>
   </div>
 
 </div>
