@@ -719,6 +719,69 @@ a:hover { text-decoration: underline; }
   .gv-submit-bar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   .gv-locked-msg { font-size: 13px; color: var(--gox-text-muted); margin-top: 16px; }
   .gv-locked-msg.is-hidden { display: none; }
+
+  /* 購物車限購：跟勾選同一列 */
+  .gv-checks .gv-inline-field { display: flex; align-items: center; gap: 8px; }
+  .gv-checks .gv-inline-field span { font-size: 13px; color: var(--gox-text-sub); white-space: nowrap; }
+  .gv-checks .gv-inline-field select { width: auto; font-size: 13px; }
+
+  /* 替換品項選擇器：禮物會越來越多，用搜尋式而不是下拉 */
+  .gv-picker { position: relative; }
+  .gv-picker-list {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
+    background: #fff; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
+    box-shadow: 0 6px 20px rgba(0,0,0,.12); max-height: 240px; overflow-y: auto;
+  }
+  .gv-picker.is-open .gv-picker-list { display: block; }
+  .gv-picker-list button {
+    display: block; width: 100%; text-align: left; border: 0; background: #fff;
+    padding: 10px 12px; cursor: pointer; font-family: inherit; font-size: 14px; color: var(--gox-text);
+  }
+  .gv-picker-list button + button { border-top: 1px solid var(--gox-card-border); }
+  .gv-picker-list button:hover { background: #f5f7fa; }
+  .gv-picker-list .r2 { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 2px; }
+  .gv-picker-list .none { padding: 12px; font-size: 13px; color: var(--gox-text-muted); }
+  .gv-picked {
+    display: flex; align-items: center; gap: 12px; margin-top: 4px;
+    border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
+    background: #f5f7fa; padding: 8px 12px;
+  }
+  .gv-picked.is-hidden { display: none; }
+  .gv-picked-main { flex: 1; min-width: 0; }
+  .gv-picked-main b { display: block; font-size: 14px; color: var(--gox-text); }
+  .gv-picked-main span { font-size: 12px; color: var(--gox-text-muted); }
+  .gv-picked-clear {
+    border: 1px solid var(--gox-card-border); background: #fff; border-radius: 4px;
+    font-size: 13px; padding: 4px 10px; cursor: pointer; font-family: inherit; color: var(--gox-text-sub);
+  }
+  .gv-picked-clear:hover { border-color: #b8bfc7; }
+
+  /* 開發者面板（只在 demo 用，正式頁面不會有）。放左下角 */
+  #devbar {
+    position: fixed; left: 16px; bottom: 16px; z-index: 10001;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  }
+  #devbar .toggle {
+    background: #1a1a1a; color: #fff; border: 0; border-radius: 999px;
+    font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    font-family: inherit;
+  }
+  #devbar .box {
+    display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 280px; margin-bottom: 8px;
+  }
+  #devbar.is-open .box { display: block; }
+  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
+  #devbar .grp-t { font-size: 13px; font-weight: 600; color: #55606e; margin-bottom: 6px; }
+  #devbar .pid-list { display: flex; flex-direction: column; gap: 6px; }
+  #devbar .pid-list button {
+    text-align: left; border: 1px solid #d5d9de; border-radius: 6px; background: #fff;
+    padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 13px; color: #1a1a1a;
+  }
+  #devbar .pid-list button:hover { border-color: #1a1a1a; }
+  #devbar .pid-list b { font-variant-numeric: tabular-nums; margin-right: 6px; }
+  #devbar .pid-list span { display: block; font-size: 12px; color: #8a939e; margin-top: 2px; }
 </style>
 
 <div class="gox-toolbox is-wide">
@@ -808,6 +871,24 @@ a:hover { text-decoration: underline; }
           </div>
         </div>
 
+        <div class="gv-row">
+          <div class="gv-field gv-span-2">
+            <label>第二順位替換品項</label>
+            <div class="gv-picker" id="gv-sub-picker">
+              <input type="text" class="gox-input" id="gv-sub-search" placeholder="輸入禮物名稱、規格或產品 ID 搜尋" autocomplete="off">
+              <div class="gv-picker-list" id="gv-sub-list"></div>
+            </div>
+            <div class="gv-picked is-hidden" id="gv-sub-picked">
+              <div class="gv-picked-main">
+                <b id="gv-sub-name"></b>
+                <span id="gv-sub-meta"></span>
+              </div>
+              <button type="button" class="gv-picked-clear" id="gv-sub-clear">清除</button>
+            </div>
+            <div class="gv-field-hint">第一順位缺貨時自動改送這一份；兩份都缺貨，前台會改為「請聯繫客服」。<b>只能選已經建立的禮物</b></div>
+          </div>
+        </div>
+
 
         <div class="gv-row">
           <div class="gv-field gv-span-4">
@@ -819,6 +900,15 @@ a:hover { text-decoration: underline; }
         <div class="gv-checks">
           <label><input type="checkbox" id="gv-listed" checked> 上架（可開始贈送）</label>
           <label><input type="checkbox" id="gv-cod" checked> 可貨到付款</label>
+          <div class="gv-inline-field">
+            <span>購物車限購</span>
+            <select class="gox-select" id="gv-limit">
+              <option value="0">不限制</option>
+              <option value="1">本產品限用一張（不影響其他禮物券）</option>
+              <option value="2">同產線僅限一張</option>
+              <option value="3">整台購物車僅限一張</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -838,6 +928,8 @@ a:hover { text-decoration: underline; }
         <div>產品：<b id="gv-c-product" style="color:var(--gox-text);"></b></div>
         <div>規格描述：<b id="gv-c-desc" style="color:var(--gox-text);"></b></div>
         <div>庫存：<b id="gv-c-stock" style="color:var(--gox-text);"></b></div>
+        <div>替換品項：<b id="gv-c-sub" style="color:var(--gox-text);"></b></div>
+        <div>購物車限購：<b id="gv-c-limit" style="color:var(--gox-text);"></b></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
         <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
@@ -850,6 +942,16 @@ a:hover { text-decoration: underline; }
 <script>
 (function () {
   'use strict';
+
+  // 已建立的禮物（＝禮物列表頁那一份）。替換品項只能從這裡選
+  var GIFT_ITEMS = [
+    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用',   stock: 84 },
+    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用',   stock: 12 },
+    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', stock: 260 },
+    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', stock: 0 },
+    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用',   stock: 180 }
+  ];
+  var subPicked = null;
 
   var PRODUCTS = {
     '77385': { name: '寶寶果泥 隨手包', line: '粥寶寶專區', temp: '常溫', limit: '不限', total: '不限', freeShipping: false },
@@ -912,6 +1014,10 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-c-product').textContent = bound.name;
     document.getElementById('gv-c-desc').textContent = desc;
     document.getElementById('gv-c-stock').textContent = stock;
+    document.getElementById('gv-c-limit').textContent = limitText();
+    document.getElementById('gv-c-sub').textContent = subPicked
+      ? (subPicked.product + '（' + subPicked.spec + '）')
+      : '未設定（缺貨時請客人聯繫客服）';
     document.getElementById('gv-confirm').classList.remove('is-hidden');
   });
 
@@ -926,6 +1032,94 @@ a:hover { text-decoration: underline; }
   });
 
   setLocked(true);
+  // 購物車限購（0 不限制／1 整台車一張／2 同產線一張）
+  var LIMIT_LABEL = ['不限制', '本產品限用一張（不影響其他禮物券）', '同產線僅限一張', '整台購物車僅限一張'];
+  function limitText() {
+    return LIMIT_LABEL[Number(document.getElementById('gv-limit').value)];
+  }
+
+  // 替換品項搜尋選擇器
+  var subPicker = document.getElementById('gv-sub-picker');
+  var subSearch = document.getElementById('gv-sub-search');
+  var subList = document.getElementById('gv-sub-list');
+  var subBox = document.getElementById('gv-sub-picked');
+
+  function renderSubList(kw) {
+    kw = (kw || '').trim().toLowerCase();
+    var rows = GIFT_ITEMS.filter(function (g) {
+      if (!kw) return true;
+      return (g.product + g.spec + g.productId).toLowerCase().indexOf(kw) > -1;
+    });
+    if (!rows.length) {
+      subList.innerHTML = '<div class="none">找不到符合的禮物</div>';
+      return;
+    }
+    subList.innerHTML = rows.map(function (g) {
+      return '<button type="button" data-gid="' + g.id + '">' + g.product +
+             '<span class="r2">' + g.spec + '　#' + g.productId + '　庫存 ' + g.stock + '</span>' +
+             '</button>';
+    }).join('');
+  }
+
+  function pickSub(g) {
+    subPicked = g;
+    document.getElementById('gv-sub-name').textContent = g.product;
+    document.getElementById('gv-sub-meta').textContent = g.spec + '　#' + g.productId + '　庫存 ' + g.stock;
+    subBox.classList.remove('is-hidden');
+    subPicker.classList.add('is-hidden');
+    subPicker.classList.remove('is-open');
+    subSearch.value = '';
+  }
+
+  subSearch.addEventListener('focus', function () {
+    renderSubList(subSearch.value);
+    subPicker.classList.add('is-open');
+  });
+  subSearch.addEventListener('input', function () {
+    renderSubList(subSearch.value);
+    subPicker.classList.add('is-open');
+  });
+  subList.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-gid]');
+    if (!b) return;
+    var gid = Number(b.getAttribute('data-gid'));
+    pickSub(GIFT_ITEMS.filter(function (g) { return g.id === gid; })[0]);
+  });
+  document.getElementById('gv-sub-clear').addEventListener('click', function () {
+    subPicked = null;
+    subBox.classList.add('is-hidden');
+    subPicker.classList.remove('is-hidden');
+  });
+  document.addEventListener('click', function (e) {
+    if (!subPicker.contains(e.target)) subPicker.classList.remove('is-open');
+  });
+
+  // 開發者面板：列出 demo 認得的產品，點一下填入並綁定
+  document.addEventListener('DOMContentLoaded', function () {
+    var devBar = document.getElementById('devbar');
+    devBar.querySelector('.toggle').addEventListener('click', function () {
+      devBar.classList.toggle('is-open');
+    });
+
+    var DEV_NOTE = { '77208': '總限購 2 組', '76950': '運費恆為 0 的產線' };
+    var devList = document.getElementById('dev-pids');
+    devList.innerHTML = Object.keys(PRODUCTS).map(function (pid) {
+      var dp = PRODUCTS[pid];
+      var tail = DEV_NOTE[pid] ? '・' + DEV_NOTE[pid] : '';
+      return '<button type="button" data-pid="' + pid + '">' +
+               '<b>' + pid + '</b>' + dp.name +
+               '<span>' + dp.line + '・' + dp.temp + tail + '</span>' +
+             '</button>';
+    }).join('');
+
+    devList.addEventListener('click', function (e) {
+      var pb = e.target.closest('[data-pid]');
+      if (!pb) return;
+      document.getElementById('gv-pid').value = pb.getAttribute('data-pid');
+      document.getElementById('gv-bind').click();
+      devBar.classList.remove('is-open');
+    });
+  });
 })();
 </script>
 
@@ -1081,8 +1275,20 @@ a:hover { text-decoration: underline; }
     setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
     setTimeout(() => t.remove(), 2200);
   };
+
 })();
 
 </script>
+
+<div id="devbar">
+  <div class="box">
+    <h4>開發者面板</h4>
+    <p class="cap">demo 只認得這幾個產品 ID，點一下直接填入並綁定。</p>
+    <div class="grp-t">可綁定的產品</div>
+    <div class="pid-list" id="dev-pids"></div>
+  </div>
+  <button type="button" class="toggle">開發者面板</button>
+</div>
+
 </body>
 </html>

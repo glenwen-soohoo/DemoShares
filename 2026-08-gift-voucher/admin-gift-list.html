@@ -652,6 +652,19 @@ a:hover { text-decoration: underline; }
 /* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
 .is-hidden { display: none; }
 
+  /* 「這份禮物是誰的替換品項」標籤 */
+  .gv-subtag {
+    display: inline-block; margin-left: 8px; vertical-align: middle;
+    border: 1px solid var(--gox-card-border); background: #f5f7fa; border-radius: 4px;
+    font-size: 12px; padding: 2px 8px; cursor: pointer; font-family: inherit;
+    color: var(--gox-text-sub);
+  }
+  .gv-subtag:hover { border-color: var(--gox-green); color: var(--gox-green); }
+  .gv-sub-warn {
+    margin-top: 16px; background: #fff8e6; border: 1px solid #f0dcae; border-radius: var(--gox-radius);
+    padding: 10px 12px; font-size: 13px; color: #7a5a00; line-height: 1.7;
+  }
+  .gv-sub-lead { font-size: 14px; color: var(--gox-text); margin: 0 0 12px; line-height: 1.7; }
 </style>
 </head>
 <body>
@@ -722,16 +735,66 @@ a:hover { text-decoration: underline; }
   </div>
 </div>
 
+<div class="gox-modal-overlay is-hidden" id="gv-sub-modal">
+  <div class="gox-modal-box">
+    <div class="gox-card-title">這份禮物是誰的替換品項</div>
+    <div class="gox-card-body">
+      <p class="gv-sub-lead">「<b id="gv-sub-self"></b>」目前被 <b id="gv-sub-n"></b> 份禮物設為<b>第二順位替換品項</b>。那些禮物缺貨時，系統會自動改送這一份。</p>
+      <table class="gox-table">
+        <thead>
+          <tr>
+            <th>禮物產品名</th>
+            <th style="width:150px;">規格</th>
+            <th class="cell-right" style="width:90px;">庫存</th>
+          </tr>
+        </thead>
+        <tbody id="gv-sub-tbody"></tbody>
+      </table>
+      <div class="gv-sub-warn">下架或刪除這份禮物之前，請先確認上列禮物另有替代方案。否則它們缺貨時，客人只能改走「請聯繫客服」。</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>關閉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
 
   var gifts = [
-    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13 },
-    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 45 },
-    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 260, unused: 3 },
-    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0 }
+    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13, substituteId: 5 },
+    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 45, substituteId: 5 },
+    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 260, unused: 3,  substituteId: null },
+    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0,  substituteId: 3 },
+    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用', specId: 176099, listed: true,  stock: 180, unused: 0,  substituteId: null }
   ];
+
+  // 反查：哪些禮物把 gid 設成自己的替換品項
+  function subUsers(gid) {
+    return gifts.filter(function (g) { return g.substituteId === gid; });
+  }
+
+  function subTag(g) {
+    var cnt = subUsers(g.id).length;
+    if (!cnt) return '';
+    return '<button type="button" class="gv-subtag" data-sub="' + g.id + '">替換品項 ×' + cnt + '</button>';
+  }
+
+  function openSubModal(gid) {
+    var self = gifts.filter(function (g) { return g.id === gid; })[0];
+    var users = subUsers(gid);
+    document.getElementById('gv-sub-self').textContent = self.product + '（' + self.spec + '）';
+    document.getElementById('gv-sub-n').textContent = users.length;
+    document.getElementById('gv-sub-tbody').innerHTML = users.map(function (u) {
+      return '<tr>' +
+        '<td><span class="gv-name">' + u.product + '</span><span class="gv-id">#' + u.productId + '</span></td>' +
+        '<td>' + u.spec + '</td>' +
+        '<td class="cell-right gv-num">' + u.stock + '</td>' +
+      '</tr>';
+    }).join('');
+    document.getElementById('gv-sub-modal').classList.remove('is-hidden');
+  }
 
   function render() {
     var kw = document.getElementById('gv-kw').value.trim();
@@ -754,7 +817,7 @@ a:hover { text-decoration: underline; }
       var shortage = g.unused > g.stock;
       return '<tr>' +
         '<td><span class="gv-name">' + g.product + '</span><span class="gv-id">#' + g.productId + '</span></td>' +
-        '<td><span class="gv-spec">' + g.spec + '</span><span class="gv-id">#' + g.specId + '</span></td>' +
+        '<td><span class="gv-spec">' + g.spec + '</span><span class="gv-id">#' + g.specId + '</span>' + subTag(g) + '</td>' +
         '<td class="cell-center"><span class="gox-switch' + (g.listed ? ' is-on' : '') + '" data-gv-toggle="' + g.id + '"></span></td>' +
         '<td class="cell-right gv-num' + (shortage ? ' gv-warn-num' : '') + '">' + g.stock + '</td>' +
         '<td class="cell-right gv-num">' + g.unused +
@@ -764,6 +827,11 @@ a:hover { text-decoration: underline; }
       '</tr>';
     }).join('');
   }
+
+  document.getElementById('gv-tbody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-sub]');
+    if (b) openSubModal(Number(b.getAttribute('data-sub')));
+  });
 
   document.getElementById('gv-btn-search').addEventListener('click', render);
   document.getElementById('gv-kw').addEventListener('keydown', function (e) {

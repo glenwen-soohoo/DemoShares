@@ -498,6 +498,7 @@ img { vertical-align: middle; }
     --green-soft: #EFF5E5;   /* pale-green */
     --gold: #CAA940;
     --warn: #dc4e43;
+    --warn-dark: #db0000;  /* 深紅：快到期提醒。取自現行網站 OrderFinish.scss 的繳費期限提醒色 */
     --text: #1a1a1a;
     --text-2: #595757;
     --muted: #999;
@@ -579,7 +580,7 @@ img { vertical-align: middle; }
   .mc3 .stat-label { font-size: 18px; color: var(--muted); margin-bottom: 4px; }
   .mc3 .stat-num { font-size: 34px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
   .mc3 .stat-num small { font-size: 18px; font-weight: 500; color: var(--muted); margin-left: 4px; }
-  .mc3 .stat-warn { display: block; font-size: 16px; color: var(--gold); margin-top: 4px; }
+  .mc3 .stat-warn { display: block; font-size: 16px; color: var(--warn-dark); margin-top: 4px; }
   .mc3 .btn-record {
     background: #fff; color: var(--green); border: 1px solid var(--green); border-radius: 6px;
     font-size: 17px; font-weight: 600; padding: 8px 20px; cursor: pointer; white-space: nowrap;
@@ -614,7 +615,7 @@ img { vertical-align: middle; }
   }
   .mc3 .gv-name { font-size: 19px; font-weight: 600; line-height: 1.4; }
   .mc3 .gv-exp { font-size: 17px; color: var(--muted); margin-top: 4px; }
-  .mc3 .gv-exp.is-soon { color: var(--gold); font-weight: 600; }
+  .mc3 .gv-exp.is-soon { color: var(--warn-dark); font-weight: 600; }
   .mc3 .gv-code { font-size: 15px; color: #b0b0b0; margin-top: 4px; margin-bottom: 12px; }
   .mc3 .gv-actions { margin-top: auto; }
   .mc3 .btn-use {
@@ -626,18 +627,26 @@ img { vertical-align: middle; }
     width: 100%; background: #f4faf3; color: var(--green); border: 1px solid #cfe4c9; border-radius: 6px;
     font-size: 18px; font-weight: 600; padding: 12px; cursor: default;
   }
-  /* 暫時缺貨：整張卡片降階，按鈕不可按 */
-  .mc3 .gv-card.is-oos { background: #fafafa; border-color: var(--line); box-shadow: none; }
-  .mc3 .gv-card.is-oos .gv-thumb { opacity: .5; }
-  .mc3 .gv-card.is-oos .gv-name { color: #8a8a8a; }
+  /* 禮物與替換品項都缺貨：卡片不降階（券是客人的，不該看起來像失效），只把按鈕換成導客服 */
+  .mc3 .btn-oos {
+    display: block; width: 100%; background: #fff; color: var(--green);
+    border: 1px solid var(--green); border-radius: 6px;
+    font-size: 18px; font-weight: 600; padding: 12px; cursor: pointer;
+    text-align: center; text-decoration: none;
+  }
+  .mc3 .btn-oos:hover { background: #f4faf3; }
+  /* 狀態標籤：補貨中（中性）／替換品項（可用，用淺綠） */
   .mc3 .gv-flag {
-    display: inline-block; font-size: 15px; background: #ececec; color: #767676;
+    display: inline-block; font-size: 14px; background: #f0f0f0; color: #767676;
     border-radius: 4px; padding: 4px 12px; margin-top: 8px;
   }
-  .mc3 .btn-oos {
-    width: 100%; background: #f0f0f0; color: #999; border: 1px solid #e0e0e0; border-radius: 6px;
-    font-size: 18px; font-weight: 600; padding: 12px; cursor: not-allowed;
+  .mc3 .gv-flag.is-sub { background: #EFF5E5; color: var(--green); }
+  /* 彈窗裡的替換說明 */
+  .mc3 .gv-dialog-sub {
+    background: #EFF5E5; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px;
   }
+  .mc3 .gv-dialog-sub b { display: block; color: var(--green); font-size: 15px; margin-bottom: 4px; }
+  .mc3 .gv-dialog-sub div { font-size: 14px; color: #595757; line-height: 1.7; }
 
   /* ── 優惠券 ── */
   .mc3 .cp-card {
@@ -672,7 +681,7 @@ img { vertical-align: middle; }
   .mc3 .cp-ticket:nth-child(odd) { background: #fafbfa; }
   .mc3 .cp-t-face { font-weight: 700; color: #dc4e43; width: 5.5em; flex: none; font-variant-numeric: tabular-nums; }
   .mc3 .cp-t-exp { color: #454545; font-variant-numeric: tabular-nums; }
-  .mc3 .cp-t-exp.is-soon { color: var(--gold); font-weight: 600; }
+  .mc3 .cp-t-exp.is-soon { color: var(--warn-dark); font-weight: 600; }
   .mc3 .cp-t-code { color: #b0b0b0; font-size: 16px; margin-left: auto; font-variant-numeric: tabular-nums; }
 
   .mc3 .cp-row { display: flex; gap: 12px; font-size: 18px; line-height: 1.8; align-items: baseline; }
@@ -883,9 +892,19 @@ img { vertical-align: middle; }
           <div class="gv-name">季節果乾 隨手包</div>
           <div class="gv-exp">09/12 到期，剩 37 天</div>
           <div class="gv-code">SF-260806</div>
-          <div><span class="gv-flag">暫時缺貨</span></div>
-          <div class="gv-actions" style="margin-top:12px;">
-            <button type="button" class="btn-oos" disabled>暫時缺貨</button>
+          <div><span class="gv-flag">補貨中</span></div>
+          <div class="gv-actions">
+            <a class="btn-oos" href="https://lin.ee/djMfdxH" target="_blank" rel="noopener">請聯繫客服</a>
+          </div>
+        </div>
+        <div class="gv-card" data-gv="4">
+          <div class="gv-thumb">禮物圖</div>
+          <div class="gv-name">有機米餅 二入</div>
+          <div class="gv-exp">09/20 到期，剩 45 天</div>
+          <div class="gv-code">SF-260812</div>
+          <div><span class="gv-flag is-sub">替換品項</span></div>
+          <div class="gv-actions">
+            <button type="button" class="btn-use" data-gv-use="4">使用</button>
           </div>
         </div>
       </div>
@@ -922,6 +941,10 @@ img { vertical-align: middle; }
       <div class="gv-dialog-pic">禮物圖</div>
       <div class="gv-dialog-name" id="gv-d-name"></div>
       <div class="gv-dialog-spec" id="gv-d-spec"></div>
+      <div class="gv-dialog-sub" id="gv-d-sub" style="display:none;">
+        <b>這是替換品項</b>
+        <div id="gv-d-sub-text"></div>
+      </div>
       <div class="gv-dialog-note">
         <h4>活動說明</h4>
         <div id="gv-d-note"></div>
@@ -1031,7 +1054,10 @@ img { vertical-align: middle; }
     '2': { name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
            note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' },
     '3': { name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
-           note: '訂單回饋禮，依當季供貨情況出貨。券於有效期限內可兌換，補貨後即可加入菜籃。' }
+           note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' },
+    '4': { name: '有機米餅 二入', spec: '2 入（回饋禮專用）',
+           sub: '原本要送的「季節果乾 隨手包」暫時缺貨，已為你換成同等價值的品項，可直接兌換。',
+           note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' }
   };
 
   var ALL_LINES = ['產地直送', '快速到貨', '冷凍專區', '粥寶寶專區', '綠時光專區', '益菓保'];
@@ -1231,7 +1257,7 @@ img { vertical-align: middle; }
     for (k in added) { if (added[k]) n++; }
     var parts = ['可用 ' + (total - oos - n) + ' 張'];
     if (n) parts.push('已加入 ' + n + ' 張');
-    if (oos) parts.push('缺貨 ' + oos + ' 張');
+    if (oos) parts.push('補貨中 ' + oos + ' 張');
     document.getElementById('gv-meta').textContent = parts.join('・');
   }
 
@@ -1260,6 +1286,13 @@ img { vertical-align: middle; }
     document.getElementById('gv-d-name').textContent = g.name;
     document.getElementById('gv-d-spec').textContent = '規格：' + g.spec;
     document.getElementById('gv-d-note').textContent = g.note;
+    var subBox = document.getElementById('gv-d-sub');
+    if (g.sub) {
+      document.getElementById('gv-d-sub-text').textContent = g.sub;
+      subBox.style.display = '';
+    } else {
+      subBox.style.display = 'none';
+    }
     document.getElementById('gv-d-ok').style.display = added[id] ? 'none' : '';
     document.getElementById('gv-mask').classList.add('is-open');
   }
