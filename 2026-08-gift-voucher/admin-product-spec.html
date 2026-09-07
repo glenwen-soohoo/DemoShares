@@ -350,6 +350,18 @@ a:hover { text-decoration: underline; }
   font-weight: 600;
   color: var(--gox-text);
 }
+/* 「禮物規格」身分標籤：唯讀，取代原本的「設為禮物」勾選框 */
+.gift-badge {
+  display: inline-block;
+  background: #EFF5E5;
+  border: 1px solid #A9CE8A;
+  color: #2F6B1F;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 10px;
+}
+
 .gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
   background: var(--gox-green);
   color: #fff;
@@ -855,7 +867,7 @@ a:hover { text-decoration: underline; }
       <div class="s">如規格有銷量則無法刪除</div>
     </div>
     <div class="ps-tabs" id="ps-tabs">
-      <button type="button" class="ps-tab is-on" data-tab="onshelf">隱藏下架與零元</button>
+      <button type="button" class="ps-tab is-on" data-tab="onshelf">隱藏下架與贈禮品</button>
       <button type="button" class="ps-tab" data-tab="all">顯示全部</button>
       <button type="button" class="ps-tab" data-tab="special">贈品與禮物</button>
     </div>
@@ -949,12 +961,13 @@ a:hover { text-decoration: underline; }
     setTimeout(function () { el.remove(); }, 3000);
   }
   function isSpecial(s) { return s.bonus || s.gift; }
-  function isZero(s) { return Number(s.price) === 0 || Number(s.disc) === 0; }
   function visible(s) {
     // 勾了贈品或禮物 → 只出現在「贈品與禮物」，另兩頁一律不列
     if (tab === 'special') return isSpecial(s);
     if (isSpecial(s)) return false;
-    if (tab === 'onshelf') return s.display && !isZero(s);
+    // 這一頁只隱藏「下架」與「贈品／禮物」（贈禮品在上面已被擋掉），
+    // 零元不隱藏 —— 正常販售也可能有 0 元品項
+    if (tab === 'onshelf') return s.display;
     return true;
   }
 
@@ -1036,9 +1049,11 @@ a:hover { text-decoration: underline; }
     /* 第三層 */
     h += '<div class="tier3">';
     h += '<div><div class="tier3-h">規格限制</div><div class="cons-wrap">';
+    // 禮物是「這個規格是不是禮物」的身分，不是可以隨手勾掉的設定
+    //（解綁會讓已發出的券失去對應），所以放在上架之前，用標籤呈現、不給勾
+    if (s.gift) h += '<div class="fi" style="margin-bottom:24px;"><span class="gift-badge">禮物規格</span></div>';
     h += chk(i, 'display', '上架', s.display);
-    h += chk(i, 'bonus', '設為贈品', s.bonus);
-    h += chk(i, 'gift', '設為禮物', s.gift);
+    h += chk(i, 'bonus', '設為贈品', s.bonus, s.gift);
     h += chk(i, 'store', '是否為遠雄產品', s.store, lock);
     h += chk(i, 'special', '是否特殊商品', s.special, lock);
     h += chk(i, 'cod', '是否貨到付款', s.cod, lock);
@@ -1108,10 +1123,8 @@ a:hover { text-decoration: underline; }
     var s = SPECS[i], c = t.getAttribute('data-c');
     if (c) {
       s[c] = t.checked;
-      if (c === 'bonus' && t.checked && s.gift) { s.gift = false; toast('「' + s.detail + '」已從禮物改為贈品'); }
-      else if (c === 'gift' && t.checked && s.bonus) { s.bonus = false; toast('「' + s.detail + '」已從贈品改為禮物'); }
-      else if (c === 'gift' && t.checked) toast('已設為禮物，只會出現在「贈品與禮物」分頁；產品原價仍可填，其餘設定會鎖住');
-      else if (c === 'bonus' && t.checked) toast('已設為贈品，只會出現在「贈品與禮物」分頁，價格與其他設定會鎖住');
+      // 禮物規格不能在這裡解除（會讓已發出的券失去對應），所以沒有 gift 的勾選事件
+      if (c === 'bonus' && t.checked) toast('已設為贈品，只會出現在「贈品與禮物」分頁，價格與其他設定會鎖住');
       render();
       return;
     }

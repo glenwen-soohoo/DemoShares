@@ -476,9 +476,11 @@ img { vertical-align: middle; }
      Model.Atm 判斷（regular / atm-model 兩段）。
      樣式照 Content/SCSS/Order/OrderFinish.scss。
      ──────────────────────────────────────────────────────── */
-  /* 正式站這頁 body 是灰底、白卡浮在上面；demo 的外殼 .sb-site-container 是全寬白底，要放掉 */
+  /* 正式站這頁 body 是灰底、白卡浮在上面；demo 的外殼 .sb-site-container 是全寬白底，要放掉。
+     連 padding 也要一起放掉 —— 外殼透明之後，它的 20px 上下 padding 會變成一條灰帶
+     卡在 header 與 #page-top 之間（正式站沒有這條）。 */
   body { background-color: #f2f2f2; }
-  .sb-site-container { background: transparent; }
+  .sb-site-container { background: transparent; padding: 0; }
   .of-container { max-width: 1170px; margin: 0 auto; padding: 0 15px; }
   @media (max-width: 941px) { .of-container { max-width: 524px; padding: 0; } }
 
@@ -563,9 +565,30 @@ img { vertical-align: middle; }
   .check-list .ck { color: #4ba83b; margin-right: 4px; }
 
   /* ▼ 本次新增：填寫寶寶生日 ▼ */
-  #baby-block .baby-note {
-    font-size: 16px; color: #808080; font-weight: normal; margin: -8px 0 18px;
+  /* 加一個框把它跟上方文字分開，否則整段混在一起反而不顯眼。
+     框「靠內容撐寬」（實際上就是裡面那顆按鈕的寬度），不跟著容器撐滿 ——
+     撐滿的話它會比頁面上每一顆按鈕都寬，看起來像把整頁橫切開。
+     父層 #regular / #atm-model 本來就是 text-align:center，所以 inline-block 會自動置中。 */
+  #baby-block, #baby-block-atm {
+    display: inline-block;
+    border: 1px solid #cfe4c9;
+    background: #f7fbf5;
+    border-radius: 8px;
+    padding: 22px 24px 18px;
+    margin: 24px 0 20px;
+    /* 固定寬度而不是靠內容撐：只靠內容撐會縮到跟按鈕差不多寬，
+       在 1170 的白卡裡顯得太瘦。460 大約是按鈕的兩倍，仍明顯不撐滿。 */
+    width: 460px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
+  #baby-block .content, #baby-block-atm .content { margin-top: 0; }
+  #baby-block .baby-note, #baby-block-atm .baby-note {
+    font-size: 16px; color: #808080; font-weight: normal; margin: 6px 0 16px;
+  }
+  #baby-block .btn, #baby-block-atm .btn { margin: 0; }
+  /* 框裡的按鈕容器不要再撐一次滿寬，否則框會被它拉開 */
+  #baby-block .col-xs-12, #baby-block-atm .col-xs-12 { padding: 0; }
 </style>
 
 <div id="page-top">
@@ -635,7 +658,7 @@ img { vertical-align: middle; }
       <div id="baby-block">
         <div class="content">填寫寶寶生日，收生日禮</div>
         <div class="baby-note">完善資料，不定期享有專屬會員禮遇</div>
-        <a class="col-xs-12" href="member-baby-profile.html">
+        <a class="col-xs-12" href="member-baby-profile-b.html">
           <div class="btn">填寫寶寶生日</div>
         </a>
       </div>
@@ -684,8 +707,8 @@ img { vertical-align: middle; }
       <!-- ▼▼▼ 本次新增（ATM 段也要加一次） ▼▼▼ -->
       <div id="baby-block-atm">
         <div class="content">填寫寶寶生日，收生日禮</div>
-        <div class="baby-note" style="font-size:16px;color:#808080;font-weight:normal;margin:-8px 0 18px;">完善資料，不定期享有專屬會員禮遇</div>
-        <a class="col-xs-12" href="member-baby-profile.html">
+        <div class="baby-note">完善資料，不定期享有專屬會員禮遇</div>
+        <a class="col-xs-12" href="member-baby-profile-b.html">
           <div class="btn">填寫寶寶生日</div>
         </a>
       </div>

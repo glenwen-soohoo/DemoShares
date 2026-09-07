@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>後台建單 使用禮物券 — 後台 demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ───── GoX Admin / base.css ─────
+   後台殼共用 reset + 全域字型 + CSS 變數 token。
+   color / spacing / radius 集中在 :root，後續元件一律 var(--gox-*) 取用，
+   不要再回填 hex。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+  color: var(--gox-text);
+  background: var(--gox-content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--gox-info); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* 整個後台 wrapper（一定要包這層才能套色） */
+.gox-page {
+  min-height: 100vh;
+  background: var(--gox-content-bg);
+  color: var(--gox-text);
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+}
+
+/* ───── GoX Admin / header.css ─────
+   固定在頂端的淺綠 header：
+     左：無毒農 logo（小張）
+     中：breadcrumb（B2B管理 > 訂單管理）
+     右：使用者快捷區（登出、通知；可選） */
+
+.gox-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--gox-header-h);
+  background: var(--gox-header-bg);
+  border-bottom: 1px solid var(--gox-header-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-family: var(--gox-font-family);
+}
+
+.gox-header .gox-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.gox-header .gox-logo img {
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  display: block;
+}
+
+/* ── breadcrumb ── */
+.gox-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gox-text-sub);
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+}
+.gox-breadcrumb a {
+  color: var(--gox-green);
+  text-decoration: none;
+}
+.gox-breadcrumb a:hover { text-decoration: underline; }
+.gox-breadcrumb .sep {
+  color: var(--gox-text-muted);
+  font-size: 12px;
+}
+.gox-breadcrumb strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* ── 右側使用者快捷區（可選）── */
+.gox-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-header-right .gox-user {
+  color: var(--gox-text);
+}
+.gox-header-right .gox-icon-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--gox-radius);
+  white-space: nowrap;
+}
+.gox-header-right .gox-user { white-space: nowrap; }
+.gox-header-right .gox-icon-btn:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--gox-text);
+}
+
+/* ───── GoX Admin / sidebar.css ─────
+   左側深灰固定側欄。支援：
+     - 一級項目（可帶 badge 紅點）
+     - 可摺疊群組（▶ / ▼）
+     - 二級項目（active 高亮）
+     - disabled 樣式 */
+
+.gox-sidebar {
+  width: var(--gox-sider-w);
+  flex-shrink: 0;
+  background: var(--gox-sider-bg);
+  color: var(--gox-sider-text);
+  padding: 8px 0;
+  font-size: var(--gox-font-size-sm);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--gox-header-h);
+  height: calc(100vh - var(--gox-header-h));
+  font-family: var(--gox-font-family);
+}
+
+/* ── 一級項目 / 群組標題 ── */
+.gox-sidebar .gox-menu-item,
+.gox-sidebar .gox-menu-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--gox-sider-text);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--gox-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  user-select: none;
+}
+.gox-sidebar .gox-menu-item:hover,
+.gox-sidebar .gox-menu-title:hover {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+
+/* disabled（demo 未開放的入口） */
+.gox-sidebar .gox-menu-item.is-disabled {
+  cursor: default;
+  color: #888;
+}
+.gox-sidebar .gox-menu-item.is-disabled:hover {
+  background: transparent;
+  color: #888;
+}
+
+/* 一級項目 active（無子項目、可直接點的頁面，例如「獨立平台」）
+   字色用 !important 壓過腳本給一級項的 inline color:inherit，對齊二級 active 的 bisque */
+.gox-sidebar .gox-menu-item.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text) !important;
+  font-weight: 600;
+}
+
+/* 箭頭（▶ / ▼） */
+.gox-sidebar .gox-arrow {
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+
+/* badge 紅點 */
+.gox-sidebar .gox-badge {
+  margin-left: auto;
+  background: var(--gox-danger);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ── 摺疊群組 ── */
+.gox-sidebar .gox-menu-group.is-open .gox-menu-title {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+.gox-sidebar .gox-menu-children {
+  background: var(--gox-sider-sub-bg);
+}
+
+/* 二級項目 */
+.gox-sidebar .gox-menu-child {
+  display: block;
+  padding: 8px 14px 8px 32px;
+  color: var(--gox-sider-sub-text);
+  text-decoration: none;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-sidebar .gox-menu-child:hover {
+  background: #252530;
+  color: var(--gox-sider-active-text);
+  text-decoration: none;
+}
+.gox-sidebar .gox-menu-child.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text);
+  font-weight: 600;
+}
+
+/* ───── GoX Admin / content.css ─────
+   內容區共用元件：
+     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
+   全部用 :root 變數，不直接寫 hex。 */
+
+/* ── 主體佈局：header 下方的 sidebar + content ── */
+.gox-body {
+  display: flex;
+  min-height: calc(100vh - var(--gox-header-h));
+}
+.gox-content {
+  flex: 1;
+  min-width: 0;          /* 讓子層 table overflow 正常 */
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--gox-content-bg);
+}
+
+/* ─────────────────────────────────────────────────
+   Toolbox：工具型頁面的主要工作區容器
+   預設 960px 限寬置中（表單、設定、編輯頁讀起來舒服）
+   修飾詞依內容寬度需求調整
+   ─────────────────────────────────────────────────
+   何時用：
+     - 系統設定、個人資料、單筆編輯、單一表單
+     - 內容上下流式排列、欄位不多
+   何時不用：
+     - 列表頁（要滿寬度顯示表格）
+     - 看板、儀表板（多欄並列）
+     - 包含寬表格的編輯頁（會被切掉）
+   範例：
+     <main class="gox-content">
+       <div class="gox-toolbox">  ← 用這個
+         <h2>系統設定</h2>
+         <div class="gox-card">…</div>
+       </div>
+     </main>
+*/
+.gox-toolbox {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.gox-toolbox.is-narrow { max-width: 720px; }   /* 表單少欄位、登入頁、設定密碼 */
+.gox-toolbox.is-wide   { max-width: 1200px; }  /* 多欄表單、含中型表格 */
+.gox-toolbox.is-fluid  { max-width: none; }    /* 內容太擠時退回滿寬 */
+
+/* ─────────────────────────────────────────────────
+   Card：後台主要的「白卡片」容器
+   ───────────────────────────────────────────────── */
+.gox-card {
+  background: var(--gox-card-bg);
+  border: 1px solid var(--gox-card-border);
+  border-radius: var(--gox-radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.gox-card-title {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--gox-card-bg);
+  border-bottom: 1px solid var(--gox-card-border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gox-text);
+}
+.gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
+  background: var(--gox-green);
+  color: #fff;
+  border-bottom: 0;
+}
+.gox-card-body { padding: 16px; }
+.gox-card-body.is-table-padding { padding: 0; }     /* table 自己有 padding 時用 */
+
+/* 卡片頂端列：左標題 / 右操作按鈕 */
+.gox-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────────────────
+   Button
+   ───────────────────────────────────────────────── */
+.gox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  line-height: 1.5;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.gox-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* 主操作 — 品牌綠 */
+.gox-btn-primary {
+  background: var(--gox-green);
+  color: #fff;
+  border-color: var(--gox-green);
+}
+.gox-btn-primary:hover:not(:disabled) { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+
+/* 次操作 — 白底邊框 */
+.gox-btn-default {
+  background: #fff;
+  color: var(--gox-text);
+  border-color: #ccc;
+}
+.gox-btn-default:hover:not(:disabled) { background: #f5f5f5; border-color: var(--gox-green); color: var(--gox-green); }
+
+/* 危險 */
+.gox-btn-danger {
+  background: #fff;
+  color: var(--gox-danger);
+  border-color: var(--gox-danger);
+}
+.gox-btn-danger:hover:not(:disabled) { background: var(--gox-danger); color: #fff; }
+
+/* 列表內小按鈕（檢視 / 編輯 / 刪除） */
+.gox-btn-op {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  color: var(--gox-text);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.gox-btn-op:hover { background: #f5f5f5; text-decoration: none; }
+
+/* ─────────────────────────────────────────────────
+   Form
+   ───────────────────────────────────────────────── */
+.gox-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.gox-form-row > label {
+  min-width: 110px;
+  color: var(--gox-text);
+  font-weight: 500;
+}
+.gox-input,
+.gox-select,
+.gox-textarea {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  background: #fff;
+  color: var(--gox-text);
+  line-height: 1.5;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.gox-input:focus,
+.gox-select:focus,
+.gox-textarea:focus {
+  outline: 2px solid var(--gox-green);
+  outline-offset: -1px;
+  border-color: var(--gox-green);
+}
+.gox-input:disabled,
+.gox-select:disabled,
+.gox-textarea:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+.gox-textarea { min-height: 80px; resize: vertical; }
+
+.gox-radio-group, .gox-checkbox-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gox-hint {
+  color: var(--gox-text-muted);
+  font-size: var(--gox-font-size-xs);
+}
+
+/* ─────────────────────────────────────────────────
+   Table
+   ───────────────────────────────────────────────── */
+.gox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--gox-font-size-sm);
+  background: #fff;
+}
+.gox-table th {
+  background: #fafafa;
+  border-bottom: 1px solid var(--gox-card-border);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gox-text-sub);
+  white-space: nowrap;
+}
+.gox-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.gox-table tr:hover td { background: #fafafa; }
+.gox-table .cell-center { text-align: center; }
+.gox-table .cell-right { text-align: right; }
+.gox-table .cell-ops { white-space: nowrap; }
+.gox-table .row-error td { background: #fff1f0; }
+.gox-table .row-error:hover td { background: #ffe0de; }
+
+/* ─────────────────────────────────────────────────
+   Tab（頁籤）
+   ───────────────────────────────────────────────── */
+.gox-tab-group {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  overflow: hidden;
+}
+.gox-tab-btn {
+  padding: 6px 20px;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  border-right: 1px solid #ccc;
+  color: var(--gox-text);
+}
+.gox-tab-btn:last-child { border-right: 0; }
+.gox-tab-btn.is-active {
+  background: var(--gox-info);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────
+   Modal
+   ───────────────────────────────────────────────── */
+.gox-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.gox-modal-overlay.is-hidden { display: none; }
+[hidden] { display: none !important; }
+.gox-modal-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 480px;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+.gox-modal-box h4 { margin: 0 0 16px; font-size: 16px; }
+.gox-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ─────────────────────────────────────────────────
+   Switch / Tag
+   ───────────────────────────────────────────────── */
+.gox-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background .18s ease;
+  vertical-align: middle;
+}
+.gox-switch.is-on { background: var(--gox-green); }
+.gox-switch.is-disabled { opacity: .5; cursor: not-allowed; }
+.gox-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  transition: transform .18s ease;
+}
+.gox-switch.is-on::after { transform: translateX(18px); }
+
+.gox-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  font-weight: 600;
+  background: #f0f0f0;
+  color: var(--gox-text-sub);
+  border: 1px solid #e0e0e0;
+}
+.gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+.gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-warning { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
+.gox-tag.is-danger  { background: #fff1f0; color: var(--gox-danger); border-color: #ffccc7; }
+
+/* 溫層快速 tag（兩專案都會用） */
+.gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+
+/* ─────────────────────────────────────────────────
+   Icon button（鉛筆 / 確認 / 取消）
+   ───────────────────────────────────────────────── */
+.gox-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gox-radius);
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  font-size: 12px;
+  font-family: inherit;
+  transition: all .15s;
+}
+.gox-icon-btn:hover {
+  background: #f0f4f8;
+  color: var(--gox-info);
+  border-color: #bcd4ea;
+}
+.gox-icon-btn.is-confirm { background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
+.gox-icon-btn.is-confirm:hover { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+.gox-icon-btn.is-cancel  { background: #fff; color: #999; border-color: #ccc; }
+.gox-icon-btn.is-cancel:hover  { background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
+
+/* ─────────────────────────────────────────────────
+   通用工具 class
+   ───────────────────────────────────────────────── */
+/* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
+.is-hidden { display: none; }
+
+</style>
+</head>
+<body>
+<div class="gox-page">
+<header class="gox-header">
+  <a href="#" class="gox-logo">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農">
+  </a>
+  <nav class="gox-breadcrumb">
+    <a href="#">訂單管理</a>
+    <span class="sep">&gt;</span>
+    <strong>後台建單</strong>
+  </nav>
+  <div class="gox-header-right">
+    <span class="gox-user">示範帳號</span>
+    <button type="button" class="gox-icon-btn">登出</button>
+  </div>
+</header>
+
+<div class="gox-body">
+<aside class="gox-sidebar">
+  <div class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
+  <div class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
+  <a href="admin-gift-list.html" class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">禮物券管理</span></a>
+</aside>
+
+<main class="gox-content">
+<style>
+  /* ══════════════════════════════════════════════════════════
+     後台建單 — 版面重新規劃
+     欄位來源：Areas/GoX/Views/Orders/CreatePayment.cshtml（一個沒加沒減）
+
+     現行排版的問題與這一版的處理：
+       ① 折抵散在三處（優惠券在訂單資訊中段、購物金/紅利埋在金額區當輸入框）
+          ⇒ 收攏成獨立的「折抵」段
+       ② 「訂單資訊」是大雜燴（商品/發票/備註/物流/狀態/折抵/金額）
+          ⇒ 拆成 商品 / 折抵 / 發票 / 備註 四段
+       ③ 會員帶出的唯讀資料夾在要填的欄位中間
+          ⇒ 收進「帶出的既有資料」淺底區，查到會員才展開
+       ④ 金額在整頁最底，加商品時看不到總額
+          ⇒ 桌機移到右欄 sticky，跟付款/狀態/送出放在一起
+     ══════════════════════════════════════════════════════════ */
+
+  /* 外殼的 .gox-content 有 overflow-x: auto；依 CSS 規範，一軸不是 visible 時
+     另一軸會被算成 auto，於是它變成 sticky 的捲動容器 —— 但它自己不捲，
+     右欄就永遠 pin 不住。這頁把它放回 visible，讓視窗當捲動容器；
+     真正需要橫向捲的只有購物車表格，改由 .oc-tb-wrap 自己處理。 */
+  .gox-content { overflow: visible; }
+  .oc-tb-wrap { overflow-x: auto; }
+
+  .oc { max-width: 1320px; font-family: var(--gox-font-family); }
+
+  /* 主結構：左邊是填寫流程，右邊是結果與送出 */
+  .oc-grid { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 16px; align-items: start; }
+  /* sticky 只有在元素「比視窗矮」時才 pin 得住；比視窗高就會整塊捲出去。
+     所以右欄要壓短（付款/狀態/送出併成一張卡），再加 max-height 當保險。 */
+  .oc-side {
+    position: sticky; top: 16px;
+    display: flex; flex-direction: column; gap: 16px;
+    max-height: calc(100vh - 32px); overflow-y: auto;
+  }
+
+  .oc-card {
+    background: #fff; border: 1px solid var(--gox-card-border); border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,.04), 0 2px 6px 0 rgba(0,0,0,.03);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .oc-side .oc-card { margin-bottom: 0; }
+  .oc-card > h2 {
+    margin: 0; padding: 12px 20px;
+    background: #008000; color: #fff;
+    font-size: 15px; font-weight: 600; letter-spacing: .5px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .oc-card > h2 .step {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(255,255,255,.22);
+    font-size: 12px; display: flex; align-items: center; justify-content: center;
+  }
+  .oc-card > h2 .h2note { margin-left: auto; font-size: 12px; font-weight: normal; opacity: .85; }
+  .oc-body { padding: 18px 20px 20px; }
+
+  /* ── 欄位格線：一段內兩欄，需要滿寬的自己跨欄 ── */
+  .oc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; align-content: start; }
+  .fld { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .fld--half { grid-column: span 1; }
+  .fld-label { font-size: 13px; font-weight: 600; color: #55605a; }
+  .fld-label .req { color: var(--gox-danger); margin-right: 2px; }
+  .fld-label .note { color: var(--gox-text-muted); font-weight: normal; }
+
+  .oc input[type="text"], .oc input[type="number"], .oc input[type="date"],
+  .oc select, .oc textarea {
+    width: 100%; box-sizing: border-box;
+    font-family: inherit; font-size: 14px; color: var(--gox-text);
+    background: #fff; border: 1px solid #dcdfe6; border-radius: var(--gox-radius);
+    padding: 0 10px; height: 34px; transition: border-color .15s;
+  }
+  .oc textarea { height: auto; padding: 8px 10px; line-height: 1.7; resize: vertical; }
+  .oc input:focus, .oc select:focus, .oc textarea:focus { outline: none; border-color: var(--gox-green); }
+  .oc input[readonly] { background: #f5f5f5; color: var(--gox-text-muted); }
+  .oc select { appearance: none; }
+
+  .rad-grp { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; min-height: 34px; }
+  .rad-grp.is-stack { flex-direction: column; align-items: flex-start; gap: 7px; min-height: 0; }
+  .rad-grp label, .chk-line { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+  .rad-grp input, .chk-line input { width: 15px; height: 15px; margin: 0; accent-color: var(--gox-green); }
+
+  .oc-btn {
+    font-family: inherit; font-size: 13px; line-height: 1.5;
+    padding: 6px 14px; border-radius: var(--gox-radius);
+    border: 1px solid #dcdfe6; background: #fff; color: var(--gox-text); cursor: pointer; white-space: nowrap;
+  }
+  .oc-btn:hover { background: #f5f7fa; }
+  .oc-btn-primary { background: var(--gox-green); border-color: var(--gox-green); color: #fff; }
+  .oc-btn-primary:hover { background: var(--gox-green-hover); }
+  .oc-btn-danger { border-color: var(--gox-danger); color: var(--gox-danger); }
+  .oc-btn-danger:hover { background: #fdf2f1; }
+  .oc-btn:disabled { opacity: .4; cursor: default; }
+  .oc-btn:disabled:hover { background: #fff; }
+
+  .inline-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .inline-row input { width: auto; flex: 1; min-width: 0; }
+
+  .ro { color: var(--gox-text-muted); font-size: 13px; }
+  .oc-noresult { color: var(--gox-danger); font-size: 13px; display: none; }
+  .oc-noresult.is-on { display: inline; }
+  .oc-found { color: var(--gox-green-hover); font-size: 13px; font-weight: 600; display: none; }
+
+  /* ── 會員帶出的唯讀資料：獨立一塊，不跟要填的欄位混 ── */
+  .oc-carry {
+    grid-column: 1 / -1;
+    border: 1px solid #e2e8e0; border-radius: 6px; background: #f7faf6; overflow: hidden;
+  }
+  .oc-carry > summary {
+    list-style: none; cursor: pointer; padding: 10px 14px;
+    font-size: 13px; font-weight: 600; color: #3f6b34;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .oc-carry > summary::-webkit-details-marker { display: none; }
+  .oc-carry > summary::before {
+    content: '▸'; transition: transform .15s; display: inline-block; font-size: 11px;
+  }
+  .oc-carry[open] > summary::before { transform: rotate(90deg); }
+  .oc-carry > summary .cnt { margin-left: auto; font-weight: normal; color: var(--gox-text-muted); }
+  .oc-carry-body { padding: 0 14px 14px; }
+  .carry-dl { display: grid; grid-template-columns: 96px 1fr; gap: 8px 14px; margin: 0; font-size: 13px; }
+  .carry-dl dt { color: var(--gox-text-muted); }
+  .carry-dl dd { margin: 0; color: var(--gox-text); line-height: 1.6; }
+
+  /* ── 表格（購物車、特殊紀錄）── */
+  .oc-tb { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .oc-tb th, .oc-tb td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
+  .oc-tb th { background: var(--gox-header-bg); font-weight: 600; color: #33553a; }
+  .oc-tb td.num, .oc-tb th.num { text-align: right; }
+  .oc-tb .spec { color: var(--gox-text-muted); font-size: 12px; margin-top: 2px; }
+  .oc-tb tr.is-gift td { background: #f7fbf4; }
+  .cart-gift-tag {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    color: #2f6b26; background: #e5f1da; border-radius: 3px; padding: 1px 7px; margin-right: 6px;
+  }
+  .cart-lock { color: var(--gox-text-muted); font-size: 12px; }
+
+  /* ── 折抵段：四種折抵並列，各自一個小區 ── */
+  .disc-item { grid-column: 1 / -1; border-top: 1px dashed #e6e6e6; padding-top: 16px; }
+  .disc-item:first-child { border-top: 0; padding-top: 0; }
+  .disc-head { font-size: 13px; font-weight: 600; color: #55605a; margin-bottom: 8px; }
+  .disc-head .hint { font-weight: normal; color: var(--gox-text-muted); margin-left: 6px; }
+
+  /* 禮物券卡片 */
+  .gvu-empty { color: var(--gox-text-muted); font-size: 13px; line-height: 1.8; }
+  .gvu-list { display: flex; flex-direction: column; gap: 8px; }
+  .gvu-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
+    padding: 11px 13px; background: #fff;
+  }
+  .gvu-item.is-added { border-color: #a9ce8a; background: #f7fbf4; }
+  .gvu-item.is-dead { background: #fafafa; }
+  .gvu-main { min-width: 0; flex: 1; }
+  .gvu-vtype { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .gvu-item.is-dead .gvu-vtype { color: #999; }
+  .gvu-name { font-size: 13px; color: var(--gox-text-sub); margin-top: 2px; }
+  .gvu-meta { font-size: 12px; color: var(--gox-text-muted); margin-top: 3px; line-height: 1.7; }
+  .gvu-meta .is-soon { color: var(--gox-danger); }
+  .gvu-tag { font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 7px; }
+  .gvu-tag.is-sub { color: #2f6b26; background: #e5f1da; }
+  .gvu-tag.is-oos { color: #7a7a7a; background: #ececec; }
+  .gvu-ops { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .gvu-blocked { font-size: 12px; color: var(--gox-danger); line-height: 1.5; max-width: 190px; text-align: right; }
+  .gvu-added-hint { font-size: 12px; color: #2f6b26; }
+
+  /* ── 右欄：金額 ── */
+  .amt-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 14px; color: var(--gox-text-sub); }
+  .amt-row .v { color: var(--gox-text); font-variant-numeric: tabular-nums; }
+  .amt-row .v.is-minus { color: var(--gox-success); }
+  .amt-hr { margin: 10px 0; border: 0; border-top: 1px solid #eee; }
+  .amt-total { display: flex; justify-content: space-between; align-items: baseline; }
+  .amt-total .lbl { font-size: 15px; font-weight: 600; }
+  .amt-total .v { font-size: 24px; font-weight: 700; color: #008000; font-variant-numeric: tabular-nums; }
+  .amt-custom { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gox-text-sub); }
+  .amt-custom input { width: 96px; text-align: right; }
+  .amt-note { margin: 12px 0 0; font-size: 12px; color: var(--gox-text-muted); line-height: 1.8; }
+
+  .oc-submit {
+    width: 100%; font-family: inherit; font-size: 16px; font-weight: 600;
+    padding: 12px; border-radius: var(--gox-radius);
+    background: var(--gox-green); border: 1px solid var(--gox-green); color: #fff; cursor: pointer;
+  }
+  .oc-submit:hover { background: var(--gox-green-hover); }
+  .oc-submit-hint { margin: 10px 0 0; font-size: 12px; color: var(--gox-text-muted); line-height: 1.7; text-align: center; }
+
+  /* ── 窄畫面：收成單欄，金額回到最後、不再 sticky ── */
+  @media (max-width: 1180px) {
+    .oc-grid { grid-template-columns: 1fr; }
+    .oc-side { position: static; }
+  }
+  @media (max-width: 720px) {
+    .oc-fields { grid-template-columns: 1fr; }
+    .fld--half { grid-column: 1 / -1; }
+  }
+
+  /* 開發者面板（只在 demo 用，正式頁面不會有）。放左下角 */
+  #devbar { position: fixed; left: 16px; bottom: 16px; z-index: 10001; font-family: var(--gox-font-family); }
+  #devbar .toggle {
+    background: #1a1a1a; color: #fff; border: 0; border-radius: 999px;
+    font-size: 14px; padding: 10px 18px; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25); font-family: inherit;
+  }
+  #devbar .box {
+    display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 300px; margin-bottom: 8px;
+  }
+  #devbar.is-open .box { display: block; }
+  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
+  #devbar .grp-t { font-size: 13px; font-weight: 600; color: #55606e; margin: 12px 0 6px; }
+  #devbar .pid-list { display: flex; flex-direction: column; gap: 6px; }
+  #devbar .pid-list button {
+    text-align: left; border: 1px solid #d5d9de; border-radius: 6px; background: #fff;
+    padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 13px; color: #1a1a1a;
+  }
+  #devbar .pid-list button:hover { border-color: #1a1a1a; }
+  #devbar .pid-list button.is-on { border-color: var(--gox-green); background: #f3faf1; }
+  #devbar .pid-list span { display: block; font-size: 12px; color: #8a939e; margin-top: 2px; }
+</style>
+
+<div class="oc">
+<div class="oc-grid">
+
+<!-- ══════════ 左欄：填寫流程 ══════════ -->
+<div class="oc-main">
+
+  <!-- 1 客戶 -->
+  <section class="oc-card">
+    <h2><span class="step">1</span>客戶<span class="h2note">先查到人，後面的折抵才有東西可帶</span></h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+        <div class="fld fld--half">
+          <span class="fld-label"><span class="req">*</span>是否為會員</span>
+          <div class="rad-grp">
+            <label><input type="radio" name="IsMember" value="1" checked><span>會員</span></label>
+            <label><input type="radio" name="IsMember" value="0"><span>非會員</span></label>
+          </div>
+        </div>
+        <div class="fld fld--half" id="blk-mobile">
+          <label class="fld-label" for="vol-mobile"><span class="req">*</span>會員手機</label>
+          <div class="inline-row">
+            <input type="text" id="vol-mobile" placeholder="0900000008">
+            <button type="button" class="oc-btn" id="vol-search">查詢</button>
+          </div>
+          <span class="oc-noresult" id="vol-noresult">查無此會員!!</span>
+          <span class="oc-found" id="vol-found"></span>
+        </div>
+
+        <div class="fld fld--half">
+          <label class="fld-label" for="buyer-name"><span class="req">*</span>聯絡人姓名</label>
+          <input type="text" id="buyer-name">
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="buyer-mobile"><span class="req">*</span>聯絡人手機</label>
+          <input type="text" id="buyer-mobile">
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="buyer-email">電子信箱</label>
+          <input type="text" id="buyer-email">
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="buyer-line">Line 資訊</label>
+          <input type="text" id="buyer-line">
+        </div>
+
+        <!-- 查到會員才有值的唯讀資料，收成一塊 -->
+        <details class="oc-carry" id="carry">
+          <summary>這位客人的既有設定<span class="cnt" id="carry-cnt">查詢後帶出</span></summary>
+          <div class="oc-carry-body">
+            <dl class="carry-dl">
+              <dt>預設配達時段</dt><dd id="ro-rcv">—</dd>
+              <dt>倉庫備註</dt><dd id="ro-warehouse">—</dd>
+              <dt>出貨備註</dt><dd id="ro-shipremark">—</dd>
+              <dt>特殊紀錄</dt><dd id="ro-internal">—</dd>
+              <dt>優待券</dt><dd id="ro-redeem">—</dd>
+            </dl>
+          </div>
+        </details>
+
+        <div class="fld">
+          <label class="chk-line"><input type="checkbox"><span>我要送禮，請幫讓收件人知道誰贈送（不顯示金額）</span></label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 收件與配送 -->
+  <section class="oc-card">
+    <h2><span class="step">2</span>收件與配送</h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+        <div class="fld">
+          <label class="chk-line"><input type="checkbox" id="copy-buyer"><span>同訂購人資訊</span></label>
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="rcv-name"><span class="req">*</span>收件人姓名</label>
+          <input type="text" id="rcv-name">
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="rcv-mobile"><span class="req">*</span>收件人手機</label>
+          <input type="text" id="rcv-mobile">
+        </div>
+        <div class="fld">
+          <label class="fld-label" for="rcv-addr"><span class="req">*</span>收件地址</label>
+          <input type="text" id="rcv-addr">
+        </div>
+
+        <div class="fld fld--half">
+          <span class="fld-label"><span class="req">*</span>配達時段</span>
+          <div class="rad-grp is-stack">
+            <label><input type="radio" name="ReceiveTime"><span>上午配送：13 時前</span></label>
+            <label><input type="radio" name="ReceiveTime"><span>下午配送：14–18 時</span></label>
+            <label><input type="radio" name="ReceiveTime"><span>當日配：16–19 時</span></label>
+            <label><input type="radio" name="ReceiveTime" checked><span>不指定</span></label>
+          </div>
+        </div>
+        <div class="fld fld--half">
+          <span class="fld-label">單品到貨時間</span>
+          <div class="rad-grp is-stack">
+            <label><input type="radio" name="ShipTime" checked><span>不選擇</span></label>
+            <label><input type="radio" name="ShipTime"><span>A 不指定（最快到貨）</span></label>
+            <label><input type="radio" name="ShipTime"><span>B 僅平日可收貨（一至五）</span></label>
+            <label><input type="radio" name="ShipTime"><span>C 僅周六可收貨</span></label>
+          </div>
+        </div>
+
+        <div class="fld fld--half">
+          <span class="fld-label"><span class="req">*</span>物流方式</span>
+          <div class="rad-grp">
+            <label><input type="radio" name="DeliveryType" checked><span>黑貓</span></label>
+            <label><input type="radio" name="DeliveryType"><span>全家</span></label>
+          </div>
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="store-name">店鋪名稱 <span class="note">（選全家才有）</span></label>
+          <input type="text" id="store-name" readonly>
+        </div>
+
+        <div class="fld fld--half">
+          <label class="fld-label" for="custom-date">自訂出貨日 <span class="note">（不指定就抓產品的出貨日）</span></label>
+          <input type="date" id="custom-date">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 商品 -->
+  <section class="oc-card">
+    <h2><span class="step">3</span>商品</h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+        <div class="fld">
+          <span class="fld-label"><span class="req">*</span>加入商品 <span class="note" id="dataState">資料讀取完成</span></span>
+          <div class="inline-row">
+            <input type="text" placeholder="商品名稱" style="flex:2">
+            <span>×</span>
+            <input type="number" value="1" min="1" style="flex:0 0 64px;text-align:center">
+            <button type="button" class="oc-btn oc-btn-primary">加入</button>
+            <button type="button" class="oc-btn">匯入文字檔</button>
+            <button type="button" class="oc-btn oc-btn-danger">清空購物車</button>
+          </div>
+        </div>
+        <div class="fld">
+          <div class="oc-tb-wrap">
+          <table class="oc-tb">
+            <thead>
+              <tr>
+                <th>品名</th><th style="width:14%">產線</th>
+                <th class="num" style="width:10%">單價</th>
+                <th class="num" style="width:10%">數量</th>
+                <th class="num" style="width:12%">小計</th>
+                <th class="num" style="width:10%">操作</th>
+              </tr>
+            </thead>
+            <tbody id="cart-body">
+              <tr>
+                <td>有機蔬菜箱<div class="spec">中箱／每週配送</div></td><td>蔬菜箱</td>
+                <td class="num">680</td><td class="num">1</td><td class="num">680</td>
+                <td class="num"><button type="button" class="oc-btn">移除</button></td>
+              </tr>
+              <tr>
+                <td>當季水果禮盒<div class="spec">綜合 6 入</div></td><td>水果</td>
+                <td class="num">520</td><td class="num">1</td><td class="num">520</td>
+                <td class="num"><button type="button" class="oc-btn">移除</button></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 折抵 -->
+  <section class="oc-card">
+    <h2><span class="step">4</span>折抵<span class="h2note">現行散在三處，這裡收攏</span></h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+
+        <div class="disc-item">
+          <div class="disc-head">優惠代碼</div>
+          <div class="inline-row">
+            <input type="text" style="flex:0 0 180px">
+            <button type="button" class="oc-btn">檢查</button>
+          </div>
+        </div>
+
+        <div class="disc-item">
+          <div class="disc-head">優惠券<span class="hint">一張訂單只能用一張</span></div>
+          <div id="coupon-area"><span class="ro">先查詢會員，才會列出他的優惠券。</span></div>
+        </div>
+
+        <div class="disc-item">
+          <div class="disc-head">禮物券<span class="hint">可以用多張，受限購規則約束</span></div>
+          <div id="gvu-area"></div>
+        </div>
+
+        <div class="disc-item">
+          <div class="disc-head">購物金與紅利點數</div>
+          <div class="oc-fields">
+            <div class="fld fld--half">
+              <label class="fld-label" for="use-bonus">購物金 <span class="note">剩餘 $<span id="bonus-max">0</span></span></label>
+              <input type="number" id="use-bonus" placeholder="0">
+            </div>
+            <div class="fld fld--half">
+              <label class="fld-label" for="use-rp">紅利點數 <span class="note">剩餘 $<span id="rp-max">0</span></span></label>
+              <input type="number" id="use-rp" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 發票 -->
+  <section class="oc-card">
+    <h2><span class="step">5</span>發票</h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+        <div class="fld fld--half">
+          <label class="fld-label" for="inv-type">發票類型</label>
+          <select id="inv-type"><option>二聯式</option><option>三聯式</option><option>捐贈發票</option></select>
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="carrier-type">載具類型</label>
+          <select id="carrier-type"><option>無載具</option><option>自然人載具</option><option>手機載具</option></select>
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="carrier-no">載具號碼</label>
+          <input type="text" id="carrier-no">
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="tax-id">統一編號 <span class="note">（8 碼，三聯式才要）</span></label>
+          <input type="text" id="tax-id" maxlength="8">
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="comp-name">公司抬頭</label>
+          <input type="text" id="comp-name">
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="comp-email">發票寄送 Email</label>
+          <input type="text" id="comp-email">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 備註 -->
+  <section class="oc-card">
+    <h2><span class="step">6</span>備註<span class="h2note">三個備註給不同人看，別填錯</span></h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+        <div class="fld">
+          <label class="fld-label" for="rm-ship">出貨單備註 <span class="note">客人看得到</span></label>
+          <textarea id="rm-ship" rows="2" placeholder="出貨單上的備註，例：管理員可代收，假日不在家。"></textarea>
+        </div>
+        <div class="fld">
+          <label class="fld-label" for="rm-wh">倉庫備註 <span class="note">揀貨單會顯示</span></label>
+          <textarea id="rm-wh" rows="2" placeholder="可用來紀錄給倉庫的訊息"></textarea>
+        </div>
+        <div class="fld">
+          <label class="fld-label" for="rm-cs">客服備註 <span class="note">只有後台看得到</span></label>
+          <textarea id="rm-cs" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ══════════ 右欄：金額、付款狀態、送出（桌機 sticky）══════════ -->
+<aside class="oc-side">
+
+  <section class="oc-card">
+    <h2>金額</h2>
+    <div class="oc-body">
+      <div class="amt-row"><span>商品小計</span><span class="v" id="amt-sub">1,200</span></div>
+      <div class="amt-row"><span>活動折扣</span><span class="v is-minus">0</span></div>
+      <div class="amt-row"><span>優惠券</span><span class="v is-minus" id="amt-coupon">0</span></div>
+      <div class="amt-row"><span>禮物券</span><span class="v" id="amt-gift">未使用</span></div>
+      <div class="amt-row"><span>購物金</span><span class="v is-minus" id="amt-bonus">0</span></div>
+      <div class="amt-row"><span>紅利點數</span><span class="v is-minus" id="amt-rp">0</span></div>
+      <div class="amt-row"><span>運費</span><span class="v" id="amt-ship">0</span></div>
+      <hr class="amt-hr">
+      <div class="amt-total"><span class="lbl">應付總額</span><span class="v"><span id="amt-total">1,200</span> 元</span></div>
+      <div class="amt-custom">
+        <label for="amt-fix">修改總計</label>
+        <input type="number" id="amt-fix" placeholder="不改可留空">
+      </div>
+      <p class="amt-note">
+        禮物券兌換到的商品單價為 0，不列入折抵、也不列入免運門檻。
+      </p>
+    </div>
+  </section>
+
+  <section class="oc-card">
+    <h2>付款與狀態</h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+        <div class="fld">
+          <span class="fld-label"><span class="req">*</span>付款方式</span>
+          <div class="rad-grp">
+            <label><input type="radio" name="PaymentType" checked><span>ATM轉帳</span></label>
+            <label><input type="radio" name="PaymentType"><span>信用卡</span></label>
+            <label><input type="radio" name="PaymentType"><span>貨到付款</span></label>
+            <label><input type="radio" name="PaymentType"><span>其他</span></label>
+            <label><input type="radio" name="PaymentType"><span>無</span></label>
+          </div>
+        </div>
+        <div class="fld">
+          <span class="fld-label"><span class="req">*</span>是否付款</span>
+          <div class="rad-grp">
+            <label><input type="radio" name="isPay" checked><span style="color:var(--gox-danger)">否</span></label>
+            <label><input type="radio" name="isPay"><span style="color:var(--gox-green-hover)">是</span></label>
+          </div>
+        </div>
+        <div class="fld">
+          <label class="fld-label" for="order-status"><span class="req">*</span>訂單狀態</label>
+          <select id="order-status">
+            <option>處理中</option><option>備貨中</option><option>待出貨</option>
+            <option>已出貨</option><option>已送達</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label class="chk-line" id="join-area" style="display:none"><input type="checkbox"><span>我要加入會員（帳號、密碼為手機）</span></label>
+          <label class="chk-line"><input type="checkbox" checked><span>發送簡訊通知客人</span></label>
+        </div>
+      </div>
+      <button type="button" class="oc-submit" style="margin-top:16px">新增訂單</button>
+      <p class="oc-submit-hint" id="foot-hint"></p>
+    </div>
+  </section>
+
+</aside>
+
+</div>
+</div>
+</main>
+</div>
+</div>
+
+<div id="devbar">
+  <div class="box">
+    <h4>開發者面板</h4>
+    <p class="cap">demo 只認得一組會員手機，其餘都會查無此會員。</p>
+    <div class="pid-list">
+      <button type="button" id="dev-fill">填入 0900000008 並查詢<span>示範會員（會員編號 900005）</span></button>
+    </div>
+    <div class="grp-t">這位會員的券況</div>
+    <div class="pid-list" id="dev-scenes"></div>
+  </div>
+  <button type="button" class="toggle">開發者面板</button>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  var MEMBER = {
+    id: 900005, mobile: '0900000008', name: '示範會員',
+    email: 'demo@example.com', line: 'greenbox_demo',
+    addr: '新北市板橋區中山路一段 100 號',
+    rcv: '上午配送時段：13 時前', warehouse: '無',
+    shipRemark: '假日不在家，可放管理室',
+    internal: '曾反映水果碰傷，出貨請加緩衝',
+    redeem: '生日優待卷 100 元',
+    bonus: 250, rp: 80
+  };
+
+  // limit：0 不限制 / 1 整台購物車僅限一張 / 2 同產線僅限一張 / 3 本產品限用一張
+  var SCENES = {
+    normal: [
+      { no: 'BD-260803', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包',
+        exp: '2026/09/20', left: 45, limit: 0, line: '嬰幼食品', state: 'ok' },
+      { no: 'MF-260815', vtype: '中秋限定禮', name: '有機米餅 二入', spec: '2 入',
+        exp: '2026/09/09', left: 5, limit: 1, line: '零食', state: 'ok' },
+      { no: 'OR-260722', vtype: '訂單回饋禮', name: '有機蔬果乾 隨手包', spec: '1 包',
+        exp: '2026/10/02', left: 58, limit: 0, line: '零食', state: 'sub', origin: '季節果乾 隨手包' },
+      { no: 'OR-260728', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入',
+        exp: '2026/09/30', left: 26, limit: 0, line: '零食', state: 'oos' }
+    ],
+    empty: [],
+    alloos: [
+      { no: 'BD-260803', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包',
+        exp: '2026/09/20', left: 45, limit: 0, line: '嬰幼食品', state: 'oos' },
+      { no: 'OR-260728', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入',
+        exp: '2026/09/30', left: 26, limit: 0, line: '零食', state: 'oos' }
+    ]
+  };
+
+  var scene = 'normal', found = false, isMember = true, added = [];
+  var SUBTOTAL = 1200;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  function vouchers() { return SCENES[scene]; }
+  function byNo(no) { return vouchers().filter(function (v) { return v.no === no; })[0]; }
+  function fmt(n) { return n.toLocaleString('en-US'); }
+
+  // 這幾條規則跟前台購物車共用，後台建單不能自己放行
+  function blockReason(v) {
+    if (added.indexOf(v.no) >= 0) return '';
+    var list = added.map(byNo);
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      if (a.limit === 1 || v.limit === 1) return '整台購物車僅限一張禮物券，已加入「' + a.vtype + '」。';
+      if ((a.limit === 2 || v.limit === 2) && a.line === v.line) return '同產線（' + v.line + '）僅限一張，已加入「' + a.vtype + '」。';
+      if ((a.limit === 3 || v.limit === 3) && a.name === v.name) return '「' + v.name + '」本產品限用一張。';
+    }
+    return '';
+  }
+
+  function renderVouchers() {
+    var el = $('gvu-area');
+    if (!isMember) { el.innerHTML = '<p class="gvu-empty">非會員不能使用禮物券。券是發給特定會員的，沒有會員身分就查不到、也不能兌換。</p>'; return; }
+    if (!found) { el.innerHTML = '<p class="gvu-empty">先查詢會員，才會列出他的禮物券。</p>'; return; }
+    if (!vouchers().length) { el.innerHTML = '<p class="gvu-empty">這位會員目前沒有可用的禮物券。（已兌換、已過期的不會列出）</p>'; return; }
+
+    el.innerHTML = '<div class="gvu-list">' + vouchers().map(function (v) {
+      var isAdded = added.indexOf(v.no) >= 0;
+      var dead = (v.state === 'oos');
+      var blocked = dead ? '' : blockReason(v);
+      var tag = v.state === 'sub' ? '<span class="gvu-tag is-sub">替換品項</span>'
+              : dead ? '<span class="gvu-tag is-oos">補貨中</span>' : '';
+      var ops;
+      if (dead) {
+        ops = '<button type="button" class="oc-btn" disabled>加入本單</button>' +
+              '<span class="gvu-blocked">清單上的品項全部缺貨。</span>';
+      } else if (isAdded) {
+        ops = '<button type="button" class="oc-btn" data-del="' + v.no + '">移除</button>' +
+              '<span class="gvu-added-hint">已加入本單</span>';
+      } else if (blocked) {
+        ops = '<button type="button" class="oc-btn" disabled>加入本單</button>' +
+              '<span class="gvu-blocked">' + esc(blocked) + '</span>';
+      } else {
+        ops = '<button type="button" class="oc-btn oc-btn-primary" data-add="' + v.no + '">加入本單</button>';
+      }
+      return '<div class="gvu-item' + (isAdded ? ' is-added' : '') + (dead ? ' is-dead' : '') + '">' +
+        '<div class="gvu-main">' +
+          '<div class="gvu-vtype">' + esc(v.vtype) + tag + '</div>' +
+          '<div class="gvu-name">' + esc(v.name) + '（' + esc(v.spec) + '）' +
+            (v.state === 'sub' ? '　<span style="color:#2f6b26">原「' + esc(v.origin) + '」缺貨</span>' : '') +
+          '</div>' +
+          '<div class="gvu-meta">券號 ' + esc(v.no) + '　·　到期 ' + esc(v.exp) +
+            '（<span class="' + (v.left <= 7 ? 'is-soon' : '') + '">剩 ' + v.left + ' 天</span>）' +
+            '　·　產線 ' + esc(v.line) +
+            (v.limit ? '　·　' + ['', '整台車限一張', '同產線限一張', '本產品限一張'][v.limit] : '') +
+          '</div>' +
+        '</div><div class="gvu-ops">' + ops + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  function renderCart() {
+    var body = $('cart-body');
+    Array.prototype.forEach.call(body.querySelectorAll('tr.is-gift'), function (tr) { tr.remove(); });
+    added.map(byNo).forEach(function (v) {
+      var tr = document.createElement('tr');
+      tr.className = 'is-gift';
+      tr.innerHTML =
+        '<td><span class="cart-gift-tag">禮物</span>' + esc(v.name) +
+          '<div class="spec">' + esc(v.spec) + '　券號 ' + esc(v.no) + '</div></td>' +
+        '<td>' + esc(v.line) + '</td><td class="num">0</td>' +
+        '<td class="num">1 <span class="cart-lock">固定</span></td><td class="num">0</td>' +
+        '<td class="num"><button type="button" class="oc-btn" data-del="' + v.no + '">移除</button></td>';
+      body.appendChild(tr);
+    });
+  }
+
+  function renderAmount() {
+    var bonus = Math.min(Number($('use-bonus').value || 0), found ? MEMBER.bonus : 0);
+    var rp = Math.min(Number($('use-rp').value || 0), found ? MEMBER.rp : 0);
+    $('amt-bonus').textContent = bonus ? '-' + fmt(bonus) : '0';
+    $('amt-rp').textContent = rp ? '-' + fmt(rp) : '0';
+    $('amt-gift').textContent = added.length ? added.length + ' 張（0 元）' : '未使用';
+    $('amt-total').textContent = fmt(Math.max(0, SUBTOTAL - bonus - rp));
+    $('foot-hint').textContent = added.length
+      ? '建單成立時，這 ' + added.length + ' 張券會一併標記為已使用。' : '';
+  }
+
+  function render() { renderVouchers(); renderCart(); renderAmount(); }
+
+  function search() {
+    var m = $('vol-mobile').value.trim();
+    var ok = (m === MEMBER.mobile);
+    found = ok; added = [];
+    $('vol-noresult').classList.toggle('is-on', !ok && m !== '');
+    $('vol-found').style.display = ok ? 'inline' : 'none';
+
+    if (ok) {
+      $('vol-found').textContent = MEMBER.name + '（會員編號 ' + MEMBER.id + '）';
+      $('buyer-name').value = MEMBER.name;
+      $('buyer-mobile').value = MEMBER.mobile;
+      $('buyer-email').value = MEMBER.email;
+      $('buyer-line').value = MEMBER.line;
+      $('rcv-addr').value = MEMBER.addr;
+      $('ro-rcv').textContent = MEMBER.rcv;
+      $('ro-warehouse').textContent = MEMBER.warehouse;
+      $('ro-shipremark').textContent = MEMBER.shipRemark;
+      $('ro-internal').textContent = MEMBER.internal;
+      $('ro-redeem').textContent = MEMBER.redeem;
+      $('carry-cnt').textContent = '已帶出 5 項';
+      $('carry').open = true;
+      $('bonus-max').textContent = MEMBER.bonus;
+      $('rp-max').textContent = MEMBER.rp;
+      $('coupon-area').innerHTML =
+        '<div class="rad-grp is-stack">' +
+          '<label><input type="radio" name="RadCoupon" checked data-amt="0"><span>不使用優惠券</span></label>' +
+          '<label><input type="radio" name="RadCoupon" data-amt="100"><span>100 元的折價券有 1 張（最低消費 1,000）</span></label>' +
+        '</div>';
+      $('join-area').style.display = 'none';
+    } else {
+      ['buyer-name', 'buyer-mobile', 'buyer-email', 'buyer-line', 'rcv-addr'].forEach(function (id) { $(id).value = ''; });
+      ['ro-rcv', 'ro-warehouse', 'ro-shipremark', 'ro-internal', 'ro-redeem'].forEach(function (id) { $(id).textContent = '—'; });
+      $('carry-cnt').textContent = '查詢後帶出';
+      $('carry').open = false;
+      $('bonus-max').textContent = '0'; $('rp-max').textContent = '0';
+      $('use-bonus').value = ''; $('use-rp').value = '';
+      $('coupon-area').innerHTML = '<span class="ro">先查詢會員，才會列出他的優惠券。</span>';
+      $('join-area').style.display = m ? 'inline-flex' : 'none';
+    }
+    render();
+  }
+
+  $('vol-search').addEventListener('click', search);
+  $('vol-mobile').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search(); } });
+  $('use-bonus').addEventListener('input', renderAmount);
+  $('use-rp').addEventListener('input', renderAmount);
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="IsMember"]'), function (r) {
+    r.addEventListener('change', function () {
+      isMember = (this.value === '1');
+      $('blk-mobile').style.visibility = isMember ? '' : 'hidden';
+      if (!isMember) { found = false; added = []; $('join-area').style.display = 'none'; }
+      render();
+    });
+  });
+
+  $('copy-buyer').addEventListener('change', function () {
+    if (!this.checked) return;
+    $('rcv-name').value = $('buyer-name').value;
+    $('rcv-mobile').value = $('buyer-mobile').value;
+  });
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-add]'), del = e.target.closest('[data-del]');
+    if (a) { added.push(a.getAttribute('data-add')); render(); toast('已加入本單'); }
+    else if (del) {
+      added = added.filter(function (n) { return n !== del.getAttribute('data-del'); });
+      render(); toast('已移除');
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    if (e.target.name === 'RadCoupon') {
+      $('amt-coupon').textContent = e.target.getAttribute('data-amt') === '100' ? '-100' : '0';
+    }
+  });
+
+  function toast(msg) {
+    var host = $('gox-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'gox-toast-host';
+      host.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+      document.body.appendChild(host);
+    }
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-family:inherit;';
+    host.appendChild(t);
+    setTimeout(function () { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
+    setTimeout(function () { t.remove(); }, 2200);
+  }
+
+  // ── 開發者面板 ──
+  var SCENE_LABELS = [
+    ['normal', '有 4 張券（預設）', '含一張替換品項、一張補貨中、一張整台車限一張'],
+    ['alloos', '券都在補貨中', '兩張券的品項全缺，都不能加'],
+    ['empty', '這位會員沒有券', '已兌換與過期的不會列出']
+  ];
+  var devbar = $('devbar');
+  devbar.querySelector('.toggle').addEventListener('click', function () { devbar.classList.toggle('is-open'); });
+  var list = $('dev-scenes');
+  list.innerHTML = SCENE_LABELS.map(function (s) {
+    return '<button type="button" data-scene="' + s[0] + '">' + s[1] + '<span>' + s[2] + '</span></button>';
+  }).join('');
+  list.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-scene]');
+    if (!b) return;
+    scene = b.getAttribute('data-scene'); added = [];
+    Array.prototype.forEach.call(list.querySelectorAll('button'), function (x) { x.classList.toggle('is-on', x === b); });
+    render();
+  });
+  list.querySelector('button').classList.add('is-on');
+  $('dev-fill').addEventListener('click', function () { $('vol-mobile').value = MEMBER.mobile; search(); });
+
+  render();
+})();
+</script>
+
+</body>
+</html>

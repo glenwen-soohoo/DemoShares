@@ -737,20 +737,21 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-modal-overlay is-hidden" id="gv-sub-modal">
   <div class="gox-modal-box">
-    <div class="gox-card-title">這份禮物是誰的替換品項</div>
+    <div class="gox-card-title">這份禮物是誰的備援</div>
     <div class="gox-card-body">
-      <p class="gv-sub-lead">「<b id="gv-sub-self"></b>」目前被 <b id="gv-sub-n"></b> 份禮物設為<b>第二順位替換品項</b>。那些禮物缺貨時，系統會自動改送這一份。</p>
+      <p class="gv-sub-lead">「<b id="gv-sub-self"></b>」目前被 <b id="gv-sub-n"></b> 份禮物排進<b>兌換順序</b>。那些禮物輪到這一順位而且前面都缺貨時，系統會自動改送這一份。</p>
       <table class="gox-table">
         <thead>
           <tr>
             <th>禮物產品名</th>
             <th style="width:150px;">規格</th>
+            <th class="cell-center" style="width:90px;">排第幾</th>
             <th class="cell-right" style="width:90px;">庫存</th>
           </tr>
         </thead>
         <tbody id="gv-sub-tbody"></tbody>
       </table>
-      <div class="gv-sub-warn">下架或刪除這份禮物之前，請先確認上列禮物另有替代方案。否則它們缺貨時，客人只能改走「請聯繫客服」。</div>
+      <div class="gv-sub-warn">下架或刪除這份禮物之前，請先確認上列禮物的兌換順序還有其他有貨的備援。否則它們缺貨時，客人只能改走「請聯繫客服」。</div>
       <div style="display:flex;justify-content:flex-end;margin-top:20px;">
         <button type="button" class="gox-btn gox-btn-default" data-gox-close>關閉</button>
       </div>
@@ -763,22 +764,26 @@ a:hover { text-decoration: underline; }
   'use strict';
 
   var gifts = [
-    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13, substituteId: 5 },
-    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 45, substituteId: 5 },
-    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 260, unused: 3,  substituteId: null },
-    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0,  substituteId: 3 },
-    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用', specId: 176099, listed: true,  stock: 180, unused: 0,  substituteId: null }
+    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13, candidates: [5] },
+    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 45, candidates: [5, 3] },
+    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 260, unused: 3,  candidates: [] },
+    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0,  candidates: [3] },
+    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用', specId: 176099, listed: true,  stock: 180, unused: 0,  candidates: [] }
   ];
 
-  // 反查：哪些禮物把 gid 設成自己的替換品項
+  // 反查：哪些禮物把 gid 排進自己的兌換順序，順便帶出排第幾
   function subUsers(gid) {
-    return gifts.filter(function (g) { return g.substituteId === gid; });
+    return gifts
+      .filter(function (g) { return (g.candidates || []).indexOf(gid) > -1; })
+      .map(function (g) {
+        return { g: g, order: g.candidates.indexOf(gid) + 2 };  // 第 1 順位是禮物自己
+      });
   }
 
   function subTag(g) {
     var cnt = subUsers(g.id).length;
     if (!cnt) return '';
-    return '<button type="button" class="gv-subtag" data-sub="' + g.id + '">替換品項 ×' + cnt + '</button>';
+    return '<button type="button" class="gv-subtag" data-sub="' + g.id + '">備援 ×' + cnt + '</button>';
   }
 
   function openSubModal(gid) {
@@ -788,9 +793,10 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-sub-n').textContent = users.length;
     document.getElementById('gv-sub-tbody').innerHTML = users.map(function (u) {
       return '<tr>' +
-        '<td><span class="gv-name">' + u.product + '</span><span class="gv-id">#' + u.productId + '</span></td>' +
-        '<td>' + u.spec + '</td>' +
-        '<td class="cell-right gv-num">' + u.stock + '</td>' +
+        '<td><span class="gv-name">' + u.g.product + '</span><span class="gv-id">#' + u.g.productId + '</span></td>' +
+        '<td>' + u.g.spec + '</td>' +
+        '<td class="cell-center">第 ' + u.order + ' 順位</td>' +
+        '<td class="cell-right gv-num">' + u.g.stock + '</td>' +
       '</tr>';
     }).join('');
     document.getElementById('gv-sub-modal').classList.remove('is-hidden');

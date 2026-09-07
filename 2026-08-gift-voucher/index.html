@@ -39,6 +39,22 @@
   }
   .entry-name { font-size: 18px; font-weight: 700; color: #008000; margin-bottom: 4px; }
   .entry-desc { font-size: 14px; color: #595757; line-height: 1.6; }
+
+  /* 要給客服確認的頁：整張卡片換成琥珀色系，掃一眼就找得到 */
+  .entry.is-cs {
+    background: #fffdf5;
+    border-color: #e8c76a;
+    box-shadow: 0 0 0 1px #e8c76a inset;
+  }
+  .entry.is-cs:hover { border-color: #caa940; box-shadow: 0 4px 14px rgba(202,169,64,.22); }
+  .entry.is-cs .entry-icon { background: #fbf0cf; color: #8a6d1f; }
+  .entry.is-cs .entry-name { color: #8a6d1f; }
+  .entry-tag {
+    display: inline-block; margin-top: 10px;
+    font-size: 12px; font-weight: 700; letter-spacing: .5px;
+    color: #7a5a00; background: #f7e3a1; border-radius: 3px; padding: 2px 10px;
+  }
+
 </style>
 </head>
 <body>
@@ -51,15 +67,22 @@
     <h2>前台</h2>
     <p class="group-note">客人會看到的畫面</p>
     <div class="entries">
-      <a class="entry" href="member-center-c.html">
+      <a class="entry is-cs" href="member-center-c.html">
         <div class="entry-icon">員</div>
         <div class="entry-name">會員中心</div>
         <div class="entry-desc">客人看到與使用禮物券的地方</div>
+        <span class="entry-tag">請客服確認</span>
       </a>
-      <a class="entry" href="member-baby-profile.html">
+      <a class="entry" href="member-share-link.html">
+        <div class="entry-icon">友</div>
+        <div class="entry-name">好友分享</div>
+        <div class="entry-desc">推薦連結、複製與社群分享，版面重做</div>
+      </a>
+      <a class="entry is-cs" href="member-baby-profile-b.html">
         <div class="entry-icon">寶</div>
-        <div class="entry-name">個人資料・寶寶資料</div>
-        <div class="entry-desc">客人填寶寶小名與生日，送出後不可改，最多 3 位</div>
+        <div class="entry-name">個人資料修改</div>
+        <div class="entry-desc">客人改自己的資料、管理常用收件人、填寶寶小名與生日</div>
+        <span class="entry-tag">請客服確認</span>
       </a>
       <a class="entry" href="checkout-finish-baby.html">
       <div class="entry-icon">完</div>
@@ -76,7 +99,7 @@
 
   <div class="group">
     <h2>後台</h2>
-    <p class="group-note">同事操作的畫面。禮物券管理是新開的 3 頁，其餘三項是加在既有頁面上</p>
+    <p class="group-note">同事操作的畫面。禮物券管理是新開的 3 頁，其餘四項是加在既有頁面上</p>
     <div class="entries">
       <a class="entry" href="admin-gift-list.html">
         <div class="entry-icon">券</div>
@@ -88,15 +111,22 @@
         <div class="entry-name">產品編輯・規格設定</div>
         <div class="entry-desc">規格分頁多一個「贈品與禮物」，勾選多一個「設為禮物」</div>
       </a>
+      <a class="entry is-cs" href="admin-order-create-gift-b.html">
+        <div class="entry-icon">建</div>
+        <div class="entry-name">後台建單・使用禮物券</div>
+        <div class="entry-desc">查到會員就列出他的券，四區＋金額自動計算</div>
+        <span class="entry-tag">請客服確認</span>
+      </a>
       <a class="entry" href="admin-order-refund-gift.html">
         <div class="entry-icon">退</div>
         <div class="entry-name">訂單頁・返還禮物券</div>
         <div class="entry-desc">客服在既有的返還訂單優惠裡把券退還給客人</div>
       </a>
-      <a class="entry" href="admin-member-gift.html">
+      <a class="entry is-cs" href="admin-member-gift.html">
         <div class="entry-icon">卡</div>
         <div class="entry-name">會員頁・禮物券區塊</div>
         <div class="entry-desc">客服從會員查他手上的券，接手大冰箱券的位置</div>
+        <span class="entry-tag">請客服確認</span>
       </a>
     </div>
   </div>

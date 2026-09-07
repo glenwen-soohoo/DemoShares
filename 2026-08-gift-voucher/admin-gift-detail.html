@@ -706,33 +706,6 @@ a:hover { text-decoration: underline; }
   .gv-icon-cancel { color: var(--gox-text-muted); }
   .gv-stock-view.is-hidden { display: none; }
 
-  /* 產品名稱旁的小按鈕（換綁、換綁紀錄） */
-  .gv-mini-btn {
-    margin-left: 8px; vertical-align: middle; border: 1px solid var(--gox-card-border);
-    background: #fff; border-radius: 4px; font-size: 12px; padding: 2px 8px;
-    cursor: pointer; font-family: inherit; color: var(--gox-text-sub);
-  }
-  .gv-mini-btn:hover { border-color: var(--gox-green); color: var(--gox-green); }
-  .gv-mini-btn.is-quiet { background: #f5f7fa; }
-  /* 換綁彈窗 */
-  .gv-rb-row { display: flex; align-items: baseline; gap: 8px; font-size: 14px; margin-bottom: 16px; }
-  .gv-rb-row span { color: var(--gox-text-muted); font-size: 13px; white-space: nowrap; }
-  .gv-rb-row b { color: var(--gox-text); }
-  .gv-rb-input { display: flex; gap: 8px; }
-  .gv-rb-err { font-size: 13px; color: #d93025; margin-top: 6px; }
-  .gv-rb-err.is-hidden { display: none; }
-  .gv-rb-to {
-    background: #f5f7fa; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
-    padding: 12px; margin-bottom: 16px;
-  }
-  .gv-rb-to b { font-size: 15px; color: var(--gox-text); }
-  .gv-rb-to div { font-size: 13px; color: var(--gox-text-muted); margin-top: 4px; }
-  .gv-rb-impact {
-    background: #fff8e6; border: 1px solid #f0dcae; border-radius: var(--gox-radius);
-    padding: 12px; font-size: 13px; color: #7a5a00; line-height: 1.8; margin-bottom: 16px;
-  }
-  .gv-rb-impact b { color: #7a5a00; }
-
   /* 購物車限購：跟勾選同一列 */
   .gv-checks .gv-inline-field { display: flex; align-items: center; gap: 8px; }
   .gv-checks .gv-inline-field span { font-size: 13px; color: var(--gox-text-sub); white-space: nowrap; }
@@ -754,20 +727,29 @@ a:hover { text-decoration: underline; }
   .gv-picker-list button:hover { background: #f5f7fa; }
   .gv-picker-list .r2 { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 2px; }
   .gv-picker-list .none { padding: 12px; font-size: 13px; color: var(--gox-text-muted); }
-  .gv-picked {
-    display: flex; align-items: center; gap: 12px; margin-top: 4px;
-    border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
-    background: #f5f7fa; padding: 8px 12px;
+  /* 兌換順序清單 */
+  .gv-cand-list { border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius); margin-bottom: 8px; }
+  .gv-cand {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px;
   }
-  .gv-picked.is-hidden { display: none; }
-  .gv-picked-main { flex: 1; min-width: 0; }
-  .gv-picked-main b { display: block; font-size: 14px; color: var(--gox-text); }
-  .gv-picked-main span { font-size: 12px; color: var(--gox-text-muted); }
-  .gv-picked-clear {
+  .gv-cand + .gv-cand { border-top: 1px solid var(--gox-card-border); }
+  .gv-cand-no {
+    width: 68px; flex-shrink: 0; font-size: 12px; color: var(--gox-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .gv-cand.is-serving .gv-cand-no { color: var(--gox-green); font-weight: 600; }
+  .gv-cand-main { flex: 1; min-width: 0; }
+  .gv-cand-main b { display: block; font-size: 14px; color: var(--gox-text); }
+  .gv-cand-main span { font-size: 12px; color: var(--gox-text-muted); }
+  .gv-cand-main .oos { color: #d93025; }
+  .gv-cand-ops { display: flex; gap: 4px; flex-shrink: 0; }
+  .gv-cand-ops button {
     border: 1px solid var(--gox-card-border); background: #fff; border-radius: 4px;
-    font-size: 13px; padding: 4px 10px; cursor: pointer; font-family: inherit; color: var(--gox-text-sub);
+    font-size: 12px; padding: 3px 8px; cursor: pointer; font-family: inherit; color: var(--gox-text-sub);
   }
-  .gv-picked-clear:hover { border-color: #b8bfc7; }
+  .gv-cand-ops button:hover:not(:disabled) { border-color: var(--gox-green); color: var(--gox-green); }
+  .gv-cand-ops button:disabled { opacity: .35; cursor: default; }
+  .gv-cand-self { font-size: 12px; color: var(--gox-text-muted); }
 
   .gv-edit-form { display: none; }
   .gv-edit-form.is-shown { display: block; }
@@ -891,11 +873,7 @@ a:hover { text-decoration: underline; }
         <div class="gv-pic">商品圖</div>
         <div>
           <div class="gv-ro-label">綁定產品</div>
-          <div class="gv-ro-name">
-            <span id="gv-e-pname"></span>
-            <button type="button" class="gv-mini-btn" id="gv-btn-rebind">換綁</button>
-            <button type="button" class="gv-mini-btn is-quiet is-hidden" id="gv-btn-rbhist"></button>
-          </div>
+          <div class="gv-ro-name" id="gv-e-pname"></div>
           <div class="gv-ro-meta" id="gv-e-pmeta"></div>
         </div>
       </div>
@@ -949,20 +927,14 @@ a:hover { text-decoration: underline; }
         </div>
 
         <div class="gv-row">
-          <div class="gv-field gv-span-2">
-            <label>第二順位替換品項</label>
+          <div class="gv-field gv-span-4">
+            <label>兌換順序</label>
+            <div class="gv-cand-list" id="gv-e-cand-list"></div>
             <div class="gv-picker" id="gv-e-sub-picker">
-              <input type="text" class="gox-input" id="gv-e-sub-search" placeholder="輸入禮物名稱、規格或產品 ID 搜尋" autocomplete="off">
+              <input type="text" class="gox-input" id="gv-e-sub-search" placeholder="＋ 新增備援品項（輸入禮物名稱、規格或產品 ID 搜尋）" autocomplete="off">
               <div class="gv-picker-list" id="gv-e-sub-list"></div>
             </div>
-            <div class="gv-picked is-hidden" id="gv-e-sub-picked">
-              <div class="gv-picked-main">
-                <b id="gv-e-sub-name"></b>
-                <span id="gv-e-sub-meta"></span>
-              </div>
-              <button type="button" class="gv-picked-clear" id="gv-e-sub-clear">清除</button>
-            </div>
-            <div class="gv-field-hint">第一順位缺貨時自動改送這一份；兩份都缺貨，前台會改為「請聯繫客服」。<b>只能選已經建立的禮物</b></div>
+            <div class="gv-field-hint">兌換時<b>從上往下找第一個有庫存的送出</b>。全部都缺貨，前台才顯示「請聯繫客服」。<b>備援只能選已經建立的禮物</b></div>
           </div>
         </div>
 
@@ -1073,79 +1045,20 @@ a:hover { text-decoration: underline; }
 </div>
 
 
-<div class="gox-modal-overlay is-hidden" id="gv-rebind-modal">
-  <div class="gox-modal-box">
-    <div class="gox-card-title">換綁產品</div>
-    <div class="gox-card-body">
-      <div class="gv-rb-row">
-        <span>目前綁定</span><b id="gv-rb-from"></b>
-      </div>
-
-      <div id="gv-rb-step1">
-        <div class="gv-field">
-          <label>換成哪一個產品</label>
-          <div class="gv-rb-input">
-            <input type="text" class="gox-input" id="gv-rb-pid" placeholder="輸入產品 ID">
-            <button type="button" class="gox-btn gox-btn-primary" id="gv-rb-query">查詢</button>
-          </div>
-          <div class="gv-rb-err is-hidden" id="gv-rb-err"></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-top:20px;">
-          <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
-        </div>
-      </div>
-
-      <div id="gv-rb-step2" class="is-hidden">
-        <div class="gv-rb-to">
-          <b id="gv-rb-toname"></b>
-          <div id="gv-rb-tometa"></div>
-        </div>
-        <div class="gv-rb-impact" id="gv-rb-impact"></div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;">
-          <button type="button" class="gox-btn gox-btn-default" id="gv-rb-back">重新選</button>
-          <button type="button" class="gox-btn gox-btn-primary" id="gv-rb-ok">確認換綁</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="gox-modal-overlay is-hidden" id="gv-rbhist-modal">
-  <div class="gox-modal-box">
-    <div class="gox-card-title">換綁紀錄</div>
-    <div class="gox-card-body">
-      <table class="gox-table">
-        <thead>
-          <tr>
-            <th style="width:150px;">時間</th>
-            <th>從</th>
-            <th>換成</th>
-            <th style="width:110px;">操作人</th>
-          </tr>
-        </thead>
-        <tbody id="gv-rbhist-tbody"></tbody>
-      </table>
-      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
-        <button type="button" class="gox-btn gox-btn-default" data-gox-close>關閉</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="gox-modal-overlay is-hidden" id="gv-rule-modal">
   <div class="gox-modal-box">
     <div class="gox-card-title">生日券發放規則</div>
     <div class="gox-card-body">
       <div class="gv-rule-body">
         <h4>什麼時候發</h4>
-        <ul><li>每週一上午自動執行，不需要人工操作</li><li><b>不會每次都建一個新的券</b> —— 生日禮固定用列表上這一個券持續發放，每張發出去的券依發券日各自算到期日</li></ul>
+        <ul><li>每週三上午自動執行，不需要人工操作</li><li><b>不會每次都建一個新的券</b> —— 生日禮固定用列表上這一個券持續發放，每張發出去的券依發券日各自算到期日</li></ul>
         <h4>發給誰</h4>
         <ul>
           <li>當週滿一歲的寶寶（週一到週日）</li>
           <li>之前錯過的也會補發：只要還沒發過、而且登記時間沒有太晚，都會在下一批補上</li>
           <li>寶寶超過一歲之後才登記的不發</li>
           <li>每個寶寶一生只發一次</li>
-          <li>雙胞胎各發一張，兩張可以在同一筆訂單一起用</li>
+          <li>雙胞胎各發一張；一張訂單只能用一張生日禮券，兩張要同單使用請客人聯繫客服</li>
         </ul>
         <h4>效期</h4>
         <ul><li>發券日起算 14 天，到期自動失效</li><li>到期前不另外提醒</li></ul>
@@ -1175,7 +1088,7 @@ a:hover { text-decoration: underline; }
   // 所以列表上永遠只佔一列。recurring=true 時，發放時間與有效期限改顯示規則而非固定日期。
   function bdRecurring(issued, used, unused, smsSent, smsFail) {
     return { code: 'BD-BABY', name: '寶寶生日禮', recurring: true,
-      issuedAt: '2026-04-20', issueRule: '每週一自動', expire: null, expireRule: '發券日起 14 天',
+      issuedAt: '2026-04-20', issueRule: '每週三自動', expire: null, expireRule: '發券日起 14 天',
       used: used, issued: issued, unused: unused,
       active: true, ended: false, sms: { sent: smsSent, failed: smsFail } };
   }
@@ -1191,22 +1104,12 @@ a:hover { text-decoration: underline; }
   var DEFAULT_NOTE = '活動期間限定，逾期自動失效。每筆訂單可同時使用多張禮物券。';
   var LIMIT_LABEL = ['不限制', '本產品限用一張（不影響其他禮物券）', '同產線僅限一張', '整台購物車僅限一張'];
 
-  // 可換綁的產品（與新增禮物頁同一份）
-  var PRODUCTS = {
-    '77385': { name: '寶寶果泥 隨手包', line: '粥寶寶專區', temp: '常溫', price: 199 },
-    '77412': { name: '有機米餅 二入',   line: '粥寶寶專區', temp: '常溫', price: 149 },
-    '77208': { name: '寶寶粥 鮮蔬雞肉', line: '粥寶寶專區', temp: '冷凍', price: 89 },
-    '76950': { name: '果乾禮盒 綜合',   line: '產地直送', temp: '常溫', price: 380 }
-  };
   var DATA = {
     '1': {
       product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021,
       qty: 1, unit: '包', cost: 120, line: '粥寶寶專區', temp: '常溫', price: 199, start: '2026-06-01', end: '2026-12-31',
-      listed: true, stock: 84, hasAutoRule: true, substituteId: '5', cartLimit: 3,
+      listed: true, stock: 84, hasAutoRule: true, candidates: ['5'], cartLimit: 3,
       note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。',
-      rebinds: [
-        { at: '2026-08-15 14:22', from: '寶寶粥 鮮蔬雞肉（#77208）', to: '寶寶果泥 隨手包（#77385）', by: '示範帳號' }
-      ],
       types: [
           bdRecurring(170, 127, 13, 161, 10)
       ]
@@ -1214,7 +1117,7 @@ a:hover { text-decoration: underline; }
     '2': {
       product: '有機米餅 二入', productId: 77412, spec: '中秋禮專用', specId: 176035,
       qty: 2, unit: '入', cost: 90, line: '粥寶寶專區', temp: '常溫', price: 149, start: '2026-08-01', end: '2026-09-30',
-      listed: true, stock: 12, hasAutoRule: false, substituteId: '5', cartLimit: 2,
+      listed: true, stock: 12, hasAutoRule: false, candidates: ['5', '3'], cartLimit: 2,
       types: [
         { code: 'MF-260801', name: '中秋限定禮', issuedAt: '2026-08-01', expire: '2026-09-15', used: 128, issued: 200, unused: 40, active: true, ended: false, sms: null },
         { code: 'MF-260820', name: '中秋加碼場', issuedAt: '2026-08-20', expire: '2026-09-03', used: 12,  issued: 60,  unused: 5,  active: true, ended: false, sms: null }
@@ -1223,7 +1126,7 @@ a:hover { text-decoration: underline; }
     '3': {
       product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988,
       qty: 1, unit: '包', cost: 55, line: '粥寶寶專區', temp: '冷凍', price: 89, start: '2026-01-01', end: '2026-12-31',
-      listed: true, stock: 260, hasAutoRule: false, substituteId: null, cartLimit: 0,
+      listed: true, stock: 260, hasAutoRule: false, candidates: [], cartLimit: 0,
       types: [
         { code: 'CS-260715', name: '客服補償券', issuedAt: '2026-07-15', expire: '2026-08-14', used: 47, issued: 52, unused: 3, active: true, ended: false, sms: null }
       ]
@@ -1231,7 +1134,7 @@ a:hover { text-decoration: underline; }
     '4': {
       product: '果乾禮盒 綜合', productId: 76950, spec: '週年慶禮專用', specId: 175640,
       qty: 1, unit: '盒', cost: 240, line: '產地直送', temp: '常溫', price: 380, start: '2025-10-01', end: '2025-11-30',
-      listed: false, stock: 0, hasAutoRule: false, substituteId: '3', cartLimit: 0,
+      listed: false, stock: 0, hasAutoRule: false, candidates: ['3'], cartLimit: 0,
       types: [
         { code: 'AN-251001', name: '週年慶禮', issuedAt: '2025-10-01', expire: '2025-11-30', used: 310, issued: 400, unused: 0, active: false, ended: true, sms: null }
       ]
@@ -1239,7 +1142,7 @@ a:hover { text-decoration: underline; }
     '5': {
       product: '有機米餅 二入', productId: 77412, spec: '替代品專用', specId: 176099,
       qty: 2, unit: '入', cost: 90, line: '粥寶寶專區', temp: '常溫', price: 149, start: '2026-01-01', end: '2026-12-31',
-      listed: true, stock: 180, hasAutoRule: false, substituteId: null, cartLimit: 0,
+      listed: true, stock: 180, hasAutoRule: false, candidates: [], cartLimit: 0,
       note: '此規格專供其他禮物缺貨時自動替換，不單獨發券，所以沒有自己的券種。',
       types: []
     }
@@ -1412,108 +1315,53 @@ a:hover { text-decoration: underline; }
     if (e.key === 'Escape') closeStockEdit();
   });
 
-  // ---- 換綁產品 ----
-  var rbModal = document.getElementById('gv-rebind-modal');
-  var rbPending = null;
-
-  function totalUsed() {
-    return g.types.reduce(function (s, ty) { return s + ty.used; }, 0);
-  }
-
-  function renderRebindEntry() {
-    var btn = document.getElementById('gv-btn-rbhist');
-    var cnt = (g.rebinds || []).length;
-    if (!cnt) { btn.classList.add('is-hidden'); return; }
-    btn.classList.remove('is-hidden');
-    btn.textContent = '換綁紀錄 ×' + cnt;
-  }
-
-  function openRebind() {
-    document.getElementById('gv-rb-from').textContent = g.product + '（#' + g.productId + '）';
-    document.getElementById('gv-rb-pid').value = '';
-    document.getElementById('gv-rb-err').classList.add('is-hidden');
-    document.getElementById('gv-rb-step1').classList.remove('is-hidden');
-    document.getElementById('gv-rb-step2').classList.add('is-hidden');
-    rbPending = null;
-    rbModal.classList.remove('is-hidden');
-  }
-
-  document.getElementById('gv-btn-rebind').addEventListener('click', openRebind);
-
-  document.getElementById('gv-rb-query').addEventListener('click', function () {
-    var pid = document.getElementById('gv-rb-pid').value.trim();
-    var err = document.getElementById('gv-rb-err');
-    var pd = PRODUCTS[pid];
-    if (!pd) {
-      err.textContent = '找不到這個產品 ID';
-      err.classList.remove('is-hidden');
-      return;
-    }
-    if (pid === String(g.productId)) {
-      err.textContent = '這就是目前綁定的產品，不需要換綁';
-      err.classList.remove('is-hidden');
-      return;
-    }
-    err.classList.add('is-hidden');
-    rbPending = { pid: pid, pd: pd };
-
-    document.getElementById('gv-rb-toname').textContent = pd.name + '（#' + pid + '）';
-    document.getElementById('gv-rb-tometa').textContent =
-      '產線 ' + pd.line + '　|　溫層 ' + pd.temp + '　|　原價 $' + fmt(pd.price);
-
-    document.getElementById('gv-rb-impact').innerHTML =
-      '換綁之後：<br>' +
-      '・已兌換的 <b>' + totalUsed() + '</b> 張券<b>保留原本的禮物紀錄</b>，客服查得到當初送的是什麼<br>' +
-      '・未兌換的 <b>' + totalUnused() + '</b> 張券<b>改為兌換新禮物</b><br>' +
-      '・新產品的庫存與贈送期間不會帶過來，換綁後要自己確認';
-
-    document.getElementById('gv-rb-step1').classList.add('is-hidden');
-    document.getElementById('gv-rb-step2').classList.remove('is-hidden');
-  });
-
-  document.getElementById('gv-rb-back').addEventListener('click', function () {
-    document.getElementById('gv-rb-step2').classList.add('is-hidden');
-    document.getElementById('gv-rb-step1').classList.remove('is-hidden');
-  });
-
-  document.getElementById('gv-rb-ok').addEventListener('click', function () {
-    if (!rbPending) return;
-    g.rebinds = g.rebinds || [];
-    g.rebinds.unshift({
-      at: today() + ' ' + new Date().toTimeString().slice(0, 5),
-      from: g.product + '（#' + g.productId + '）',
-      to: rbPending.pd.name + '（#' + rbPending.pid + '）',
-      by: '示範帳號'
-    });
-    g.product = rbPending.pd.name;
-    g.productId = Number(rbPending.pid);
-    g.line = rbPending.pd.line;
-    g.temp = rbPending.pd.temp;
-    g.price = rbPending.pd.price;
-    rbModal.classList.add('is-hidden');
-    fillEditProduct();
-    renderView();
-    window.gox.toast('已換綁為「' + g.product + '」');
-  });
-
-  document.getElementById('gv-btn-rbhist').addEventListener('click', function () {
-    document.getElementById('gv-rbhist-tbody').innerHTML = (g.rebinds || []).map(function (r) {
-      return '<tr><td>' + r.at + '</td><td>' + r.from + '</td><td>' + r.to + '</td><td>' + r.by + '</td></tr>';
-    }).join('');
-    document.getElementById('gv-rbhist-modal').classList.remove('is-hidden');
-  });
-
-  // ---- 替換品項搜尋選擇器 ----
-  var subPicked = null;
+  // ---- 兌換順序：本禮物 ＋ 有序備援清單 ----
+  var candidates = [];          // GiftItem id 陣列，不含自己
   var subPicker = document.getElementById('gv-e-sub-picker');
   var subSearch = document.getElementById('gv-e-sub-search');
   var subList = document.getElementById('gv-e-sub-list');
-  var subBox = document.getElementById('gv-e-sub-picked');
+  var candBox = document.getElementById('gv-e-cand-list');
+
+  function candRows() {
+    // 第 1 列固定是本禮物（不解除綁定），後面才是備援
+    var stockInput = document.getElementById('gv-e-stock').value;
+    var selfStock = stockInput === '' ? g.stock : Number(stockInput);
+    var rows = [{ self: true, name: g.product, meta: g.spec + '　#' + g.productId, stock: selfStock }];
+    candidates.forEach(function (cid) {
+      var d = DATA[cid];
+      if (d) rows.push({ self: false, id: cid, name: d.product, meta: d.spec + '　#' + d.productId, stock: d.stock });
+    });
+    return rows;
+  }
+
+  function renderCandidates() {
+    var rows = candRows();
+    var servingIdx = -1;
+    for (var k = 0; k < rows.length; k++) { if (rows[k].stock > 0) { servingIdx = k; break; } }
+
+    candBox.innerHTML = rows.map(function (r, idx) {
+      var no = idx === servingIdx ? '目前送出' : String(idx + 1);
+      var stockTxt = r.stock > 0 ? ('庫存 ' + r.stock) : '<span class="oos">缺貨</span>';
+      var ops = r.self
+        ? '<span class="gv-cand-self">本禮物</span>'
+        : '<div class="gv-cand-ops">' +
+            '<button type="button" data-cand-up="' + r.id + '"' + (idx <= 1 ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" data-cand-down="' + r.id + '"' + (idx === rows.length - 1 ? ' disabled' : '') + '>↓</button>' +
+            '<button type="button" data-cand-del="' + r.id + '">移除</button>' +
+          '</div>';
+      return '<div class="gv-cand' + (idx === servingIdx ? ' is-serving' : '') + '">' +
+               '<div class="gv-cand-no">' + no + '</div>' +
+               '<div class="gv-cand-main"><b>' + r.name + '</b><span>' + r.meta + '　' + stockTxt + '</span></div>' +
+               ops +
+             '</div>';
+    }).join('');
+  }
 
   function renderSubList(kw) {
     kw = (kw || '').trim().toLowerCase();
     var rows = GIFT_ITEMS.filter(function (it) {
-      if (it.id === id) return false;   // 不能把自己設成自己的替代品
+      if (it.id === id) return false;                  // 不能把自己加進備援
+      if (candidates.indexOf(it.id) > -1) return false; // 已在清單裡的不重複列
       if (!kw) return true;
       return (it.product + it.spec + it.productId).toLowerCase().indexOf(kw) > -1;
     });
@@ -1523,23 +1371,7 @@ a:hover { text-decoration: underline; }
                  '<span class="r2">' + it.spec + '　#' + it.productId + '　庫存 ' + it.stock + '</span>' +
                  '</button>';
         }).join('')
-      : '<div class="none">找不到符合的禮物</div>';
-  }
-
-  function pickSub(it) {
-    subPicked = it;
-    document.getElementById('gv-e-sub-name').textContent = it.product;
-    document.getElementById('gv-e-sub-meta').textContent = it.spec + '　#' + it.productId + '　庫存 ' + it.stock;
-    subBox.classList.remove('is-hidden');
-    subPicker.classList.add('is-hidden');
-    subPicker.classList.remove('is-open');
-    subSearch.value = '';
-  }
-
-  function clearSub() {
-    subPicked = null;
-    subBox.classList.add('is-hidden');
-    subPicker.classList.remove('is-hidden');
+      : '<div class="none">沒有可加入的禮物</div>';
   }
 
   subSearch.addEventListener('focus', function () {
@@ -1551,19 +1383,37 @@ a:hover { text-decoration: underline; }
   subList.addEventListener('click', function (e) {
     var b = e.target.closest('[data-gid]');
     if (!b) return;
-    var gid = b.getAttribute('data-gid');
-    pickSub(GIFT_ITEMS.filter(function (it) { return it.id === gid; })[0]);
+    candidates.push(b.getAttribute('data-gid'));
+    subSearch.value = '';
+    subPicker.classList.remove('is-open');
+    renderCandidates();
   });
-  document.getElementById('gv-e-sub-clear').addEventListener('click', clearSub);
   document.addEventListener('click', function (e) {
     if (!subPicker.contains(e.target)) subPicker.classList.remove('is-open');
+  });
+
+  document.getElementById('gv-e-stock').addEventListener('input', renderCandidates);
+
+  candBox.addEventListener('click', function (e) {
+    var up = e.target.closest('[data-cand-up]');
+    var down = e.target.closest('[data-cand-down]');
+    var del = e.target.closest('[data-cand-del]');
+    if (up) {
+      var i1 = candidates.indexOf(up.getAttribute('data-cand-up'));
+      if (i1 > 0) { candidates.splice(i1 - 1, 0, candidates.splice(i1, 1)[0]); renderCandidates(); }
+    } else if (down) {
+      var i2 = candidates.indexOf(down.getAttribute('data-cand-down'));
+      if (i2 > -1 && i2 < candidates.length - 1) { candidates.splice(i2 + 1, 0, candidates.splice(i2, 1)[0]); renderCandidates(); }
+    } else if (del) {
+      candidates = candidates.filter(function (c) { return c !== del.getAttribute('data-cand-del'); });
+      renderCandidates();
+    }
   });
 
   // ---- 完整編輯 ----
   function fillEditProduct() {
     document.getElementById('gv-e-pname').textContent = g.product + '（#' + g.productId + '）';
     document.getElementById('gv-e-pmeta').textContent = g.line + '　|　' + g.temp + '　|　規格 ID #' + g.specId;
-    renderRebindEntry();
   }
 
   function enterEdit() {
@@ -1580,11 +1430,8 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-e-note').value = g.note || DEFAULT_NOTE;
     document.getElementById('gv-e-listed').checked = g.listed;
     document.getElementById('gv-e-limit').value = String(g.cartLimit || 0);
-    if (g.substituteId && DATA[g.substituteId]) {
-      pickSub(GIFT_ITEMS.filter(function (it) { return it.id === g.substituteId; })[0]);
-    } else {
-      clearSub();
-    }
+    candidates = (g.candidates || []).slice();
+    renderCandidates();
     document.getElementById('gv-view').classList.add('is-hidden');
     document.getElementById('gv-edit-form').classList.add('is-shown');
     document.getElementById('gv-edit').style.display = 'none';
@@ -1614,7 +1461,7 @@ a:hover { text-decoration: underline; }
     g.end = document.getElementById('gv-e-end').value || g.end;
     g.note = document.getElementById('gv-e-note').value.trim();
     g.listed = document.getElementById('gv-e-listed').checked;
-    g.substituteId = subPicked ? subPicked.id : null;
+    g.candidates = candidates.slice();
     g.cartLimit = Number(document.getElementById('gv-e-limit').value);
     renderView(); exitEdit();
     window.gox.toast('已儲存「' + g.spec + '」');
