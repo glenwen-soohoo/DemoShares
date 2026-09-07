@@ -653,6 +653,17 @@ a:hover { text-decoration: underline; }
 .is-hidden { display: none; }
 
   /* 「這份禮物是誰的替換品項」標籤 */
+  /* 券種欄：張數當主，名稱當副 */
+  .gv-vt-n {
+    display: inline-block; font-size: 13px; font-weight: 600; color: var(--gox-text);
+    background: #eef4ec; border-radius: 3px; padding: 1px 8px;
+  }
+  .gv-vt-names {
+    display: block; font-size: 12px; color: var(--gox-text-muted);
+    margin-top: 3px; line-height: 1.5;
+  }
+  .gv-vt-none { font-size: 13px; color: var(--gox-text-muted); }
+
   .gv-subtag {
     display: inline-block; margin-left: 8px; vertical-align: middle;
     border: 1px solid var(--gox-card-border); background: #f5f7fa; border-radius: 4px;
@@ -660,10 +671,6 @@ a:hover { text-decoration: underline; }
     color: var(--gox-text-sub);
   }
   .gv-subtag:hover { border-color: var(--gox-green); color: var(--gox-green); }
-  .gv-sub-warn {
-    margin-top: 16px; background: #fff8e6; border: 1px solid #f0dcae; border-radius: var(--gox-radius);
-    padding: 10px 12px; font-size: 13px; color: #7a5a00; line-height: 1.7;
-  }
   .gv-sub-lead { font-size: 14px; color: var(--gox-text); margin: 0 0 12px; line-height: 1.7; }
 </style>
 </head>
@@ -724,6 +731,7 @@ a:hover { text-decoration: underline; }
         <tr>
           <th>禮物產品名</th>
           <th>禮物規格</th>
+          <th style="width:190px;">券種</th>
           <th class="cell-center" style="width:80px;">上架</th>
           <th class="cell-right" style="width:100px;">庫存</th>
           <th class="cell-right" style="width:140px;">未使用券數</th>
@@ -737,9 +745,9 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-modal-overlay is-hidden" id="gv-sub-modal">
   <div class="gox-modal-box">
-    <div class="gox-card-title">這份禮物是誰的備援</div>
+    <div class="gox-card-title">誰把這份禮物當備選</div>
     <div class="gox-card-body">
-      <p class="gv-sub-lead">「<b id="gv-sub-self"></b>」目前被 <b id="gv-sub-n"></b> 份禮物排進<b>兌換順序</b>。那些禮物輪到這一順位而且前面都缺貨時，系統會自動改送這一份。</p>
+      <p class="gv-sub-lead">以下 <b id="gv-sub-n"></b> 份禮物把「<b id="gv-sub-self"></b>」列為備選。</p>
       <table class="gox-table">
         <thead>
           <tr>
@@ -751,7 +759,6 @@ a:hover { text-decoration: underline; }
         </thead>
         <tbody id="gv-sub-tbody"></tbody>
       </table>
-      <div class="gv-sub-warn">下架或刪除這份禮物之前，請先確認上列禮物的兌換順序還有其他有貨的備援。否則它們缺貨時，客人只能改走「請聯繫客服」。</div>
       <div style="display:flex;justify-content:flex-end;margin-top:20px;">
         <button type="button" class="gox-btn gox-btn-default" data-gox-close>關閉</button>
       </div>
@@ -763,12 +770,20 @@ a:hover { text-decoration: underline; }
 (function () {
   'use strict';
 
+  // types 要跟明細頁（admin-gift-detail.html 的 DATA）對得上
   var gifts = [
-    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13, candidates: [5] },
-    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 45, candidates: [5, 3] },
-    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 260, unused: 3,  candidates: [] },
-    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0,  candidates: [3] },
-    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用', specId: 176099, listed: true,  stock: 180, unused: 0,  candidates: [] }
+    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13, candidates: [5],
+      types: ['寶寶生日禮'] },
+    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 72, candidates: [5, 3],
+      types: ['中秋限定禮', '中秋加碼場'] },
+    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 260, unused: 5,  candidates: [],
+      types: ['客服補償券'] },
+    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0,  candidates: [3],
+      types: ['週年慶禮'] },
+    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用', specId: 176099, listed: true,  stock: 180, unused: 0,  candidates: [],
+      types: [] },
+    { id: 6, product: '季節果乾 隨手包', productId: 77530, spec: '回饋禮專用', specId: 176140, listed: true,  stock: 6,   unused: 27, candidates: [5],
+      types: ['訂單回饋禮'] }
   ];
 
   // 反查：哪些禮物把 gid 排進自己的兌換順序，順便帶出排第幾
@@ -778,6 +793,14 @@ a:hover { text-decoration: underline; }
       .map(function (g) {
         return { g: g, order: g.candidates.indexOf(gid) + 2 };  // 第 1 順位是禮物自己
       });
+  }
+
+  // 券種欄：先給張數（快速辨識），再列名稱
+  function typeCell(g) {
+    var ts = g.types || [];
+    if (!ts.length) return '<span class="gv-vt-none">未建券</span>';
+    return '<span class="gv-vt-n">' + ts.length + ' 種</span>' +
+           '<span class="gv-vt-names">' + ts.join('、') + '</span>';
   }
 
   function subTag(g) {
@@ -815,7 +838,7 @@ a:hover { text-decoration: underline; }
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="gv-empty">沒有符合條件的禮物</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="gv-empty">沒有符合條件的禮物</td></tr>';
       return;
     }
 
@@ -824,6 +847,7 @@ a:hover { text-decoration: underline; }
       return '<tr>' +
         '<td><span class="gv-name">' + g.product + '</span><span class="gv-id">#' + g.productId + '</span></td>' +
         '<td><span class="gv-spec">' + g.spec + '</span><span class="gv-id">#' + g.specId + '</span>' + subTag(g) + '</td>' +
+        '<td>' + typeCell(g) + '</td>' +
         '<td class="cell-center"><span class="gox-switch' + (g.listed ? ' is-on' : '') + '" data-gv-toggle="' + g.id + '"></span></td>' +
         '<td class="cell-right gv-num' + (shortage ? ' gv-warn-num' : '') + '">' + g.stock + '</td>' +
         '<td class="cell-right gv-num">' + g.unused +

@@ -1387,25 +1387,34 @@ a:hover { text-decoration: underline; }
   var cart = PRODUCTS.slice();
 
   // limit：0 不限制 / 1 整台購物車僅限一張 / 2 同產線僅限一張 / 3 本產品限用一張
+  // 這裡的券要跟後台對得上：vtype 是券種名、no 是「券代碼-流水」、
+  // limit 用 CartLimitType（0 不限 / 1 本產品 / 2 同產線 / 3 整車，數字越大越嚴）、
+  // line 用真實產線名。對照表見 admin-gift-detail.html 的 DATA。
   var SCENES = {
     normal: [
-      { no: 'BD-260803', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包',
-        exp: '2026/09/20', left: 45, limit: 0, line: '嬰幼食品', state: 'ok' },
-      { no: 'MF-260815', vtype: '中秋限定禮', name: '有機米餅 二入', spec: '2 入',
-        exp: '2026/09/09', left: 5, limit: 1, line: '零食', state: 'ok' },
-      { no: 'OR-260722', vtype: '訂單回饋禮', name: '有機蔬果乾 隨手包', spec: '1 包',
-        exp: '2026/10/02', left: 58, limit: 0, line: '零食', state: 'sub', origin: '季節果乾 隨手包' },
-      { no: 'OR-260728', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入',
-        exp: '2026/09/30', left: 26, limit: 0, line: '零食', state: 'oos' }
+      { no: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
+        exp: '2026/09/20', limit: 1, line: '粥寶寶專區', state: 'ok' },
+      { no: 'MF-260801-0108', vtype: '中秋限定禮', name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
+        exp: '2026/09/15', limit: 2, line: '粥寶寶專區', state: 'ok' },
+      { no: 'OR-260701-0021', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入（替代品專用）',
+        exp: '2026/10/31', limit: 0, line: '粥寶寶專區', state: 'sub', origin: '季節果乾 隨手包' },
+      { no: 'OR-260701-0022', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
+        exp: '2026/10/31', limit: 0, line: '產地直送', state: 'oos' }
     ],
     empty: [],
     alloos: [
-      { no: 'BD-260803', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包',
-        exp: '2026/09/20', left: 45, limit: 0, line: '嬰幼食品', state: 'oos' },
-      { no: 'OR-260728', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入',
-        exp: '2026/09/30', left: 26, limit: 0, line: '零食', state: 'oos' }
+      { no: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
+        exp: '2026/09/20', limit: 1, line: '粥寶寶專區', state: 'oos' },
+      { no: 'OR-260701-0022', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
+        exp: '2026/10/31', limit: 0, line: '產地直送', state: 'oos' }
     ]
   };
+
+  // 剩餘天數從到期日算，不要另外寫一個數字（兩邊會對不上）
+  var TODAY = new Date('2026-09-07T00:00:00');
+  function daysLeft(exp) {
+    return Math.round((new Date(exp.replace(/\//g, '-') + 'T00:00:00') - TODAY) / 86400000);
+  }
 
   var scene = 'normal', found = false, isMember = true, added = [], useCoupon = false;
 
@@ -1521,9 +1530,10 @@ a:hover { text-decoration: underline; }
     var list = added.map(byNo);
     for (var i = 0; i < list.length; i++) {
       var a = list[i];
-      if (a.limit === 1 || v.limit === 1) return '整台購物車僅限一張禮物券，已加入「' + a.vtype + '」。';
+      // CartLimitType 越大越嚴：1 本產品 / 2 同產線 / 3 整台購物車
+      if (a.limit === 3 || v.limit === 3) return '整台購物車僅限一張禮物券，已加入「' + a.vtype + '」。';
       if ((a.limit === 2 || v.limit === 2) && a.line === v.line) return '同產線（' + v.line + '）僅限一張，已加入「' + a.vtype + '」。';
-      if ((a.limit === 3 || v.limit === 3) && a.name === v.name) return '「' + v.name + '」本產品限用一張。';
+      if ((a.limit === 1 || v.limit === 1) && a.name === v.name) return '「' + v.name + '」本產品限用一張。';
     }
     return '';
   }
@@ -1560,9 +1570,9 @@ a:hover { text-decoration: underline; }
             (v.state === 'sub' ? '　<span style="color:#2f6b26">原「' + esc(v.origin) + '」缺貨</span>' : '') +
           '</div>' +
           '<div class="gvu-meta">券號 ' + esc(v.no) + '　·　到期 ' + esc(v.exp) +
-            '（<span class="' + (v.left <= 7 ? 'is-soon' : '') + '">剩 ' + v.left + ' 天</span>）' +
+            '（<span class="' + (daysLeft(v.exp) <= 7 ? 'is-soon' : '') + '">剩 ' + daysLeft(v.exp) + ' 天</span>）' +
             '　·　產線 ' + esc(v.line) +
-            (v.limit ? '　·　' + ['', '整車限一張', '同產線限一張', '本產品限一張'][v.limit] : '') +
+            (v.limit ? '　·　' + ['', '本產品限一張', '同產線限一張', '整車限一張'][v.limit] : '') +
           '</div>' +
         '</div><div class="gvu-ops">' + ops + '</div></div>';
     }).join('') + '</div>';

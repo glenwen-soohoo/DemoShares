@@ -1292,13 +1292,13 @@ a:hover { text-decoration: underline; }
 
   /* ── 禮物券 ── */
   var ROWS = [
-    { name: '寶寶果泥 隨手包', code: 'BD-260803-0052', st: 'unused',  end: '2026/08/17', src: '排程', sub: '粥寶生日禮', order: '' },
-    { name: '季節果乾 隨手包', code: 'SF-260806-0011', st: 'unused',  end: '2026/09/12', src: '人工', sub: '客服 A012・補償未收到簡訊', order: '' },
-    { name: '有機米餅 二入',   code: 'MF-260728-0107', st: 'used',    end: '2026/08/02', src: '人工', sub: '客服 A012', order: '260728751188' },
-    { name: '寶寶果泥 隨手包', code: 'BD-260727-0041', st: 'used',    end: '2026/08/10', src: '排程', sub: '粥寶生日禮', order: '260728751188' },
-    { name: '寶寶果泥 隨手包', code: 'BD-260615-0338', st: 'expired', end: '2026/06/29', src: '排程', sub: '粥寶生日禮', order: '' },
-    { name: '中秋米禮 一盒',   code: 'MC-260520-0204', st: 'used',    end: '2026/06/03', src: '排程', sub: '中秋檔期滿額贈', order: '260522750433' },
-    { name: '寶寶果泥 隨手包', code: 'BD-260504-0176', st: 'expired', end: '2026/05/18', src: '排程', sub: '粥寶生日禮', order: '' }
+    { name: '寶寶果泥 隨手包',   code: 'BD-BABY-0052',    st: 'unused',  end: '2026/09/09', src: '排程', sub: '寶寶生日禮', order: '' },
+    { name: '季節果乾 隨手包',   code: 'OR-260701-0011',  st: 'unused',  end: '2026/10/31', src: '人工', sub: '訂單回饋禮・客服 A012 補償未收到簡訊', order: '' },
+    { name: '寶寶粥 鮮蔬雞肉',   code: 'CS-260715-0107',  st: 'used',    end: '2026/08/14', src: '人工', sub: '客服補償券・客服 A012', order: '260728751188' },
+    { name: '寶寶果泥 隨手包',   code: 'BD-BABY-0041',    st: 'used',    end: '2026/08/10', src: '排程', sub: '寶寶生日禮', order: '260728751188' },
+    { name: '寶寶果泥 隨手包',   code: 'BD-BABY-0338',    st: 'expired', end: '2026/06/29', src: '排程', sub: '寶寶生日禮', order: '' },
+    { name: '有機米餅 二入',     code: 'MF-260801-0031',  st: 'used',    end: '2026/09/15', src: '人工', sub: '中秋限定禮', order: '260805750433' },
+    { name: '寶寶果泥 隨手包',   code: 'BD-BABY-0176',    st: 'expired', end: '2026/05/18', src: '排程', sub: '寶寶生日禮', order: '' }
   ];
   var GST = { unused: ['未使用', 'mst-unused'], used: ['已使用', 'mst-used'], expired: ['已過期', 'mst-expired'], "void": ['已作廢', 'mst-void'] };
 
@@ -1564,8 +1564,8 @@ a:hover { text-decoration: underline; }
 
   /* 寶寶生日（生日禮）—— 欄位只顯示，一顆編輯開列表彈窗 */
   var BABIES = [
-    { id: 1, name: '小豆', birth: '2025-08-12', created: '2025/09/01 10:22', voucher: 'BD-260803-0052', issued: '2026/08/03' },
-    { id: 2, name: '小米', birth: '2025-08-12', created: '2025/09/01 10:22', voucher: 'BD-260803-0053', issued: '2026/08/03' },
+    { id: 1, name: '小豆', birth: '2025-08-19', created: '2025/09/01 10:22', voucher: 'BD-BABY-0052', issued: '2026/08/26' },
+    { id: 2, name: '小米', birth: '2025-08-19', created: '2025/09/01 10:22', voucher: 'BD-BABY-0053', issued: '2026/08/26' },
     { id: 3, name: '小圓', birth: '2026-03-20', created: '2026/04/02 14:05', voucher: '', issued: '' }
   ];
   var babyEdit = null;   // null=沒在編 / 數字=該筆 id / 0=新增中

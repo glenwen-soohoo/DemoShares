@@ -685,6 +685,23 @@ a:hover { text-decoration: underline; }
   .gv-pname .gv-sep-dot { color: var(--gox-text-muted); margin: 0 4px; font-weight: normal; }
   .gv-pname .gv-id { color: var(--gox-text-muted); font-size: 12px; font-weight: normal; margin-left: 6px; }
   .gv-pmeta { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 13px; color: var(--gox-text-sub); margin-top: 8px; }
+  .gv-pmeta-wide { flex: 1 1 100%; }
+  /* 頂部資訊的兌換順序摘要。class 前綴刻意用 gv-ci-，
+     不要用 gv-cand-*，那組是下方編輯面板的清單在用的 */
+  /* 兌換順序：一個產品一行往下列，比橫排接箭頭好讀 */
+  .gv-pmeta-wide { align-items: flex-start; }
+  .gv-ci { display: block; font-weight: normal; }
+  .gv-ci-row { display: flex; align-items: baseline; gap: 6px; padding: 1px 0; }
+  .gv-ci-no { flex: none; color: var(--gox-text-muted); font-variant-numeric: tabular-nums; }
+  .gv-ci-name { color: var(--gox-text-sub); }
+  .gv-ci-row.is-self .gv-ci-name { color: var(--gox-text); font-weight: 600; }
+  .gv-ci-live {
+    font-size: 11px; font-weight: 600; color: #2f6b26;
+    background: #e5f1da; border-radius: 3px; padding: 1px 6px;
+  }
+  .gv-ci-oos { font-size: 11px; color: var(--gox-danger); }
+  .gv-ci-none { color: var(--gox-text-muted); font-weight: normal; }
+
   .gv-pmeta div span { color: var(--gox-text-muted); margin-right: 4px; }
 
   .gv-highlight { display: flex; gap: 12px; flex: none; }
@@ -789,10 +806,66 @@ a:hover { text-decoration: underline; }
   .gv-rate span { color: var(--gox-text-muted); }
   .gv-num { font-variant-numeric: tabular-nums; }
   .gv-code { font-family: 'Consolas', 'Menlo', monospace; font-size: 12px; color: var(--gox-text-sub); background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
-  .gv-date-sub { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 2px; }
   .gv-row-ended td { color: var(--gox-text-muted); }
   .gv-row-ended .gv-rate b { color: var(--gox-text-sub); }
   .gv-note { font-size: 12px; color: var(--gox-text-sub); }
+  .gv-modal-lead {
+    margin: 0 0 18px; font-size: 13px; color: #7a5a00; line-height: 1.8;
+    background: #fdf6e3; border-radius: var(--gox-radius); padding: 10px 12px;
+  }
+  .gv-inline-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .gv-inline-row .gv-radio { display: inline-flex; align-items: center; gap: 4px; margin: 0; white-space: nowrap; }
+  .gv-modal-field .gv-num, .gv-num { width: 84px; flex: 0 0 84px; }
+  .gv-unit { font-size: 13px; color: var(--gox-text-sub); }
+  .gv-field-sub { font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; line-height: 1.6; }
+  .gv-label-opt { font-weight: normal; color: var(--gox-text-muted); margin-left: 4px; }
+  .gv-send-warn { font-size: 12px; color: var(--gox-danger); margin-top: 6px; display: none; }
+  .gv-send-warn.is-on { display: block; }
+
+  /* 彈窗底部的備註：說明性內容擺這裡，不要跟操作指示混在最上面 */
+  .gv-modal-note {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--gox-card-border);
+    font-size: 12px; color: var(--gox-text-muted); line-height: 1.8;
+  }
+  .gv-modal-note b { color: var(--gox-text-sub); display: block; margin-bottom: 4px; }
+  .gv-modal-note ul { margin: 0; padding-left: 18px; }
+  .gv-modal-note li:empty { display: none; }
+
+
+  /* 備註欄 */
+  .gv-memo { display: flex; align-items: flex-start; gap: 6px; }
+  .gv-memo-txt {
+    flex: 1; min-width: 0; font-size: 12px; color: var(--gox-text-sub); line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .gv-memo-empty { flex: 1; font-size: 12px; color: #b9c0ba; }
+  .gv-memo-btn {
+    flex: none; border: 0; background: transparent; cursor: pointer;
+    padding: 1px 2px; line-height: 1; color: #b9c0ba;
+  }
+  .gv-memo-btn svg { width: 13px; height: 13px; fill: currentColor; display: block; }
+  .gv-memo-btn:hover { color: var(--gox-green); }
+
+  /* 就地編輯：跟上方「剩餘庫存」用同一組 ✓／✕ 按鈕 */
+  .gv-memo-edit { display: flex; align-items: flex-start; gap: 4px; }
+  .gv-memo-input {
+    flex: 1; min-width: 0; font-family: inherit; font-size: 12px; line-height: 1.6;
+    color: var(--gox-text); background: #fff;
+    border: 1px solid var(--gox-green); border-radius: var(--gox-radius);
+    padding: 4px 6px; resize: vertical;
+  }
+  .gv-memo-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(75,168,59,.14); }
+  .gv-memo-ops { display: flex; flex-direction: column; flex: none; }
+
+  .gv-op-btn { font-size: 12px; padding: 3px 10px; }
+  .gv-op-none { color: var(--gox-text-muted); }
+  .gv-vtag {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px;
+    font-size: 11px; line-height: 1.6; border: 1px solid var(--gox-card-border);
+    background: #f7f7f9; color: var(--gox-text-muted); vertical-align: 1px;
+  }
+  .gv-not-issued { font-size: 12px; color: var(--gox-text-muted); font-weight: normal; }
+
   .gv-note-fail { color: var(--gox-danger); }
   .gv-note-none { color: var(--gox-text-muted); }
   .gv-empty { padding: 32px 16px; text-align: center; color: var(--gox-text-muted); }
@@ -845,6 +918,9 @@ a:hover { text-decoration: underline; }
             <div><span>贈送期間</span><b id="gv-period"></b></div>
             <div><span>購物車限購</span><b id="gv-limit"></b></div>
           </div>
+          <div class="gv-pmeta">
+            <div class="gv-pmeta-wide"><span>兌換順序</span><b id="gv-cand"></b></div>
+          </div>
         </div>
         <div class="gv-highlight">
           <div class="gv-hl-box" id="gv-box-stock">
@@ -860,7 +936,7 @@ a:hover { text-decoration: underline; }
             </div>
           </div>
           <div class="gv-hl-box" id="gv-box-unused">
-            <div class="gv-hl-label"><span>未兌換有效券</span></div>
+            <div class="gv-hl-label"><span>有效未使用券</span></div>
             <div class="gv-hl-num" id="gv-unused"></div>
             <div class="gv-hl-note" id="gv-shortage" style="display:none;"></div>
           </div>
@@ -922,7 +998,7 @@ a:hover { text-decoration: underline; }
           <div class="gv-field">
             <label>庫存</label>
             <input type="number" class="gox-input" id="gv-e-stock">
-            <div class="gv-field-hint">庫存不足時客人無法兌換（目前未兌換有效券 <b id="gv-e-unused"></b> 張）</div>
+            <div class="gv-field-hint">庫存不足時客人無法兌換（目前有效未使用券 <b id="gv-e-unused"></b> 張）</div>
           </div>
         </div>
 
@@ -972,7 +1048,7 @@ a:hover { text-decoration: underline; }
   <h2 style="font-size:16px;">禮物券<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
   <div class="gv-head-actions">
     <button type="button" class="gox-btn gox-btn-default" id="gv-btn-rule" style="display:none;">查看生日券發放規則</button>
-    <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">手動發券</button>
+    <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">建立新券</button>
   </div>
 </div>
 
@@ -1001,15 +1077,16 @@ a:hover { text-decoration: underline; }
       <thead>
         <tr>
           <th style="width:110px;">券代碼</th>
-          <th>券名</th>
+          <th style="min-width:120px;">券名</th>
           <th style="width:110px;">發放時間</th>
           <th style="width:130px;">有效期限</th>
           <th class="cell-right" style="width:150px;">使用／發放（使用率）</th>
-          <th class="cell-right" style="width:100px;">未兌換</th>
-          <th class="cell-right" style="width:110px;">訂單總金額</th>
-          <th class="cell-right" style="width:110px;">平均客單價</th>
-          <th style="width:145px;">備註</th>
+          <th class="cell-right" style="width:120px;">有效未使用</th>
+          <th class="cell-right" style="width:100px;">訂單總金額</th>
+          <th class="cell-right" style="width:100px;">平均客單價</th>
+          <th style="width:180px;">備註</th>
           <th class="cell-center" style="width:56px;">啟用</th>
+          <th class="cell-center" style="width:76px;">操作</th>
         </tr>
       </thead>
       <tbody id="gv-tbody"></tbody>
@@ -1019,31 +1096,77 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-modal-overlay is-hidden" id="gv-issue-modal">
   <div class="gox-modal-box">
-    <div class="gox-card-title">手動發券</div>
+    <div class="gox-card-title">建立新券</div>
     <div class="gox-card-body">
       <div class="gv-modal-field"><label>券名</label><input type="text" class="gox-input" id="gv-i-name" placeholder="例：中秋加碼場"></div>
+      <div class="gv-modal-field">
+        <label>券代碼</label>
+        <input type="text" class="gox-input" id="gv-i-code" placeholder="例：MF-260901（建立後不可改）">
+      </div>
       <div class="gv-modal-field">
         <label>有效期限</label>
         <div class="gv-radio-line">
           <label><input type="radio" name="gv-expire" value="days" checked> 發券日起算</label>
           <label><input type="radio" name="gv-expire" value="fixed"> 固定到期日</label>
         </div>
-        <div id="gv-expire-days"><input type="number" class="gox-input" id="gv-i-days" value="14" min="1"><div style="font-size:12px;color:var(--gox-text-muted);margin-top:4px;">天內有效</div></div>
+        <div id="gv-expire-days" class="gv-inline-row"><input type="number" class="gox-input gv-num" id="gv-i-days" value="14" min="1"><span class="gv-unit">天內有效</span></div>
         <div id="gv-expire-fixed" class="gv-expire-input is-hidden"><input type="date" class="gox-input" id="gv-i-date"></div>
       </div>
       <div class="gv-modal-field">
-        <label>發放對象</label>
-        <textarea class="gox-textarea" id="gv-i-members" rows="3" placeholder="一行一個會員帳號"></textarea>
-        <div style="font-size:12px;color:var(--gox-text-muted);margin-top:4px;">目前剩餘庫存 <b id="gv-i-stock"></b>，發券數量請勿超過庫存</div>
+        <label>總發送上限</label>
+        <div class="gv-inline-row">
+          <label class="gv-radio"><input type="radio" name="gv-cap" value="none" checked> 不限量</label>
+          <label class="gv-radio"><input type="radio" name="gv-cap" value="num"> 最多</label>
+          <input type="number" class="gox-input gv-num" id="gv-i-cap" min="1" disabled>
+          <span class="gv-unit">張</span>
+        </div>
+        <div class="gv-field-sub" id="gv-i-cap-ref"></div>
+        <div class="gv-send-warn" id="gv-i-cap-warn"></div>
+      </div>
+      <div class="gv-modal-field">
+        <label>同一會員可領</label>
+        <div class="gv-radio-line">
+          <label><input type="radio" name="gv-repeat" value="0" checked> 只能領一張</label>
+          <label><input type="radio" name="gv-repeat" value="1"> 可重複領取</label>
+        </div>
+      </div>
+      <div class="gv-modal-field">
+        <label>備註<span class="gv-label-opt">（選填）</span></label>
+        <textarea class="gox-textarea" id="gv-i-memo" rows="2" placeholder="給自己或同事看的備忘，例：行銷 A 檔加碼，經 JJ 核可"></textarea>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
         <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
-        <button type="button" class="gox-btn gox-btn-primary" id="gv-i-ok">發送</button>
+        <button type="button" class="gox-btn gox-btn-primary" id="gv-i-ok">建立</button>
       </div>
     </div>
   </div>
 </div>
 
+
+<div class="gox-modal-overlay is-hidden" id="gv-send-modal">
+  <div class="gox-modal-box">
+    <div class="gox-card-title">發券</div>
+    <div class="gox-card-body">
+      <p class="gv-modal-lead">將發送券種「<b id="gv-s-name"></b>」。</p>
+      <div class="gv-modal-field">
+        <label>發放對象</label>
+        <textarea class="gox-textarea" id="gv-s-members" rows="4" placeholder="一行一個會員帳號（手機）"></textarea>
+        <div class="gv-field-sub" id="gv-s-quota"></div>
+        <div class="gv-send-warn" id="gv-s-warn"></div>
+      </div>
+      <div class="gv-modal-note">
+        <ul>
+          <li>禮物券一發出去就不能收回（第一版沒有作廢功能），送出前請確認名單。</li>
+          <li id="gv-s-repeat-note"></li>
+        </ul>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
+        <button type="button" class="gox-btn gox-btn-primary" id="gv-s-ok">確認發送</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="gox-modal-overlay is-hidden" id="gv-rule-modal">
   <div class="gox-modal-box">
@@ -1051,7 +1174,7 @@ a:hover { text-decoration: underline; }
     <div class="gox-card-body">
       <div class="gv-rule-body">
         <h4>什麼時候發</h4>
-        <ul><li>每週三上午自動執行，不需要人工操作</li><li><b>不會每次都建一個新的券</b> —— 生日禮固定用列表上這一個券持續發放，每張發出去的券依發券日各自算到期日</li></ul>
+        <ul><li>每週三上午自動執行，不需要人工操作</li><li><b>不會每次都建一個新的券</b>，生日禮固定用列表上這一個券持續發放，每張發出去的券依發券日各自算到期日</li></ul>
         <h4>發給誰</h4>
         <ul>
           <li>當週滿一歲的寶寶（週一到週日）</li>
@@ -1066,7 +1189,7 @@ a:hover { text-decoration: underline; }
         <ul>
           <li>與發券同一批送出，一位媽媽只會收到一封（雙胞胎不會收到兩封）</li>
           <li>會員帳號不是手機號碼的收不到簡訊，但券還是會發</li>
-          <li>發送結果顯示在列表的備註欄</li>
+          <li>累計已送出 <b id="gv-rule-sms"></b>，其中 <b class="gv-note-fail" id="gv-rule-sms-fail"></b></li>
         </ul>
         <h4>活動暫停</h4>
         <ul><li>把禮物「上架」關掉就會停止發新的券</li><li>已經發出去的券不受影響</li></ul>
@@ -1088,7 +1211,7 @@ a:hover { text-decoration: underline; }
   // 所以列表上永遠只佔一列。recurring=true 時，發放時間與有效期限改顯示規則而非固定日期。
   function bdRecurring(issued, used, unused, smsSent, smsFail) {
     return { code: 'BD-BABY', name: '寶寶生日禮', recurring: true,
-      issuedAt: '2026-04-20', issueRule: '每週三自動', expire: null, expireRule: '發券日起 14 天',
+      issuedAt: '2026-04-20', expire: null, expireRule: '發券日起 14 天',
       used: used, issued: issued, unused: unused,
       active: true, ended: false, sms: { sent: smsSent, failed: smsFail } };
   }
@@ -1108,7 +1231,7 @@ a:hover { text-decoration: underline; }
     '1': {
       product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021,
       qty: 1, unit: '包', cost: 120, line: '粥寶寶專區', temp: '常溫', price: 199, start: '2026-06-01', end: '2026-12-31',
-      listed: true, stock: 84, hasAutoRule: true, candidates: ['5'], cartLimit: 3,
+      listed: true, stock: 84, hasAutoRule: true, candidates: ['5'], cartLimit: 1,
       note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。',
       types: [
           bdRecurring(170, 127, 13, 161, 10)
@@ -1119,8 +1242,10 @@ a:hover { text-decoration: underline; }
       qty: 2, unit: '入', cost: 90, line: '粥寶寶專區', temp: '常溫', price: 149, start: '2026-08-01', end: '2026-09-30',
       listed: true, stock: 12, hasAutoRule: false, candidates: ['5', '3'], cartLimit: 2,
       types: [
-        { code: 'MF-260801', name: '中秋限定禮', issuedAt: '2026-08-01', expire: '2026-09-15', used: 128, issued: 200, unused: 40, active: true, ended: false, sms: null },
-        { code: 'MF-260820', name: '中秋加碼場', issuedAt: '2026-08-20', expire: '2026-09-03', used: 12,  issued: 60,  unused: 5,  active: true, ended: false, sms: null }
+        { code: 'MF-260801', name: '中秋限定禮', issuedAt: '2026-08-01', expire: '2026-09-15', used: 128, issued: 200, unused: 72, active: true, ended: false, sms: null,
+          cap: 200, allowRepeat: false, memo: '行銷 A 檔主推，200 張已全數發完' },
+        { code: 'MF-260820', name: '中秋加碼場', issuedAt: '2026-08-20', expire: '2026-09-03', used: 12,  issued: 60,  unused: 0,  active: true, ended: true, sms: null,
+          memo: '' }
       ]
     },
     '3': {
@@ -1128,7 +1253,7 @@ a:hover { text-decoration: underline; }
       qty: 1, unit: '包', cost: 55, line: '粥寶寶專區', temp: '冷凍', price: 89, start: '2026-01-01', end: '2026-12-31',
       listed: true, stock: 260, hasAutoRule: false, candidates: [], cartLimit: 0,
       types: [
-        { code: 'CS-260715', name: '客服補償券', issuedAt: '2026-07-15', expire: '2026-08-14', used: 47, issued: 52, unused: 3, active: true, ended: false, sms: null }
+        { code: 'CS-260715', name: '客服補償券', issuedAt: '2026-07-15', expire: null, expireRule: '發券日起 30 天', used: 47, issued: 52, unused: 5, active: true, ended: false, sms: null }
       ]
     },
     '4': {
@@ -1137,6 +1262,16 @@ a:hover { text-decoration: underline; }
       listed: false, stock: 0, hasAutoRule: false, candidates: ['3'], cartLimit: 0,
       types: [
         { code: 'AN-251001', name: '週年慶禮', issuedAt: '2025-10-01', expire: '2025-11-30', used: 310, issued: 400, unused: 0, active: false, ended: true, sms: null }
+      ]
+    },
+    '6': {
+      product: '季節果乾 隨手包', productId: 77530, spec: '回饋禮專用', specId: 176140,
+      qty: 1, unit: '包', cost: 70, line: '產地直送', temp: '常溫', price: 129, start: '2026-07-01', end: '2026-12-31',
+      listed: true, stock: 6, hasAutoRule: false, candidates: ['5'], cartLimit: 0,
+      note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。',
+      types: [
+        { code: 'OR-260701', name: '訂單回饋禮', issuedAt: '2026-07-01', expire: '2026-10-31', used: 63, issued: 90, unused: 27, active: true, ended: false, sms: null,
+          memo: '滿額回饋常設券，庫存偏低時靠備選頂著' }
       ]
     },
     '5': {
@@ -1148,6 +1283,24 @@ a:hover { text-decoration: underline; }
     }
   };
 
+  // ── 假資料的不變式 ──
+  // 這三條在手改資料時很容易破掉，所以寫成程式檢查而不是靠人記：
+  //   1. 到期日已過的券不能再發，一律視為已結束
+  //   2. 已結束的券沒有「有效未使用」，剩下的全算過期
+  //   3. 還沒到期的一次性券，有效未使用 ＝ 已發 − 已用（沒有第三種去處）
+  // 生日禮是持續發放的滾動券，不同批各自到期，unused 由資料自己給。
+  var TODAY = '2026-09-07';
+  Object.keys(DATA).forEach(function (k) {
+    DATA[k].types.forEach(function (x) {
+      if (x.expire && x.expire < TODAY) x.ended = true;
+      if (x.ended) x.unused = 0;
+      else if (!x.recurring) x.unused = x.issued - x.used;
+      if (x.used > x.issued || x.unused < 0) {
+        console.error('假資料不一致：' + x.code, x);
+      }
+    });
+  });
+
   // 可當替代品的禮物清單（＝所有禮物），給編輯面板的選擇器用
   var GIFT_ITEMS = Object.keys(DATA).map(function (k) {
     return { id: k, product: DATA[k].product, productId: DATA[k].productId, spec: DATA[k].spec, stock: DATA[k].stock };
@@ -1155,6 +1308,30 @@ a:hover { text-decoration: underline; }
 
   var id = (location.search.match(/[?&]id=(\d+)/) || [])[1] || '1';
   var g = DATA[id] || DATA['1'];
+
+  // 頂部資訊的兌換順序摘要：本禮物自己是第 1 順位，之後才是備選
+  function candSummary() {
+    var chain = [{ product: g.product, spec: g.spec, stock: g.stock, self: true }];
+    (g.candidates || []).forEach(function (cid) {
+      var c = DATA[cid];
+      if (c) chain.push({ product: c.product, spec: c.spec, stock: c.stock, self: false });
+    });
+
+    if (chain.length === 1) return '<span class="gv-ci-none">沒有設定備選</span>';
+
+    // 第一個有庫存的就是現在實際會送出的那一份
+    var serving = -1;
+    for (var i = 0; i < chain.length; i++) { if (chain[i].stock > 0) { serving = i; break; } }
+
+    return '<span class="gv-ci">' + chain.map(function (c, i) {
+      return '<span class="gv-ci-row' + (c.self ? ' is-self' : '') + '">' +
+        '<span class="gv-ci-no">' + (i + 1) + '.</span>' +
+        '<span class="gv-ci-name">' + c.product + '（' + c.spec + '）</span>' +
+        (i === serving ? '<span class="gv-ci-live">目前送出</span>'
+         : c.stock <= 0 ? '<span class="gv-ci-oos">缺貨</span>' : '') +
+      '</span>';
+    }).join('') + '</span>';
+  }
 
   function totalUnused() {
     return g.types.reduce(function (s, t) { return s + t.unused; }, 0);
@@ -1182,6 +1359,7 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-price').textContent = '$' + g.price;
     document.getElementById('gv-period').textContent = g.start + ' ～ ' + g.end;
     document.getElementById('gv-limit').textContent = LIMIT_LABEL[g.cartLimit || 0];
+    document.getElementById('gv-cand').innerHTML = candSummary();
     var tag = document.getElementById('gv-status');
     tag.textContent = g.listed ? '贈送中' : '已停止贈送';
     tag.className = 'gox-tag ' + (g.listed ? 'is-success' : 'is-frozen');
@@ -1189,7 +1367,6 @@ a:hover { text-decoration: underline; }
     var unused = totalUnused();
     document.getElementById('gv-stock').textContent = g.stock;
     document.getElementById('gv-unused').textContent = unused;
-    document.getElementById('gv-i-stock').textContent = g.stock;
 
     var box = document.getElementById('gv-box-unused');
     var sn = document.getElementById('gv-shortage');
@@ -1221,11 +1398,54 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-s-avg').textContent = usedCount ? ('$' + fmt(Math.round(amount / usedCount))) : '—';
   }
 
-  function noteCell(t) {
-    if (!t.sms) return '<span class="gv-note gv-note-none">—</span>';
-    var s = '<span class="gv-note">簡訊 ' + t.sms.sent + ' 則已送出';
-    if (t.sms.failed) s += '<br><span class="gv-note-fail">' + t.sms.failed + ' 則號碼無效</span>';
-    return s + '</span>';
+  // 券的狀態（已結束）掛在券名旁邊，不要塞進日期欄或操作欄。
+  // 排程券不掛「自動發放」標籤，那件事由「查看生日券發放規則」按鈕負責。
+  // 原本「每週三自動」放在發放時間欄、「已結束」放在有效期限欄、「自動」放在操作欄，
+  // 三個欄位都因此變成「有時是值、有時是狀態」，篩選與排序都會壞掉。
+  // 排程細節（週期、補發、簡訊）一律只在「查看生日券發放規則」彈窗裡講。
+  function nameCell(t) {
+    var s = t.name;
+    if (t.ended) s += '<span class="gv-vtag">已結束</span>';
+    return s;
+  }
+
+  // 備註：純手寫，建券時可填，之後點鉛筆就地改。
+  // editingMemo 記住正在編輯哪一列；只有進出編輯模式時才重畫，
+  // 編輯中不重畫（重畫會把使用者打的字洗掉）。
+  var editingMemo = -1;
+
+  function memoCell(t, i) {
+    if (editingMemo === i) {
+      return '<div class="gv-memo-edit">' +
+        '<textarea class="gv-memo-input" data-gv-memo-input rows="2" placeholder="給自己或同事看的備忘">' + esc(t.memo || '') + '</textarea>' +
+        '<div class="gv-memo-ops">' +
+          '<button type="button" class="gv-icon-ok" data-gv-memo-ok aria-label="儲存">✓</button>' +
+          '<button type="button" class="gv-icon-cancel" data-gv-memo-cancel aria-label="取消">✕</button>' +
+        '</div>' +
+      '</div>';
+    }
+    var has = !!(t.memo && t.memo.trim());
+    return '<div class="gv-memo">' +
+      (has ? '<span class="gv-memo-txt" title="' + esc(t.memo) + '">' + esc(t.memo) + '</span>'
+           : '<span class="gv-memo-empty">無</span>') +
+      '<button type="button" class="gv-memo-btn" data-gv-memo="' + i + '" aria-label="編輯備註" title="編輯備註">' +
+        '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.3 1.7a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-.45.26l-3.2.8a.5.5 0 0 1-.6-.6l.8-3.2a1 1 0 0 1 .26-.45l8-8Zm.7 1.4L4.3 10.8l-.5 2 2-.5 7.7-7.7-1.5-1.5Z"/></svg>' +
+      '</button>' +
+    '</div>';
+  }
+
+  // 建券與發券分開：券建好之後才在這裡個別發送
+  // 操作欄只放「能按的東西」。不能手動發的券留一個破折號，
+  // 「為什麼不能發」由券名旁的狀態標籤回答。
+  function issueBtn(t, i) {
+    if (t.recurring || t.ended) return '<span class="gv-op-none">—</span>';
+    return '<button type="button" class="gox-btn gox-btn-default gv-op-btn" data-gv-send="' + i + '">發券</button>';
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c];
+    });
   }
 
   function renderTypes() {
@@ -1235,12 +1455,13 @@ a:hover { text-decoration: underline; }
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="gv-empty">這段期間沒有發放紀錄</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" class="gv-empty">這段期間沒有建立任何券</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (t) {
       var i = g.types.indexOf(t);
-      var rate = Math.round(t.used / t.issued * 100);
+      // 新建立但還沒發過的券 issued 為 0，不能拿去算使用率（會變 NaN%）
+      var rate = t.issued ? Math.round(t.used / t.issued * 100) : null;
       var amt = 0, cnt = 0;
       buildRoster(t).forEach(function (r) { if (r.used) { amt += r.amount; cnt++; } });
       var sw = t.ended
@@ -1248,19 +1469,18 @@ a:hover { text-decoration: underline; }
         : '<span class="gox-switch' + (t.active ? ' is-on' : '') + '" data-gv-vtoggle="' + i + '"></span>';
       return '<tr' + (t.ended ? ' class="gv-row-ended"' : '') + '>' +
         '<td><span class="gv-code">' + t.code + '</span></td>' +
-        '<td>' + t.name + '</td>' +
-        '<td>' + (t.recurring
-            ? t.issueRule + '<span class="gv-date-sub">首次 ' + t.issuedAt + '</span>'
-            : t.issuedAt) + '</td>' +
-        '<td>' + (t.recurring
-            ? t.expireRule
-            : t.expire + (t.ended ? '<span class="gv-date-sub">已結束</span>' : '')) + '</td>' +
-        '<td class="cell-right gv-rate"><b>' + t.used + '</b><span> / ' + t.issued + '（' + rate + '%）</span></td>' +
+        '<td>' + nameCell(t) + '</td>' +
+        '<td>' + (t.recurring ? t.issuedAt + ' 起' : t.issuedAt) + '</td>' +
+        '<td>' + (t.expireRule || t.expire) + '</td>' +
+        '<td class="cell-right gv-rate">' + (t.issued
+            ? '<b>' + t.used + '</b><span> / ' + t.issued + '（' + rate + '%）</span>'
+            : '<span class="gv-not-issued">尚未發放</span>') + '</td>' +
         '<td class="cell-right gv-num">' + t.unused + '</td>' +
         '<td class="cell-right gv-num">$' + fmt(amt) + '</td>' +
         '<td class="cell-right gv-num">' + (cnt ? '$' + fmt(Math.round(amt / cnt)) : '—') + '</td>' +
-        '<td>' + noteCell(t) + '</td>' +
+        '<td>' + memoCell(t, i) + '</td>' +
         '<td class="cell-center">' + sw + '</td>' +
+        '<td class="cell-center">' + issueBtn(t, i) + '</td>' +
       '</tr>';
     }).join('');
   }
@@ -1270,6 +1490,7 @@ a:hover { text-decoration: underline; }
     for (var i = 0; i < t.issued; i++) {
       var isUsed = i < t.used;
       var smsFail = t.sms && i >= (t.issued - t.sms.failed);
+      // 到期日已過的券，名單裡沒用掉的一律是過期，不能顯示成還能用
       // 生日禮持續發放，名單裡每張券的發放日要分散在各週（每週約 10 張）
       var issuedOn = t.recurring ? addDays(t.issuedAt, Math.floor(i / 10) * 7) : t.issuedAt;
       list.push({
@@ -1486,11 +1707,67 @@ a:hover { text-decoration: underline; }
 
 
   if (g.hasAutoRule) document.getElementById('gv-btn-rule').style.display = '';
-  document.getElementById('gv-btn-rule').addEventListener('click', function () {
+  function openRuleModal() {
+    // 簡訊統計是排程的執行結果，放這裡而不是列表欄位裡
+    var bd = g.types.filter(function (x) { return x.recurring && x.sms; })[0];
+    if (bd) {
+      document.getElementById('gv-rule-sms').textContent = bd.sms.sent + ' 則';
+      document.getElementById('gv-rule-sms-fail').textContent = bd.sms.failed + ' 則因號碼無效沒送出';
+    }
     document.getElementById('gv-rule-modal').classList.remove('is-hidden');
-  });
+  }
+  document.getElementById('gv-btn-rule').addEventListener('click', openRuleModal);
+  // 建議上限＝目前庫存 − 有效未使用券。已經發出去的券還沒用，那些庫存是被預定掉的，
+  // 新券的上限要從剩下的算。庫存用產品自己的單位（包／入／盒），券一律「張」。
+  function suggestCap() { return Math.max(0, g.stock - totalUnused()); }
+  function capRefText() {
+    return '目前庫存 <b>' + g.stock + '</b> ' + g.unit +
+           '，有效未使用券 <b>' + totalUnused() + '</b> 張，建議上限 <b>' + suggestCap() + '</b> 張';
+  }
+
   document.getElementById('gv-btn-issue').addEventListener('click', function () {
+    document.getElementById('gv-i-cap-ref').innerHTML = capRefText();
+    document.getElementById('gv-i-cap-warn').classList.remove('is-on');
+    document.querySelector('input[name="gv-cap"][value="none"]').checked = true;
+    setCapMode();
     document.getElementById('gv-issue-modal').classList.remove('is-hidden');
+  });
+
+  // 「不限量／最多 N 張」做成兩個選項而不是「留空＝不限」，是為了讓
+  // 「選了不限量卻又填了數字」這種無效狀態在介面上不存在，就不用寫說明去解釋它。
+  // 選不限量時欄位鎖住並清空；選「最多」時解鎖並自動 focus。
+  function capMode() {
+    return document.querySelector('input[name="gv-cap"]:checked').value;
+  }
+  function setCapMode() {
+    var num = capMode() === 'num';
+    var i = document.getElementById('gv-i-cap');
+    i.disabled = !num;
+    if (!num) {
+      i.value = '';
+      document.getElementById('gv-i-cap-warn').classList.remove('is-on');
+    }
+  }
+  document.querySelectorAll('input[name="gv-cap"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      setCapMode();
+      if (capMode() === 'num') document.getElementById('gv-i-cap').focus();
+    });
+  });
+
+  // 上限設超過庫存就提醒。只警告不擋，因為營運可能打算之後補貨，
+  // 但要讓他當場知道這樣就撐不住「發出去一定換得到」的承諾。
+  document.getElementById('gv-i-cap').addEventListener('input', function () {
+    var cap = Number(this.value) || 0;
+    var w = document.getElementById('gv-i-cap-warn');
+    // 門檻用建議上限，跟上面那行參考值同一個基準（用 g.stock 會變成畫面上兩個門檻）
+    if (cap > suggestCap()) {
+      w.textContent = '超過建議上限 ' + suggestCap() + ' 張，全部發完會有 ' +
+                      (cap - suggestCap()) + ' 張換不到東西，記得先補貨。';
+      w.classList.add('is-on');
+    } else {
+      w.classList.remove('is-on');
+    }
   });
   document.querySelectorAll('input[name="gv-expire"]').forEach(function (r) {
     r.addEventListener('change', function () {
@@ -1499,27 +1776,147 @@ a:hover { text-decoration: underline; }
       document.getElementById('gv-expire-fixed').classList.toggle('is-hidden', isDays);
     });
   });
+  // ══════════════════════════════════════════════════════
+  // 建券與發券是兩件事
+  //   建立新券 = 開一個券種（券名／代碼／效期規則／備註），發放數 0
+  //   發券     = 針對某個已建立的券，選對象送出
+  // 這跟優惠券後台同一個模型（CouponTemplate 先建模板，再發給人）。
+  // ══════════════════════════════════════════════════════
   document.getElementById('gv-i-ok').addEventListener('click', function () {
     var name = document.getElementById('gv-i-name').value.trim();
-    var members = document.getElementById('gv-i-members').value.trim();
+    var code = document.getElementById('gv-i-code').value.trim();
     if (!name) { window.gox.toast('請填寫券名'); return; }
-    if (!members) { window.gox.toast('請填寫發放對象'); return; }
-    var count = members.split('\n').filter(function (x) { return x.trim(); }).length;
-    if (count > g.stock) { window.gox.toast('發券數量 ' + count + ' 張已超過剩餘庫存 ' + g.stock); return; }
+    if (!code) { window.gox.toast('請填寫券代碼'); return; }
+    if (g.types.some(function (x) { return x.code === code; })) {
+      window.gox.toast('券代碼「' + code + '」已存在'); return;
+    }
     var isDays = document.querySelector('input[name="gv-expire"]:checked').value === 'days';
     var start = today();
     var expire = isDays ? addDays(start, Number(document.getElementById('gv-i-days').value) || 14)
                         : (document.getElementById('gv-i-date').value || addDays(start, 14));
+
     g.types.unshift({
-      code: 'MN-' + start.slice(2).replace(/-/g, ''), name: name, issuedAt: start, expire: expire,
-      used: 0, issued: count, unused: count, active: true, ended: false, sms: null
+      code: code, name: name, issuedAt: start, expire: expire,
+      used: 0, issued: 0, unused: 0, active: true, ended: false, sms: null,
+      cap: capMode() === 'num' ? (Number(document.getElementById('gv-i-cap').value) || null) : null,
+      allowRepeat: document.querySelector('input[name="gv-repeat"]:checked').value === '1',
+      memo: document.getElementById('gv-i-memo').value.trim()
     });
+
     document.getElementById('gv-issue-modal').classList.add('is-hidden');
-    document.getElementById('gv-i-name').value = '';
-    document.getElementById('gv-i-members').value = '';
+    ['gv-i-name', 'gv-i-code', 'gv-i-memo', 'gv-i-cap'].forEach(function (id) { document.getElementById(id).value = ''; });
+    document.querySelector('input[name="gv-repeat"][value="0"]').checked = true;
+    document.querySelector('input[name="gv-cap"][value="none"]').checked = true;
+    setCapMode();
     renderView(); renderTypes();
-    window.gox.toast('已發送 ' + count + ' 張「' + name + '」');
+    window.gox.toast('已建立「' + name + '」，接著在列表按「發券」發給客人');
   });
+
+  // ── 發券 ──
+  var sendIdx = -1;
+  document.getElementById('gv-tbody').addEventListener('click', function (e) {
+    var s = e.target.closest('[data-gv-send]');
+    if (s) {
+      sendIdx = Number(s.getAttribute('data-gv-send'));
+      var tt = g.types[sendIdx];
+      document.getElementById('gv-s-name').textContent = tt.name + '（' + tt.code + '）';
+      document.getElementById('gv-s-quota').innerHTML = quotaText(tt);
+      document.getElementById('gv-s-repeat-note').textContent = tt.allowRepeat
+        ? '這個券可重複領取，同一個帳號在名單裡出現幾次就發幾張。'
+        : '這個券每人只能領一張，名單裡重複的帳號只會發一張。';
+      document.getElementById('gv-s-members').value = '';
+      document.getElementById('gv-s-warn').classList.remove('is-on');
+      document.getElementById('gv-send-modal').classList.remove('is-hidden');
+      return;
+    }
+    var m = e.target.closest('[data-gv-memo]');
+    if (m) {
+      editingMemo = Number(m.getAttribute('data-gv-memo'));
+      renderTypes();
+      var box = document.querySelector('[data-gv-memo-input]');
+      if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+      return;
+    }
+
+    if (e.target.closest('[data-gv-memo-ok]')) {
+      var box2 = document.querySelector('[data-gv-memo-input]');
+      if (box2 && editingMemo > -1) g.types[editingMemo].memo = box2.value.trim();
+      editingMemo = -1;
+      renderTypes();
+      window.gox.toast('備註已儲存');
+      return;
+    }
+
+    if (e.target.closest('[data-gv-memo-cancel]')) {
+      editingMemo = -1;
+      renderTypes();
+    }
+  });
+
+  // 名單去重：不允許重複領取時，同一帳號只算一張
+  function parseMembers(raw, allowRepeat) {
+    var list = raw.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (allowRepeat) return { list: list, dropped: 0 };
+    var seen = {}, out = [];
+    list.forEach(function (m) { if (!seen[m]) { seen[m] = 1; out.push(m); } });
+    return { list: out, dropped: list.length - out.length };
+  }
+
+  function quotaText(tt) {
+    var s = '目前剩餘庫存 <b>' + g.stock + '</b>，有效未使用券 <b>' + totalUnused() + '</b> 張。';
+    if (tt.cap) {
+      s += '<br>本券總發送上限 <b>' + tt.cap + '</b> 張，已發 <b>' + tt.issued +
+           '</b> 張，<b>還可發 ' + Math.max(0, tt.cap - tt.issued) + ' 張</b>。';
+    } else {
+      s += '<br>本券沒有設總發送上限，發多少張就要備多少貨。';
+    }
+    return s;
+  }
+
+  // 名單一邊打就一邊算。庫存不足只警告（照規格，排程發券不能因庫存整批失敗）；
+  // 但「總發送上限」是防誤操作的閘門，超過要真的擋下來。
+  document.getElementById('gv-s-members').addEventListener('input', function () {
+    if (sendIdx < 0) return;
+    var tt = g.types[sendIdx];
+    var r = parseMembers(this.value, tt.allowRepeat);
+    var cnt = r.list.length;
+    var w = document.getElementById('gv-s-warn');
+    var msgs = [];
+
+    if (r.dropped) msgs.push('名單有 ' + r.dropped + ' 筆重複帳號，這個券每人只能領一張，重複的會被略過。');
+    if (tt.cap && tt.issued + cnt > tt.cap) {
+      msgs.push('超過總發送上限：上限 ' + tt.cap + ' 張、已發 ' + tt.issued +
+                ' 張，這次最多只能再發 ' + Math.max(0, tt.cap - tt.issued) + ' 張。');
+    }
+    var over = totalUnused() + cnt - g.stock;
+    if (cnt && over > 0) msgs.push('發出後有效未使用券會超出庫存 ' + over + ' 張，記得補貨。');
+
+    w.innerHTML = msgs.join('<br>');
+    w.classList.toggle('is-on', msgs.length > 0);
+  });
+
+  document.getElementById('gv-s-ok').addEventListener('click', function () {
+    if (sendIdx < 0) return;
+    var tt = g.types[sendIdx];
+    var r = parseMembers(document.getElementById('gv-s-members').value, tt.allowRepeat);
+    var cnt = r.list.length;
+    if (!cnt) { window.gox.toast('請填寫發放對象'); return; }
+
+    // 總發送上限是防誤操作的閘門，這裡真的擋（庫存不足只是警告，不擋）
+    if (tt.cap && tt.issued + cnt > tt.cap) {
+      window.gox.toast('超過總發送上限，這次最多只能再發 ' + Math.max(0, tt.cap - tt.issued) + ' 張');
+      return;
+    }
+
+    tt.issued += cnt;
+    tt.unused += cnt;
+    document.getElementById('gv-send-modal').classList.add('is-hidden');
+    renderView(); renderTypes();
+    window.gox.toast('已發送 ' + cnt + ' 張「' + tt.name + '」' +
+      (r.dropped ? '（略過 ' + r.dropped + ' 筆重複帳號）' : ''));
+  });
+
+
 
   document.getElementById('gv-back').addEventListener('click', function () {
     location.href = 'admin-gift-list.html';

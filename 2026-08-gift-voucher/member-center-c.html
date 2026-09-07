@@ -947,20 +947,20 @@ img { vertical-align: middle; }
     <div class="panel-body">
       <div class="gv-empty" id="gv-empty" style="display:none;">目前沒有可用的禮物券。</div>
       <div class="gv-grid" id="gv-list">
-        <div class="gv-card" data-gv="1">
+        <div class="gv-card is-soon" data-gv="1">
           <div class="gv-thumb">禮物圖</div>
           <div class="gv-vtype">寶寶生日禮</div>
           <div class="gv-name">寶寶果泥 隨手包</div>
-          <div class="gv-exp">08/17 到期，剩 11 天</div>
+          <div class="gv-exp is-soon">09/09 到期，剩 2 天</div>
           <div class="gv-actions">
             <button type="button" class="btn-use" data-gv-use="1">使用</button>
           </div>
         </div>
-        <div class="gv-card is-soon" data-gv="2">
+        <div class="gv-card" data-gv="2">
           <div class="gv-thumb">禮物圖</div>
           <div class="gv-vtype">中秋限定禮</div>
           <div class="gv-name">有機米餅 二入</div>
-          <div class="gv-exp is-soon">08/09 到期，剩 3 天</div>
+          <div class="gv-exp">09/15 到期，剩 8 天</div>
           <div class="gv-actions">
             <button type="button" class="btn-use" data-gv-use="2">使用</button>
           </div>
@@ -969,7 +969,7 @@ img { vertical-align: middle; }
           <div class="gv-thumb">禮物圖</div>
           <div class="gv-vtype">訂單回饋禮</div>
           <div class="gv-name">季節果乾 隨手包<span class="gv-flag">補貨中</span></div>
-          <div class="gv-exp">09/12 到期，剩 37 天</div>
+          <div class="gv-exp">10/31 到期，剩 54 天</div>
           <div class="gv-actions">
             <a class="btn-oos" href="https://lin.ee/djMfdxH" target="_blank" rel="noopener">請聯繫客服</a>
           </div>
@@ -978,7 +978,7 @@ img { vertical-align: middle; }
           <div class="gv-thumb">禮物圖</div>
           <div class="gv-vtype">訂單回饋禮</div>
           <div class="gv-name">有機米餅 二入<span class="gv-flag is-sub">替換品項</span></div>
-          <div class="gv-exp">09/20 到期，剩 45 天</div>
+          <div class="gv-exp">10/31 到期，剩 54 天</div>
           <div class="gv-actions">
             <button type="button" class="btn-use" data-gv-use="4">使用</button>
           </div>
@@ -1128,13 +1128,13 @@ img { vertical-align: middle; }
   'use strict';
 
   var GIFTS = {
-    '1': { code: 'BD-260803', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
+    '1': { code: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
            note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。' },
-    '2': { code: 'MF-260801', vtype: '中秋限定禮', name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
+    '2': { code: 'MF-260801-0107', vtype: '中秋限定禮', name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
            note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' },
-    '3': { code: 'SF-260806', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
+    '3': { code: 'OR-260701-0011', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
            note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' },
-    '4': { code: 'SF-260812', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入（回饋禮專用）',
+    '4': { code: 'OR-260701-0012', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入（替代品專用）',
            sub: '原禮物「季節果乾 隨手包」目前缺貨，<br>已為你換成同等價值的禮物，可直接兌換。',
            note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' }
   };
