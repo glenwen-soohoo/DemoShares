@@ -816,6 +816,9 @@ a:hover { text-decoration: underline; }
     background: #fdf6e3; border-radius: var(--gox-radius); padding: 10px 12px;
   }
   .gv-inline-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  /* .is-hidden 定義在前面、特異性又一樣，會被上面那條 display:flex 蓋掉。
+     要藏得起來就得用兩個 class 提高特異性。 */
+  .gv-inline-row.is-hidden { display: none; }
   .gv-inline-row .gv-radio { display: inline-flex; align-items: center; gap: 4px; margin: 0; white-space: nowrap; }
   .gv-modal-field .gv-num, .gv-num { width: 84px; flex: 0 0 84px; }
   .gv-unit { font-size: 13px; color: var(--gox-text-sub); }
@@ -834,33 +837,20 @@ a:hover { text-decoration: underline; }
   .gv-modal-note li:empty { display: none; }
 
 
-  /* 備註欄 */
-  .gv-memo { display: flex; align-items: flex-start; gap: 6px; }
+  /* 備註欄：只顯示，超過兩行截斷。編輯走操作欄的「編輯」彈窗 */
   .gv-memo-txt {
-    flex: 1; min-width: 0; font-size: 12px; color: var(--gox-text-sub); line-height: 1.6;
+    font-size: 12px; color: var(--gox-text-sub); line-height: 1.6;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .gv-memo-empty { flex: 1; font-size: 12px; color: #b9c0ba; }
-  .gv-memo-btn {
-    flex: none; border: 0; background: transparent; cursor: pointer;
-    padding: 1px 2px; line-height: 1; color: #b9c0ba;
-  }
-  .gv-memo-btn svg { width: 13px; height: 13px; fill: currentColor; display: block; }
-  .gv-memo-btn:hover { color: var(--gox-green); }
-
-  /* 就地編輯：跟上方「剩餘庫存」用同一組 ✓／✕ 按鈕 */
-  .gv-memo-edit { display: flex; align-items: flex-start; gap: 4px; }
-  .gv-memo-input {
-    flex: 1; min-width: 0; font-family: inherit; font-size: 12px; line-height: 1.6;
-    color: var(--gox-text); background: #fff;
-    border: 1px solid var(--gox-green); border-radius: var(--gox-radius);
-    padding: 4px 6px; resize: vertical;
-  }
-  .gv-memo-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(75,168,59,.14); }
-  .gv-memo-ops { display: flex; flex-direction: column; flex: none; }
+  .gv-memo-empty { font-size: 12px; color: #b9c0ba; }
 
   .gv-op-btn { font-size: 12px; padding: 3px 10px; }
   .gv-op-none { color: var(--gox-text-muted); }
+  .gv-cap-none { color: var(--gox-text-muted); font-weight: 400; }
+  .gv-cap-left { display: block; font-size: 11px; font-weight: 400; color: var(--gox-text-muted); margin-top: 2px; }
+  .gv-cap-left.is-full { color: var(--gox-danger); }
+  /* 操作欄兩顆按鈕：窄欄位排不開就換行 */
+  td.cell-center .gv-op-btn { margin: 2px 2px; }
   .gv-vtag {
     display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px;
     font-size: 11px; line-height: 1.6; border: 1px solid var(--gox-card-border);
@@ -1083,12 +1073,13 @@ a:hover { text-decoration: underline; }
           <th style="width:110px;">發放時間</th>
           <th style="width:130px;">有效期限</th>
           <th class="cell-right" style="width:150px;">使用／發放（使用率）</th>
+          <th class="cell-right" style="width:100px;">發券總量</th>
           <th class="cell-right" style="width:120px;">有效未使用</th>
           <th class="cell-right" style="width:100px;">訂單總金額</th>
           <th class="cell-right" style="width:100px;">平均客單價</th>
           <th style="width:180px;">備註</th>
           <th class="cell-center" style="width:56px;">啟用</th>
-          <th class="cell-center" style="width:76px;">操作</th>
+          <th class="cell-center" style="width:132px;">操作</th>
         </tr>
       </thead>
       <tbody id="gv-tbody"></tbody>
@@ -1098,7 +1089,7 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-modal-overlay is-hidden" id="gv-issue-modal">
   <div class="gox-modal-box">
-    <div class="gox-card-title">建立新券</div>
+    <div class="gox-card-title" id="gv-i-title">建立新券</div>
     <div class="gox-card-body">
       <div class="gv-modal-field"><label>券名</label><input type="text" class="gox-input" id="gv-i-name" placeholder="例：中秋加碼場"></div>
       <div class="gv-modal-field">
@@ -1113,6 +1104,7 @@ a:hover { text-decoration: underline; }
         </div>
         <div id="gv-expire-days" class="gv-inline-row"><input type="number" class="gox-input gv-num" id="gv-i-days" value="14" min="1"><span class="gv-unit">天內有效</span></div>
         <div id="gv-expire-fixed" class="gv-expire-input is-hidden"><input type="date" class="gox-input" id="gv-i-date"></div>
+        <div class="gv-field-sub is-hidden" id="gv-i-expire-note">改效期只影響之後發出去的券，已經發出去的券保留原本的到期日。</div>
       </div>
       <div class="gv-modal-field">
         <label>總發送上限</label>
@@ -1137,8 +1129,11 @@ a:hover { text-decoration: underline; }
         <textarea class="gox-textarea" id="gv-i-memo" rows="2" placeholder="給自己或同事看的備忘，例：行銷 A 檔加碼，經 JJ 核可"></textarea>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
-        <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
+        <button type="button" class="gox-btn gox-btn-default" id="gv-i-cancel">取消</button>
         <button type="button" class="gox-btn gox-btn-primary" id="gv-i-ok">建立</button>
+        <!-- 同一組欄位服務建立與編輯兩種模式，editTypeIdx 決定是哪一種。
+             不另開一個彈窗，是因為兩邊要填的東西完全一樣，複製一份之後
+             改欄位就得改兩個地方。 -->
       </div>
     </div>
   </div>
@@ -1423,37 +1418,30 @@ a:hover { text-decoration: underline; }
     return s;
   }
 
-  // 備註：純手寫，建券時可填，之後點鉛筆就地改。
-  // editingMemo 記住正在編輯哪一列；只有進出編輯模式時才重畫，
-  // 編輯中不重畫（重畫會把使用者打的字洗掉）。
-  var editingMemo = -1;
-
-  function memoCell(t, i) {
-    if (editingMemo === i) {
-      return '<div class="gv-memo-edit">' +
-        '<textarea class="gv-memo-input" data-gv-memo-input rows="2" placeholder="給自己或同事看的備忘">' + esc(t.memo || '') + '</textarea>' +
-        '<div class="gv-memo-ops">' +
-          '<button type="button" class="gv-icon-ok" data-gv-memo-ok aria-label="儲存">✓</button>' +
-          '<button type="button" class="gv-icon-cancel" data-gv-memo-cancel aria-label="取消">✕</button>' +
-        '</div>' +
-      '</div>';
-    }
+  // 備註：純顯示。原本這一欄有鉛筆可以就地改，操作欄有了「編輯」彈窗之後
+  // 那個入口就多餘了（同一件事兩個地方能改），2026-09-08 移除。
+  function memoCell(t) {
     var has = !!(t.memo && t.memo.trim());
-    return '<div class="gv-memo">' +
-      (has ? '<span class="gv-memo-txt" title="' + esc(t.memo) + '">' + esc(t.memo) + '</span>'
-           : '<span class="gv-memo-empty">無</span>') +
-      '<button type="button" class="gv-memo-btn" data-gv-memo="' + i + '" aria-label="編輯備註" title="編輯備註">' +
-        '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.3 1.7a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-.45.26l-3.2.8a.5.5 0 0 1-.6-.6l.8-3.2a1 1 0 0 1 .26-.45l8-8Zm.7 1.4L4.3 10.8l-.5 2 2-.5 7.7-7.7-1.5-1.5Z"/></svg>' +
-      '</button>' +
-    '</div>';
+    return has
+      ? '<span class="gv-memo-txt" title="' + esc(t.memo) + '">' + esc(t.memo) + '</span>'
+      : '<span class="gv-memo-empty">無</span>';
   }
 
   // 建券與發券分開：券建好之後才在這裡個別發送
-  // 操作欄只放「能按的東西」。不能手動發的券留一個破折號，
-  // 「為什麼不能發」由券名旁的狀態標籤回答。
+  // 發券總量：沒設就寫「不限」，設了就顯示數字並在下面標還能發幾張。
+  function capCell(t) {
+    if (!t.cap) return '<span class="gv-cap-none">不限</span>';
+    var left = Math.max(0, t.cap - t.issued);
+    return t.cap + '<span class="gv-cap-left' + (left === 0 ? ' is-full' : '') + '">' +
+           (left === 0 ? '已發完' : '還可發 ' + left) + '</span>';
+  }
+
+  // 操作欄只放「能按的東西」。編輯所有券都能按（改的是設定）；
+  // 發券只有非排程、未結束的券才有，排程券的「為什麼不能發」由券名旁的狀態標籤回答。
   function issueBtn(t, i) {
-    if (t.recurring || t.ended) return '<span class="gv-op-none">—</span>';
-    return '<button type="button" class="gox-btn gox-btn-default gv-op-btn" data-gv-send="' + i + '">發券</button>';
+    var edit = '<button type="button" class="gox-btn gox-btn-default gv-op-btn" data-gv-edit-type="' + i + '">編輯</button>';
+    if (t.recurring || t.ended) return edit;
+    return '<button type="button" class="gox-btn gox-btn-default gv-op-btn" data-gv-send="' + i + '">發券</button>' + edit;
   }
 
   function esc(s) {
@@ -1469,7 +1457,7 @@ a:hover { text-decoration: underline; }
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="11" class="gv-empty">這段期間沒有建立任何券</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="gv-empty">這段期間沒有建立任何券</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (t) {
@@ -1489,10 +1477,11 @@ a:hover { text-decoration: underline; }
         '<td class="cell-right gv-rate">' + (t.issued
             ? '<b>' + t.used + '</b><span> / ' + t.issued + '（' + rate + '%）</span>'
             : '<span class="gv-not-issued">尚未發放</span>') + '</td>' +
+        '<td class="cell-right gv-num">' + capCell(t) + '</td>' +
         '<td class="cell-right gv-num">' + t.unused + '</td>' +
         '<td class="cell-right gv-num">$' + fmt(amt) + '</td>' +
         '<td class="cell-right gv-num">' + (cnt ? '$' + fmt(Math.round(amt / cnt)) : '—') + '</td>' +
-        '<td>' + memoCell(t, i) + '</td>' +
+        '<td>' + memoCell(t) + '</td>' +
         '<td class="cell-center">' + sw + '</td>' +
         '<td class="cell-center">' + issueBtn(t, i) + '</td>' +
       '</tr>';
@@ -1735,17 +1724,71 @@ a:hover { text-decoration: underline; }
   // 建議上限＝目前庫存 − 有效未使用券。已經發出去的券還沒用，那些庫存是被預定掉的，
   // 新券的上限要從剩下的算。庫存用產品自己的單位（包／入／盒），券一律「張」。
   function suggestCap() { return Math.max(0, g.stock - totalUnused()); }
-  function capRefText() {
-    return '目前庫存 <b>' + g.stock + '</b> ' + g.unit +
-           '，有效未使用券 <b>' + totalUnused() + '</b> 張，建議上限 <b>' + suggestCap() + '</b> 張';
+  function capRefText(tt) {
+    var s = '目前庫存 <b>' + g.stock + '</b> ' + g.unit +
+            '，有效未使用券 <b>' + totalUnused() + '</b> 張，建議上限 <b>' + suggestCap() + '</b> 張';
+    // 編輯既有券時多給一個下限：上限不能設得比已經發出去的張數還低
+    if (tt && tt.issued) s += '。這個券已發出 <b>' + tt.issued + '</b> 張，上限不能低於這個數';
+    return s;
   }
 
-  document.getElementById('gv-btn-issue').addEventListener('click', function () {
-    document.getElementById('gv-i-cap-ref').innerHTML = capRefText();
-    document.getElementById('gv-i-cap-warn').classList.remove('is-on');
-    document.querySelector('input[name="gv-cap"][value="none"]').checked = true;
+  // -1 ＝ 建立新券，其他數字 ＝ 正在編輯第幾個券種
+  var editTypeIdx = -1;
+
+  function setExpireMode(isDays) {
+    document.querySelector('input[name="gv-expire"][value="' + (isDays ? 'days' : 'fixed') + '"]').checked = true;
+    document.getElementById('gv-expire-days').classList.toggle('is-hidden', !isDays);
+    document.getElementById('gv-expire-fixed').classList.toggle('is-hidden', isDays);
+  }
+
+  function openTypeModal(idx) {
+    editTypeIdx = idx;
+    var isEdit = idx >= 0;
+    var tt = isEdit ? g.types[idx] : null;
+
+    document.getElementById('gv-i-title').textContent = isEdit ? '編輯券' : '建立新券';
+    document.getElementById('gv-i-ok').textContent = isEdit ? '儲存' : '建立';
+    // 券代碼建立後不可改，編輯時鎖住
+    var codeInput = document.getElementById('gv-i-code');
+    codeInput.disabled = isEdit;
+    document.getElementById('gv-i-expire-note').classList.toggle('is-hidden', !isEdit);
+
+    document.getElementById('gv-i-name').value = isEdit ? tt.name : '';
+    codeInput.value = isEdit ? tt.code : '';
+    document.getElementById('gv-i-memo').value = isEdit ? (tt.memo || '') : '';
+
+    if (isEdit && tt.expireRule) {
+      // 「發券日起 N 天」這種相對效期，把天數挖出來
+      var m = String(tt.expireRule).match(/(\d+)/);
+      setExpireMode(true);
+      document.getElementById('gv-i-days').value = m ? m[1] : 14;
+    } else if (isEdit && tt.expire) {
+      setExpireMode(false);
+      document.getElementById('gv-i-date').value = tt.expire;
+    } else {
+      setExpireMode(true);
+      document.getElementById('gv-i-days').value = 14;
+    }
+
+    var hasCap = isEdit && !!tt.cap;
+    document.querySelector('input[name="gv-cap"][value="' + (hasCap ? 'num' : 'none') + '"]').checked = true;
     setCapMode();
+    if (hasCap) document.getElementById('gv-i-cap').value = tt.cap;
+
+    document.querySelector('input[name="gv-repeat"][value="' + (isEdit && tt.allowRepeat ? '1' : '0') + '"]').checked = true;
+
+    document.getElementById('gv-i-cap-ref').innerHTML = capRefText(isEdit ? tt : null);
+    document.getElementById('gv-i-cap-warn').classList.remove('is-on');
     document.getElementById('gv-issue-modal').classList.remove('is-hidden');
+  }
+
+  document.getElementById('gv-btn-issue').addEventListener('click', function () { openTypeModal(-1); });
+  // 取消要走自己的關閉，才會把編輯模式與鎖住的券代碼一起重設；
+  // 外殼的 data-gox-close 只會把彈窗隱藏起來。
+  document.getElementById('gv-i-cancel').addEventListener('click', closeTypeModal);
+  document.getElementById('gv-tbody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-gv-edit-type]');
+    if (b) openTypeModal(Number(b.getAttribute('data-gv-edit-type')));
   });
 
   // 「不限量／最多 N 張」做成兩個選項而不是「留空＝不限」，是為了讓
@@ -1786,9 +1829,7 @@ a:hover { text-decoration: underline; }
   });
   document.querySelectorAll('input[name="gv-expire"]').forEach(function (r) {
     r.addEventListener('change', function () {
-      var isDays = document.querySelector('input[name="gv-expire"]:checked').value === 'days';
-      document.getElementById('gv-expire-days').classList.toggle('is-hidden', !isDays);
-      document.getElementById('gv-expire-fixed').classList.toggle('is-hidden', isDays);
+      setExpireMode(this.value === 'days');
     });
   });
   // ══════════════════════════════════════════════════════
@@ -1798,34 +1839,65 @@ a:hover { text-decoration: underline; }
   // 這跟優惠券後台同一個模型（CouponTemplate 先建模板，再發給人）。
   // ══════════════════════════════════════════════════════
   document.getElementById('gv-i-ok').addEventListener('click', function () {
+    var isEdit = editTypeIdx >= 0;
     var name = document.getElementById('gv-i-name').value.trim();
     var code = document.getElementById('gv-i-code').value.trim();
     if (!name) { window.gox.toast('請填寫券名'); return; }
-    if (!code) { window.gox.toast('請填寫券代碼'); return; }
-    if (g.types.some(function (x) { return x.code === code; })) {
+    if (!isEdit && !code) { window.gox.toast('請填寫券代碼'); return; }
+    if (!isEdit && g.types.some(function (x) { return x.code === code; })) {
       window.gox.toast('券代碼「' + code + '」已存在'); return;
     }
+
+    var cap = capMode() === 'num' ? (Number(document.getElementById('gv-i-cap').value) || null) : null;
     var isDays = document.querySelector('input[name="gv-expire"]:checked').value === 'days';
+    var days = Number(document.getElementById('gv-i-days').value) || 14;
+    var allowRepeat = document.querySelector('input[name="gv-repeat"]:checked').value === '1';
+    var memo = document.getElementById('gv-i-memo').value.trim();
+
+    if (isEdit) {
+      var tt = g.types[editTypeIdx];
+      // 已發券數不能超過發券總量，所以上限也不能被改到比已發數還低
+      if (cap && cap < tt.issued) {
+        window.gox.toast('這個券已發出 ' + tt.issued + ' 張，上限不能設得比它低');
+        return;
+      }
+      tt.name = name;
+      tt.cap = cap;
+      tt.allowRepeat = allowRepeat;
+      tt.memo = memo;
+      // 效期只改「之後發出去的券」用的規則，已發出的券保留自己的到期日
+      if (isDays) { tt.expireRule = '發券日起 ' + days + ' 天'; tt.expire = null; }
+      else { tt.expireRule = null; tt.expire = document.getElementById('gv-i-date').value || tt.expire; }
+      closeTypeModal();
+      renderView(); renderTypes();
+      window.gox.toast('已更新「' + name + '」');
+      return;
+    }
+
     var start = today();
-    var expire = isDays ? addDays(start, Number(document.getElementById('gv-i-days').value) || 14)
+    var expire = isDays ? addDays(start, days)
                         : (document.getElementById('gv-i-date').value || addDays(start, 14));
 
     g.types.unshift({
       code: code, name: name, issuedAt: start, expire: expire,
       used: 0, issued: 0, unused: 0, active: true, ended: false, sms: null,
-      cap: capMode() === 'num' ? (Number(document.getElementById('gv-i-cap').value) || null) : null,
-      allowRepeat: document.querySelector('input[name="gv-repeat"]:checked').value === '1',
-      memo: document.getElementById('gv-i-memo').value.trim()
+      cap: cap, allowRepeat: allowRepeat, memo: memo
     });
 
-    document.getElementById('gv-issue-modal').classList.add('is-hidden');
-    ['gv-i-name', 'gv-i-code', 'gv-i-memo', 'gv-i-cap'].forEach(function (id) { document.getElementById(id).value = ''; });
-    document.querySelector('input[name="gv-repeat"][value="0"]').checked = true;
-    document.querySelector('input[name="gv-cap"][value="none"]').checked = true;
-    setCapMode();
+    closeTypeModal();
     renderView(); renderTypes();
     window.gox.toast('已建立「' + name + '」，接著在列表按「發券」發給客人');
   });
+
+  function closeTypeModal() {
+    document.getElementById('gv-issue-modal').classList.add('is-hidden');
+    ['gv-i-name', 'gv-i-code', 'gv-i-memo', 'gv-i-cap'].forEach(function (id) { document.getElementById(id).value = ''; });
+    document.getElementById('gv-i-code').disabled = false;
+    document.querySelector('input[name="gv-repeat"][value="0"]').checked = true;
+    document.querySelector('input[name="gv-cap"][value="none"]').checked = true;
+    setCapMode();
+    editTypeIdx = -1;
+  }
 
   // ── 發券 ──
   var sendIdx = -1;
@@ -1843,28 +1915,6 @@ a:hover { text-decoration: underline; }
       document.getElementById('gv-s-warn').classList.remove('is-on');
       document.getElementById('gv-send-modal').classList.remove('is-hidden');
       return;
-    }
-    var m = e.target.closest('[data-gv-memo]');
-    if (m) {
-      editingMemo = Number(m.getAttribute('data-gv-memo'));
-      renderTypes();
-      var box = document.querySelector('[data-gv-memo-input]');
-      if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
-      return;
-    }
-
-    if (e.target.closest('[data-gv-memo-ok]')) {
-      var box2 = document.querySelector('[data-gv-memo-input]');
-      if (box2 && editingMemo > -1) g.types[editingMemo].memo = box2.value.trim();
-      editingMemo = -1;
-      renderTypes();
-      window.gox.toast('備註已儲存');
-      return;
-    }
-
-    if (e.target.closest('[data-gv-memo-cancel]')) {
-      editingMemo = -1;
-      renderTypes();
     }
   });
 
