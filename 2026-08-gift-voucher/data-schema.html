@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>禮物券 資料結構 — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* 這一頁不是畫面 demo，是寫給「之後要用 AI 撈資料庫」的營運同事看的。
+     所以刻意不放 SQL、不放型別，只講每一欄在業務上是什麼意思、
+     以及「你想知道的事」要靠哪幾欄判斷。
+     每個欄位都配一個中文名，是為了讓不看英文的人也講得出來、開會時對得上。
+     視覺語言跟 index.html 一致（同一組綠、Noto Sans TC），不套 GoX 外殼。 */
+  :root {
+    --ds-green: #4ba83b;
+    --ds-green-dark: #2f7d20;
+    --ds-text: #1f2420;
+    --ds-muted: #7c847d;
+    --ds-line: #e0e4e6;
+    --ds-bg: #f6f8f5;
+    --ds-warn-bg: #fffdf5;
+    --ds-warn-line: #e8c76a;
+    --ds-warn-text: #7a5a00;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 20px 80px;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    font-size: 16px; line-height: 1.8; color: var(--ds-text); background: #fafbfb;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  h1 { font-size: 30px; margin: 0 0 4px; color: #008000; }
+  .sub { color: #999; font-size: 14px; margin: 0 0 32px; }
+
+  h2 {
+    font-size: 24px; font-weight: 700; color: #008000;
+    margin: 56px 0 4px; padding-top: 32px; border-top: 2px solid var(--ds-line);
+  }
+  h2:first-of-type { margin-top: 32px; }
+  .h2-note { color: var(--ds-muted); font-size: 14px; margin: 0 0 24px; }
+  h3 {
+    font-size: 18px; font-weight: 700; margin: 32px 0 8px;
+    padding-left: 12px; border-left: 4px solid var(--ds-green);
+  }
+  h3 code { font-size: 17px; }
+  p { margin: 0 0 16px; }
+
+  code {
+    font-family: 'Consolas', 'Menlo', monospace; font-size: .92em;
+    background: #eef2ee; border-radius: 3px; padding: 1px 5px; color: #24402c;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ds-line); vertical-align: top; }
+  thead th { background: var(--ds-bg); color: var(--ds-green-dark); font-size: 14px; }
+  .tbl-wrap { overflow-x: auto; }
+  .col { font-family: 'Consolas', 'Menlo', monospace; font-weight: 700; color: #24402c; white-space: nowrap; }
+  /* 欄位的中文名，掛在英文欄位名下面 */
+  .cn {
+    display: block; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+    font-size: 14px; color: var(--ds-green-dark); margin-top: 2px;
+  }
+
+  .key-table th, .key-table td { border-bottom: 1px solid #d8e6d3; }
+  .key-table thead th { background: #eef5e8; }
+
+  .note {
+    background: var(--ds-bg); border-left: 4px solid var(--ds-green);
+    padding: 14px 18px; margin: 0 0 20px; font-size: 15px;
+  }
+  .warn {
+    background: var(--ds-warn-bg); border: 1px solid var(--ds-warn-line);
+    border-radius: 6px; padding: 16px 20px; margin: 0 0 24px; font-size: 15px;
+  }
+  .warn b { color: var(--ds-warn-text); }
+  .warn ul, .note ul { margin: 8px 0 0; padding-left: 20px; }
+  .warn li, .note li { margin-bottom: 6px; }
+
+  /* 三層關係 */
+  .layers { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; margin: 0 0 20px; }
+  .layer {
+    flex: 1 1 200px; background: #fff; border: 1px solid var(--ds-line);
+    border-radius: 6px; padding: 16px 18px;
+  }
+  .layer.is-key { border-color: var(--ds-green); background: #f7fbf5; }
+  .layer .lv { font-size: 12px; color: var(--ds-muted); }
+  .layer .nm { font-size: 17px; font-weight: 700; color: var(--ds-green-dark); margin-top: 2px; }
+  .layer .tb { font-family: 'Consolas', 'Menlo', monospace; font-size: 13px; color: #24402c; margin-top: 2px; }
+  .layer .ds { font-size: 14px; color: var(--ds-muted); margin-top: 8px; line-height: 1.6; }
+  .layer-arrow { align-self: center; color: var(--ds-green); font-size: 22px; font-weight: 700; }
+  @media (max-width: 720px) { .layer-arrow { display: none; } }
+
+  /* 「你這樣說」的問答卡 */
+  .ask { border: 1px solid var(--ds-line); border-radius: 6px; background: #fff; margin: 0 0 16px; }
+  .ask .q {
+    padding: 14px 18px; border-bottom: 1px solid var(--ds-line);
+    background: var(--ds-bg); font-weight: 700; font-size: 15px;
+  }
+  .ask .q::before { content: '你說：'; color: var(--ds-muted); font-weight: 400; margin-right: 6px; }
+  .ask .a { padding: 14px 18px; font-size: 15px; }
+  .ask .a .lbl { color: var(--ds-muted); font-size: 13px; display: block; margin-bottom: 4px; }
+  .ask .a .lbl + p { margin-bottom: 12px; }
+  .ask .a p:last-child { margin-bottom: 0; }
+
+  /* 後半段的分界：以下是備查用的，一般不會碰到 */
+  .fold {
+    margin: 64px 0 0; padding: 22px 24px;
+    background: #f1f3f1; border-radius: 8px; border: 1px dashed #c8d0c8;
+  }
+  .fold h2 {
+    margin: 0 0 4px; padding: 0; border: 0; font-size: 21px; color: #5c6b5c;
+  }
+  .fold p { margin: 0; font-size: 14px; color: var(--ds-muted); }
+  .fold + h2 { border-top: 0; padding-top: 32px; }
+
+  .back { display: inline-block; margin-bottom: 24px; font-size: 14px; color: var(--ds-green-dark); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="index.html">← 回 demo 索引</a>
+
+  <h1>禮物券 資料結構</h1>
+  <p class="sub">給之後要用 AI 撈資料庫的人對欄位用　·　2026-09</p>
+
+  <div class="warn">
+    <b>這一頁講的是欄位的規劃邏輯</b>，也就是「每一欄打算拿來記什麼、之後要靠哪幾欄回答問題」。
+    禮物券還在開發前的階段，這些資料表都還沒建，現在查不到東西是正常的。
+    <br><br>
+    先把邏輯講清楚，是因為欄位一旦定了就很難改，而且之後你問 AI 的時候，
+    <b>講得出「我要的答案要看哪一欄」，AI 才不會給你一個看起來合理但其實錯的數字。</b>
+  </div>
+
+  <h2>一、先搞懂三層</h2>
+  <p class="h2-note">「券」這個字在營運口中跟在資料庫裡不是同一件事，這是最容易撈錯的地方。</p>
+
+  <div class="layers">
+    <div class="layer">
+      <div class="lv">第 1 層</div>
+      <div class="nm">禮物</div>
+      <div class="tb">GiftItem</div>
+      <div class="ds">要送什麼東西。例如「寶寶果泥 隨手包（生日禮專用）」。</div>
+    </div>
+    <div class="layer-arrow">→</div>
+    <div class="layer">
+      <div class="lv">第 2 層</div>
+      <div class="nm">券種</div>
+      <div class="tb">GiftVoucherType</div>
+      <div class="ds">一個發放設定：券名、效期規則、總發送上限。後台列表上一列就是一個券種。</div>
+    </div>
+    <div class="layer-arrow">→</div>
+    <div class="layer is-key">
+      <div class="lv">第 3 層</div>
+      <div class="nm">券　←　你要看的是這層</div>
+      <div class="tb">GiftVoucher</div>
+      <div class="ds">發給某一個會員的<b>單張</b>券。營運最常問的「發了幾張、用了幾張、誰還沒用、客人到底拿到什麼」全部在這一層。</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>營運說的「一種券」是第 2 層，「發了幾張」是數第 3 層。</b>
+    例如「寶寶生日禮」是一種券（第 2 層一筆），但它發給了 170 位媽媽，那就是第 3 層 170 筆。
+  </div>
+
+  <h2>二、個別的券：每一欄在記什麼</h2>
+  <p class="h2-note">表名 <code>GiftVoucher</code>。一張券一筆，這一節是重點。中文名是給大家開會講的，英文名是給 AI 用的。</p>
+
+  <div class="tbl-wrap">
+  <table class="key-table">
+    <thead>
+      <tr><th style="width:230px;">欄位</th><th>在記什麼、什麼時候會用到</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col">VoucherNo<span class="cn">券號</span></td>
+        <td>每張券唯一。客人打來報這組號碼，就是靠它找到那一筆。（旁邊還有一個 <code>Id</code> 流水號，那是系統自己用的，對外一律講券號）</td>
+      </tr>
+      <tr>
+        <td class="col">MemberId<span class="cn">持有會員</span></td>
+        <td><b>這張券是誰的。</b>要問「某個客人手上有哪些券」就是用它篩</td>
+      </tr>
+      <tr>
+        <td class="col">VoucherTypeId<span class="cn">所屬券種</span></td>
+        <td><b>這張券屬於哪一檔活動。</b>要問「這檔活動發了幾張」就是用它分組</td>
+      </tr>
+      <tr>
+        <td class="col">Status<span class="cn">使用狀態</span></td>
+        <td>
+          <b>用掉了沒。</b>三個值：<br>
+          <b>0</b>　還沒用<br>
+          <b>1</b>　已經用掉了<br>
+          <b>2</b>　作廢（第二版才有作廢功能，第一版不會看到）<br>
+          <span style="color:var(--ds-muted);">這裡<b>沒有「已過期」</b>。過期不是一種狀態，是拿到期時間當場比出來的，見下面說明</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="col">IssuedTime<span class="cn">發券時間</span></td>
+        <td><b>什麼時候發出去的。</b>要看「這一批是哪天發的」「這個月發了幾張」用它</td>
+      </tr>
+      <tr>
+        <td class="col">ExpireTime<span class="cn">到期時間</span></td>
+        <td>
+          <b>這張券哪天到期。</b>發券當下就算好寫死的，每張券各自不同。<br>
+          要問「哪些券快到期了」就是看它
+        </td>
+      </tr>
+      <tr>
+        <td class="col">UsedTime<span class="cn">兌換時間</span></td>
+        <td><b>什麼時候被用掉的。</b>還沒用是空的。「發出去多久客人才來換」是這一欄減發券時間</td>
+      </tr>
+      <tr>
+        <td class="col">UsedOrderNumber<span class="cn">兌換的訂單編號</span></td>
+        <td><b>用在哪一張訂單。</b>存的是訂單編號。要算「這檔活動帶動多少業績」就是從這裡接到訂單</td>
+      </tr>
+      <tr>
+        <td class="col">
+          SnapshotProductId<br>
+          SnapshotProductDetailId<br>
+          SnapshotProductName<br>
+          SnapshotSpecDesc
+          <span class="cn">實際送出快照<br>（商品／規格／品名／規格描述）</span>
+        </td>
+        <td><b>客人實際拿到的是什麼。</b>下面單獨說明</td>
+      </tr>
+      <tr>
+        <td class="col">Source<br>SourceRefId<span class="cn">來源／來源對象</span></td>
+        <td>
+          <b>這張券是怎麼來的。</b>來源記類型（例如生日禮是 <code>BabyBirthday</code>），
+          來源對象記對應到誰（例如是哪一個寶寶）。<br>
+          用途是追溯與<b>防止重複發</b>：同一個寶寶已經發過就不會再發第二次
+        </td>
+      </tr>
+      <tr>
+        <td class="col">IssuedBy<br>IssueReason<span class="cn">發券者／發券原因</span></td>
+        <td>
+          <b>誰發的、為什麼發。</b><br>
+          人工發：記操作的人與原因（例「客服 A012 補償未收到簡訊」）。<br>
+          <b>排程發：發券原因一律強制寫排程名稱</b>（例 <code>排程：粥寶生日禮</code>），
+          這樣「哪些是自動發的、哪些是人工補的」不必另外開欄位就分得出來
+        </td>
+      </tr>
+      <tr>
+        <td class="col">Remark<span class="cn">系統備註</span></td>
+        <td>
+          目前的用途是記<b>簡訊發送結果</b>：發成功、或失敗原因（例「手機號碼無效」）。<br>
+          要查「哪些人券發了但簡訊沒收到」就是看這一欄。<br>
+          <span style="color:var(--ds-muted);">注意這欄是系統寫的，不是給人手打的。人要手寫的備註在券種那一層</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>實際送出快照那四欄為什麼重要</h3>
+
+  <p>
+    禮物有<b>備選機制</b>：客人要兌換的當下如果原本那份禮物缺貨，系統會自動往備選清單找下一個有貨的送出。
+    所以<b>「這張券當初綁的禮物」跟「客人最後真的拿到的東西」可能不一樣。</b>
+  </p>
+  <p>
+    快照這四欄記的就是<b>兌換那一瞬間，實際送出去的是哪個商品、哪個規格、叫什麼名字</b>，
+    而且是把文字整個複製一份存下來，不是存一個指標。
+  </p>
+
+  <div class="note">
+    <b>為什麼要複製一份而不是存指標</b><br>
+    禮物的設定之後還會被改（換圖、改描述、調整備選順序）。如果只存指標，
+    半年後回頭查這張券，讀到的是「禮物現在的樣子」，不是「當初送出去的樣子」。
+    快照的意思就是把當下凍結起來。
+  </div>
+
+  <div class="warn">
+    <b>所以要回答這幾個問題，只能看快照，不能回頭去查禮物設定：</b>
+    <ul>
+      <li>這位客人到底拿到什麼？</li>
+      <li>這檔活動有多少人是拿到備選、不是原本要送的那個？</li>
+      <li>被換掉的那些，換成了什麼？</li>
+    </ul>
+    判斷有沒有被換過的方法：<b>把券的快照規格（<code>SnapshotProductDetailId</code>）跟這檔活動原本綁的禮物比對，不一樣就是被換過。</b>
+  </div>
+
+  <p>
+    還沒兌換的券，這四欄是空的（因為還沒發生兌換，不知道會送什麼）。
+    這一點反過來也可以用：<b>快照有值 ＝ 這張券真的被換走過。</b>
+  </p>
+
+  <h3>「過期」不是一種狀態，是當場比出來的</h3>
+  <p>
+    券過期的時候，資料庫裡<b>什麼都不會變</b>，使用狀態還是 0。
+    每次要顯示或使用的時候，系統就當場拿這張券的到期時間跟現在比一次，過期的自然就不會出現在清單裡。
+  </p>
+  <p>
+    這跟現行的折價券是同一套做法：折價券那張表連狀態欄位都沒有，
+    能不能用完全靠到期時間當場比。後台看到的「已過期」標記也是當下算給你看的，不是存在資料庫裡。
+  </p>
+  <div class="warn">
+    <b>所以「還能用」要兩個條件一起：使用狀態是 0　而且　到期時間還沒到。</b>
+    後台畫面上的「有效未使用券」就是這個定義。<br>
+    只看使用狀態會把已經過期、但狀態還停在 0 的那些也算進去，數字就會比實際多。
+  </div>
+
+  <h2>三、常見問題查哪裡</h2>
+  <p class="h2-note">左邊是你想知道的事，右邊是這個答案是從哪幾欄算出來的。</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th style="width:36%;">你想知道</th><th>AI 會靠哪幾欄查</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>某個客人手上有哪些券、還能不能用</td>
+        <td>持有會員 <code>MemberId</code> 篩人，再看使用狀態 <code>Status</code> 與到期時間 <code>ExpireTime</code></td>
+      </tr>
+      <tr>
+        <td>客人報一組券號，想知道來龍去脈</td>
+        <td>券號 <code>VoucherNo</code> 找到那一筆，看發券時間 <code>IssuedTime</code>、兌換時間 <code>UsedTime</code>、兌換的訂單編號 <code>UsedOrderNumber</code>；更完整的歷程在券的異動紀錄 <code>GiftVoucherLog</code></td>
+      </tr>
+      <tr>
+        <td>這檔活動發了幾張、用了幾張、過期沒用到幾張</td>
+        <td>券代碼 <code>TypeCode</code> 找到活動，數它底下的券，按使用狀態 <code>Status</code> 與到期時間 <code>ExpireTime</code> 分類</td>
+      </tr>
+      <tr>
+        <td>這檔活動帶動多少業績</td>
+        <td>兌換的訂單編號 <code>UsedOrderNumber</code> 接到訂單，加總訂單總額 <code>TotalPrice</code>（記得排除已取消的單，見第五節）</td>
+      </tr>
+      <tr>
+        <td>客人拿到的是原本的禮物還是備選</td>
+        <td>快照規格 <code>SnapshotProductDetailId</code> 跟活動綁的禮物比對</td>
+      </tr>
+      <tr>
+        <td>哪些人券發了但簡訊沒收到</td>
+        <td>系統備註 <code>Remark</code></td>
+      </tr>
+      <tr>
+        <td>哪些是排程自動發的、哪些是客服人工補的</td>
+        <td>發券原因 <code>IssueReason</code>（排程發的會寫排程名稱）、發券者 <code>IssuedBy</code></td>
+      </tr>
+      <tr>
+        <td>哪些券快到期了，要不要提醒</td>
+        <td>使用狀態 <code>Status</code> 是 0，且到期時間 <code>ExpireTime</code> 在近幾天內</td>
+      </tr>
+      <tr>
+        <td>庫存夠不夠</td>
+        <td>禮物規格的庫存　減去　這份禮物底下所有「還能用」的券數</td>
+      </tr>
+      <tr>
+        <td>發出去多久客人才來換</td>
+        <td>兌換時間 <code>UsedTime</code> 減 發券時間 <code>IssuedTime</code></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>四、你可以怎麼跟 AI 說</h2>
+  <p class="h2-note">不用寫程式，把想知道的事直接講出來就好。下面第二格是這一題背後的查詢邏輯，寫出來是讓你看得懂 AI 給的數字是怎麼來的。</p>
+
+  <div class="ask">
+    <div class="q">幫我查「寶寶生日禮」這個活動到目前為止發了幾張、用了幾張、多少張過期沒用到。</div>
+    <div class="a">
+      <span class="lbl">AI 的查詢邏輯</span>
+      <p>「還能用」要同時滿足使用狀態是 0 <b>而且</b> 到期時間還沒到。資料庫不存「已過期」這個狀態，所以只看使用狀態會把過期的也算進來。</p>
+      <span class="lbl">會用到</span>
+      <p>所屬券種 <code>VoucherTypeId</code>、使用狀態 <code>Status</code>、到期時間 <code>ExpireTime</code>；活動用券代碼 <code>TypeCode</code> 指定</p>
+    </div>
+  </div>
+
+  <div class="ask">
+    <div class="q">這檔活動裡，有多少人拿到的不是原本要送的禮物？換成了什麼？</div>
+    <div class="a">
+      <span class="lbl">AI 的查詢邏輯</span>
+      <p>實際送出什麼取自快照欄位，不是回頭去讀禮物現在的設定。</p>
+      <span class="lbl">會用到</span>
+      <p>快照規格 <code>SnapshotProductDetailId</code>、快照品名 <code>SnapshotProductName</code>，跟活動綁定的禮物規格比對</p>
+    </div>
+  </div>
+
+  <div class="ask">
+    <div class="q">這檔活動帶動了多少訂單、多少金額？</div>
+    <div class="a">
+      <span class="lbl">AI 的查詢邏輯</span>
+      <p>券接訂單走<b>訂單編號</b>，不是訂單 Id。並且要排除已取消的訂單（看 <code>direction</code>）、只算成立的訂單（看 <code>Del</code>）。</p>
+      <span class="lbl">會用到</span>
+      <p>兌換的訂單編號 <code>UsedOrderNumber</code> 接訂單的 <code>OrderNumber</code>，金額取訂單總額 <code>TotalPrice</code></p>
+    </div>
+  </div>
+
+  <div class="ask">
+    <div class="q">上個月發出去的券裡，哪些人的簡訊沒發成功？</div>
+    <div class="a">
+      <span class="lbl">AI 的查詢邏輯</span>
+      <p>簡訊結果記在券自己的系統備註欄，不是另外一張表。</p>
+      <span class="lbl">會用到</span>
+      <p>發券時間 <code>IssuedTime</code> 篩月份、系統備註 <code>Remark</code> 看結果、持有會員 <code>MemberId</code> 撈人</p>
+    </div>
+  </div>
+
+  <div class="ask">
+    <div class="q">客人說他的券號是 BD-BABY-0052，幫我看這張券發生過什麼事。</div>
+    <div class="a">
+      <span class="lbl">AI 的查詢邏輯</span>
+      <p>券號對到 <code>VoucherNo</code>。如果兌換的訂單編號是空的，不代表沒用過：訂單被取消時券會被退回來、欄位會被清空，完整歷程要看券的異動紀錄。</p>
+      <span class="lbl">會用到</span>
+      <p>券號 <code>VoucherNo</code>、使用狀態 <code>Status</code>、兌換時間 <code>UsedTime</code>、兌換的訂單編號 <code>UsedOrderNumber</code>、系統備註 <code>Remark</code>、券的異動紀錄 <code>GiftVoucherLog</code></p>
+    </div>
+  </div>
+
+  <div class="warn">
+    <b>開口之前先講的三件事</b>，不講很容易拿到看起來對但其實錯的數字：
+    <ul>
+      <li>「券」有兩層：<b>券種是設定，券才是發給人的那一張</b>。問「發了幾張」是數後者</li>
+      <li><b>還能用 ≠ 使用狀態是 0</b>，要再加上還沒到期。資料庫沒有「已過期」這個狀態</li>
+      <li><b>實際送出什麼看快照那四欄</b>，不要回頭查禮物設定</li>
+    </ul>
+  </div>
+
+  <div class="fold">
+    <h2>以下通常不太需要知道</h2>
+    <p>剩下兩節是備查用的。只有在你要算「活動帶動多少業績」需要接訂單、或是要指定某一檔活動的時候，才會翻到這裡。</p>
+  </div>
+
+  <h2>五、跟訂單、會員怎麼接</h2>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th style="width:26%;">要接的東西</th><th>怎麼接</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>券 → 訂單</td>
+        <td>券的兌換訂單編號 <code>UsedOrderNumber</code> 對到訂單的 <code>OrderNumber</code>。<br>
+        <b>不是接訂單的 Id。</b>延後出貨會複製出一筆新的訂單（新 Id、同一個訂單編號），接 Id 會抓不到</td>
+      </tr>
+      <tr>
+        <td>券 → 會員</td>
+        <td>券的持有會員 <code>MemberId</code> 對到會員主檔<br>
+        <span style="color:var(--ds-muted);font-size:13px;">（會員表的實際名稱還沒跟工程對過）</span></td>
+      </tr>
+      <tr>
+        <td>券 → 庫存</td>
+        <td>券 → 券種 → 禮物 → 那個商品規格，再去看規格的庫存</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>訂單那一側的三個坑</h3>
+  <div class="warn">
+    這三件事跟禮物券無關，是主站訂單本來就有的規則。講錯這三條，數字會整個歪掉：
+    <ul>
+      <li><b>「已取消」不是看訂單狀態文字，是看訂單方向 <code>direction</code> 等於 3</b></li>
+      <li><b>「訂單成立」看 <code>Del</code>，不是看有沒有付款</b>。建單時一律先寫 <code>Del = 1</code>，付款成功才翻成 0</li>
+      <li><b>訂單狀態 <code>OrdersStates</code> 是自由文字不是固定選項</b>，會出現處理中／備貨中／待出貨／已出貨／已送達等值，不要當成固定清單比對</li>
+    </ul>
+  </div>
+
+  <p>
+    訂單被取消時，券會<b>退回給客人</b>：使用狀態回到 0、兌換的訂單編號被清空。
+    所以看到兌換訂單編號是空的，不代表這張券從來沒被用過。
+  </p>
+
+  <h2>六、券種與禮物這兩層</h2>
+  <p class="h2-note">這兩層的欄位絕大多數是給系統用的，營運查資料時多半只會用到「名字」跟「代碼」。</p>
+
+  <div class="note">
+    <b>你只需要記兩件事：</b>
+    <ul>
+      <li><b>券種</b>（<code>GiftVoucherType</code>）：要指定某一檔活動，用它的<b>券代碼</b> <code>TypeCode</code>（例 <code>BD-BABY</code>），不要用流水號 Id。券名在 <code>Name</code></li>
+      <li><b>禮物</b>（<code>GiftItem</code>）：禮物名稱在 <code>GiftName</code>，它綁的商品規格在 <code>ProductDetailId</code>，庫存要去那個規格上看</li>
+    </ul>
+    其餘欄位（效期規則、發送上限、購物車限購、活動說明⋯）是後台設定用的，查資料時很少會碰到。
+  </div>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th style="width:30%;">還有這幾張</th><th>是什麼</th></tr></thead>
+    <tbody>
+      <tr><td class="col">GiftVoucherLog<span class="cn">券的異動紀錄</span></td><td>從什麼狀態變成什麼、原因、誰操作、什麼時候。查「這張券發生過什麼事」看這張</td></tr>
+      <tr><td class="col">GiftItemCandidate<span class="cn">備選清單</span></td><td>每份禮物缺貨時往下找誰。禮物自己永遠是第一順位、不會在這張表裡</td></tr>
+      <tr><td class="col">GiftVoucherItem<span class="cn">券的候選禮物</span></td><td>第一版每張券固定一筆，未來要做「三選一讓客人挑」才會多筆</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+</body>
+</html>
