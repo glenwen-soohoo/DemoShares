@@ -679,7 +679,8 @@ a:hover { text-decoration: underline; }
 <main class="gox-content">
 <style>
   .gv-info { display: flex; gap: 20px; }
-  .gv-pic { width: 88px; height: 88px; flex: none; border-radius: var(--gox-radius); border: 1px solid var(--gox-card-border); background: #f7f7f7; display: flex; align-items: center; justify-content: center; color: var(--gox-text-muted); font-size: 12px; }
+  /* 4:3，對齊前台商品列表頁那組圖的原始比例 */
+  .gv-pic { width: 116px; aspect-ratio: 4 / 3; height: auto; flex: none; align-self: flex-start; overflow: hidden; border-radius: var(--gox-radius); border: 1px solid var(--gox-card-border); background: #f7f7f7; display: flex; align-items: center; justify-content: center; color: var(--gox-text-muted); font-size: 12px; }
   .gv-pinfo { flex: 1; }
   .gv-pname { font-size: 16px; font-weight: 600; color: var(--gox-text); margin-bottom: 4px; }
   .gv-pname .gv-sep-dot { color: var(--gox-text-muted); margin: 0 4px; font-weight: normal; }
@@ -729,6 +730,7 @@ a:hover { text-decoration: underline; }
   .gv-checks .gv-inline-field select { width: auto; font-size: 13px; }
 
   /* 替換品項選擇器：禮物會越來越多，用搜尋式而不是下拉 */
+  .gv-pic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: var(--gox-radius); }
   .gv-picker { position: relative; }
   .gv-picker-list {
     display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
@@ -772,7 +774,7 @@ a:hover { text-decoration: underline; }
   .gv-edit-form.is-shown { display: block; }
   .gv-view.is-hidden { display: none; }
   .gv-readonly-product { display: flex; gap: 16px; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius); margin-bottom: 20px; }
-  .gv-readonly-product .gv-pic { width: 56px; height: 56px; }
+  .gv-readonly-product .gv-pic { width: 76px; height: auto; align-self: flex-start; }
   .gv-ro-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 2px; }
   .gv-ro-name { font-size: 14px; font-weight: 600; color: var(--gox-text); }
   .gv-ro-meta { font-size: 12px; color: var(--gox-text-sub); margin-top: 4px; }
@@ -901,7 +903,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-card-body">
     <div class="gv-view" id="gv-view">
       <div class="gv-info">
-        <div class="gv-pic">商品圖</div>
+        <div class="gv-pic" id="gv-pic">商品圖</div>
         <div class="gv-pinfo">
           <div class="gv-pname">
             <span id="gv-pname"></span><span class="gv-id" id="gv-pid"></span>
@@ -946,7 +948,7 @@ a:hover { text-decoration: underline; }
 
     <div class="gv-edit-form" id="gv-edit-form">
       <div class="gv-readonly-product">
-        <div class="gv-pic">商品圖</div>
+        <div class="gv-pic" id="gv-e-pic">商品圖</div>
         <div>
           <div class="gv-ro-label">綁定產品</div>
           <div class="gv-ro-name" id="gv-e-pname"></div>
@@ -1224,6 +1226,17 @@ a:hover { text-decoration: underline; }
   function today() { return ymd(new Date()); }
   function fmt(n) { return n.toLocaleString('zh-TW'); }
 
+  // 商品圖走 CDN 正式圖，用商品名對照。沒有圖的商品留佔位文字。
+  var PIC = {
+    '寶寶果泥 隨手包': 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp',
+    '有機米餅 二入':   'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
+    '季節果乾 隨手包': 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg',
+    '果乾禮盒 綜合':   'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg'
+  };
+  function picHtml(name) {
+    return PIC[name] ? '<img src="' + PIC[name] + '" alt="' + esc(name) + '">' : '商品圖';
+  }
+
   var DEFAULT_NOTE = '活動期間限定，逾期自動失效。每筆訂單可同時使用多張禮物券。';
   var LIMIT_LABEL = ['不限制', '本產品限用一張（不影響其他禮物券）', '同產線僅限一張', '整台購物車僅限一張'];
 
@@ -1351,6 +1364,7 @@ a:hover { text-decoration: underline; }
 
   function renderView() {
     document.getElementById('gv-pname').textContent = g.product;
+    document.getElementById('gv-pic').innerHTML = picHtml(g.product);
     document.getElementById('gv-pid').textContent = '#' + g.productId;
     document.getElementById('gv-spec').textContent = g.spec;
     document.getElementById('gv-specid').textContent = '#' + g.specId;
@@ -1634,6 +1648,7 @@ a:hover { text-decoration: underline; }
   // ---- 完整編輯 ----
   function fillEditProduct() {
     document.getElementById('gv-e-pname').textContent = g.product + '（#' + g.productId + '）';
+    document.getElementById('gv-e-pic').innerHTML = picHtml(g.product);
     document.getElementById('gv-e-pmeta').textContent = g.line + '　|　' + g.temp + '　|　規格 ID #' + g.specId;
   }
 

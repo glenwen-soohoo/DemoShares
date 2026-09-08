@@ -688,8 +688,9 @@ a:hover { text-decoration: underline; }
 
   .gv-product { display: none; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
   .gv-product.is-shown { display: flex; }
+  /* 4:3，對齊前台商品列表頁那組圖的原始比例 */
   .gv-pic {
-    width: 88px; height: 88px; flex: none; border-radius: var(--gox-radius);
+    width: 116px; aspect-ratio: 4 / 3; height: auto; flex: none; align-self: flex-start; overflow: hidden; border-radius: var(--gox-radius);
     border: 1px solid var(--gox-card-border); background: #f7f7f7;
     display: flex; align-items: center; justify-content: center;
     color: var(--gox-text-muted); font-size: 12px;
@@ -726,6 +727,7 @@ a:hover { text-decoration: underline; }
   .gv-checks .gv-inline-field select { width: auto; font-size: 13px; }
 
   /* 替換品項選擇器：禮物會越來越多，用搜尋式而不是下拉 */
+  .gv-pic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: var(--gox-radius); }
   .gv-picker { position: relative; }
   .gv-picker-list {
     display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
@@ -805,7 +807,7 @@ a:hover { text-decoration: underline; }
       <div class="gv-bind-err is-hidden" id="gv-bind-err"></div>
 
       <div class="gv-product" id="gv-product">
-        <div class="gv-pic">商品圖</div>
+        <div class="gv-pic" id="gv-pic-box">商品圖</div>
         <div class="gv-pinfo">
           <div class="gv-pname" id="gv-pname"></div>
           <div class="gv-pmeta">
@@ -951,6 +953,13 @@ a:hover { text-decoration: underline; }
     { id: 6, product: '季節果乾 隨手包', productId: 77530, spec: '回饋禮專用',   stock: 6 }
   ];
 
+  // 商品圖走 CDN 正式圖。寶寶粥沒有拿到圖，那一支留佔位文字。
+  var PIC = {
+    '77385': 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp',
+    '77412': 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
+    '76950': 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg'
+  };
+
   var PRODUCTS = {
     '77385': { name: '寶寶果泥 隨手包', line: '粥寶寶專區', temp: '常溫', limit: '不限', total: '不限', freeShipping: false },
     '77412': { name: '有機米餅 二入',   line: '粥寶寶專區', temp: '常溫', limit: '不限', total: '不限', freeShipping: false },
@@ -984,6 +993,9 @@ a:hover { text-decoration: underline; }
     err.classList.add('is-hidden');
     bound = p;
     document.getElementById('gv-pname').textContent = p.name + '（#' + pid + '）';
+    document.getElementById('gv-pic-box').innerHTML = PIC[pid]
+      ? '<img src="' + PIC[pid] + '" alt="' + p.name + '">'
+      : '商品圖';
     document.getElementById('gv-pline').textContent = p.line;
     document.getElementById('gv-ptemp').textContent = p.temp;
     document.getElementById('gv-plimit').textContent = p.limit;

@@ -671,10 +671,14 @@ img { vertical-align: middle; }
   }
   .mc3 .gv-card.is-soon { border-color: #e8c98a; background: #fffdf6; }
   .mc3 .gv-card.is-added { border-color: #cfe4c9; background: #f7fbf6; }
+  /* 商品圖用的是前台商品列表頁那組圖（4:3），容器就照 4:3，不裁切也不變形。
+     原本固定 112px 高會把圖裁掉上下。 */
   .mc3 .gv-thumb {
-    width: 100%; height: 112px; border-radius: 6px; background: #f0f2f0;
+    width: 100%; aspect-ratio: 4 / 3; border-radius: 6px; background: #f0f2f0; overflow: hidden;
     display: flex; align-items: center; justify-content: center; color: #9bb59b; font-size: 16px; margin-bottom: 12px;
   }
+  .mc3 .gv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 6px; }
+  .gv-dialog-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* 券種名稱是主標（這張券是什麼），禮物名稱是副標（實際會拿到什麼） */
   .mc3 .gv-vtype { font-size: 19px; font-weight: 600; line-height: 1.4; }
   .mc3 .gv-name { font-size: 16px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
@@ -951,7 +955,7 @@ img { vertical-align: middle; }
       <div class="gv-empty" id="gv-empty" style="display:none;">目前沒有可用的禮物券。</div>
       <div class="gv-grid" id="gv-list">
         <div class="gv-card is-soon" data-gv="1">
-          <div class="gv-thumb">禮物圖</div>
+          <div class="gv-thumb"><img src="https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp" alt="寶寶果泥 隨手包"></div>
           <div class="gv-vtype">寶寶生日禮</div>
           <div class="gv-name">寶寶果泥 隨手包</div>
           <div class="gv-exp is-soon">09/09 到期，剩 2 天</div>
@@ -960,7 +964,7 @@ img { vertical-align: middle; }
           </div>
         </div>
         <div class="gv-card" data-gv="2">
-          <div class="gv-thumb">禮物圖</div>
+          <div class="gv-thumb"><img src="https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp" alt="有機米餅 二入"></div>
           <div class="gv-vtype">中秋限定禮</div>
           <div class="gv-name">有機米餅 二入</div>
           <div class="gv-exp">09/15 到期，剩 8 天</div>
@@ -969,7 +973,7 @@ img { vertical-align: middle; }
           </div>
         </div>
         <div class="gv-card is-oos" data-gv="3">
-          <div class="gv-thumb">禮物圖</div>
+          <div class="gv-thumb"><img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg" alt="季節果乾 隨手包"></div>
           <div class="gv-vtype">訂單回饋禮</div>
           <div class="gv-name">季節果乾 隨手包<span class="gv-flag">補貨中</span></div>
           <div class="gv-exp">10/31 到期，剩 54 天</div>
@@ -978,7 +982,7 @@ img { vertical-align: middle; }
           </div>
         </div>
         <div class="gv-card" data-gv="4">
-          <div class="gv-thumb">禮物圖</div>
+          <div class="gv-thumb"><img src="https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp" alt="有機米餅 二入"></div>
           <div class="gv-vtype">訂單回饋禮</div>
           <div class="gv-name">有機米餅 二入<span class="gv-flag is-sub">替換品項</span></div>
           <div class="gv-exp">10/31 到期，剩 54 天</div>
@@ -1018,7 +1022,7 @@ img { vertical-align: middle; }
     </div>
     <div class="gv-dialog-body">
       <div class="gv-dialog-vtype" id="gv-d-vtype"></div>
-      <div class="gv-dialog-pic">禮物圖</div>
+      <div class="gv-dialog-pic" id="gv-d-pic"></div>
 
       <div class="gv-dialog-name" id="gv-d-name"></div>
       <div class="gv-dialog-spec" id="gv-d-spec"></div>
@@ -1129,6 +1133,13 @@ img { vertical-align: middle; }
 <script>
 (function () {
   'use strict';
+
+  // 商品圖走 CDN 正式圖。寶寶粥沒有拿到圖，那一支還是留佔位。
+  var PIC = {
+    '寶寶果泥 隨手包': 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp',
+    '有機米餅 二入':   'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
+    '季節果乾 隨手包': 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg'
+  };
 
   var GIFTS = {
     '1': { code: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
@@ -1368,6 +1379,10 @@ img { vertical-align: middle; }
     document.getElementById('gv-d-vtype').textContent = g.vtype;
     document.getElementById('gv-d-code').textContent = '券號 ' + g.code;
     document.getElementById('gv-d-name').textContent = g.name;
+    var pic = document.getElementById('gv-d-pic');
+    pic.innerHTML = PIC[g.name]
+      ? '<img src="' + PIC[g.name] + '" alt="' + g.name + '">'
+      : '禮物圖';
     document.getElementById('gv-d-spec').textContent = '規格：' + g.spec;
     document.getElementById('gv-d-note').textContent = g.note;
     var subBox = document.getElementById('gv-d-sub');

@@ -697,6 +697,14 @@ a:hover { text-decoration: underline; }
 <main class="gox-content">
 <style>
   .gv-filter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  /* 產品圖欄：4:3，對齊前台商品列表頁那組圖的原始比例 */
+  .gv-thumb {
+    width: 72px; aspect-ratio: 4 / 3; border-radius: var(--gox-radius);
+    border: 1px solid var(--gox-card-border); background: #f7f7f7; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gox-text-muted); font-size: 11px;
+  }
+  .gv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .gv-filter .gox-input { width: 280px; }
   .gv-filter .gox-select { width: 140px; }
   .gv-sub { color: var(--gox-text-muted); font-size: 12px; font-weight: normal; margin-left: 8px; }
@@ -729,6 +737,7 @@ a:hover { text-decoration: underline; }
     <table class="gox-table">
       <thead>
         <tr>
+          <th style="width:88px;">圖</th>
           <th>禮物產品名</th>
           <th>禮物規格</th>
           <th style="width:190px;">券種</th>
@@ -769,6 +778,19 @@ a:hover { text-decoration: underline; }
 <script>
 (function () {
   'use strict';
+
+  // 商品圖走 CDN 正式圖，用產品 ID 對照。寶寶粥沒有拿到圖，那一支留佔位。
+  var PIC = {
+    77385: 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp',
+    77412: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
+    77530: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg',
+    76950: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg'
+  };
+  function picCell(g) {
+    return '<td>' + (PIC[g.productId]
+      ? '<div class="gv-thumb"><img src="' + PIC[g.productId] + '" alt="' + g.product + '"></div>'
+      : '<div class="gv-thumb">無圖</div>') + '</td>';
+  }
 
   // types 要跟明細頁（admin-gift-detail.html 的 DATA）對得上
   var gifts = [
@@ -838,13 +860,14 @@ a:hover { text-decoration: underline; }
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="gv-empty">沒有符合條件的禮物</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="gv-empty">沒有符合條件的禮物</td></tr>';
       return;
     }
 
     tbody.innerHTML = rows.map(function (g) {
       var shortage = g.unused > g.stock;
       return '<tr>' +
+        picCell(g) +
         '<td><span class="gv-name">' + g.product + '</span><span class="gv-id">#' + g.productId + '</span></td>' +
         '<td><span class="gv-spec">' + g.spec + '</span><span class="gv-id">#' + g.specId + '</span>' + subTag(g) + '</td>' +
         '<td>' + typeCell(g) + '</td>' +
