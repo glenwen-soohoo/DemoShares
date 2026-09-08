@@ -414,7 +414,10 @@ img { vertical-align: middle; }
 
   /* 手機版：小樹排到主內容之後，不要卡在選單與內容中間。
      .mc-side 用 display:contents 把兩個子元素直接交給外層 flex，order 才管得到 */
-  .mc-layout { flex-direction: column; gap: 0; padding-bottom: 32px; }
+  /* 外層有 align-items: flex-start，轉成直向之後那條會讓子元素縮成內容寬
+     （.left_menu 有 width:100% 所以看不出來，右邊主內容就被壓成一半）。
+     直向排列時要改回 stretch，讓兩欄都吃滿寬度。 */
+  .mc-layout { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 32px; }
   .mc-side { display: contents; }
   .mc-layout .left_menu { order: 1; }
   .mc-layout .right_content { order: 2; }
@@ -789,7 +792,7 @@ img { vertical-align: middle; }
   }
 
   /* 欄位格線 */
-  .acct-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; align-content: start; }
+  .acct-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px 24px; align-content: start; }
   .fld { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .fld--half { grid-column: span 1; }
   .fld-label { font-size: 13px; font-weight: 600; color: #55605a; letter-spacing: .3px; }
@@ -825,7 +828,11 @@ img { vertical-align: middle; }
   .fld-radios input[type="radio"] { width: 18px; height: 18px; accent-color: var(--ac-green); margin: 0; }
 
   /* 地址：縣市／區／路名同一列 */
-  .fld-addr { display: grid; grid-template-columns: 150px 150px 1fr; gap: 12px; }
+  /* 縣市／區／路名三格：用 flex 讓它自己按容器寬度換行。
+     grid 的固定欄數在窄容器會擠，auto-fit 又會讓路名獨佔一行、桌機版跟原本不一樣。 */
+  .fld-addr { display: flex; flex-wrap: wrap; gap: 12px; }
+  .fld-addr select { flex: 1 1 140px; max-width: 150px; min-width: 0; }
+  .fld-addr input { flex: 1 1 200px; min-width: 0; }
 
   /* 淺底資訊區（唯讀的收件人資料、達上限提示） */
   .fld-box {
@@ -973,15 +980,17 @@ img { vertical-align: middle; }
   #baby-form { display: contents; }
 
   /* 手機 */
-  @media (max-width: 900px) {
+  /* 1100 不是視窗寬的美感選擇，是扣掉 295px 側欄之後主內容才夠放
+     「148px 標題欄 + 兩欄輸入」的門檻 */
+  @media (max-width: 1100px) {
     .acct-sec { grid-template-columns: 1fr; gap: 16px; padding: 24px 0; }
+    /* 上面那條把左右 padding 歸零是給有上框線、沒外框的區塊用的。
+       有外框的寶寶資料卡不能跟著歸零，不然內容會貼到框上。 */
+    .acct-sec--boxed { padding: 24px 20px; }
     .acct-aside p { margin-top: 4px; }
   }
   @media (max-width: 640px) {
-    .acct-fields { grid-template-columns: 1fr; gap: 16px; }
-    .fld--half { grid-column: 1 / -1; }
-    .fld-addr { grid-template-columns: 1fr 1fr; }
-    .fld-addr input { grid-column: 1 / -1; }
+    .acct-fields { gap: 16px; }
     .acct-title h1 { font-size: 24px; }
   }
 </style>

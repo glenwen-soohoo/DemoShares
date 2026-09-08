@@ -414,7 +414,10 @@ img { vertical-align: middle; }
 
   /* 手機版：小樹排到主內容之後，不要卡在選單與內容中間。
      .mc-side 用 display:contents 把兩個子元素直接交給外層 flex，order 才管得到 */
-  .mc-layout { flex-direction: column; gap: 0; padding-bottom: 32px; }
+  /* 外層有 align-items: flex-start，轉成直向之後那條會讓子元素縮成內容寬
+     （.left_menu 有 width:100% 所以看不出來，右邊主內容就被壓成一半）。
+     直向排列時要改回 stretch，讓兩欄都吃滿寬度。 */
+  .mc-layout { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 32px; }
   .mc-side { display: contents; }
   .mc-layout .left_menu { order: 1; }
   .mc-layout .right_content { order: 2; }
@@ -785,6 +788,10 @@ img { vertical-align: middle; }
     border-top: 1px solid var(--sl-line);
   }
   .share-sec h2 { margin: 0; font-size: 20px; font-weight: 700; color: var(--sl-green-dark); }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
   .share-sec .aside-note { margin: 8px 0 0; font-size: 13px; color: var(--sl-muted); line-height: 1.7; }
   .share-body { min-width: 0; }
 
@@ -809,14 +816,66 @@ img { vertical-align: middle; }
     display: flex; align-items: center; justify-content: center;
   }
 
-  /* 規則圖 */
-  .share-rule-img {
-    margin-top: 18px; width: 100%; max-width: 660px;
-    border: 1px solid var(--sl-line); border-radius: 8px;
-    background: var(--sl-bg);
-    aspect-ratio: 660 / 240;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--sl-muted); font-size: 14px;
+  /* 等級對照表：照 CDN 那張桌機圖的排版重做（會員等級放 X 軸、標題深色底白字、
+     文字一律粗體），配色換成本頁的綠色系。淺綠底色沿用專案既有的
+     #eef5e8 / #f7fbf5，沒有自己調新的色。
+     欄位之間用白色框線分隔，跟原圖一樣，不用一般表格的細灰線。 */
+  .share-rule-wrap { margin-top: 18px; overflow-x: auto; }
+  .share-rule-table {
+    width: 100%; min-width: 520px;
+    border-collapse: separate; border-spacing: 0;
+    border-radius: 12px; overflow: hidden;
+    font-size: 15px; line-height: 1.4; font-weight: 700;
+    text-align: center;
+  }
+  .share-rule-table th,
+  .share-rule-table td {
+    padding: 14px 12px; border-right: 2px solid #fff; border-bottom: 2px solid #fff;
+  }
+  .share-rule-table tr > *:last-child { border-right: 0; }
+  .share-rule-table tr:last-child > * { border-bottom: 0; }
+
+  /* 只有最上面那一列是深綠底白字 */
+  .share-rule-table thead th {
+    background: var(--sl-green-dark); color: #fff; font-size: 16px;
+  }
+
+  /* 「自己／朋友」那一欄跟同一列的數值格用一樣的淺底，整列讀起來是一條 */
+  .share-rule-table tbody th { font-size: 16px; white-space: nowrap; }
+  .share-rule-table tbody th span {
+    display: block; font-size: 13px; font-weight: 700; opacity: .8;
+  }
+  .share-rule-table tbody th,
+  .share-rule-table tbody td { color: var(--sl-green-dark); }
+  .share-rule-table tbody tr:nth-child(odd) th,
+  .share-rule-table tbody tr:nth-child(odd) td { background: #eef5e8; }
+  .share-rule-table tbody tr:nth-child(even) th,
+  .share-rule-table tbody tr:nth-child(even) td { background: #f7fbf5; }
+  .share-rule-table td em { font-style: normal; font-size: 17px; }
+  .share-rule-table td .v { margin-left: .3em; }
+
+  /* 容器變窄時把「1 張」與「95 折券」拆成兩行，比擠在一行好讀，
+     順便讓表格的最小寬度降下來，能少一點橫向捲動。 */
+  @media (max-width: 980px) {
+    .share-rule-table { min-width: 400px; font-size: 14px; }
+    .share-rule-table th,
+    .share-rule-table td { padding: 12px 6px; }
+    .share-rule-table thead th,
+    .share-rule-table tbody th { font-size: 15px; }
+    .share-rule-table td .n,
+    .share-rule-table td .v { display: block; margin-left: 0; }
+    .share-rule-table td em { font-size: 16px; }
+  }
+
+  /* 最窄的手機再縮一級，盡量讓五欄塞得進去不用橫捲 */
+  @media (max-width: 480px) {
+    .share-rule-table { min-width: 0; font-size: 13px; }
+    .share-rule-table th,
+    .share-rule-table td { padding: 10px 4px; }
+    .share-rule-table thead th,
+    .share-rule-table tbody th { font-size: 14px; }
+    .share-rule-table tbody th span { font-size: 12px; }
+    .share-rule-table td em { font-size: 15px; }
   }
 
   /* ── 推薦連結：這一段是整頁的主角 ──
@@ -863,9 +922,14 @@ img { vertical-align: middle; }
   }
   .share-notes b { color: #1f2420; font-weight: 600; }
 
+  /* 148px 標題欄要在主內容不夠寬時就讓位。斷點看的是視窗，但左邊還有 295px
+     側欄在佔位，所以 1100 才是主內容真正夠寬的門檻，不是 720。 */
+  @media (max-width: 1100px) {
+    .share-sec { grid-template-columns: 1fr; gap: 14px; padding: 22px 0; }
+  }
+
   /* ── 手機 ── */
   @media (max-width: 720px) {
-    .share-sec { grid-template-columns: 1fr; gap: 14px; padding: 22px 0; }
     .share-title h1 { font-size: 26px; }
     .share-link-ops { width: 100%; }
     .share-btn { flex: 1; justify-content: center; padding: 0 12px; }
@@ -1002,7 +1066,36 @@ img { vertical-align: middle; }
         <li>朋友點擊連結並完成註冊</li>
         <li>你與朋友都能獲得優惠券！</li>
       </ol>
-      <div class="share-rule-img">各等級的優惠對照圖（CDN 圖片，桌機／手機兩版）</div>
+      <div class="share-rule-wrap">
+        <table class="share-rule-table">
+          <caption class="sr-only">各會員等級推薦好友，分享人與被分享人可獲得的優惠券對照</caption>
+          <thead>
+            <tr>
+              <th scope="col">會員等級</th>
+              <th scope="col">一般會員</th>
+              <th scope="col">VIP</th>
+              <th scope="col">VVIP</th>
+              <th scope="col">SVIP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">自己<span>（分享人）</span></th>
+              <td><span class="n"><em>1</em> 張</span><span class="v">95 折券</span></td>
+              <td><span class="n"><em>1</em> 張</span><span class="v">95 折券</span></td>
+              <td><span class="n"><em>1</em> 張</span><span class="v">9 折券</span></td>
+              <td><span class="n"><em>1</em> 張</span><span class="v">88 折券</span></td>
+            </tr>
+            <tr>
+              <th scope="row">朋友<span>（被分享人）</span></th>
+              <td><span class="n"><em>3</em> 張</span><span class="v">95 折券</span></td>
+              <td><span class="n"><em>3</em> 張</span><span class="v">95 折券</span></td>
+              <td><span class="n"><em>3</em> 張</span><span class="v">9 折券</span></td>
+              <td><span class="n"><em>3</em> 張</span><span class="v">88 折券</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -1046,6 +1139,72 @@ img { vertical-align: middle; }
 </div>
 </div><!-- /right_content -->
 </div><!-- /mc-layout -->
+  </div><!-- /page -->
+</div><!-- /sb-site-container -->
+
+<!--
+  footer.html — 無毒農主站 footer
+  依賴：base.css、footer.css
+  圖片：images/fb.svg、line.svg、ig.svg、yt.svg、footer_logo.svg
+-->
+<footer class="gb-footer">
+  <div class="wrap">
+    <div>
+      <h4>無毒農標準</h4>
+      <a href="/Home/DailyReport">安心檢驗日報</a>
+      <a href="/Home/AboutPGS">PGS參與式驗證</a>
+      <a href="/Blog/BlogNew">無毒農部落格</a>
+    </div>
+    <div>
+      <h4>安心選購</h4>
+      <a href="/BabyFood">粥寶寶</a>
+      <a href="/Eaglebabee">益菓保</a>
+      <a href="/Products/ItemNew">產地直送</a>
+      <a href="/Products/FrozenFood">冷凍超市</a>
+    </div>
+    <div>
+      <h4>幫助/政策</h4>
+      <a href="/Home/QuestionAndAnswer">常見問題</a>
+      <a href="/Home/Privacy">隱私權政策</a>
+      <a href="/Home/TermsConditions">使用者條款</a>
+      <a href="/Home/ReturnPolicy">退貨辦法</a>
+      <a href="/Home/AboutVip">會員制度/紅利積點</a>
+    </div>
+    <div>
+      <h4>認識無毒農</h4>
+      <a href="/Home/AboutNew">關於無毒農</a>
+      <a href="/Home/AboutTeam">團隊介紹</a>
+      <a href="https://www.104.com.tw/company/1a2x6blzu5" target="_blank">人才招募</a>
+      <a href="/Baby/About">等家寶寶</a>
+    </div>
+    <div>
+      <h4>追蹤我們</h4>
+      <div class="social">
+        <a href="https://www.facebook.com/GreenBox.in.tw" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KCjxyZWN0IHg9IjAiIGZpbGw9Im5vbmUiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIvPgoKPGc+Cgo8cGF0aCBmaWxsPSIjNGJhODNiIiBkPSJNOC40NiAxOGgyLjkzdi03LjNoMi40NWwuMzctMi44NGgtMi44MlY2LjA0YzAtLjgyLjIzLTEuMzggMS40MS0xLjM4aDEuNTFWMi4xMWMtLjI2LS4wMy0xLjE1LS4xMS0yLjE5LS4xMS0yLjE4IDAtMy42NiAxLjMzLTMuNjYgMy43NnYyLjFINnYyLjg0aDIuNDZWMTh6Ii8+Cgo8L2c+Cgo8L3N2Zz4=" alt="Facebook"></a>
+        <a href="https://lin.ee/djMfdxH" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAyQzE3LjUxNDEgMiAyMiA1LjY0MDUgMjIgMTAuMTE1MkMyMiAxMS45MDU5IDIxLjMwNTYgMTMuNTE4OSAxOS44NTY1IDE1LjEwODNIMTkuODU2OUMxNy43NTg5IDE3LjUyMjkgMTMuMDY3MyAyMC40NjQyIDEyIDIwLjkxNEMxMC45NjIyIDIxLjM1MTMgMTEuMDgyNCAyMC42NjcyIDExLjEyOTkgMjAuMzk2OUMxMS4xMzEyIDIwLjM4OTIgMTEuMTMyNSAyMC4zODE5IDExLjEzMzcgMjAuMzc0OUMxMS4xNTkyIDIwLjIyNDUgMTEuMjc2NSAxOS41MTg4IDExLjI3NjUgMTkuNTE4OEMxMS4zMTAxIDE5LjI2MzQgMTEuMzQ1IDE4Ljg2NzMgMTEuMjQ0MSAxOC42MTQ2QzExLjEzMjEgMTguMzM2MyAxMC42ODg4IDE4LjE5MTggMTAuMzYzMiAxOC4xMjE0QzUuNTU3NTUgMTcuNDg2NCAyIDE0LjEyNjcgMiAxMC4xMTUyQzIgNS42NDA1IDYuNDg2MzMgMiAxMiAyWk05Ljk3MjE4IDcuOTUyODFIOS4yNjMxQzkuMTU3NjYgNy45NTI4MSA5LjA3MjA4IDguMDM4MzkgOS4wNzIwOCA4LjE0Mzc0VjEyLjUwOEM5LjA3MjA4IDEyLjYxMzUgOS4xNTc2NiAxMi42OTkgOS4yNjMxIDEyLjY5OUg5Ljk3MjE4QzEwLjA3NzcgMTIuNjk5IDEwLjE2MzEgMTIuNjEzNSAxMC4xNjMxIDEyLjUwOFY4LjE0Mzc0QzEwLjE2MzEgOC4wMzgzOSAxMC4wNzc3IDcuOTUyODEgOS45NzIxOCA3Ljk1MjgxWk04LjQ3MTg0IDEyLjUwOEM4LjQ3MTg0IDEyLjYxMzUgOC4zODYzNiAxMi42OTg5IDguMjgwOTEgMTIuNjk4OUg1LjQ3MTQyQzUuMzY1OTggMTIuNjk4OSA1LjI4MDUgMTIuNjEzNSA1LjI4MDUgMTIuNTA4VjguMTQzODFDNS4yODA1IDguMDM4MzYgNS4zNjU5OCA3Ljk1Mjg4IDUuNDcxNDIgNy45NTI4OEg2LjE4MDY5QzYuMjg1NjYgNy45NTI4OCA2LjM3MTUyIDguMDM4NzQgNi4zNzE1MiA4LjE0MzgxVjExLjYwNzlIOC4yODA5MUM4LjM4NTg5IDExLjYwNzkgOC40NzE4NCAxMS42OTM4IDguNDcxODQgMTEuNzk4N1YxMi41MDhaTTE1Ljg2MzcgMTIuNjk4OUgxOC42NzMyQzE4Ljc3ODcgMTIuNjk4OSAxOC44NjQxIDEyLjYxMzUgMTguODY0MSAxMi41MDhWMTEuNzk4N0MxOC44NjQxIDExLjY5MzggMTguNzc4MiAxMS42MDc5IDE4LjY3MzIgMTEuNjA3OUgxNi43NjM5VjEwLjg3MTVIMTguNjczMkMxOC43Nzg3IDEwLjg3MTUgMTguODY0MSAxMC43ODYgMTguODY0MSAxMC42ODA1VjkuOTcxMjhDMTguODY0MSA5Ljg2NjMgMTguNzc4MiA5Ljc4MDM1IDE4LjY3MzIgOS43ODAzNUgxNi43NjM5VjkuMDQzOUgxOC42NzMyQzE4Ljc3ODcgOS4wNDM5IDE4Ljg2NDEgOC45NTg0MiAxOC44NjQxIDguODUyOTdWOC4xNDM4MUMxOC44NjQxIDguMDM4NzQgMTguNzc4MiA3Ljk1Mjg4IDE4LjY3MzIgNy45NTI4OEgxNS44NjM3QzE1Ljc1ODMgNy45NTI4OCAxNS42NzI4IDguMDM4MzYgMTUuNjcyOCA4LjE0MzgxVjEyLjUwOEMxNS42NzI4IDEyLjYxMzUgMTUuNzU4MyAxMi42OTg5IDE1Ljg2MzcgMTIuNjk4OVpNMTQuMDkxIDcuOTUyODFIMTQuODAwMUMxNC45MDU2IDcuOTUyODEgMTQuOTkxMSA4LjAzODM5IDE0Ljk5MTEgOC4xNDM3NFYxMi41MDhDMTQuOTkxMSAxMi42MTM1IDE0LjkwNTYgMTIuNjk5IDE0LjgwMDEgMTIuNjk5SDE0LjA5NDlDMTQuMDc3NiAxMi42OTkgMTQuMDYwOSAxMi42OTY0IDE0LjA0NSAxMi42OTIyTDE0LjA0MzcgMTIuNjkyTDE0LjA0MjIgMTIuNjkxNkMxNC4wMzc3IDEyLjY5MDMgMTQuMDMzMyAxMi42ODg4IDE0LjAyOSAxMi42ODczTDE0LjAyMyAxMi42ODUxQzE0LjAxOTggMTIuNjgzOSAxNC4wMTY4IDEyLjY4MjYgMTQuMDEzNiAxMi42ODExQzE0LjAxMDUgMTIuNjc5NyAxNC4wMDc1IDEyLjY3ODIgMTQuMDA0NSAxMi42NzY2QzE0LjAwMjUgMTIuNjc1NyAxNC4wMDA3IDEyLjY3NDYgMTMuOTk4OCAxMi42NzM2QzEzLjk5NDggMTIuNjcxMyAxMy45OTA3IDEyLjY2ODkgMTMuOTg2OCAxMi42NjYzTDEzLjk4NDcgMTIuNjY0OEMxMy45NjYgMTIuNjUyMSAxMy45NDkyIDEyLjYzNjIgMTMuOTM1NCAxMi42MTY3TDExLjkzNjEgOS45MTY3NVYxMi41MDhDMTEuOTM2MSAxMi42MTM1IDExLjg1MDYgMTIuNjk5IDExLjc0NTIgMTIuNjk5SDExLjAzNkMxMC45MzA2IDEyLjY5OSAxMC44NDUxIDEyLjYxMzUgMTAuODQ1MSAxMi41MDhWOC4xNDM3NEMxMC44NDUxIDguMDM4MzkgMTAuOTMwNiA3Ljk1MjgxIDExLjAzNiA3Ljk1MjgxSDExLjc0MTJDMTEuNzQzNSA3Ljk1MjgxIDExLjc0NTYgNy45NTMwOSAxMS43NDc5IDcuOTUzMThDMTEuNzUxMyA3Ljk1MzI4IDExLjc1NDYgNy45NTMzNyAxMS43NTggNy45NTM3NUwxMS43NjgzIDcuOTU0ODdMMTEuNzc2NCA3Ljk1NjE4TDExLjc4NzcgNy45NTg2MkwxMS43OTQ2IDcuOTYwNEMxMS43OTg1IDcuOTYxNTMgMTEuODAyMyA3Ljk2Mjc0IDExLjgwNjIgNy45NjQxNUwxMS44MTI0IDcuOTY2NEMxMS44MTYxIDcuOTY3OSAxMS44MTk5IDcuOTY5NDkgMTEuODIzNSA3Ljk3MTE4TDExLjgyOTYgNy45NzQxOEMxMS44MzMyIDcuOTc1OTYgMTEuODM2NyA3Ljk3NzkzIDExLjg0MDEgNy45Nzk5OUwxMS44NDU5IDcuOTgzNDZDMTEuODQ5NSA3Ljk4NTggMTEuODUyOSA3Ljk4ODA1IDExLjg1NjEgNy45OTA0TDExLjg2MTMgNy45OTQyNEMxMS44NjQ5IDcuOTk3MTQgMTEuODY4MiA4LjAwMDA1IDExLjg3MTYgOC4wMDMwNUwxMS44NzUyIDguMDA2MzNDMTEuODc5MiA4LjAxMDA4IDExLjg4MyA4LjAxNDExIDExLjg4NjcgOC4wMTgyM0wxMS44ODc5IDguMDE5NjRDMTEuODkzNCA4LjAyNTgzIDExLjg5ODYgOC4wMzIzOSAxMS45MDMzIDguMDM5MzJMMTMuOSAxMC43MzU5VjguMTQzNzRDMTMuOSA4LjAzODM5IDEzLjk4NTUgNy45NTI4MSAxNC4wOTEgNy45NTI4MVoiIGZpbGw9IiM0YmE4M2IiLz4KPC9zdmc+" alt="LINE"></a>
+        <a href="https://www.instagram.com/greenbox_tw/" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAyQzkuMjg0IDIgOC45NDQgMi4wMTEzMyA3Ljg3NzMzIDIuMDZDNi44MTI2NyAyLjEwODY3IDYuMDg1MzMgMi4yNzggNS40NDkzMyAyLjUyNTMzQzQuNzgyNjcgMi43NzYgNC4xNzggMy4xNjkzMyAzLjY3OCAzLjY3ODY3QzMuMTY5NDggNC4xNzgwOSAyLjc3NTkxIDQuNzgyMzMgMi41MjQ2NyA1LjQ0OTMzQzIuMjc4NjcgNi4wODUzMyAyLjEwODY3IDYuODEzMzMgMi4wNiA3Ljg3OEMyLjAxMiA4Ljk0NCAyIDkuMjgzMzMgMiAxMkMyIDE0LjcxNjcgMi4wMTEzMyAxNS4wNTYgMi4wNiAxNi4xMjI3QzIuMTA4NjcgMTcuMTg3MyAyLjI3OCAxNy45MTQ3IDIuNTI1MzMgMTguNTUwN0MyLjc3NiAxOS4yMTczIDMuMTY5MzMgMTkuODIyIDMuNjc4NjcgMjAuMzIyQzQuMTc4MSAyMC44MzA1IDQuNzgyMzQgMjEuMjI0MSA1LjQ0OTMzIDIxLjQ3NTNDNi4wODUzMyAyMS43MjIgNi44MTI2NyAyMS44OTEzIDcuODc3MzMgMjEuOTRDOC45NDQgMjEuOTg4NyA5LjI4NCAyMiAxMiAyMkMxNC43MTYgMjIgMTUuMDU2IDIxLjk4ODcgMTYuMTIyNyAyMS45NEMxNy4xODczIDIxLjg5MTMgMTcuOTE0NyAyMS43MjIgMTguNTUwNyAyMS40NzQ3QzE5LjIxNzMgMjEuMjI0IDE5LjgyMiAyMC44MzA3IDIwLjMyMiAyMC4zMjEzQzIwLjgzMDUgMTkuODIxOSAyMS4yMjQxIDE5LjIxNzcgMjEuNDc1MyAxOC41NTA3QzIxLjcyMiAxNy45MTQ3IDIxLjg5MTMgMTcuMTg3MyAyMS45NCAxNi4xMjI3QzIxLjk4ODcgMTUuMDU2IDIyIDE0LjcxNiAyMiAxMkMyMiA5LjI4NCAyMS45ODg3IDguOTQ0IDIxLjk0IDcuODc3MzNDMjEuODkxMyA2LjgxMjY3IDIxLjcyMiA2LjA4NTMzIDIxLjQ3NDcgNS40NDkzM0MyMS4yMjM2IDQuNzgyMDQgMjAuODMgNC4xNzc1NSAyMC4zMjEzIDMuNjc4QzE5LjgyMTkgMy4xNjk0OCAxOS4yMTc3IDIuNzc1OTEgMTguNTUwNyAyLjUyNDY3QzE3LjkxNDcgMi4yNzg2NyAxNy4xODY3IDIuMTA4NjcgMTYuMTIyIDIuMDZDMTUuMDU2IDIuMDEyIDE0LjcxNjcgMiAxMiAyWk0xMiAzLjgwMkMxNC42NyAzLjgwMiAxNC45ODY3IDMuODEyIDE2LjA0MTMgMy44NkMxNy4wMTYgMy45MDQ2NyAxNy41NDUzIDQuMDY2NjcgMTcuODk4IDQuMjA0NjdDMTguMzY0NyA0LjM4NTMzIDE4LjY5OCA0LjYwMjY3IDE5LjA0OCA0Ljk1MkMxOS4zOTggNS4zMDIgMTkuNjE0NyA1LjYzNTMzIDE5Ljc5NTMgNi4xMDJDMTkuOTMyNyA2LjQ1NDY3IDIwLjA5NTMgNi45ODQgMjAuMTQgNy45NTg2N0MyMC4xODggOS4wMTMzMyAyMC4xOTggOS4zMyAyMC4xOTggMTJDMjAuMTk4IDE0LjY3IDIwLjE4OCAxNC45ODY3IDIwLjE0IDE2LjA0MTNDMjAuMDk1MyAxNy4wMTYgMTkuOTMzMyAxNy41NDUzIDE5Ljc5NTMgMTcuODk4QzE5LjYzNTMgMTguMzMyNCAxOS4zNzk5IDE4LjcyNTMgMTkuMDQ4IDE5LjA0OEMxOC43MjU0IDE5LjM4IDE4LjMzMjQgMTkuNjM1NCAxNy44OTggMTkuNzk1M0MxNy41NDUzIDE5LjkzMjcgMTcuMDE2IDIwLjA5NTMgMTYuMDQxMyAyMC4xNEMxNC45ODY3IDIwLjE4OCAxNC42NzA3IDIwLjE5OCAxMiAyMC4xOThDOS4zMjkzMyAyMC4xOTggOS4wMTMzMyAyMC4xODggNy45NTg2NyAyMC4xNEM2Ljk4NCAyMC4wOTUzIDYuNDU0NjcgMTkuOTMzMyA2LjEwMiAxOS43OTUzQzUuNjY3NjQgMTkuNjM1MyA1LjI3NDY3IDE5LjM3OTkgNC45NTIgMTkuMDQ4QzQuNjIwMTIgMTguNzI1MyA0LjM2NDc1IDE4LjMzMjMgNC4yMDQ2NyAxNy44OThDNC4wNjczMyAxNy41NDUzIDMuOTA0NjcgMTcuMDE2IDMuODYgMTYuMDQxM0MzLjgxMiAxNC45ODY3IDMuODAyIDE0LjY3IDMuODAyIDEyQzMuODAyIDkuMzMgMy44MTIgOS4wMTMzMyAzLjg2IDcuOTU4NjdDMy45MDQ2NyA2Ljk4NCA0LjA2NjY3IDYuNDU0NjcgNC4yMDQ2NyA2LjEwMkM0LjM4NTMzIDUuNjM1MzMgNC42MDI2NyA1LjMwMiA0Ljk1MiA0Ljk1MkM1LjI3NDYzIDQuNjIwMDMgNS42Njc2MSA0LjM2NDY1IDYuMTAyIDQuMjA0NjdDNi40NTQ2NyA0LjA2NzMzIDYuOTg0IDMuOTA0NjcgNy45NTg2NyAzLjg2QzkuMDEzMzMgMy44MTIgOS4zMyAzLjgwMiAxMiAzLjgwMloiIGZpbGw9IiM0YmE4M2IiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAxNS4zMzY3QzExLjU2MTggMTUuMzM2NyAxMS4xMjggMTUuMjUwNCAxMC43MjMxIDE1LjA4MjdDMTAuMzE4MyAxNC45MTUgOS45NTA0NyAxNC42NjkyIDkuNjQwNjQgMTQuMzU5NEM5LjMzMDggMTQuMDQ5NSA5LjA4NTAyIDEzLjY4MTcgOC45MTczNCAxMy4yNzY5QzguNzQ5NjUgMTIuODcyMSA4LjY2MzM1IDEyLjQzODIgOC42NjMzNSAxMkM4LjY2MzM1IDExLjU2MTggOC43NDk2NSAxMS4xMjc5IDguOTE3MzQgMTAuNzIzMUM5LjA4NTAyIDEwLjMxODMgOS4zMzA4IDkuOTUwNDYgOS42NDA2NCA5LjY0MDYyQzkuOTUwNDcgOS4zMzA3OCAxMC4zMTgzIDkuMDg1MDEgMTAuNzIzMSA4LjkxNzMyQzExLjEyOCA4Ljc0OTY0IDExLjU2MTggOC42NjMzMyAxMiA4LjY2MzMzQzEyLjg4NSA4LjY2MzMzIDEzLjczMzYgOS4wMTQ4NyAxNC4zNTk0IDkuNjQwNjJDMTQuOTg1MSAxMC4yNjY0IDE1LjMzNjcgMTEuMTE1MSAxNS4zMzY3IDEyQzE1LjMzNjcgMTIuODg0OSAxNC45ODUxIDEzLjczMzYgMTQuMzU5NCAxNC4zNTk0QzEzLjczMzYgMTQuOTg1MSAxMi44ODUgMTUuMzM2NyAxMiAxNS4zMzY3Wk0xMiA2Ljg2QzEwLjYzNjggNi44NiA5LjMyOTQyIDcuNDAxNTMgOC4zNjU0OSA4LjM2NTQ3QzcuNDAxNTUgOS4zMjk0MSA2Ljg2MDAyIDEwLjYzNjggNi44NjAwMiAxMkM2Ljg2MDAyIDEzLjM2MzIgNy40MDE1NSAxNC42NzA2IDguMzY1NDkgMTUuNjM0NUM5LjMyOTQyIDE2LjU5ODUgMTAuNjM2OCAxNy4xNCAxMiAxNy4xNEMxMy4zNjMyIDE3LjE0IDE0LjY3MDYgMTYuNTk4NSAxNS42MzQ1IDE1LjYzNDVDMTYuNTk4NSAxNC42NzA2IDE3LjE0IDEzLjM2MzIgMTcuMTQgMTJDMTcuMTQgMTAuNjM2OCAxNi41OTg1IDkuMzI5NDEgMTUuNjM0NSA4LjM2NTQ3QzE0LjY3MDYgNy40MDE1MyAxMy4zNjMyIDYuODYgMTIgNi44NlpNMTguNjM1MyA2Ljc2NjY3QzE4LjYzNTMgNy4wODg5IDE4LjUwNzMgNy4zOTc5NCAxOC4yNzk1IDcuNjI1OEMxOC4wNTE2IDcuODUzNjYgMTcuNzQyNiA3Ljk4MTY3IDE3LjQyMDQgNy45ODE2N0MxNy4wOTgxIDcuOTgxNjcgMTYuNzg5MSA3Ljg1MzY2IDE2LjU2MTIgNy42MjU4QzE2LjMzMzQgNy4zOTc5NCAxNi4yMDUzIDcuMDg4OSAxNi4yMDUzIDYuNzY2NjdDMTYuMjA1MyA2LjQ0NDQzIDE2LjMzMzQgNi4xMzUzOSAxNi41NjEyIDUuOTA3NTNDMTYuNzg5MSA1LjY3OTY4IDE3LjA5ODEgNS41NTE2NyAxNy40MjA0IDUuNTUxNjdDMTcuNzQyNiA1LjU1MTY3IDE4LjA1MTYgNS42Nzk2OCAxOC4yNzk1IDUuOTA3NTNDMTguNTA3MyA2LjEzNTM5IDE4LjYzNTMgNi40NDQ0MyAxOC42MzUzIDYuNzY2NjdaIiBmaWxsPSIjNGJhODNiIi8+Cjwvc3ZnPg==" alt="Instagram"></a>
+        <a href="https://www.youtube.com/channel/UC1fp9pohpxLtAVtUkQKNLHQ" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJub25lIj48cGF0aCBmaWxsPSIjNGJhODNiIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy40NzggMy4zOTljLjYuMTYxIDEuMDcyLjYzNCAxLjIzNCAxLjIzNEMxNSA1LjcyOCAxNSA4IDE1IDhzMCAyLjI3Mi0uMjg4IDMuMzY3YTEuNzU0IDEuNzU0IDAgMDEtMS4yMzQgMS4yMzRDMTIuMzgyIDEyLjg5IDggMTIuODkgOCAxMi44OXMtNC4zODIgMC01LjQ3OC0uMjg5YTEuNzU0IDEuNzU0IDAgMDEtMS4yMzQtMS4yMzRDMSAxMC4yODMgMSA4IDEgOHMwLTIuMjcyLjI4OC0zLjM2N2MuMTYyLS42LjYzNS0xLjA3MyAxLjIzNC0xLjIzNEMzLjYxOCAzLjExIDggMy4xMSA4IDMuMTFzNC4zODIgMCA1LjQ3OC4yODl6bS0zLjI0IDQuNjEybC0zLjY0NSAyLjFWNS45bDMuNjQ0IDIuMTF6IiBjbGlwLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=" alt="YouTube"></a>
+      </div>
+      <div class="info">
+        總部地址：106 臺北市大安區仁愛路四段 2 號 11 樓<br>
+        電話：(02) 2771-2900<br>
+        客服時間：<br>
+        週一至週五 09:00–18:00（不含國定假日）
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="slogan">
+      <img src="data:image/svg+xml;base64,PHN2ZyBpZD0i5ZyW5bGkXzEiIGRhdGEtbmFtZT0i5ZyW5bGkIDEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI2OS4zMyA3Ny40MSI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmY7fTwvc3R5bGU+PC9kZWZzPjx0aXRsZT5MT0dPIOeZveiJsuasvjwvdGl0bGU+PHJlY3QgY2xhc3M9ImNscy0xIiB4PSIxMDMuMDkiIHk9IjI1LjE0IiB3aWR0aD0iNS4wNCIgaGVpZ2h0PSI0OC40OCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTUuMjYgMTU0LjU0KSByb3RhdGUoLTg5LjQ4KSIvPjxwb2x5Z29uIGNsYXNzPSJjbHMtMSIgcG9pbnRzPSI4Ni43MyA0My4zOSA5MS43NyA0My40NCA5MS44NCAzNi4wMyA5OC4xMyAzNi4wOSA5OC4wOCA0My40OSAxMDMuMSA0My41NSAxMDMuMTggMzYuMTMgMTA5LjQ3IDM2LjE5IDEwOS40MSA0My42MSAxMTQuNDUgNDMuNjUgMTE0LjUyIDM2LjI0IDEyMC44MSAzNi4zIDEyMC43NSA0My43MSAxMjUuNzkgNDMuNzYgMTI1Ljg1IDM2LjM0IDEyOS45NiAzNi4zOCAxMzAuMDEgMzEuMzUgMTI1LjkgMzEuMzEgMTI1Ljk1IDI1Ljk5IDEyMC45MSAyNS45NSAxMjAuODYgMzEuMjcgMTE0LjU3IDMxLjIxIDExNC42MSAyNS44OSAxMDkuNTggMjUuODQgMTA5LjUyIDMxLjE2IDEwMy4yMyAzMS4xIDEwMy4yOCAyNS43OSA5OC4yMyAyNS43NCA5OC4xOCAzMS4wNiA5MS44OSAzMSA5MS45MiAyNS42OCA4Ni44OSAyNS42NCA4Ni44NSAzMC45NSA4MS41MyAzMC45MSA4MS40OCAzNS45NCA4Ni44IDM1Ljk4IDg2LjczIDQzLjM5Ii8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjEyOS40MyAxNS44IDg3LjE3IDE1LjggODcuMTcgMTAuOTQgODIuMTQgMTAuOTQgODIuMTMgMjAuODMgMTI5LjQzIDIwLjgzIDEyOS40MyAxNS44Ii8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjE3OC40IDI2LjIzIDE5OC45NCAyNi4yMyAxOTguOTQgMjIuMDQgMTc4LjQgMjIuMDQgMTc4LjQgMTkuMTggMjAxLjkzIDE5LjE4IDIwMS45MyAxNC44NiAxNzguNCAxNC44NiAxNzguNCAxMC45NCAxNzIuMTUgMTAuOTQgMTcyLjE1IDE0Ljg2IDE0OC4zNCAxNC44NiAxNDguMzQgMTkuMTggMTcyLjE1IDE5LjE4IDE3Mi4xNSAyMi4wNCAxNTEuNjcgMjIuMDQgMTUxLjY3IDI2LjIzIDE3Mi4xNSAyNi4yMyAxNzIuMTUgMjkuNDIgMTQ3LjIxIDI5LjQyIDE0Ny4yMSAzMy43NCAyMDMuODYgMzMuNzQgMjAzLjg2IDI5LjQyIDE3OC40IDI5LjQyIDE3OC40IDI2LjIzIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY5LjMzLDMxLjIySDIyMi42NlY2Ny41NGg2LjI1di0xNWgzLjI2djE1aDEzLjQ0VjYzLjM1aC03LjE5VjUyLjU5SDI0MGwyNi4yMywxNS4xNCwyLjA5LTMuNjMtMi42Ny0xLjU0di0xMGgzLjY3VjQ4LjRIMjI4Ljkxdi0xM2g0MC40MlpNMjU5LjQxLDU5bC0xMS02LjM2aDExWiIvPjxyZWN0IGNsYXNzPSJjbHMtMSIgeD0iMjMwLjk0IiB5PSIzOS40MyIgd2lkdGg9IjM0Ljc4IiBoZWlnaHQ9IjQuMTkiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xOTYuODIsNDAuMzhWMzYuMTlIMTU0LjczdjguMzZoLTYuMTd2NC4xOWg2LjE3djkuMTFoMzUuODR2NC45M0gxNjlWNjdoMjcuODFWNTcuODVIMjAwVjUzLjY2aC0zLjE0VjQ4Ljc0aDVWNDQuNTVoLTVabS02LjI1LDQuMTdIMTc2LjgybC00LjA3LTQuMTdoMTcuODJaTTE2MSw0MC4zOGg2LjExbC0uMS4xLDQsNC4wN0gxNjFabTAsOC4zNmgxNC4wOGw0LjgxLDQuOTJIMTYxWm0yOS41OSw0LjkyaC00LjgzbC00LjgyLTQuOTJoOS42NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNTAuNDIsMTYuNDZsMCwwYy0xLjUxLTEuOC0zLjE0LTIuNzItNC44NC0yLjczQTUuNTgsNS41OCwwLDAsMCwyNDIuMDksMTVsLTEtMS42NWMtMS41MS0yLjQxLTMuMTctMy42NC00LjkzLTMuNjUtMywwLTQuODUsMy40OS00Ljg4LDMuNTZMMjIyLjM5LDI2LjhoMzYuNzNaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY4LDI0Ljc5bC02LjU4LTExLjQzYy0xLjM5LTIuNDItMy0zLjY2LTQuNjItMy42OC0yLjc3LDAtNC40NSwzLjMtNC41OCwzLjU5bC0uNTEuODYsOS4yNSwxMC42NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik04MC4xOSw2NS44NWw0LjIsMS42OGE2Mi4zMyw2Mi4zMywwLDAsMCw2LjA3LTEyLjA4bC00LjItMS4wOEE1Ni40Miw1Ni40MiwwLDAsMSw4MC4xOSw2NS44NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik05Ni4yOSw1Ni4wNWE2NS44LDY1LjgsMCwwLDEsMS4yNiwxMWw0LjM5LS42NmE2NC4yMyw2NC4yMywwLDAsMC0xLjUtMTAuN1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMDguNjcsNTUuOTNhNjUsNjUsMCwwLDEsMy42LDExbDQuMzktLjlhNTQuMyw1NC4zLDAsMCwwLTMuOTEtMTAuODJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTIxLDU1LjY5YTk4LjA2LDk4LjA2LDAsMCwxLDYsMTEuNzJsNC4zMy0xLjg2YTEyMy40OCwxMjMuNDgsMCwwLDAtNi4zMS0xMS40OFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik02Mi4xOSwyNmgzLjQ4YS41NC41NCwwLDAsMCwuNTQtLjUybC4wNS0xLjA5YTguNDIsOC40MiwwLDAsMC0yLjIxLTUuNjNjLTEuODgtMi00LjczLTMuMTQtOC40OC0zLjI3LTMuNTktLjEyLTQuNjktMS42Mi02LjctNC4zMkM0Ni41OCw4LDQzLjQ1LDMuOCwzNSwuNDZoMGMtLjU4LS4yMy0xLS4zOC0xLS4zOGwtLjE3LDBhLjQ3LjQ3LDAsMCwwLS4xNywwLC42My42MywwLDAsMC0uMTksMGwtLjM3LjE1QzI0LDMuNTQsMjAuNzksNy45MiwxOC40MiwxMS4xMmMtMiwyLjcxLTMuMTEsNC4yLTYuNyw0LjMzLTMuNzUuMTMtNi42LDEuMjMtOC40OSwzLjI3QTguMzksOC4zOSwwLDAsMCwxLDI0LjM1bC4wNSwxLjA5YS41NC41NCwwLDAsMCwuNTQuNTJINS4xQTMzLjY0LDMzLjY0LDAsMCwwLDI4LjY0LDc3YTMyLjg3LDMyLjg3LDAsMCwwLDUsLjM4LDM0LDM0LDAsMCwwLDUtLjM4QTMzLjY0LDMzLjY0LDAsMCwwLDYyLjE5LDI2Wk00Ni42LDEyLjgxYzIuMTEsMi44NCwzLjkyLDUuMjksOC44Nyw1LjQ2LDYsLjIxLDcuNDgsMy4xOCw3Ljg1LDQuODdINDlBNDQsNDQsMCwwLDAsMzkuNzYsNiwyNC43MSwyNC43MSwwLDAsMSw0Ni42LDEyLjgxWm0wLDEwLjMzSDQwLjM0Yy45LTUuMTctMS4wOC0xMS43Mi0yLjkxLTE2LjMyQTQyLjMyLDQyLjMyLDAsMCwxLDQ2LjYzLDIzLjE0Wk0zMy44OCw0LjM1QzM1LjY5LDguMjYsMzkuMjksMTcuMTMsMzgsMjMuMTRIMjkuNzVDMjguNDcsMTcuMTMsMzIuMDcsOC4yOCwzMy44OCw0LjM1Wk0yNy40MiwyMy4xNEgyMS4xNGE0Mi4yNCw0Mi4yNCwwLDAsMSw5LjE4LTE2LjNDMjguNSwxMS40NCwyNi41MywxOCwyNy40MiwyMy4xNFpNNCwyMy4xNGE1LjU0LDUuNTQsMCwwLDEsMS4zMi0yLjVjMS4zNS0xLjQ3LDMuNTQtMi4yNiw2LjUxLTIuMzcsNC45NC0uMTcsNi43Ni0yLjYyLDguODYtNS40NmEyNC42LDI0LjYsMCwwLDEsNy44OS03LjQzLDQ0LjQ3LDQ0LjQ3LDAsMCwwLTkuOCwxNy43Nkg0Wk04LjY1LDY1LjQ3Yy42NC43NCwxLjMyLDEuNDUsMiwyLjEzQzEwLDY2LjkyLDkuMjksNjYuMjEsOC42NSw2NS40N1ptMjcuNzYsOWEzMS4yMywzMS4yMywwLDAsMS01LjQ3LDAsNC43OSw0Ljc5LDAsMCwwLC42Ni0zLjJBNC45Myw0LjkzLDAsMCwwLDI5LjIyLDY4TDI5LjA3LDY4bC0uMTcsMGEyNSwyNSwwLDAsMS0zLjgzLTEuMDhMMjYuNyw2NGwwLS4yM2E0LjE5LDQuMTksMCwwLDAtMy4zNC00LjY0TDIyLjkxLDU5bC01LjE4LDMuNTNhMjQuMzksMjQuMzksMCwwLDEtNC40MS00Ljg5SDU0YTI0LDI0LDAsMCwxLTQuMzcsNC44NUw0NC40MSw1OWwtLjQ4LjExYTQuMTcsNC4xNywwLDAsMC0zLjM0LDQuNjRsMCwuMjMsMS42MywyLjg0YTI1LDI1LDAsMCwxLTMuODMsMS4wOGwtLjE3LDBMMzguMSw2OGE0LjkzLDQuOTMsMCwwLDAtMi4zOCwzLjIzQTQuODgsNC44OCwwLDAsMCwzNi40MSw3NC40NlpNMzIuMzUsNDYuNTRBNTAuNTUsNTAuNTUsMCwwLDAsMjUsNTUuMzZIMTEuOTNBMjQuNjQsMjQuNjQsMCwwLDEsOSw0My43NWMwLS43NCwwLTEuNDguMDktMi4yMUE0Ni43NSw0Ni43NSwwLDAsMSwyMy44LDQzbC4zLTEuMWgwbC0uMywxLjFBMzYuNTUsMzYuNTUsMCwwLDEsMzIuMzUsNDYuNTRabTEuNzYtMS42MWEzNy41MiwzNy41MiwwLDAsMC05LTMuOUE5LjkyLDkuOTIsMCwwLDEsMjUsMzkuN2E4Ljg4LDguODgsMCwwLDEsMTcuNzItLjgzQTQ2LjI5LDQ2LjI5LDAsMCwwLDM0LjExLDQ0LjkzWm0xMC4zMi00LjM4YTMyLjYsMzIuNiwwLDAsMSwxMi44Ni0zLjY3LDI0LjczLDI0LjczLDAsMCwxLTEuOTMsMTguNDhIMjcuNzVBNTEuMzYsNTEuMzYsMCwwLDEsMzUsNDcuMTksNDMuNjUsNDMuNjUsMCwwLDEsNDQuNDMsNDAuNTVabS01LjUsMzMuNTdhMy41MywzLjUzLDAsMCwxLTEtMi41MiwyLjU0LDIuNTQsMCwwLDEsMS4xLTEuNTUsMjYuNzcsMjYuNzcsMCwwLDAsNS4yOC0xLjY2bDEuMTctLjUxTDQyLjg0LDYzLjJBMS44LDEuOCwwLDAsMSw0NCw2MS40M2w1LjcxLDMuOTEuNjYtLjUzQTI3LDI3LDAsMCwwLDU5LjIsMzUuMzNMNTksMzQuNTVoLS44OGEzNC4zOSwzNC4zOSwwLDAsMC0xMy4xOSwzLjI0QTExLjE2LDExLjE2LDAsMCwwLDIyLjcyLDM5LjdjMCwuMjMsMCwuNDcsMCwuN0E0Ny4xNyw0Ny4xNywwLDAsMCw4LDM5LjM1bC0uODguMTFMNyw0MC4zNGEyNS41OSwyNS41OSwwLDAsMC0uMjIsMy40MUEyNi44NSwyNi44NSwwLDAsMCwxNyw2NC44NWwuNjYuNTIsNS42OS0zLjg4YTEuODMsMS44MywwLDAsMSwxLjE3LDEuNzdMMjEuOCw2Ny45NGwxLjE3LjUxYTI2LjU3LDI2LjU3LDAsMCwwLDUuMjgsMS42NiwyLjU3LDIuNTcsMCwwLDEsMS4xLDEuNTUsMy40NCwzLjQ0LDAsMCwxLS45MywyLjQ3QTMxLDMxLDAsMCwxLDIuODIsNDMuNzcsMzAuNTIsMzAuNTIsMCwwLDEsOC44OCwyNS40Mkg1OC40YTMwLjQ1LDMwLjQ1LDAsMCwxLDYuMDYsMTguMzVBMzEsMzEsMCwwLDEsMzguOTMsNzQuMTJaIi8+PC9zdmc+" alt="無毒農 logo">
+      <span>用信任連結產地和餐桌</span>
+    </div>
+    <div class="legal">
+      <p>舒果農企業有限公司／無毒農　統編：42829375</p>
+      <p>食品業者登錄字號：A-142829375-00000-8</p>
+      <p>© 無毒農 All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
 
 <div class="sl-toast" id="sl-toast"></div>
 

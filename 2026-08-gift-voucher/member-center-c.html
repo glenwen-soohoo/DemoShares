@@ -414,7 +414,10 @@ img { vertical-align: middle; }
 
   /* 手機版：小樹排到主內容之後，不要卡在選單與內容中間。
      .mc-side 用 display:contents 把兩個子元素直接交給外層 flex，order 才管得到 */
-  .mc-layout { flex-direction: column; gap: 0; padding-bottom: 32px; }
+  /* 外層有 align-items: flex-start，轉成直向之後那條會讓子元素縮成內容寬
+     （.left_menu 有 width:100% 所以看不出來，右邊主內容就被壓成一半）。
+     直向排列時要改回 stretch，讓兩欄都吃滿寬度。 */
+  .mc-layout { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 32px; }
   .mc-side { display: contents; }
   .mc-layout .left_menu { order: 1; }
   .mc-layout .right_content { order: 2; }

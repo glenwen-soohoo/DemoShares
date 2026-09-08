@@ -21,6 +21,16 @@
   .who:first-of-type { padding-top: 0; border-top: 0; }
   .who:last-child { margin-bottom: 0; }
   .who > h2 { font-size: 26px; font-weight: 700; color: #008000; margin: 0 0 4px; }
+  /* 錨點：標題本身就是連結，點一下網址列就帶著 #ops / #cs / #design，
+     可以直接把某一段的連結貼給對應的人。scroll-margin-top 讓跳過去時上方留白。 */
+  .who { scroll-margin-top: 24px; }
+  .who > h2 a { color: inherit; text-decoration: none; }
+  .who > h2 a::after {
+    content: '#'; margin-left: 8px; font-size: 20px; color: #b9c4bb;
+    opacity: 0; transition: opacity .15s;
+  }
+  .who > h2 a:hover::after,
+  .who > h2 a:focus-visible::after { opacity: 1; }
   .who-note { color: #595757; font-size: 14px; margin: 0 0 28px; }
 
   /* 第二層＝前台或後台 */
@@ -56,8 +66,8 @@
   <h1>禮物券 demo</h1>
   <p class="sub">2026-08</p>
 
-  <div class="who">
-    <h2>營運確認</h2>
+  <div class="who" id="ops">
+    <h2><a href="#ops">營運確認</a></h2>
     <p class="who-note">券怎麼設定、怎麼發、客人拿到之後怎麼用</p>
 
     <div class="side">
@@ -105,8 +115,8 @@
     </div>
   </div>
 
-  <div class="who">
-    <h2>客服確認</h2>
+  <div class="who" id="cs">
+    <h2><a href="#cs">客服確認</a></h2>
     <p class="who-note">客人打來問的時候，查得到、答得出、處理得掉</p>
 
     <div class="side">
@@ -149,8 +159,8 @@
     </div>
   </div>
 
-  <div class="who">
-    <h2>設計確認</h2>
+  <div class="who" id="design">
+    <h2><a href="#design">設計確認</a></h2>
     <p class="who-note">版面、視覺與文案，只有前台這幾頁</p>
 
     <div class="side">
