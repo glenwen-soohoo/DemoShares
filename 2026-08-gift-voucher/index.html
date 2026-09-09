@@ -14,7 +14,7 @@
   }
   .wrap { max-width: 900px; margin: 0 auto; }
   h1 { font-size: 30px; margin: 0 0 4px; color: #008000; }
-  .sub { color: #999; font-size: 14px; margin: 0 0 48px; }
+  .sub { color: #999; font-size: 14px; margin: 0 0 24px; }
 
   /* 第一層＝要誰確認。三段之間拉開距離並加分隔線，掃一眼知道自己該看哪一段 */
   .who { margin-bottom: 56px; padding-top: 40px; border-top: 2px solid #e0e4e6; }
@@ -58,6 +58,23 @@
   }
   .entry-name { font-size: 17px; font-weight: 700; color: #008000; margin-bottom: 4px; }
   .entry-desc { font-size: 14px; color: #595757; line-height: 1.6; }
+
+  /* 最上面的全頁清單：一眼看完 demo 有哪些頁，不用先決定自己屬於哪一段。
+     下面三段是「你該看哪幾頁」，這一塊是「總共有哪些頁」，用途不同所以樣式刻意做輕。 */
+  .all {
+    border: 1px solid #e0e4e6; border-radius: 4px; background: #fff;
+    padding: 20px 24px; margin: 0 0 48px;
+  }
+  .all > h2 { font-size: 17px; font-weight: 700; color: #1a1a1a; margin: 0 0 16px; }
+  .all-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 24px; }
+  @media (max-width: 760px) { .all-cols { grid-template-columns: 1fr; gap: 24px; } }
+  .all-col > h3 {
+    font-size: 13px; font-weight: 700; color: #8a8f8b; letter-spacing: 1px; margin: 0 0 8px;
+  }
+  .all-col ul { list-style: none; margin: 0; padding: 0; }
+  .all-col li { margin-bottom: 4px; line-height: 1.6; }
+  .all-col a { color: #008000; text-decoration: none; font-size: 15px; }
+  .all-col a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -65,6 +82,40 @@
 
   <h1>禮物券 demo</h1>
   <p class="sub">2026-08</p>
+
+  <nav class="all">
+    <h2>全部頁面</h2>
+    <div class="all-cols">
+      <div class="all-col">
+        <h3>前台</h3>
+        <ul>
+          <li><a href="member-center-c.html">會員中心</a></li>
+          <li><a href="checkout-cart.html">購物車／確認訂單</a></li>
+          <li><a href="checkout-finish-baby.html">結帳完成頁</a></li>
+          <li><a href="member-baby-profile-b.html">個人資料修改（寶寶資料）</a></li>
+          <li><a href="member-share-link.html">好友分享</a></li>
+        </ul>
+      </div>
+      <div class="all-col">
+        <h3>後台</h3>
+        <ul>
+          <li><a href="admin-gift-list.html">禮物列表</a></li>
+          <li><a href="admin-gift-create.html">新增禮物</a></li>
+          <li><a href="admin-gift-detail.html">禮物明細</a></li>
+          <li><a href="admin-member-gift.html">會員頁的禮物券</a></li>
+          <li><a href="admin-order-refund-gift.html">訂單返還禮物券</a></li>
+          <li><a href="admin-order-create-gift-b.html">後台建單</a></li>
+          <li><a href="admin-product-spec.html">商品編輯頁 規格設定</a></li>
+        </ul>
+      </div>
+      <div class="all-col">
+        <h3>不是畫面</h3>
+        <ul>
+          <li><a href="data-schema.html">資料結構說明</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 
   <div class="who" id="ops">
     <h2><a href="#ops">營運確認</a></h2>

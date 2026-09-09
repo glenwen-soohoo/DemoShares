@@ -955,6 +955,10 @@ img { vertical-align: middle; }
     .recv-form .fld-addr input { grid-column: 1 / -1; }
   }
 
+  /* 從結帳完成頁 #baby 跳進來時，要讓開固定在最上面的 .gb-head（桌機約 95px），再加卡片外框的呼吸。
+     只留 24px 的話標題會被導覽列蓋住。手機的 header 比較矮，另外給值。 */
+  #baby { scroll-margin-top: 140px; }
+  @media (max-width: 767px) { #baby { scroll-margin-top: 72px; } }
   /* 寶寶資料整段框起來，跟上面的個人資料明顯分開 */
   .acct-sec--boxed {
     background: var(--ac-bg);
@@ -1208,7 +1212,7 @@ img { vertical-align: middle; }
   </section>
 
   <!-- ── 寶寶資料 ── -->
-  <section class="acct-sec acct-sec--boxed">
+  <section class="acct-sec acct-sec--boxed" id="baby">
     <div class="acct-aside">
       <h2>寶寶資料</h2>
       <span class="acct-count">已登錄 <span id="baby-count">0</span> / 3 位</span>
