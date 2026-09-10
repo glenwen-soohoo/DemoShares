@@ -1,0 +1,2770 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>後台建單 使用禮物券（c 版）— 後台 demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ───── GoX Admin / base.css ─────
+   後台殼共用 reset + 全域字型 + CSS 變數 token。
+   color / spacing / radius 集中在 :root，後續元件一律 var(--gox-*) 取用，
+   不要再回填 hex。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+  color: var(--gox-text);
+  background: var(--gox-content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--gox-info); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* 整個後台 wrapper（一定要包這層才能套色） */
+.gox-page {
+  min-height: 100vh;
+  background: var(--gox-content-bg);
+  color: var(--gox-text);
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+}
+
+/* ───── GoX Admin / header.css ─────
+   固定在頂端的淺綠 header：
+     左：無毒農 logo（小張）
+     中：breadcrumb（B2B管理 > 訂單管理）
+     右：使用者快捷區（登出、通知；可選） */
+
+.gox-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--gox-header-h);
+  background: var(--gox-header-bg);
+  border-bottom: 1px solid var(--gox-header-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-family: var(--gox-font-family);
+}
+
+.gox-header .gox-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.gox-header .gox-logo img {
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  display: block;
+}
+
+/* ── breadcrumb ── */
+.gox-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gox-text-sub);
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+}
+.gox-breadcrumb a {
+  color: var(--gox-green);
+  text-decoration: none;
+}
+.gox-breadcrumb a:hover { text-decoration: underline; }
+.gox-breadcrumb .sep {
+  color: var(--gox-text-muted);
+  font-size: 12px;
+}
+.gox-breadcrumb strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* ── 右側使用者快捷區（可選）── */
+.gox-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-header-right .gox-user {
+  color: var(--gox-text);
+}
+.gox-header-right .gox-icon-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--gox-radius);
+  white-space: nowrap;
+}
+.gox-header-right .gox-user { white-space: nowrap; }
+.gox-header-right .gox-icon-btn:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--gox-text);
+}
+
+/* ───── GoX Admin / sidebar.css ─────
+   左側深灰固定側欄。支援：
+     - 一級項目（可帶 badge 紅點）
+     - 可摺疊群組（▶ / ▼）
+     - 二級項目（active 高亮）
+     - disabled 樣式 */
+
+.gox-sidebar {
+  width: var(--gox-sider-w);
+  flex-shrink: 0;
+  background: var(--gox-sider-bg);
+  color: var(--gox-sider-text);
+  padding: 8px 0;
+  font-size: var(--gox-font-size-sm);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--gox-header-h);
+  height: calc(100vh - var(--gox-header-h));
+  font-family: var(--gox-font-family);
+}
+
+/* ── 一級項目 / 群組標題 ── */
+.gox-sidebar .gox-menu-item,
+.gox-sidebar .gox-menu-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--gox-sider-text);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--gox-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  user-select: none;
+}
+.gox-sidebar .gox-menu-item:hover,
+.gox-sidebar .gox-menu-title:hover {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+
+/* disabled（demo 未開放的入口） */
+.gox-sidebar .gox-menu-item.is-disabled {
+  cursor: default;
+  color: #888;
+}
+.gox-sidebar .gox-menu-item.is-disabled:hover {
+  background: transparent;
+  color: #888;
+}
+
+/* 一級項目 active（無子項目、可直接點的頁面，例如「獨立平台」）
+   字色用 !important 壓過腳本給一級項的 inline color:inherit，對齊二級 active 的 bisque */
+.gox-sidebar .gox-menu-item.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text) !important;
+  font-weight: 600;
+}
+
+/* 箭頭（▶ / ▼） */
+.gox-sidebar .gox-arrow {
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+
+/* badge 紅點 */
+.gox-sidebar .gox-badge {
+  margin-left: auto;
+  background: var(--gox-danger);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ── 摺疊群組 ── */
+.gox-sidebar .gox-menu-group.is-open .gox-menu-title {
+  background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text);
+}
+.gox-sidebar .gox-menu-children {
+  background: var(--gox-sider-sub-bg);
+}
+
+/* 二級項目 */
+.gox-sidebar .gox-menu-child {
+  display: block;
+  padding: 8px 14px 8px 32px;
+  color: var(--gox-sider-sub-text);
+  text-decoration: none;
+  font-size: var(--gox-font-size-sm);
+}
+.gox-sidebar .gox-menu-child:hover {
+  background: #252530;
+  color: var(--gox-sider-active-text);
+  text-decoration: none;
+}
+.gox-sidebar .gox-menu-child.is-active {
+  background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text);
+  font-weight: 600;
+}
+
+/* ───── GoX Admin / content.css ─────
+   內容區共用元件：
+     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
+   全部用 :root 變數，不直接寫 hex。 */
+
+/* ── 主體佈局：header 下方的 sidebar + content ── */
+.gox-body {
+  display: flex;
+  min-height: calc(100vh - var(--gox-header-h));
+}
+.gox-content {
+  flex: 1;
+  min-width: 0;          /* 讓子層 table overflow 正常 */
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--gox-content-bg);
+}
+
+/* ─────────────────────────────────────────────────
+   Toolbox：工具型頁面的主要工作區容器
+   預設 960px 限寬置中（表單、設定、編輯頁讀起來舒服）
+   修飾詞依內容寬度需求調整
+   ─────────────────────────────────────────────────
+   何時用：
+     - 系統設定、個人資料、單筆編輯、單一表單
+     - 內容上下流式排列、欄位不多
+   何時不用：
+     - 列表頁（要滿寬度顯示表格）
+     - 看板、儀表板（多欄並列）
+     - 包含寬表格的編輯頁（會被切掉）
+   範例：
+     <main class="gox-content">
+       <div class="gox-toolbox">  ← 用這個
+         <h2>系統設定</h2>
+         <div class="gox-card">…</div>
+       </div>
+     </main>
+*/
+.gox-toolbox {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.gox-toolbox.is-narrow { max-width: 720px; }   /* 表單少欄位、登入頁、設定密碼 */
+.gox-toolbox.is-wide   { max-width: 1200px; }  /* 多欄表單、含中型表格 */
+.gox-toolbox.is-fluid  { max-width: none; }    /* 內容太擠時退回滿寬 */
+
+/* ─────────────────────────────────────────────────
+   Card：後台主要的「白卡片」容器
+   ───────────────────────────────────────────────── */
+.gox-card {
+  background: var(--gox-card-bg);
+  border: 1px solid var(--gox-card-border);
+  border-radius: var(--gox-radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.gox-card-title {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--gox-card-bg);
+  border-bottom: 1px solid var(--gox-card-border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gox-text);
+}
+.gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
+  background: var(--gox-green);
+  color: #fff;
+  border-bottom: 0;
+}
+.gox-card-body { padding: 16px; }
+.gox-card-body.is-table-padding { padding: 0; }     /* table 自己有 padding 時用 */
+
+/* 卡片頂端列：左標題 / 右操作按鈕 */
+.gox-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────────────────
+   Button
+   ───────────────────────────────────────────────── */
+.gox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  line-height: 1.5;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.gox-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* 主操作 — 品牌綠 */
+.gox-btn-primary {
+  background: var(--gox-green);
+  color: #fff;
+  border-color: var(--gox-green);
+}
+.gox-btn-primary:hover:not(:disabled) { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+
+/* 次操作 — 白底邊框 */
+.gox-btn-default {
+  background: #fff;
+  color: var(--gox-text);
+  border-color: #ccc;
+}
+.gox-btn-default:hover:not(:disabled) { background: #f5f5f5; border-color: var(--gox-green); color: var(--gox-green); }
+
+/* 危險 */
+.gox-btn-danger {
+  background: #fff;
+  color: var(--gox-danger);
+  border-color: var(--gox-danger);
+}
+.gox-btn-danger:hover:not(:disabled) { background: var(--gox-danger); color: #fff; }
+
+/* 列表內小按鈕（檢視 / 編輯 / 刪除） */
+.gox-btn-op {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  color: var(--gox-text);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.gox-btn-op:hover { background: #f5f5f5; text-decoration: none; }
+
+/* ─────────────────────────────────────────────────
+   Form
+   ───────────────────────────────────────────────── */
+.gox-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.gox-form-row > label {
+  min-width: 110px;
+  color: var(--gox-text);
+  font-weight: 500;
+}
+.gox-input,
+.gox-select,
+.gox-textarea {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  background: #fff;
+  color: var(--gox-text);
+  line-height: 1.5;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.gox-input:focus,
+.gox-select:focus,
+.gox-textarea:focus {
+  outline: 2px solid var(--gox-green);
+  outline-offset: -1px;
+  border-color: var(--gox-green);
+}
+.gox-input:disabled,
+.gox-select:disabled,
+.gox-textarea:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+.gox-textarea { min-height: 80px; resize: vertical; }
+
+.gox-radio-group, .gox-checkbox-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gox-hint {
+  color: var(--gox-text-muted);
+  font-size: var(--gox-font-size-xs);
+}
+
+/* ─────────────────────────────────────────────────
+   Table
+   ───────────────────────────────────────────────── */
+.gox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--gox-font-size-sm);
+  background: #fff;
+}
+.gox-table th {
+  background: #fafafa;
+  border-bottom: 1px solid var(--gox-card-border);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gox-text-sub);
+  white-space: nowrap;
+}
+.gox-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.gox-table tr:hover td { background: #fafafa; }
+.gox-table .cell-center { text-align: center; }
+.gox-table .cell-right { text-align: right; }
+.gox-table .cell-ops { white-space: nowrap; }
+.gox-table .row-error td { background: #fff1f0; }
+.gox-table .row-error:hover td { background: #ffe0de; }
+
+/* ─────────────────────────────────────────────────
+   Tab（頁籤）
+   ───────────────────────────────────────────────── */
+.gox-tab-group {
+  display: inline-flex;
+  border: 1px solid #ccc;
+  border-radius: var(--gox-radius);
+  overflow: hidden;
+}
+.gox-tab-btn {
+  padding: 6px 20px;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--gox-font-size-base);
+  font-family: inherit;
+  border-right: 1px solid #ccc;
+  color: var(--gox-text);
+}
+.gox-tab-btn:last-child { border-right: 0; }
+.gox-tab-btn.is-active {
+  background: var(--gox-info);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────
+   Modal
+   ───────────────────────────────────────────────── */
+.gox-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.gox-modal-overlay.is-hidden { display: none; }
+[hidden] { display: none !important; }
+.gox-modal-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 480px;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+.gox-modal-box h4 { margin: 0 0 16px; font-size: 16px; }
+.gox-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ─────────────────────────────────────────────────
+   Switch / Tag
+   ───────────────────────────────────────────────── */
+.gox-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background .18s ease;
+  vertical-align: middle;
+}
+.gox-switch.is-on { background: var(--gox-green); }
+.gox-switch.is-disabled { opacity: .5; cursor: not-allowed; }
+.gox-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  transition: transform .18s ease;
+}
+.gox-switch.is-on::after { transform: translateX(18px); }
+
+.gox-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--gox-radius);
+  font-size: var(--gox-font-size-xs);
+  font-weight: 600;
+  background: #f0f0f0;
+  color: var(--gox-text-sub);
+  border: 1px solid #e0e0e0;
+}
+.gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+.gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-warning { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
+.gox-tag.is-danger  { background: #fff1f0; color: var(--gox-danger); border-color: #ffccc7; }
+
+/* 溫層快速 tag（兩專案都會用） */
+.gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+.gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+
+/* ─────────────────────────────────────────────────
+   Icon button（鉛筆 / 確認 / 取消）
+   ───────────────────────────────────────────────── */
+.gox-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gox-radius);
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  font-size: 12px;
+  font-family: inherit;
+  transition: all .15s;
+}
+.gox-icon-btn:hover {
+  background: #f0f4f8;
+  color: var(--gox-info);
+  border-color: #bcd4ea;
+}
+.gox-icon-btn.is-confirm { background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
+.gox-icon-btn.is-confirm:hover { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+.gox-icon-btn.is-cancel  { background: #fff; color: #999; border-color: #ccc; }
+.gox-icon-btn.is-cancel:hover  { background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
+
+/* ─────────────────────────────────────────────────
+   通用工具 class
+   ───────────────────────────────────────────────── */
+/* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
+.is-hidden { display: none; }
+
+</style>
+</head>
+<body>
+<div class="gox-page">
+<header class="gox-header">
+  <a href="#" class="gox-logo">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農">
+  </a>
+  <nav class="gox-breadcrumb">
+    <a href="#">訂單管理</a>
+    <span class="sep">&gt;</span>
+    <strong>後台建單（c 版）</strong>
+  </nav>
+  <div class="gox-header-right">
+    <span class="gox-user">示範帳號</span>
+    <button type="button" class="gox-icon-btn">登出</button>
+  </div>
+</header>
+
+<div class="gox-body">
+<aside class="gox-sidebar">
+  <div class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
+  <div class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
+  <a href="admin-gift-list.html" class="gox-menu-item" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">禮物券管理</span></a>
+</aside>
+
+<main class="gox-content">
+<style>
+  /* ══════════════════════════════════════════════════════════
+     後台建單 c 版 — 四區 ＋ 自動計算金額。c 版是客服回饋（E-01/E-03/E-03b/E-04/E-05）改完的版本，b 版留著對照
+     欄位來源：Areas/GoX/Views/Orders/CreatePayment.cshtml（一個沒加沒減）
+
+     跟第一版（admin-order-create-gift.html）的差異：
+       ① 六區收成四區：客戶與收件 / 商品與優惠 / 發票與備註 / 付款與狀態
+       ② 金額全部自動算：優惠券、購物金、紅利、運費門檻、貨到付款手續費都進算式
+       ③ select 有自己的樣式（箭頭＋淺底），不再跟輸入框長得一樣
+       ④ 「新增訂單」搬到金額結算區底下 —— 那裡才是最後確認的位置
+
+     ⚠️ 現行 CreatePayment.cshtml 有一塊「優待卷」（#CheckRedeemVoucherData），
+        這頁刻意不畫。那就是會員中心「我的大冰箱」的同一套 ProductTicket /
+        ProductTicketRecord，A 子項目正要把它下架（最後異動 2023-11-16，
+        至今零動靜，仍有 28 位會員共 68 張掛在外面）。畫進來等於幫它延命。
+     ══════════════════════════════════════════════════════════ */
+
+  /* 外殼的 .gox-content 有 overflow-x: auto；依 CSS 規範，一軸不是 visible 時
+     另一軸會被算成 auto，於是它變成 sticky 的捲動容器，但它自己不捲，
+     右欄就永遠 pin 不住。這頁放回 visible，讓視窗當捲動容器。 */
+  .gox-content { overflow: visible; }
+  .oc-tb-wrap { overflow-x: auto; }
+
+  .oc { max-width: 1320px; font-family: var(--gox-font-family); }
+  .oc-grid { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 16px; align-items: start; }
+  .oc-side { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+
+  .oc-card {
+    background: #fff; border: 1px solid var(--gox-card-border); border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,.04), 0 2px 6px 0 rgba(0,0,0,.03);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .oc-side .oc-card { margin-bottom: 0; }
+  .oc-card > h2 {
+    margin: 0; padding: 12px 20px; background: #008000; color: #fff;
+    font-size: 15px; font-weight: 600; letter-spacing: .5px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .oc-card > h2 .step {
+    width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.22);
+    font-size: 12px; display: flex; align-items: center; justify-content: center;
+  }
+  .oc-card > h2 .h2note { margin-left: auto; font-size: 12px; font-weight: normal; opacity: .85; }
+  .oc-body { padding: 18px 20px 20px; }
+
+  /* 一區之內再分小節（四區之後每區內容變多，需要次級標題） */
+  .oc-sub { border-top: 1px dashed #e6e6e6; margin-top: 20px; padding-top: 18px; }
+  .oc-sub:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+  .oc-sub-t {
+    font-size: 14px; font-weight: 700; color: #33553a; margin-bottom: 14px;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .oc-sub-t .hint { font-size: 12px; font-weight: normal; color: var(--gox-text-muted); }
+
+  .oc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; align-content: start; }
+  .fld { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .fld--half { grid-column: span 1; }
+  .fld-label { font-size: 13px; font-weight: 600; color: #55605a; }
+  .fld-label .req { color: var(--gox-danger); margin-right: 2px; }
+  .fld-label .note { color: var(--gox-text-muted); font-weight: normal; }
+
+  /* 彈窗掛在 .oc 外面，不把它一起選進來的話裡面的 input 會是瀏覽器預設樣式，
+     跟同一頁其他欄位長得完全不一樣。 */
+  .oc input[type="text"], .oc input[type="number"], .oc input[type="date"],
+  .oc select, .oc textarea,
+  .mk-box input[type="text"], .mk-box input[type="number"], .mk-box select {
+    width: 100%; box-sizing: border-box;
+    font-family: inherit; font-size: 14px; color: var(--gox-text);
+    background: #fff; border: 1px solid #dcdfe6; border-radius: var(--gox-radius);
+    padding: 0 10px; height: 34px; transition: border-color .15s;
+  }
+  .oc textarea { height: auto; padding: 8px 10px; line-height: 1.7; resize: vertical; }
+  .oc input:focus, .oc select:focus, .oc textarea:focus,
+  .mk-box input:focus, .mk-box select:focus { outline: none; border-color: var(--gox-green); }
+  .oc input[readonly] { background: #f5f5f5; color: var(--gox-text-muted); }
+  .oc input:disabled, .oc select:disabled, .oc textarea:disabled {
+    background: #f2f3f2; color: #a8aea9; cursor: not-allowed; border-color: #e4e7e4;
+  }
+
+  /* 被連動鎖住的欄位：不隱藏，只鎖住並寫出原因。
+     現行頁是 hide()，欄位整個消失，客服會以為系統壞了、表單高度也會跳。 */
+  .fld.is-locked > .fld-label { color: #a8aea9; }
+  .fld-why { font-size: 12px; color: var(--gox-text-muted); line-height: 1.6; }
+  .fld-req-on .req-mark { color: var(--gox-danger); font-weight: 700; }
+
+  /* select 靠右側箭頭跟輸入框區分就夠，底色維持白色
+     —— 灰底看起來像 disabled，而這頁真的有一堆被連動鎖住的欄位，兩者不能撞混 */
+  .oc select {
+    appearance: none;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%236d746e' d='M1.4 0 6 4.6 10.6 0 12 1.4 6 7.4 0 1.4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px 7px;
+    padding-right: 30px;
+    cursor: pointer;
+  }
+
+  .rad-grp { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; min-height: 34px; }
+  .rad-grp.is-stack { flex-direction: column; align-items: flex-start; gap: 7px; min-height: 0; }
+  .rad-grp label, .chk-line { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+  .rad-grp input, .chk-line input { width: 15px; height: 15px; margin: 0; accent-color: var(--gox-green); }
+  .rad-grp label.is-off { color: var(--gox-text-muted); cursor: default; }
+  .rad-grp label.is-off .why { font-size: 12px; color: var(--gox-danger); }
+
+  .oc-btn {
+    font-family: inherit; font-size: 13px; line-height: 1.5;
+    padding: 6px 14px; border-radius: var(--gox-radius);
+    border: 1px solid #dcdfe6; background: #fff; color: var(--gox-text); cursor: pointer; white-space: nowrap;
+  }
+  .oc-btn:hover { background: #f5f7fa; }
+  .oc-btn-primary { background: var(--gox-green); border-color: var(--gox-green); color: #fff; }
+  .oc-btn-primary:hover { background: var(--gox-green-hover); }
+  .oc-btn-danger { border-color: var(--gox-danger); color: var(--gox-danger); }
+  .oc-btn-danger:hover { background: #fdf2f1; }
+  .oc-btn:disabled { opacity: .4; cursor: default; }
+  .oc-btn:disabled:hover { background: #fff; }
+  /* 主要按鈕停用時不要用 opacity 淡化 —— 半透明的綠看起來像壞掉或載入中。
+     改成實心灰，一眼讀得出是「現在不能按」。 */
+  .oc-btn-primary:disabled {
+    opacity: 1; background: #c9cec9; border-color: #c9cec9; color: #fff;
+  }
+  .oc-btn-primary:disabled:hover { background: #c9cec9; }
+
+  .inline-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .inline-row input { width: auto; flex: 1; min-width: 0; }
+  /* select 預設吃滿整行寬（.fld select 是 width:100%），放進 inline-row 會被擠成上下兩排 */
+  .inline-row select { width: auto; flex: 1; min-width: 0; }
+
+  .ro { color: var(--gox-text-muted); font-size: 13px; }
+  .oc-noresult { color: var(--gox-danger); font-size: 13px; display: none; }
+  .oc-noresult.is-on { display: inline; }
+  .oc-found { color: var(--gox-green-hover); font-size: 13px; font-weight: 600; display: none; }
+  /* 多帳號提示：是提醒不是錯誤，用警示黃不用紅 —— 紅色會讓客服以為查詢失敗 */
+  .vol-multi { display: block; font-size: 12px; color: #946b00; margin-top: 4px; line-height: 1.6; }
+
+  /* 同步建新會員：提示與完成狀態 */
+  .nm-hint { font-size: 13px; line-height: 1.6; }
+  .nm-hint.is-warn { color: var(--gox-danger); }
+  .nm-hint.is-ok { color: var(--gox-text-muted); }
+  .nm-hint .lnk { color: var(--gox-green-hover); font-weight: 600; cursor: pointer; text-decoration: underline; }
+  .nm-done { display: block; font-size: 13px; font-weight: 600; color: var(--gox-green-hover); }
+  .nm-sub { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
+
+  /* 選「非會員」時，會員手機欄鎖起來而不是消失 */
+  .fld.is-locked { opacity: .55; }
+  .fld.is-locked input, .fld.is-locked button { pointer-events: none; background: #f5f5f5; }
+
+  /* 配送判定：跟在「配達時段」標籤後面的一顆小標籤。
+     四種結果各一個顏色，都用細框＋淡底，不做實心色塊 —— 它是狀態不是按鈕。 */
+  .zone-tag {
+    display: inline-block; margin-left: 8px; padding: 0 8px;
+    border: 1px solid currentColor; border-radius: 9999px;
+    font-size: 12px; font-weight: 600; line-height: 20px; vertical-align: middle;
+  }
+  .zone-tag.is-sameday  { color: var(--gox-green); }
+  .zone-tag.is-newregion{ color: #946b00; }
+  .zone-tag.is-home     { color: var(--gox-text-muted); }
+  .zone-tag.is-island   { color: var(--gox-danger); }
+  .fld-ro { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
+
+  /* 複製訂單彈窗：沿用本頁「全家選店」那顆彈窗的骨架（.mk-*），
+     表格沿用本頁購物車的 .oc-tb，不要另外長一套樣式。 */
+  /* 匯入文字檔：彈窗裡的欄位間距與按鈕列 */
+  .mk-box textarea {
+    width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px;
+    color: var(--gox-text); background: #fff; border: 1px solid #dcdfe6;
+    border-radius: var(--gox-radius); padding: 8px 10px; line-height: 1.7; resize: vertical;
+  }
+  .mk-box textarea:focus { outline: none; border-color: var(--gox-green); }
+  .mk-box .fld { margin-bottom: 16px; }
+  .mk-box .fld-label { display: block; font-size: 13px; color: var(--gox-text-sub); margin-bottom: 6px; }
+  /* 檔案選擇：原生 input 藏起來，label 借用 .oc-btn 的樣子 */
+  .im-file { display: flex; align-items: center; gap: 12px; }
+  .im-file input[type="file"] {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .im-file label { cursor: pointer; }
+  /* 鍵盤 focus 到隱藏的 input 時，要讓對應的 label 看得出來被選中 */
+  .im-file input[type="file"]:focus + label { border-color: var(--gox-green); }
+  .im-file-name { font-size: 13px; color: var(--gox-text-muted); }
+  .im-file-name.is-set { color: var(--gox-text); }
+  .im-act { margin-bottom: 16px; }
+  .im-miss { font-size: 12px; color: var(--gox-danger); }
+
+  .co-find { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+  .co-find input { flex: 1; min-width: 0; }
+  /* 彈窗底部：兩顆按鈕靠右、各自照內容寬，不要一人一半把「取消」撐成一大塊白色。
+     主按鈕停用時給實心灰，不用 opacity —— 淡掉的綠色看起來像壞掉，灰色才讀得出是停用。 */
+  #co-modal .mk-foot, #im-modal .mk-foot { justify-content: flex-end; }
+  #co-modal .mk-foot button, #im-modal .mk-foot button { flex: 0 0 auto; padding: 8px 20px; font-size: 14px; }
+  .co-meta {
+    background: #f7fbf4; border: 1px solid var(--gox-card-border); border-radius: 6px;
+    padding: 12px 14px; font-size: 13px; color: var(--gox-text-sub);
+    line-height: 1.8; margin: 0 0 16px;
+  }
+  .co-meta b { color: var(--gox-text); }
+  .co-tb input[type="number"] { width: 72px; }
+  /* 加不進來的品項：劃掉並寫原因，不是藏起來。
+     客服那張單有 6 個品項、彈窗只列 4 個，他會以為系統查錯單。 */
+  .co-tb tr.is-off td { color: var(--gox-text-muted); }
+  .co-tb tr.is-off .co-name { text-decoration: line-through; }
+  .co-why { font-size: 12px; color: var(--gox-danger); }
+  .co-ok { font-size: 12px; color: var(--gox-text-muted); }
+
+  /* 會員帶出的唯讀資料 */
+  .oc-carry {
+    grid-column: 1 / -1;
+    border: 1px solid #e2e8e0; border-radius: 6px; background: #f7faf6; overflow: hidden;
+  }
+  .oc-carry > summary {
+    list-style: none; cursor: pointer; padding: 10px 14px;
+    font-size: 13px; font-weight: 600; color: #3f6b34;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .oc-carry > summary::-webkit-details-marker { display: none; }
+  .oc-carry > summary::before { content: '▸'; transition: transform .15s; display: inline-block; font-size: 11px; }
+  .oc-carry[open] > summary::before { transform: rotate(90deg); }
+  .oc-carry > summary .cnt { margin-left: auto; font-weight: normal; color: var(--gox-text-muted); }
+  .oc-carry-body { padding: 0 14px 14px; }
+  .carry-dl { display: grid; grid-template-columns: 96px 1fr; gap: 8px 14px; margin: 0; font-size: 13px; }
+  .carry-dl dt { color: var(--gox-text-muted); }
+  .carry-dl dd { margin: 0; color: var(--gox-text); line-height: 1.6; }
+
+  /* 表格 */
+  .oc-tb { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .oc-tb th, .oc-tb td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
+  .oc-tb th { background: var(--gox-header-bg); font-weight: 600; color: #33553a; }
+  .oc-tb td.num, .oc-tb th.num { text-align: right; }
+  .oc-tb .spec { color: var(--gox-text-muted); font-size: 12px; margin-top: 2px; }
+  .oc-tb tr.is-gift td { background: #f7fbf4; }
+  .cart-gift-tag {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    color: #2f6b26; background: #e5f1da; border-radius: 3px; padding: 1px 7px; margin-right: 6px;
+  }
+  .cart-lock { color: var(--gox-text-muted); font-size: 12px; }
+
+  /* 禮物券卡片 */
+  .gvu-empty { color: var(--gox-text-muted); font-size: 13px; line-height: 1.8; }
+  .gvu-list { display: flex; flex-direction: column; gap: 8px; }
+  .gvu-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
+    padding: 11px 13px; background: #fff;
+  }
+  .gvu-item.is-added { border-color: #a9ce8a; background: #f7fbf4; }
+  .gvu-item.is-dead { background: #fafafa; }
+  .gvu-main { min-width: 0; flex: 1; }
+  .gvu-vtype { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .gvu-item.is-dead .gvu-vtype { color: #999; }
+  .gvu-name { font-size: 13px; color: var(--gox-text-sub); margin-top: 2px; }
+  .gvu-meta { font-size: 12px; color: var(--gox-text-muted); margin-top: 3px; line-height: 1.7; }
+  .gvu-meta .is-soon { color: var(--gox-danger); }
+  .gvu-tag { font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 7px; }
+  .gvu-tag.is-sub { color: #2f6b26; background: #e5f1da; }
+  .gvu-tag.is-oos { color: #7a7a7a; background: #ececec; }
+  .gvu-ops { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .gvu-blocked { font-size: 12px; color: var(--gox-danger); line-height: 1.5; max-width: 190px; text-align: right; }
+  .gvu-added-hint { font-size: 12px; color: #2f6b26; }
+
+  /* 折扣碼／購物金／紅利：三個都是短欄位，排一行 */
+  .row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 20px; }
+  .row3 > .fld { grid-column: auto; }
+
+  /* ── 商品：打字搜尋（現行是 jQuery UI autocomplete）── */
+  .prod-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .prod-row .ac { position: relative; flex: 2; min-width: 0; }
+  .prod-row .prod-qty { flex: 0 0 64px; text-align: center; }
+  .prod-row .prod-price { flex: 0 0 88px; text-align: right; font-size: 13px; color: var(--gox-text-muted); font-variant-numeric: tabular-nums; }
+  .ac-list {
+    position: absolute; z-index: 30; left: 0; right: 0; top: 36px;
+    background: #fff; border: 1px solid #d3dad2; border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12); max-height: 220px; overflow-y: auto; display: none;
+  }
+  .ac-list.is-open { display: block; }
+  .ac-item { padding: 8px 12px; font-size: 13px; cursor: pointer; line-height: 1.5; }
+  .ac-item:hover, .ac-item.is-on { background: #f3faf1; }
+  .ac-item b { color: var(--gox-text); }
+  .ac-item .code { color: var(--gox-text-muted); font-size: 12px; }
+  .ac-empty { padding: 10px 12px; font-size: 13px; color: var(--gox-text-muted); }
+
+  /* ── 假彈窗（全家選店）── */
+  .mk-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center; z-index: 10002;
+  }
+  .mk-mask.is-open { display: flex; }
+  .mk-box {
+    background: #fff; border-radius: 8px; width: 92%; max-width: 520px;
+    max-height: 82vh; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,.24);
+  }
+  .mk-head {
+    background: #008000; color: #fff; padding: 12px 18px;
+    font-size: 15px; font-weight: 600; display: flex; align-items: center;
+  }
+  .mk-head button { margin-left: auto; background: none; border: 0; color: #fff; font-size: 20px; cursor: pointer; line-height: 1; }
+  .mk-body { padding: 16px 18px; overflow-y: auto; }
+  .mk-warn {
+    background: #fdf6e3; color: #7a5a00; border-radius: 6px;
+    padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.8; margin: 0 0 14px;
+  }
+  .mk-store {
+    display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left;
+    border: 1px solid var(--gox-card-border); border-radius: 6px;
+    background: #fff; padding: 11px 13px; margin-bottom: 8px; cursor: pointer; font-family: inherit;
+  }
+  .mk-store:hover { border-color: var(--gox-green); background: #f7fbf4; }
+  .mk-store .no { font-size: 12px; color: var(--gox-text-muted); flex: 0 0 56px; }
+  .mk-store .nm { font-size: 14px; font-weight: 600; }
+  .mk-store .ad { font-size: 12px; color: var(--gox-text-muted); margin-top: 2px; }
+  .mk-foot { padding: 0 18px 18px; display: flex; gap: 8px; }
+  .mk-foot button { flex: 1; }
+  .mk-note { margin: 0; padding: 0 18px 16px; font-size: 12px; color: var(--gox-text-muted); line-height: 1.7; }
+
+  /* ── 右欄：金額結算（含送出）── */
+  .amt-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 0; font-size: 14px; color: var(--gox-text-sub);
+  }
+  .amt-row.is-off { opacity: .45; }
+  .amt-row .v { color: var(--gox-text); font-variant-numeric: tabular-nums; }
+  .amt-row .v.is-minus { color: var(--gox-success); }
+  .amt-row .v.is-plus { color: var(--gox-danger); }
+  .amt-row .sub { display: block; font-size: 11px; color: var(--gox-text-muted); }
+  .amt-hr { margin: 10px 0; border: 0; border-top: 1px solid #eee; }
+  .amt-total { display: flex; justify-content: space-between; align-items: baseline; }
+  .amt-total .lbl { font-size: 15px; font-weight: 600; }
+  .amt-total .v { font-size: 26px; font-weight: 700; color: #008000; font-variant-numeric: tabular-nums; }
+  /* 「修改總計」一行放得下就不要斷行：label 不收縮、輸入框吃剩下的寬 */
+  .amt-custom {
+    margin-top: 14px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--gox-text-sub); flex-wrap: nowrap;
+  }
+  .amt-custom label { flex: none; white-space: nowrap; }
+  .amt-custom input { flex: 1; min-width: 0; text-align: right; }
+  .amt-warn { margin: 8px 0 0; font-size: 12px; color: var(--gox-danger); line-height: 1.6; display: none; }
+  .amt-warn.is-on { display: block; }
+
+  .oc-submit {
+    width: 100%; margin-top: 16px;
+    font-family: inherit; font-size: 16px; font-weight: 600;
+    padding: 12px; border-radius: var(--gox-radius);
+    background: var(--gox-green); border: 1px solid var(--gox-green); color: #fff; cursor: pointer;
+  }
+  .oc-submit:hover { background: var(--gox-green-hover); }
+  .oc-submit-hint { margin: 10px 0 0; font-size: 12px; color: var(--gox-text-muted); line-height: 1.7; text-align: center; }
+
+  @media (max-width: 1180px) {
+    .oc-grid { grid-template-columns: 1fr; }
+    .oc-side { position: static; max-height: none; }
+  }
+  @media (max-width: 720px) {
+    .oc-fields { grid-template-columns: 1fr; }
+    .fld--half { grid-column: 1 / -1; }
+  }
+
+  /* 開發者面板（只在 demo 用，正式頁面不會有）。放左下角 */
+  #devbar { position: fixed; left: 16px; bottom: 16px; z-index: 10001; font-family: var(--gox-font-family); }
+  #devbar .toggle {
+    background: #1a1a1a; color: #fff; border: 0; border-radius: 999px;
+    font-size: 14px; padding: 10px 18px; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25); font-family: inherit;
+  }
+  #devbar .box {
+    display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 300px; margin-bottom: 8px;
+    /* 面板長高過螢幕會頂到天花板，內容多的時候讓它自己捲 */
+    max-height: calc(100vh - 96px); overflow-y: auto;
+  }
+  /* chip 版：一列排得下好幾顆，比一顆一行的清單矮很多。
+     每顆只留標籤，說明放註解不放畫面。 */
+  #devbar .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  #devbar .chips button {
+    border: 1px solid #d5d9de; border-radius: 12px; background: #fff;
+    padding: 4px 8px; cursor: pointer; font-family: inherit; font-size: 12px; color: #1a1a1a;
+  }
+  #devbar .chips button:hover { border-color: #1a1a1a; }
+  #devbar .chips button.is-on { border-color: #4ba83b; color: #4ba83b; font-weight: 600; }
+  #devbar.is-open .box { display: block; }
+  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
+  #devbar .grp-t { font-size: 12px; font-weight: 600; color: #55606e; margin: 12px 0 6px; }
+  #devbar .grp-t:first-of-type { margin-top: 0; }
+  #devbar .pid-list { display: flex; flex-direction: column; gap: 6px; }
+  #devbar .pid-list button {
+    text-align: left; border: 1px solid #d5d9de; border-radius: 6px; background: #fff;
+    padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 13px; color: #1a1a1a;
+  }
+  #devbar .pid-list button:hover { border-color: #1a1a1a; }
+  #devbar .pid-list button.is-on { border-color: #4ba83b; color: #4ba83b; }
+  #devbar .pid-list button.is-on { border-color: var(--gox-green); background: #f3faf1; }
+  #devbar .pid-list span { display: block; font-size: 12px; color: #8a939e; margin-top: 2px; }
+</style>
+
+<div class="oc">
+<div class="oc-grid">
+<div class="oc-main">
+
+  <!-- ══════ 1 客戶與收件 ══════ -->
+  <section class="oc-card">
+    <h2><span class="step">1</span>客戶與收件<span class="h2note">先查到人，優惠才有東西可帶</span></h2>
+    <div class="oc-body">
+
+      <div class="oc-sub">
+        <div class="oc-sub-t">訂購人</div>
+        <div class="oc-fields">
+          <!-- ⚠️ 給施工的工程師：這裡從現行的兩選項改成三選項。
+               現行 CreatePayment.cshtml:162-163 只有「會員／非會員」，而「我要加入會員」
+               是躺在最下面付款區的一個勾選框（:647-648），且只在送出時才 InsertByAdmin
+               （Areas/GoX/Controllers/OrdersController.cs:5742）。
+               那個順序造成首購限定商品永遠加不進來：Cart.cs:2874 的 CheckFirstBuyConstraint
+               看到 userId <= 0 就 return false，而購物車是在建會員之前就組好的。
+               所以第三個選項要真的「先建會員拿到 Id、再下單」，不是換個位置的旗標。 -->
+          <div class="fld fld--half">
+            <span class="fld-label"><span class="req">*</span>是否為會員</span>
+            <div class="rad-grp">
+              <label><input type="radio" name="IsMember" value="1" checked><span>會員</span></label>
+              <label><input type="radio" name="IsMember" value="0"><span>非會員</span></label>
+              <label><input type="radio" name="IsMember" value="2"><span>同步建新會員</span></label>
+            </div>
+          </div>
+          <!-- 三種身分共用這一欄，不要為了「同步建新會員」另開一個手機欄。
+               差別只在按鈕：會員 ⇒「查詢」，同步建新會員 ⇒「建立會員」。
+               選「非會員」時這一欄鎖起來、不消失 —— 欄位整個抽掉會讓表單在切換身分時上下跳動，
+               客服會找不到剛剛在看的位置。 -->
+          <div class="fld fld--half" id="blk-mobile">
+            <label class="fld-label" for="vol-mobile"><span class="req">*</span><span id="mb-label">會員手機</span></label>
+            <div class="inline-row">
+              <input type="text" id="vol-mobile" placeholder="請輸入會員手機">
+              <button type="button" class="oc-btn" id="vol-search" hidden>查詢</button>
+            </div>
+            <span class="oc-noresult" id="vol-noresult">查無此會員!!</span>
+            <span class="oc-found" id="vol-found"></span>
+            <span class="vol-multi" id="vol-multi" hidden></span>
+            <!-- 以下三行只在「同步建新會員」時用到 -->
+            <span class="nm-hint" id="nm-hint"></span>
+            <span class="nm-done" id="nm-done" hidden></span>
+            <span class="nm-sub" id="nm-sub" hidden>將以此訂單資訊帶入會員資料</span>
+          </div>
+
+          <div class="fld fld--half">
+            <label class="fld-label" for="buyer-name"><span class="req">*</span>聯絡人姓名</label>
+            <input type="text" id="buyer-name">
+          </div>
+          <div class="fld fld--half">
+            <label class="fld-label" for="buyer-mobile"><span class="req">*</span>聯絡人手機</label>
+            <input type="text" id="buyer-mobile">
+          </div>
+          <div class="fld fld--half">
+            <label class="fld-label" for="buyer-email">電子信箱</label>
+            <input type="text" id="buyer-email">
+          </div>
+          <div class="fld fld--half">
+            <label class="fld-label" for="buyer-line">Line 資訊</label>
+            <input type="text" id="buyer-line">
+          </div>
+
+          <details class="oc-carry" id="carry">
+            <summary>這位客人的既有設定<span class="cnt" id="carry-cnt">查詢後帶出</span></summary>
+            <div class="oc-carry-body">
+              <dl class="carry-dl">
+                <dt>預設配達時段</dt><dd id="ro-rcv">—</dd>
+                <dt>倉庫備註</dt><dd id="ro-warehouse">—</dd>
+                <dt>出貨備註</dt><dd id="ro-shipremark">—</dd>
+                <dt>特殊紀錄</dt><dd id="ro-internal">—</dd>
+              </dl>
+            </div>
+          </details>
+
+          <div class="fld">
+            <label class="chk-line"><input type="checkbox"><span>我要送禮，請幫讓收件人知道誰贈送（不顯示金額）</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="oc-sub">
+        <div class="oc-sub-t">收件人與配送</div>
+        <div class="oc-fields">
+          <div class="fld">
+            <label class="chk-line"><input type="checkbox" id="copy-buyer"><span>同訂購人資訊</span></label>
+          </div>
+          <div class="fld fld--half">
+            <label class="fld-label" for="rcv-name"><span class="req">*</span>收件人姓名</label>
+            <input type="text" id="rcv-name">
+          </div>
+          <div class="fld fld--half">
+            <label class="fld-label" for="rcv-mobile"><span class="req">*</span>收件人手機</label>
+            <input type="text" id="rcv-mobile">
+          </div>
+          <!-- 現行 CreatePayment.cshtml 的地址是「縣市下拉 ＋ 鄉鎮下拉 ＋ 詳細地址」三段
+               （JS 裡的 #cityname / #areaname / #addr）。前一版 demo 併成一欄，這一版拆回來，
+               因為配送判定那一支 API 收的就是 county + district。 -->
+          <div class="fld fld--half">
+            <span class="fld-label"><span class="req">*</span>收件縣市／鄉鎮</span>
+            <div class="inline-row">
+              <select id="rcv-city"><option value="">請選擇</option></select>
+              <select id="rcv-area"><option value="">請選擇</option></select>
+            </div>
+          </div>
+          <div class="fld fld--half">
+            <label class="fld-label" for="rcv-addr"><span class="req">*</span>收件地址</label>
+            <input type="text" id="rcv-addr">
+          </div>
+          <div class="fld fld--half">
+            <!-- ⚠️ 標籤後面那顆是唯讀判定，不是選項。走雙北宅配還是宅急便由「收件地區」決定，
+                 客服只需要看到答案。接現成的 GET /Orders/CheckSameDay?county=&district=
+                 （Controllers/OrdersController.cs:6181），回傳 IsSameDay / ZoneType
+                 （SameDay 親送區 or NewRegion 非親送區）/ LastArrivalTime；
+                 離島另外走 OutlyingIslandHelper.IsAddressInOutlyingIsland（整縣：連江/金門/澎湖）。
+                 判定會隨兩個開關（EnableSameday、EnableNewRegionDelivery）與該區的星期限制變動，
+                 而且 ShippingService.cs:196-198 在 14 點後是用「隔天」的星期算，
+                 所以 title 帶「依目前設定」，標籤本身只寫結果。 -->
+            <span class="fld-label"><span class="req">*</span>配達時段<span class="zone-tag" id="zone-tag" hidden></span></span>
+            <div class="rad-grp is-stack">
+              <label><input type="radio" name="ReceiveTime" value="4" checked><span>不指定</span></label>
+              <label><input type="radio" name="ReceiveTime" value="1"><span>上午配送：13 時前</span></label>
+              <label><input type="radio" name="ReceiveTime" value="2"><span>下午配送：14 時~18 時</span></label>
+            </div>
+            <!-- 值 5（親送配）不做成選項：它是地址判定出來的，不是客服選的。
+                 前台的做法也是藏起來（Views/Orders/FillOrderInfo.cshtml:752-754）。
+                 舊版這裡寫「當日配：16–19 時」，那是沒跟著 enum 改的舊文案，
+                 而且近 12 個月值 5 的訂單 10,014 筆全部來自前台、後台建單 0 筆。 -->
+            <span class="fld-ro" id="rcv-locked" hidden></span>
+          </div>
+          <div class="fld fld--half">
+            <span class="fld-label">單品到貨時間</span>
+            <div class="rad-grp is-stack">
+              <label><input type="radio" name="ShipTime" checked><span>不選擇</span></label>
+              <label><input type="radio" name="ShipTime"><span>A 不指定（最快到貨）</span></label>
+              <label><input type="radio" name="ShipTime"><span>B 僅平日可收貨（一至五）</span></label>
+              <label><input type="radio" name="ShipTime"><span>C 僅周六可收貨</span></label>
+            </div>
+          </div>
+          <div class="fld fld--half" id="f-delivery-type">
+            <label class="fld-label" for="delivery-type"><span class="req">*</span>物流方式</label>
+            <select id="delivery-type"><option>黑貓</option><option>全家</option></select>
+            <span class="fld-why"></span>
+          </div>
+          <div class="fld fld--half" id="f-store-name">
+            <label class="fld-label" for="store-name">店鋪名稱</label>
+            <input type="text" id="store-name" readonly>
+            <span class="fld-why"></span>
+          </div>
+          <div class="fld fld--half" id="f-custom-date">
+            <label class="fld-label" for="custom-date">自訂出貨日 <span class="note">（不指定就抓產品的出貨日）</span></label>
+            <input type="date" id="custom-date">
+            <span class="fld-why"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════ 2 商品與優惠 ══════ -->
+  <section class="oc-card">
+    <h2><span class="step">2</span>商品與優惠<span class="h2note">動這一區，右邊金額即時重算</span></h2>
+    <div class="oc-body">
+
+      <div class="oc-sub">
+        <div class="oc-sub-t">商品</div>
+        <div class="oc-fields">
+          <!-- ⚠️ 給施工的工程師：商品名稱是「打字搜尋」，不是純文字輸入。
+               現行用 jQuery UI autocomplete（CreatePayment.cshtml:748 initialProductDataList）：
+                 · 來源 productsStr，每筆 label 為「產品 ID-規格 ID-名稱」
+                 · select 時 split('-') 取兩個 ID，打 GetProductObject 取回單價
+                 · 再把 addToCart(pid, pdid) 綁到「加入」按鈕上
+               「＋ 再加一項」對應現行的 Add_Product()（可加多列，name 為 item2[n]）。
+               這兩件都不要因為 demo 看起來簡單就拿掉。 -->
+          <div class="fld">
+            <div id="prod-rows"></div>
+            <div class="inline-row" style="margin-top:2px">
+              <button type="button" class="oc-btn" id="prod-add-row">＋ 再加一項</button>
+              <button type="button" class="oc-btn oc-btn-primary" id="prod-to-cart">加入購物車</button>
+              <button type="button" class="oc-btn" id="import-text">匯入文字檔</button>
+              <button type="button" class="oc-btn" id="copy-order">複製訂單</button>
+              <button type="button" class="oc-btn oc-btn-danger" id="cart-clear">清空購物車</button>
+            </div>
+          </div>
+          <div class="fld">
+            <div class="oc-tb-wrap">
+            <table class="oc-tb">
+              <thead>
+                <tr>
+                  <th>品名</th><th style="width:14%">產線</th>
+                  <th class="num" style="width:10%">單價</th>
+                  <th class="num" style="width:10%">數量</th>
+                  <th class="num" style="width:12%">小計</th>
+                  <th class="num" style="width:10%">操作</th>
+                </tr>
+              </thead>
+              <tbody id="cart-body"></tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="oc-sub">
+        <div class="oc-sub-t">優惠</div>
+        <div class="oc-fields">
+          <div class="row3">
+            <div class="fld">
+              <label class="fld-label" for="promo">折扣碼</label>
+              <div class="inline-row">
+                <input type="text" id="promo">
+                <button type="button" class="oc-btn">檢查</button>
+              </div>
+            </div>
+            <div class="fld" id="f-use-bonus">
+              <label class="fld-label" for="use-bonus">購物金 <span class="note">剩餘 $<span id="bonus-max">0</span></span></label>
+              <input type="number" id="use-bonus" placeholder="0" min="0">
+              <span class="fld-why"></span>
+            </div>
+            <div class="fld" id="f-use-rp">
+              <label class="fld-label" for="use-rp">紅利點數 <span class="note">剩餘 $<span id="rp-max">0</span></span></label>
+              <input type="number" id="use-rp" placeholder="0" min="0">
+              <span class="fld-why"></span>
+            </div>
+          </div>
+
+          <div class="fld">
+            <span class="fld-label">優惠券 <span class="note">一張訂單只能用一張</span></span>
+            <div id="coupon-area"><span class="ro">先查詢會員，才會列出他的優惠券。</span></div>
+          </div>
+
+          <div class="fld">
+            <span class="fld-label">禮物券 <span class="note">可以用多張，受限購規則約束</span></span>
+            <div id="gvu-area"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════ 3 發票與備註 ══════ -->
+  <section class="oc-card">
+    <h2><span class="step">3</span>發票與備註</h2>
+    <div class="oc-body">
+
+      <div class="oc-sub">
+        <div class="oc-sub-t">發票</div>
+        <div class="oc-fields">
+          <div class="fld fld--half">
+            <label class="fld-label" for="inv-type">發票類型</label>
+            <select id="inv-type"><option>二聯式</option><option>三聯式</option><option>捐贈發票</option></select>
+          </div>
+          <div class="fld fld--half">
+            <label class="fld-label" for="carrier-type">載具類型</label>
+            <select id="carrier-type"><option>無載具</option><option>自然人載具</option><option>手機載具</option></select>
+          </div>
+          <div class="fld fld--half" id="f-carrier-no">
+            <label class="fld-label" for="carrier-no">載具號碼</label>
+            <input type="text" id="carrier-no">
+            <span class="fld-why"></span>
+          </div>
+          <div class="fld fld--half" id="f-tax-id">
+            <label class="fld-label" for="tax-id"><span class="req-mark"></span>統一編號 <span class="note">（8 碼）</span></label>
+            <input type="text" id="tax-id" maxlength="8">
+            <span class="fld-why"></span>
+          </div>
+          <div class="fld fld--half" id="f-comp-name">
+            <label class="fld-label" for="comp-name"><span class="req-mark"></span>公司抬頭</label>
+            <input type="text" id="comp-name">
+            <span class="fld-why"></span>
+          </div>
+          <div class="fld fld--half" id="f-comp-email">
+            <label class="fld-label" for="comp-email"><span class="req-mark"></span>發票寄送 Email</label>
+            <input type="text" id="comp-email">
+            <span class="fld-why"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="oc-sub">
+        <div class="oc-sub-t">備註<span class="hint">三個備註給不同人看，別填錯</span></div>
+        <div class="oc-fields">
+          <div class="fld">
+            <label class="fld-label" for="rm-ship">出貨單備註 <span class="note">客人看得到</span></label>
+            <textarea id="rm-ship" rows="2" placeholder="出貨單上的備註，例：管理員可代收，假日不在家。"></textarea>
+          </div>
+          <div class="fld">
+            <label class="fld-label" for="rm-wh">倉庫備註 <span class="note">揀貨單會顯示</span></label>
+            <textarea id="rm-wh" rows="2" placeholder="可用來紀錄給倉庫的訊息"></textarea>
+          </div>
+          <div class="fld">
+            <label class="fld-label" for="rm-cs">客服備註 <span class="note">只有後台看得到</span></label>
+            <textarea id="rm-cs" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════ 4 付款與狀態 ══════ -->
+  <section class="oc-card">
+    <h2><span class="step">4</span>付款與狀態<span class="h2note">選貨到付款會加 30 元手續費</span></h2>
+    <div class="oc-body">
+      <div class="oc-fields">
+        <div class="fld">
+          <span class="fld-label"><span class="req">*</span>付款方式</span>
+          <div class="rad-grp">
+            <label><input type="radio" name="PaymentType" value="ATM轉帳" checked><span>ATM轉帳</span></label>
+            <label><input type="radio" name="PaymentType" value="信用卡"><span>信用卡</span></label>
+            <label><input type="radio" name="PaymentType" value="貨到付款"><span>貨到付款</span></label>
+            <label><input type="radio" name="PaymentType" value="其他"><span>其他</span></label>
+            <label><input type="radio" name="PaymentType" value="無"><span>無</span></label>
+          </div>
+        </div>
+        <div class="fld fld--half">
+          <span class="fld-label"><span class="req">*</span>是否付款</span>
+          <div class="rad-grp">
+            <label><input type="radio" name="isPay" checked><span style="color:var(--gox-danger)">否</span></label>
+            <label><input type="radio" name="isPay"><span style="color:var(--gox-green-hover)">是</span></label>
+          </div>
+        </div>
+        <div class="fld fld--half">
+          <label class="fld-label" for="order-status"><span class="req">*</span>訂單狀態</label>
+          <select id="order-status">
+            <option>處理中</option><option>備貨中</option><option>待出貨</option>
+            <option>已出貨</option><option>已送達</option>
+          </select>
+        </div>
+        <!-- 舊版這裡還有一個「我要加入會員（帳號、密碼為手機）」勾選框，
+             已經搬到 §1 變成「同步建立會員」那個選項，這裡不再重複。 -->
+        <div class="fld">
+          <label class="chk-line"><input type="checkbox" id="send-sms" checked><span>發送簡訊通知客人</span></label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ══════ 右欄：金額結算（最後確認的位置）══════ -->
+<aside class="oc-side">
+  <section class="oc-card">
+    <h2>金額結算</h2>
+    <div class="oc-body">
+      <div class="amt-row"><span>商品小計</span><span class="v" id="amt-sub">0</span></div>
+      <div class="amt-row" id="row-act"><span>活動折扣</span><span class="v is-minus" id="amt-act">0</span></div>
+      <div class="amt-row" id="row-coupon"><span>優惠券</span><span class="v is-minus" id="amt-coupon">0</span></div>
+      <div class="amt-row" id="row-gift"><span>禮物券</span><span class="v" id="amt-gift">未使用</span></div>
+      <div class="amt-row" id="row-bonus"><span>購物金</span><span class="v is-minus" id="amt-bonus">0</span></div>
+      <div class="amt-row" id="row-rp"><span>紅利點數</span><span class="v is-minus" id="amt-rp">0</span></div>
+      <div class="amt-row" id="row-freight">
+        <span>運費<span class="sub" id="freight-note"></span></span>
+        <span class="v is-plus" id="amt-freight">0</span>
+      </div>
+      <div class="amt-row is-off" id="row-cod"><span>貨到付款手續費</span><span class="v is-plus" id="amt-cod">0</span></div>
+      <hr class="amt-hr">
+      <div class="amt-total"><span class="lbl">應付總額</span><span class="v"><span id="amt-total">0</span> 元</span></div>
+      <p class="amt-warn" id="amt-warn"></p>
+      <div class="amt-custom">
+        <label for="amt-fix">修改總計</label>
+        <input type="number" id="amt-fix" placeholder="不改可留空">
+      </div>
+      <button type="button" class="oc-submit">新增訂單</button>
+      <p class="oc-submit-hint" id="foot-hint"></p>
+    </div>
+  </section>
+</aside>
+
+</div>
+</div>
+</main>
+</div>
+</div>
+
+<!-- 匯入文字檔
+     ⚠️ 這是現行就有的功能（CreatePayment.cshtml:405 按鈕、:659 彈窗），前一版 demo 只放了按鈕沒接東西。
+        現行結構：貼上文字（或上傳 .txt/.csv）⇒「解析商品」⇒ 勾選結果表 ⇒「批次加入購物車」。
+        結果表的欄位照現行：全選 / 客人訂購商品 / 數量 / 規格選擇 / 加入。
+        「規格選擇」存在的理由：文字檔只有商品名，比對到同一個商品的多個規格時要客服自己挑。 -->
+<div class="mk-mask" id="im-modal">
+  <div class="mk-box" style="max-width:760px">
+    <div class="mk-head">匯入文字檔<button type="button" id="im-x">&times;</button></div>
+    <div class="mk-body">
+      <div class="fld">
+        <label class="fld-label" for="im-text">貼上文字（每行一筆，商品名與數量之間用空白分隔，數量用阿拉伯數字）</label>
+        <textarea id="im-text" rows="5" placeholder="白蘿蔔 2&#10;有機蔬菜箱 1&#10;鮮乳坊豐樂鮮乳 3"></textarea>
+      </div>
+      <!-- 原生的 <input type="file"> 在每個瀏覽器長得都不一樣，也吃不到這一頁的按鈕樣式。
+           作法是把它藏起來、用 label 當觸發器，這樣按鈕就能沿用 .oc-btn。 -->
+      <div class="fld">
+        <span class="fld-label">或上傳文字檔（.txt / .csv）</span>
+        <div class="im-file">
+          <input type="file" id="im-file" accept=".txt,.csv">
+          <label class="oc-btn" for="im-file">選擇檔案</label>
+          <span class="im-file-name" id="im-file-name">尚未選擇檔案</span>
+        </div>
+      </div>
+      <div class="im-act">
+        <button type="button" class="oc-btn oc-btn-primary" id="im-parse">解析商品</button>
+      </div>
+      <div id="im-result" hidden>
+        <div class="oc-tb-wrap">
+          <table class="oc-tb co-tb">
+            <thead>
+              <tr>
+                <th style="width:40px"><input type="checkbox" id="im-all"></th>
+                <th>客人訂購商品</th>
+                <th class="num" style="width:84px">數量</th>
+                <th style="width:34%">規格選擇</th>
+                <th class="num" style="width:72px">加入</th>
+              </tr>
+            </thead>
+            <tbody id="im-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="mk-foot">
+      <button type="button" class="oc-btn" id="im-close">取消</button>
+      <button type="button" class="oc-btn oc-btn-primary" id="im-add" disabled>批次加入購物車</button>
+    </div>
+  </div>
+</div>
+
+<!-- 複製訂單
+     ⚠️ 給施工的工程師：版型照現行「匯入文字檔」那個彈窗抄
+        （CreatePayment.cshtml:405 按鈕、:659 彈窗，流程是「輸入 ⇒ 解析 ⇒ 勾選結果表 ⇒ 批次加入購物車」）。
+        只複製商品品項，不複製收件人、配送、付款、備註、折扣、優惠券、禮物券
+        （那幾項每次下單都要重新確認，複製過來反而要一個一個檢查）。 -->
+<div class="mk-mask" id="co-modal">
+  <div class="mk-box" style="max-width:720px">
+    <div class="mk-head">複製訂單<button type="button" id="co-x">&times;</button></div>
+    <div class="mk-body">
+      <div class="co-find">
+        <input type="text" id="co-no" placeholder="輸入訂單編號">
+        <button type="button" class="oc-btn oc-btn-primary" id="co-find">查詢</button>
+      </div>
+      <p class="co-meta" id="co-meta" hidden></p>
+      <div id="co-result" hidden>
+        <div class="oc-tb-wrap">
+          <table class="oc-tb co-tb">
+            <thead>
+              <tr>
+                <th style="width:40px"><input type="checkbox" id="co-all"></th>
+                <th>品名</th>
+                <th style="width:22%">規格</th>
+                <th class="num" style="width:84px">數量</th>
+                <th style="width:26%">狀態</th>
+              </tr>
+            </thead>
+            <tbody id="co-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="mk-foot">
+      <button type="button" class="oc-btn" id="co-close">取消</button>
+      <button type="button" class="oc-btn oc-btn-primary" id="co-add" disabled>批次加入購物車</button>
+    </div>
+  </div>
+</div>
+
+<!-- 全家選店
+     ⚠️ 現行不是彈窗：是把整張表單 POST 到 FamiOrderDetail、暫存進 Session／bridge，
+        跳去全家的店鋪選擇頁，選完再導回 CreatePayment 還原表單（FamiMap()）。
+        這個彈窗只是 demo，用來呈現「選到店之後畫面會變成什麼樣」，
+        施工時要接的是既有的 FamiMap 流程，不是做一個彈窗。
+     警語三行的文字照抄現行 initDeliveryChangeEvent 的 confirm 內容。 -->
+<div class="mk-mask" id="fami-mask">
+  <div class="mk-box">
+    <div class="mk-head">選擇全家取貨門市<button type="button" data-fami-close aria-label="關閉">&times;</button></div>
+    <div class="mk-body">
+      <p class="mk-warn">
+        選擇全家物流將進入店鋪選擇頁<br>
+        ★ 點擊後不可新增修改訂購商品<br>
+        ★ 出貨日期無法指定
+      </p>
+      <div id="fami-list"></div>
+    </div>
+    <div class="mk-foot">
+      <button type="button" class="oc-btn" data-fami-cancel>取消，改回黑貓</button>
+    </div>
+  </div>
+</div>
+
+<div id="devbar">
+  <div class="box">
+    <h4>開發者面板</h4>
+    <div class="grp-t">查會員</div>
+    <div class="chips" id="dev-pick">
+      <button type="button" data-pick="solo">單一帳號</button>
+      <button type="button" data-pick="login">多帳號・最近登入</button>
+      <button type="button" data-pick="order">多帳號・最近下單</button>
+      <button type="button" data-pick="none">多帳號・都沒有</button>
+    </div>
+    <div class="grp-t">券況</div>
+    <div class="chips" id="dev-scenes"></div>
+    <div class="grp-t">收件地區</div>
+    <div class="chips" id="dev-zones">
+      <button type="button" data-zone="臺北市|大安區">雙北宅配</button>
+      <button type="button" data-zone="桃園市|中壢區">混溫層</button>
+      <button type="button" data-zone="新北市|瑞芳區">宅急便</button>
+      <button type="button" data-zone="澎湖縣|馬公市">離島</button>
+    </div>
+    <div class="grp-t">彈窗</div>
+    <div class="chips">
+      <button type="button" id="dev-copy">複製訂單</button>
+      <button type="button" id="dev-import">匯入文字檔</button>
+    </div>
+  </div>
+  <button type="button" class="toggle">開發者面板</button>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  // 免運門檻與運費沿用購物車 demo 的同一組（checkout-cart.html: THRESHOLD/FREIGHT）
+  var THRESHOLD = 1500, FREIGHT = 150;
+  var COD_FEE = 30;          // 貨到付款手續費，照 CreatePayment.cshtml 的 #fee
+  var COUPON = { amount: 100, minSpend: 1000 };
+
+  // ══════════════════════════════════════════════════════
+  // 會員池
+  // 這支手機底下故意放兩個帳號，因為正式庫真的長這樣：
+  // 3,557 支手機對到 2 個以上有效帳號、共 7,254 個帳號，其中 1,606 支「兩邊都有下過單」。
+  // 88% 是「官網註冊一個 ＋ FB 註冊一個」，跟這裡的假資料同型。
+  // ══════════════════════════════════════════════════════
+  var MEMBER_POOL = [
+    {
+      id: 900005, mobile: '0900000008', name: '示範會員', regType: '官網',
+      lastLogin: null, lastOrder: '2026/05/12', createTime: '2024/11/02',
+      email: 'demo@example.com', line: 'greenbox_demo',
+      city: '新北市', area: '板橋區', addr: '中山路一段 100 號',
+      rcv: '上午配送時段：13 時前', warehouse: '無',
+      shipRemark: '假日不在家，可放管理室',
+      internal: '曾反映水果碰傷，出貨請加緩衝',
+      // 發票預設值（會員在「個人資料修改」設定過的，見 member-baby-profile-b.html）
+      invType: '二聯式', carrierType: '手機載具', carrierNo: '/AB12CD3',
+      compName: '', taxId: '', compEmail: 'demo@example.com',
+      bonus: 250, rp: 80
+    },
+    {
+      id: 900311, mobile: '0900000008', name: '示範會員', regType: 'Facebook',
+      lastLogin: null, lastOrder: '2026/09/05', createTime: '2025/06/14',
+      email: 'demo.fb@example.com', line: '',
+      city: '臺北市', area: '大安區', addr: '和平東路二段 88 號 5 樓',
+      rcv: '不指定', warehouse: '無',
+      shipRemark: '', internal: '',
+      invType: '二聯式', carrierType: '手機載具', carrierNo: '/AB12CD3',
+      compName: '', taxId: '', compEmail: 'demo.fb@example.com',
+      bonus: 0, rp: 340
+    }
+  ];
+
+  // ══════════════════════════════════════════════════════
+  // 一支手機對到多個帳號時挑哪一個（2026-09-10 客服定案）
+  //   最近登入 ⇒ 最近下單 ⇒ 最早註冊
+  //
+  // ⚠️ 第一段現在是空的：Volunteers.FDLastLoginTime 整包程式碼沒有任何地方寫入，
+  //    全站只有 38 筆有值、最新一筆停在 2017-11。前台五個登入入口
+  //    （官網帳密 / 官網 AJAX / FB / App / WebAPI）一個都沒記錄登入。
+  //    所以實際生效的是第二段「最近下單」（3,557 組裡 2,888 組有訂單日期，81%）。
+  //    補寫登入時間是另一張工單，不在這次。
+  //
+  // 現行行為是 FirstOrDefault 不排序，實測 3,557 組全部回傳最小 Id（最早註冊）。
+  // 改成這個順序之後，2,414 組（68%）會挑到跟現在不同的帳號。
+  // ══════════════════════════════════════════════════════
+  function pickMember(list) {
+    return list.slice().sort(function (a, b) {
+      var la = a.lastLogin || '', lb = b.lastLogin || '';
+      if (la !== lb) return la > lb ? -1 : 1;
+      var oa = a.lastOrder || '', ob = b.lastOrder || '';
+      if (oa !== ob) return oa > ob ? -1 : 1;
+      return a.id - b.id;   // 都沒有就回到現行行為：最早註冊
+    })[0];
+  }
+
+  // 提示要講「實際用了哪一段」，不能一律寫「最近下單」。
+  // 寫死理由等於在騙客服：他照那句話去判斷，就會用錯的前提做決定。
+  function pickReason(list) {
+    var withLogin = list.filter(function (v) { return v.lastLogin; });
+    if (withLogin.length) return '最近登入';
+    var withOrder = list.filter(function (v) { return v.lastOrder; });
+    if (withOrder.length) return '最近下單';
+    return '最早註冊';
+  }
+
+  // 只有一個帳號的手機。多帳號是例外（3,557 / 267,086），常態長這樣，
+  // demo 要兩種都看得到，不然會以為每次查詢都會冒出提示。
+  MEMBER_POOL.push({
+    id: 900742, mobile: '0900000009', name: '單帳號客人', regType: '官網',
+    lastLogin: null, lastOrder: '2026/08/20', createTime: '2023/03/08',
+    email: 'solo@example.com', line: '',
+    city: '臺中市', area: '西屯區', addr: '台灣大道三段 200 號',
+    rcv: '不指定', warehouse: '無',
+    shipRemark: '', internal: '',
+    invType: '二聯式', carrierType: '無載具', carrierNo: '',
+    compName: '', taxId: '', compEmail: '',
+    bonus: 60, rp: 0
+  });
+
+  // MEMBER 是「這張單目前綁的那個帳號」，查詢之後才確定是誰
+  var MEMBER = MEMBER_POOL[0];
+
+  // 一般商品（可移除、可清空，用來驗證金額真的會重算）
+  var PRODUCTS = [
+    { id: 'p1', name: '有機蔬菜箱', spec: '中箱／每週配送', line: '蔬菜箱', price: 680, qty: 1 },
+    { id: 'p2', name: '當季水果禮盒', spec: '綜合 6 入', line: '水果', price: 520, qty: 1 }
+  ];
+  var cart = PRODUCTS.slice();
+
+  // limit：0 不限制 / 1 整台購物車僅限一張 / 2 同產線僅限一張 / 3 本產品限用一張
+  // 這裡的券要跟後台對得上：vtype 是券種名、no 是「券代碼-流水」、
+  // limit 用 CartLimitType（0 不限 / 1 本產品 / 2 同產線 / 3 整車，數字越大越嚴）、
+  // line 用真實產線名。對照表見 admin-gift-detail.html 的 DATA。
+  var SCENES = {
+    normal: [
+      { no: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
+        exp: '2026/09/20', limit: 3, line: '粥寶寶專區', state: 'ok' },
+      { no: 'MF-260801-0108', vtype: '中秋限定禮', name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
+        exp: '2026/09/15', limit: 2, line: '粥寶寶專區', state: 'ok' },
+      { no: 'OR-260701-0021', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入（替代品專用）',
+        exp: '2026/10/31', limit: 0, line: '粥寶寶專區', state: 'sub', origin: '季節果乾 隨手包' },
+      { no: 'OR-260701-0022', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
+        exp: '2026/10/31', limit: 0, line: '產地直送', state: 'oos' }
+    ],
+    empty: [],
+    alloos: [
+      { no: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
+        exp: '2026/09/20', limit: 3, line: '粥寶寶專區', state: 'oos' },
+      { no: 'OR-260701-0022', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
+        exp: '2026/10/31', limit: 0, line: '產地直送', state: 'oos' }
+    ]
+  };
+
+  // 剩餘天數從到期日算，不要另外寫一個數字（兩邊會對不上）
+  var TODAY = new Date('2026-09-07T00:00:00');
+  function daysLeft(exp) {
+    return Math.round((new Date(exp.replace(/\//g, '-') + 'T00:00:00') - TODAY) / 86400000);
+  }
+
+  var scene = 'normal', found = false, isMember = true, added = [], useCoupon = false;
+  // memberMode：1 會員 / 0 非會員 / 2 同步建立會員
+  var memberMode = 1, newMemberId = null;
+
+  // ══════════════════════════════════════════════════════
+  // 配送區域判定的假資料
+  // 現行是拿郵遞區號比對 StaticConfigHelper.SameDayDeliveryConfig 的
+  // SameDayInfos[].Districts[]（ShippingService.cs:150 CheckIsSameDay），
+  // demo 用縣市＋鄉鎮直接查表，結果的三種型態與真實回傳一致：
+  //   SameDay   親送區（雙北宅配）
+  //   NewRegion 非親送區混溫層
+  //   都不是    一般宅配（黑貓）
+  // ══════════════════════════════════════════════════════
+  var CITY_AREA = {
+    '臺北市': ['中正區', '大安區', '信義區', '士林區', '內湖區'],
+    '新北市': ['板橋區', '新莊區', '中和區', '淡水區', '瑞芳區'],
+    '桃園市': ['桃園區', '中壢區', '大溪區'],
+    '臺中市': ['西屯區', '北屯區'],
+    '臺東縣': ['臺東市', '池上鄉', '綠島鄉'],
+    '澎湖縣': ['馬公市', '湖西鄉']
+  };
+  // 離島：整縣的三個照 OutlyingIslandHelper.FullIslandCounties（連江/金門/澎湖）；
+  // 部分區的例子放臺東縣綠島鄉，那是「同一縣裡只有特定鄉是離島」的情形。
+  var ISLAND_COUNTY = ['連江縣', '金門縣', '澎湖縣'];
+  var ISLAND_AREA = { '臺東縣': ['綠島鄉', '蘭嶼鄉'] };
+  function isIsland(c, a) {
+    if (ISLAND_COUNTY.indexOf(c) > -1) return true;
+    return (ISLAND_AREA[c] || []).indexOf(a) > -1;
+  }
+  // 親送區（雙北宅配）：雙北的市區。瑞芳與淡水刻意排除，用來示範同一個縣市裡也會有不在親送區的鄉鎮。
+  var ZONE = {
+    '臺北市中正區': { type: 'SameDay', last: '18:00' },
+    '臺北市大安區': { type: 'SameDay', last: '18:00' },
+    '臺北市信義區': { type: 'SameDay', last: '18:00' },
+    '臺北市士林區': { type: 'SameDay', last: '17:00' },
+    '臺北市內湖區': { type: 'SameDay', last: '17:00' },
+    '新北市板橋區': { type: 'SameDay', last: '18:00' },
+    '新北市新莊區': { type: 'SameDay', last: '17:00' },
+    '新北市中和區': { type: 'SameDay', last: '17:00' },
+    // 混溫層配的非親送區：可以合併運費，但不是自己的車
+    '桃園市桃園區': { type: 'NewRegion' },
+    '桃園市中壢區': { type: 'NewRegion' },
+    '臺中市西屯區': { type: 'NewRegion' }
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function vouchers() { return SCENES[scene]; }
+  function byNo(no) { return vouchers().filter(function (v) { return v.no === no; })[0]; }
+  function payType() {
+    var r = document.querySelector('input[name="PaymentType"]:checked');
+    return r ? r.value : '';
+  }
+
+  // ══════════════════════════════════════════
+  // 金額：一條算式，所有輸入都餵進來
+  // ══════════════════════════════════════════
+  function subtotal() {
+    return cart.reduce(function (s, p) { return s + p.price * p.qty; }, 0);
+  }
+
+  function calc() {
+    var sub = subtotal();                       // 禮物是 0 元，不進小計
+    var act = 0;                                // 活動折扣（demo 無活動）
+    var couponOk = useCoupon && found && sub >= COUPON.minSpend;
+    var coupon = couponOk ? COUPON.amount : 0;
+
+    // 購物金／紅利：先夾在剩餘額度，再夾在「還沒付掉的金額」，不能折到負的
+    var bonusCap = found ? MEMBER.bonus : 0;
+    var rpCap = found ? MEMBER.rp : 0;
+    var wantBonus = Math.max(0, Number($('use-bonus').value || 0));
+    var wantRp = Math.max(0, Number($('use-rp').value || 0));
+    var over = (wantBonus > bonusCap) || (wantRp > rpCap);
+
+    var bonus = Math.min(wantBonus, bonusCap);
+    var rp = Math.min(wantRp, rpCap);
+    var payable = sub - act - coupon;
+    bonus = Math.min(bonus, Math.max(0, payable));
+    rp = Math.min(rp, Math.max(0, payable - bonus));
+
+    var freight = sub >= THRESHOLD ? 0 : (sub > 0 ? FREIGHT : 0);
+    var cod = payType() === '貨到付款' ? COD_FEE : 0;
+
+    var total = Math.max(0, payable - bonus - rp + freight + cod);
+    var fix = $('amt-fix').value.trim();
+    var shown = fix === '' ? total : Math.max(0, Number(fix));
+
+    return {
+      sub: sub, act: act, coupon: coupon, couponOk: couponOk,
+      bonus: bonus, rp: rp, freight: freight, cod: cod,
+      total: shown, auto: total, over: over, fixed: fix !== ''
+    };
+  }
+
+  function renderAmount() {
+    var r = calc();
+    $('amt-sub').textContent = fmt(r.sub);
+    $('amt-act').textContent = r.act ? '-' + fmt(r.act) : '0';
+    $('amt-coupon').textContent = r.coupon ? '-' + fmt(r.coupon) : '0';
+    $('amt-gift').textContent = added.length ? added.length + ' 張（0 元）' : '未使用';
+    $('amt-bonus').textContent = r.bonus ? '-' + fmt(r.bonus) : '0';
+    $('amt-rp').textContent = r.rp ? '-' + fmt(r.rp) : '0';
+    $('amt-freight').textContent = r.freight ? '+' + fmt(r.freight) : '免運';
+    $('amt-cod').textContent = r.cod ? '+' + fmt(r.cod) : '0';
+    $('amt-total').textContent = fmt(r.total);
+
+    $('freight-note').textContent = r.sub === 0 ? ''
+      : (r.freight ? '還差 ' + fmt(THRESHOLD - r.sub) + ' 免運' : '已達免運門檻');
+
+    // 沒作用的列淡掉，客服才不會以為漏算
+    [['row-act', r.act], ['row-coupon', r.coupon], ['row-bonus', r.bonus],
+     ['row-rp', r.rp], ['row-cod', r.cod]].forEach(function (x) {
+      $(x[0]).classList.toggle('is-off', !x[1]);
+    });
+    $('row-gift').classList.toggle('is-off', !added.length);
+
+    var warn = '';
+    if (r.over) warn = '購物金或紅利點數超過剩餘額度，已自動以剩餘額度計算。';
+    else if (r.fixed) warn = '總額已被「修改總計」覆蓋，自動算的是 ' + fmt(r.auto) + ' 元。';
+    $('amt-warn').textContent = warn;
+    $('amt-warn').classList.toggle('is-on', !!warn);
+
+    $('foot-hint').textContent = added.length
+      ? '建單成立時，這 ' + added.length + ' 張券會一併標記為已使用。' : '';
+  }
+
+  // ══════════════════════════════════════════
+  // 購物車
+  // ══════════════════════════════════════════
+  function renderCart() {
+    var rows = cart.map(function (p) {
+      return '<tr><td>' + esc(p.name) + '<div class="spec">' + esc(p.spec) + '</div></td>' +
+        '<td>' + esc(p.line) + '</td>' +
+        '<td class="num">' + fmt(p.price) + '</td><td class="num">' + p.qty + '</td>' +
+        '<td class="num">' + fmt(p.price * p.qty) + '</td>' +
+        '<td class="num"><button type="button" class="oc-btn" data-rm="' + p.id + '">移除</button></td></tr>';
+    });
+    rows = rows.concat(added.map(byNo).map(function (v) {
+      return '<tr class="is-gift"><td><span class="cart-gift-tag">禮物</span>' + esc(v.name) +
+        '<div class="spec">' + esc(v.spec) + '　券號 ' + esc(v.no) + '</div></td>' +
+        '<td>' + esc(v.line) + '</td><td class="num">0</td>' +
+        '<td class="num">1 <span class="cart-lock">固定</span></td><td class="num">0</td>' +
+        '<td class="num"><button type="button" class="oc-btn" data-del="' + v.no + '">移除</button></td></tr>';
+    }));
+    if (!rows.length) rows = ['<tr><td colspan="6" class="ro" style="padding:16px">購物車是空的。</td></tr>'];
+    $('cart-body').innerHTML = rows.join('');
+  }
+
+  // ══════════════════════════════════════════
+  // 禮物券
+  // ══════════════════════════════════════════
+  function blockReason(v) {
+    if (added.indexOf(v.no) >= 0) return '';
+    var list = added.map(byNo);
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      // CartLimitType 越大越嚴：1 本產品 / 2 同產線 / 3 整台購物車
+      if (a.limit === 3 || v.limit === 3) return '整台購物車僅限一張禮物券，已加入「' + a.vtype + '」。';
+      if ((a.limit === 2 || v.limit === 2) && a.line === v.line) return '同產線（' + v.line + '）僅限一張，已加入「' + a.vtype + '」。';
+      if ((a.limit === 1 || v.limit === 1) && a.name === v.name) return '「' + v.name + '」本產品限用一張。';
+    }
+    return '';
+  }
+
+  function renderVouchers() {
+    var el = $('gvu-area');
+    if (!isMember) { el.innerHTML = '<p class="gvu-empty">非會員不能使用禮物券。券是發給特定會員的，沒有會員身分就查不到、也不能兌換。</p>'; return; }
+    if (!found) { el.innerHTML = '<p class="gvu-empty">先查詢會員，才會列出他的禮物券。</p>'; return; }
+    if (!vouchers().length) { el.innerHTML = '<p class="gvu-empty">這位會員目前沒有可用的禮物券。（已兌換、已過期的不會列出）</p>'; return; }
+
+    el.innerHTML = '<div class="gvu-list">' + vouchers().map(function (v) {
+      var isAdded = added.indexOf(v.no) >= 0;
+      var dead = (v.state === 'oos');
+      var blocked = dead ? '' : blockReason(v);
+      var tag = v.state === 'sub' ? '<span class="gvu-tag is-sub">替換品項</span>'
+              : dead ? '<span class="gvu-tag is-oos">補貨中</span>' : '';
+      var ops;
+      if (dead) {
+        ops = '<button type="button" class="oc-btn" disabled>加入本單</button>' +
+              '<span class="gvu-blocked">清單上的品項全部缺貨。</span>';
+      } else if (isAdded) {
+        ops = '<button type="button" class="oc-btn" data-del="' + v.no + '">移除</button>' +
+              '<span class="gvu-added-hint">已加入本單</span>';
+      } else if (blocked) {
+        ops = '<button type="button" class="oc-btn" disabled>加入本單</button>' +
+              '<span class="gvu-blocked">' + esc(blocked) + '</span>';
+      } else {
+        ops = '<button type="button" class="oc-btn oc-btn-primary" data-add="' + v.no + '">加入本單</button>';
+      }
+      return '<div class="gvu-item' + (isAdded ? ' is-added' : '') + (dead ? ' is-dead' : '') + '">' +
+        '<div class="gvu-main">' +
+          '<div class="gvu-vtype">' + esc(v.vtype) + tag + '</div>' +
+          '<div class="gvu-name">' + esc(v.name) + '（' + esc(v.spec) + '）' +
+            (v.state === 'sub' ? '　<span style="color:#2f6b26">原「' + esc(v.origin) + '」缺貨</span>' : '') +
+          '</div>' +
+          '<div class="gvu-meta">券號 ' + esc(v.no) + '　·　到期 ' + esc(v.exp) +
+            '（<span class="' + (daysLeft(v.exp) <= 7 ? 'is-soon' : '') + '">剩 ' + daysLeft(v.exp) + ' 天</span>）' +
+            '　·　產線 ' + esc(v.line) +
+            (v.limit ? '　·　' + ['', '本產品限一張', '同產線限一張', '整車限一張'][v.limit] : '') +
+          '</div>' +
+        '</div><div class="gvu-ops">' + ops + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  // 優惠券：未達最低消費就不給選，並寫明原因（現行只寫「最低消費」不擋）
+  function renderCoupon() {
+    var el = $('coupon-area');
+    if (!found) { el.innerHTML = '<span class="ro">先查詢會員，才會列出他的優惠券。</span>'; return; }
+    var sub = subtotal();
+    var ok = sub >= COUPON.minSpend;
+    if (!ok) useCoupon = false;
+    el.innerHTML =
+      '<div class="rad-grp is-stack">' +
+        '<label><input type="radio" name="RadCoupon" value="0"' + (useCoupon ? '' : ' checked') + '><span>不使用優惠券</span></label>' +
+        '<label class="' + (ok ? '' : 'is-off') + '">' +
+          '<input type="radio" name="RadCoupon" value="1"' + (useCoupon ? ' checked' : '') + (ok ? '' : ' disabled') + '>' +
+          '<span>' + COUPON.amount + ' 元的折價券有 1 張（最低消費 ' + fmt(COUPON.minSpend) + '）' +
+            (ok ? '' : '<span class="why">　小計 ' + fmt(sub) + '，未達最低消費</span>') +
+          '</span>' +
+        '</label>' +
+      '</div>';
+  }
+
+
+  // ══════════════════════════════════════════════════════
+  // 欄位連動：全部收在這一個函式，任何 change 都只呼叫它
+  //
+  // 現行頁把這些規則散在 initDeliveryChangeEvent / initPaymentChangeEvent /
+  // disableByFami / runChangeEvent / hiddenBonusBlock 五個地方，改一條要找五個位置。
+  //
+  // 呈現方式刻意跟現行頁不同：現行用 hide() 把欄位藏起來，
+  // 客服會以為系統壞了、表單高度也會跳；這裡改成「鎖住＋灰化＋寫出原因」。
+  // ══════════════════════════════════════════════════════
+  function lock(wrapId, why) {
+    var w = $(wrapId);
+    w.classList.add('is-locked');
+    var f = w.querySelector('input, select, textarea');
+    if (f) { f.disabled = true; if (f.type !== 'date') f.value = ''; else f.value = ''; }
+    w.querySelector('.fld-why').textContent = why;
+  }
+  function unlock(wrapId, why) {
+    var w = $(wrapId);
+    w.classList.remove('is-locked');
+    var f = w.querySelector('input, select, textarea');
+    if (f) f.disabled = false;
+    w.querySelector('.fld-why').textContent = why || '';
+  }
+  function required(wrapId, on) {
+    var w = $(wrapId);
+    w.classList.toggle('fld-req-on', !!on);
+    var m = w.querySelector('.req-mark');
+    if (m) m.textContent = on ? '*' : '';
+  }
+
+  function applyDeps() {
+    // ── 發票載具：沒選載具就不該填號碼（現行頁完全沒擋這條）──
+    var ct = $('carrier-type').value;
+    if (ct === '無載具') {
+      lock('f-carrier-no', '沒有選載具，不需要號碼。');
+    } else {
+      unlock('f-carrier-no');
+      $('carrier-no').placeholder = (ct === '手機載具') ? '/ABC1234（斜線＋7 碼）'
+                                                       : 'AB12345678901234（2 英文＋14 碼）';
+    }
+
+    // ── 發票類型：只有三聯式要統編／抬頭／Email（照現行 runChangeEvent ＋ check()）──
+    var isTriple = ($('inv-type').value === '三聯式');
+    ['f-tax-id', 'f-comp-name', 'f-comp-email'].forEach(function (id) {
+      if (isTriple) { unlock(id); required(id, true); }
+      else { lock(id, '二聯式與捐贈發票不開統編。'); required(id, false); }
+    });
+
+    // ── 物流方式（照現行 disableByFami）──
+    var fami = ($('delivery-type').value === '全家');
+    if (fami) {
+      unlock('f-store-name', '從店鋪選擇頁帶回，不手填。');
+      lock('f-custom-date', '全家取貨無法指定出貨日。');
+      $('f-delivery-type').querySelector('.fld-why').textContent =
+        '選全家會進店鋪選擇頁，之後不可再改商品。';
+    } else {
+      lock('f-store-name', '只有全家取貨才需要。');
+      unlock('f-custom-date');
+      $('f-delivery-type').querySelector('.fld-why').textContent = '';
+    }
+
+    // ── 付款方式 × 物流：現行用 payment-cant-fami / payment-fami 兩組 class 互鎖 ──
+    var pt = payType();
+    var cantFami = (pt === '其他' || pt === '無');
+    $('delivery-type').querySelector('option[value="全家"], option:nth-child(2)').disabled = cantFami;
+    if (cantFami && fami) { $('delivery-type').value = '黑貓'; }
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="PaymentType"]'), function (r) {
+      var isCant = (r.value === '其他' || r.value === '無');
+      r.disabled = fami && isCant;
+      r.closest('label').classList.toggle('is-off', fami && isCant);
+    });
+
+    // ── 購物金／紅利：付款方式選「其他／無」不能折（照現行 hiddenBonusBlock）；非會員也沒有 ──
+    var noWallet = cantFami ? '付款方式為「' + pt + '」時不折抵。'
+                 : !found ? '先查詢會員才有額度。' : '';
+    ['f-use-bonus', 'f-use-rp'].forEach(function (id) {
+      if (noWallet) lock(id, noWallet); else unlock(id);
+    });
+
+    renderAmount();
+  }
+
+  function render() { renderCart(); renderVouchers(); renderCoupon(); applyDeps(); }
+
+  // ══════════════════════════════════════════
+  // 查會員
+  // ══════════════════════════════════════════
+  function search() {
+    var m = $('vol-mobile').value.trim();
+    var hits = MEMBER_POOL.filter(function (v) { return v.mobile === m; });
+    var ok = hits.length > 0;
+    if (ok) MEMBER = pickMember(hits);
+    found = ok; added = []; useCoupon = false;
+    $('vol-noresult').classList.toggle('is-on', !ok && m !== '');
+    $('vol-found').style.display = ok ? 'inline' : 'none';
+
+    // 多帳號提示：只講事實，不做選擇清單。客服要的是「知道有這回事」，
+    // 真的挑錯時他會自己去會員管理查，不需要在建單流程中間多一道選擇。
+    var multi = $('vol-multi');
+    if (ok && hits.length > 1) {
+      multi.textContent = '此手機有 ' + hits.length + ' 組帳號，已帶入' + pickReason(hits) + '的 ' + MEMBER.id;
+      multi.hidden = false;
+    } else {
+      multi.hidden = true;
+    }
+
+    if (ok) {
+      $('vol-found').textContent = MEMBER.name + '（會員編號 ' + MEMBER.id + '）';
+      $('buyer-name').value = MEMBER.name;
+      $('buyer-mobile').value = MEMBER.mobile;
+      $('buyer-email').value = MEMBER.email;
+      $('buyer-line').value = MEMBER.line;
+      // 會員的地址是三段存的，帶入之後配送判定要立刻跑一次
+      $('rcv-city').value = MEMBER.city;
+      fillAreas();
+      $('rcv-area').value = MEMBER.area;
+      $('rcv-addr').value = MEMBER.addr;
+      renderZone();
+      $('ro-rcv').textContent = MEMBER.rcv;
+      $('ro-warehouse').textContent = MEMBER.warehouse;
+      $('ro-shipremark').textContent = MEMBER.shipRemark;
+      $('ro-internal').textContent = MEMBER.internal;
+      $('carry-cnt').textContent = '已帶出 4 項';
+      $('carry').open = true;
+      // 發票這幾欄有會員預設就先帶入，客服不用重打（下單當下仍可改）
+      $('inv-type').value = MEMBER.invType;
+      $('carrier-type').value = MEMBER.carrierType;
+      $('carrier-no').value = MEMBER.carrierNo;
+      $('comp-name').value = MEMBER.compName;
+      $('tax-id').value = MEMBER.taxId;
+      $('comp-email').value = MEMBER.compEmail;
+      $('bonus-max').textContent = MEMBER.bonus;
+      $('rp-max').textContent = MEMBER.rp;
+    } else {
+      ['buyer-name', 'buyer-mobile', 'buyer-email', 'buyer-line', 'rcv-addr'].forEach(function (id) { $(id).value = ''; });
+      $('rcv-city').value = ''; fillAreas(); renderZone();
+      ['ro-rcv', 'ro-warehouse', 'ro-shipremark', 'ro-internal'].forEach(function (id) { $(id).textContent = '—'; });
+      $('inv-type').value = '二聯式';
+      $('carrier-type').value = '無載具';
+      ['carrier-no', 'tax-id', 'comp-name', 'comp-email'].forEach(function (id) { $(id).value = ''; });
+      $('carry-cnt').textContent = '查詢後帶出';
+      $('vol-multi').hidden = true;
+      $('carry').open = false;
+      $('bonus-max').textContent = '0'; $('rp-max').textContent = '0';
+      $('use-bonus').value = ''; $('use-rp').value = '';
+    }
+    render();
+  }
+
+  // ══════════════════════════════════════════
+  // 收件地區 ⇒ 配送方式判定
+  // ══════════════════════════════════════════
+  function fillCities() {
+    var s = $('rcv-city');
+    Object.keys(CITY_AREA).forEach(function (c) {
+      var o = document.createElement('option'); o.value = c; o.textContent = c; s.appendChild(o);
+    });
+  }
+  function fillAreas() {
+    var c = $('rcv-city').value, s = $('rcv-area');
+    s.innerHTML = '<option value="">請選擇</option>';
+    (CITY_AREA[c] || []).forEach(function (a) {
+      var o = document.createElement('option'); o.value = a; o.textContent = a; s.appendChild(o);
+    });
+  }
+  function renderZone() {
+    var c = $('rcv-city').value, a = $('rcv-area').value;
+    var tag = $('zone-tag'), locked = $('rcv-locked');
+    if (!c || !a) { tag.hidden = true; locked.hidden = true; return; }
+
+    var z = ZONE[c + a];
+    var text, cls, why;
+    if (isIsland(c, a)) {
+      // 離島優先判：它同時影響運費與可出貨品項，比親送區更該先讓客服知道
+      text = '離島'; cls = 'zone-tag is-island'; why = '離島地區，運費與可出貨品項另有規則';
+    } else if (z && z.type === 'SameDay') {
+      text = '雙北宅配'; cls = 'zone-tag is-sameday'; why = '親送區，最後到貨 ' + z.last + '（依目前設定）';
+    } else if (z && z.type === 'NewRegion') {
+      text = '混溫層'; cls = 'zone-tag is-newregion'; why = '非親送區的混溫層配（依目前設定）';
+    } else {
+      text = '宅急便'; cls = 'zone-tag is-home'; why = '此地區不在親送範圍';
+    }
+    tag.className = cls;
+    tag.textContent = text;
+    tag.title = why;
+    tag.hidden = false;
+
+    // 親送區的配達時段由系統定成值 5，客服不用也不能選。
+    // 這裡跟會員頁不同：會員頁那欄是「預設值」所以永遠可選，這裡是這張單的實際值。
+    var same = !isIsland(c, a) && !!(z && z.type === 'SameDay');
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="ReceiveTime"]'), function (r) {
+      r.disabled = same;
+      r.parentNode.classList.toggle('is-off', same);
+    });
+    locked.hidden = !same;
+    if (same) locked.textContent = '親送區的配達時段由系統帶入，不需選擇';
+  }
+
+  // ══════════════════════════════════════════
+  // 同步建立會員
+  // ══════════════════════════════════════════
+  function checkNewMobile() {
+    if (memberMode !== 2 || newMemberId !== null) return;
+    var m = $('vol-mobile').value.trim();
+    var hint = $('nm-hint'), btn = $('vol-search');
+    if (!m) { hint.textContent = ''; hint.className = 'nm-hint'; btn.disabled = true; return; }
+
+    var exist = MEMBER_POOL.filter(function (v) { return v.mobile === m; });
+    if (exist.length > 0) {
+      // 已經是會員就不准再建一次。重複建檔等於多製造一支對到多帳號的手機，
+      // 正式庫已經有 3,557 支這種號碼、最多一支對到 21 個帳號。
+      hint.className = 'nm-hint is-warn';
+      hint.innerHTML = '這支手機已經是會員 ' + pickMember(exist).id + '（' + pickMember(exist).name + '）。' +
+        '<span class="lnk" id="nm-switch">改用會員身分</span>';
+      btn.disabled = true;
+      $('nm-switch').addEventListener('click', function () {
+        document.querySelector('input[name="IsMember"][value="1"]').checked = true;
+        applyMemberMode(1);
+        $('vol-mobile').value = m;
+        search();
+      });
+    } else {
+      hint.className = 'nm-hint is-ok';
+      hint.textContent = '尚未是會員，可以建立。帳號與密碼都會是這支手機。';
+      btn.disabled = false;
+    }
+  }
+
+  function createMember() {
+    var m = $('vol-mobile').value.trim();
+    if (!m) return;
+    // demo 給一個固定的新編號。實際是 VolunteersModel.InsertByAdmin(paymentInfo) 的回傳。
+    newMemberId = 900123;
+    isMember = true; found = true;
+    $('nm-hint').textContent = ''; $('nm-hint').className = 'nm-hint';
+    $('nm-done').hidden = false;
+    $('nm-done').textContent = '已建立會員 ' + newMemberId + '（' + m + '）';
+    $('nm-sub').hidden = false;
+    $('vol-mobile').readOnly = true;
+    $('vol-search').disabled = true;
+    $('buyer-mobile').value = m;
+    render();
+    toast('已建立會員 ' + newMemberId + '，可以加首購限定商品了');
+  }
+
+  function applyMemberMode(mode) {
+    memberMode = mode;
+    isMember = (mode === 1) || (mode === 2 && newMemberId !== null);
+
+    // 三種身分共用同一個手機欄，差別在按鈕與鎖不鎖。
+    var blk = $('blk-mobile'), btn = $('vol-search'), inp = $('vol-mobile');
+    blk.classList.toggle('is-locked', mode === 0);
+    inp.disabled = (mode === 0);
+
+    // 切換身分時把上一個模式的殘留清乾淨
+    newMemberId = null;
+    inp.readOnly = false;
+    $('nm-done').hidden = true;
+    $('nm-sub').hidden = true;
+    $('nm-hint').textContent = '';
+    $('nm-hint').className = 'nm-hint';
+    $('vol-noresult').classList.remove('is-on');
+    $('vol-found').style.display = 'none';
+    $('vol-multi').hidden = true;
+    inp.value = '';
+
+    // 只有「同步建新會員」才需要按鈕。
+    // 「會員」那邊沒有按鈕：現行就是失焦自動查（order-create-payment.js:264 的 $("#VolMobile").change），
+    // 既然失焦就查得到，再放一顆「查詢」是多的，客服還要想「我到底要不要按」。
+    // 建立會員不一樣 —— 那是會寫進 DB 的動作，一定要客服明按。
+    if (mode === 2) {
+      $('mb-label').textContent = '手機（將成為帳號與密碼）';
+      inp.placeholder = '請輸入手機';
+      btn.hidden = false;
+      btn.textContent = '建立會員';
+      btn.className = 'oc-btn oc-btn-primary';
+      btn.disabled = true;               // 要先判斷過這支號碼還不是會員才給按
+    } else {
+      $('mb-label').textContent = '會員手機';
+      inp.placeholder = '請輸入會員手機';
+      btn.hidden = true;
+      btn.textContent = '查詢';
+      btn.className = 'oc-btn';
+      btn.disabled = (mode === 0);
+    }
+
+    if (mode === 0) { found = false; added = []; useCoupon = false; }
+    render();
+  }
+
+  // ══════════════════════════════════════════
+  // 匯入文字檔
+  // 現行是把整段文字丟後端解析（CreatePayment.cshtml:659 那顆彈窗）。
+  // demo 在前端做同一件事：一行一筆，最後一段數字當數量，其餘當商品名。
+  // ══════════════════════════════════════════
+  var imRows = [];
+
+  function imParse(text) {
+    var out = [];
+    text.split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim();
+      if (!line) return;
+      // 數量在最後、用空白隔開；沒寫數量就當 1
+      var m = line.match(/^(.*?)[\s　]+(\d+)$/);
+      var name = m ? m[1].trim() : line;
+      var qty = m ? Math.max(1, parseInt(m[2], 10)) : 1;
+      // 只比對得到商品名，所以同名的多個規格都要撈出來給客服挑
+      var hits = PRODUCTS_SRC.filter(function (p) { return p.name.indexOf(name) > -1 || name.indexOf(p.name) > -1; });
+      out.push({ name: name, qty: qty, hits: hits, pick: hits.length ? 0 : -1 });
+    });
+    return out;
+  }
+
+  function imRender() {
+    var h = '';
+    imRows.forEach(function (r, i) {
+      var ok = r.hits.length > 0;
+      var specCell;
+      if (!ok) {
+        specCell = '<span class="im-miss">查無此商品</span>';
+      } else if (r.hits.length === 1) {
+        specCell = r.hits[0].spec;
+      } else {
+        specCell = '<select data-imspec="' + i + '">' + r.hits.map(function (p, j) {
+          return '<option value="' + j + '">' + p.spec + '（' + p.price + ' 元）</option>';
+        }).join('') + '</select>';
+      }
+      h += '<tr class="' + (ok ? '' : 'is-off') + '">' +
+        '<td><input type="checkbox" data-im="' + i + '"' + (ok ? ' checked' : ' disabled') + '></td>' +
+        '<td><span class="co-name">' + r.name + '</span></td>' +
+        '<td class="num">' + (ok ? '<input type="number" min="1" value="' + r.qty + '" data-imq="' + i + '">' : r.qty) + '</td>' +
+        '<td>' + specCell + '</td>' +
+        '<td class="num">' + (ok ? '<button type="button" class="oc-btn" data-imadd="' + i + '">加入</button>' : '') + '</td>' +
+      '</tr>';
+    });
+    $('im-body').innerHTML = h;
+    imSync();
+    Array.prototype.forEach.call($('im-body').querySelectorAll('input[data-im]'), function (cb) {
+      cb.addEventListener('change', imSync);
+    });
+    Array.prototype.forEach.call($('im-body').querySelectorAll('select[data-imspec]'), function (sel) {
+      sel.addEventListener('change', function () { imRows[+this.getAttribute('data-imspec')].pick = +this.value; });
+    });
+  }
+  function imSync() {
+    var n = $('im-body').querySelectorAll('input[data-im]:checked').length;
+    $('im-add').disabled = (n === 0);
+    $('im-add').textContent = n ? '批次加入購物車（' + n + '）' : '批次加入購物車';
+  }
+  function imAddRow(i) {
+    var r = imRows[i];
+    if (!r || !r.hits.length) return false;
+    var p = r.hits[r.pick] || r.hits[0];
+    var q = $('im-body').querySelector('input[data-imq="' + i + '"]');
+    cart.push({
+      id: 'im' + Date.now() + '-' + i, name: p.name, spec: p.spec,
+      line: p.line, price: p.price, qty: q ? Math.max(1, +q.value || 1) : r.qty
+    });
+    return true;
+  }
+
+  function imOpen()  { $('im-modal').classList.add('is-open'); }
+  function imClose() { $('im-modal').classList.remove('is-open'); }
+
+  $('import-text').addEventListener('click', function () {
+    imOpen();
+    $('im-text').value = ''; $('im-result').hidden = true;
+    $('im-add').disabled = true; $('im-add').textContent = '批次加入購物車';
+    $('im-file').value = '';
+    $('im-file-name').textContent = '尚未選擇檔案';
+    $('im-file-name').className = 'im-file-name';
+    $('im-text').focus();
+  });
+  $('im-close').addEventListener('click', imClose);
+  $('im-x').addEventListener('click', imClose);
+  $('im-file').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    var nm = $('im-file-name');
+    if (!f) { nm.textContent = '尚未選擇檔案'; nm.className = 'im-file-name'; return; }
+    nm.textContent = f.name;
+    nm.className = 'im-file-name is-set';
+    var rd = new FileReader();
+    rd.onload = function () { $('im-text').value = rd.result; };
+    rd.readAsText(f);
+  });
+  $('im-parse').addEventListener('click', function () {
+    var t = $('im-text').value;
+    if (!t.trim()) { toast('請先貼上文字或上傳檔案'); return; }
+    imRows = imParse(t);
+    $('im-result').hidden = false;
+    imRender();
+  });
+  $('im-all').addEventListener('change', function () {
+    var on = this.checked;
+    Array.prototype.forEach.call($('im-body').querySelectorAll('input[data-im]:not(:disabled)'), function (cb) { cb.checked = on; });
+    imSync();
+  });
+  $('im-body').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-imadd]'); if (!b) return;
+    if (imAddRow(+b.getAttribute('data-imadd'))) { render(); toast('已加入 1 項'); }
+  });
+  $('im-add').addEventListener('click', function () {
+    var n = 0;
+    Array.prototype.forEach.call($('im-body').querySelectorAll('input[data-im]:checked'), function (cb) {
+      if (imAddRow(+cb.getAttribute('data-im'))) n++;
+    });
+    imClose(); render(); toast('已加入 ' + n + ' 項');
+  });
+
+  // ══════════════════════════════════════════
+  // 複製訂單
+  // ══════════════════════════════════════════
+  // 一筆假訂單，刻意涵蓋四種狀態：正常、已下架、缺貨、禮物規格。
+  // 首購限定那一列的可否加入要看當下是不是會員，所以在 renderCopy() 裡才決定。
+  var SRC_ORDER = {
+    no: 'A26090301',
+    meta: '2026/09/03 下單・訂購人 示範會員・訂單金額 1,850 元',
+    items: [
+      { name: '有機蔬菜箱', spec: '中箱／每週配送', line: '蔬菜箱', price: 680, qty: 1, state: 'ok' },
+      { name: '當季水果禮盒', spec: '綜合 6 入', line: '水果', price: 520, qty: 2, state: 'ok' },
+      { name: '鮮乳坊豐樂鮮乳', spec: '936ml', line: '鮮乳', price: 150, qty: 1, state: 'oos' },
+      { name: '春季限定 桶柑', spec: '5 台斤', line: '水果', price: 480, qty: 1, state: 'off' },
+      { name: '【小寶寶】含運-十倍粥體驗組', spec: '首購限定', line: '粥寶寶專區', price: 0, qty: 1, state: 'firstbuy' },
+      { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）', line: '粥寶寶專區', price: 0, qty: 1, state: 'gift' }
+    ]
+  };
+
+  function copyState(it) {
+    if (it.state === 'off') return { can: false, why: '已下架' };
+    if (it.state === 'gift') return { can: false, why: '禮物需憑券兌換' };
+    if (it.state === 'firstbuy') {
+      return isMember ? { can: true, why: '' } : { can: false, why: '需先建立會員' };
+    }
+    if (it.state === 'oos') return { can: true, why: '缺貨，加入後依既有邏輯處理' };
+    return { can: true, why: '' };
+  }
+
+  function renderCopy() {
+    var h = '';
+    SRC_ORDER.items.forEach(function (it, i) {
+      var st = copyState(it);
+      h += '<tr class="' + (st.can ? '' : 'is-off') + '">' +
+        '<td><input type="checkbox" data-co="' + i + '"' +
+          (st.can ? ' checked' : ' disabled') + '></td>' +
+        '<td><span class="co-name">' + it.name + '</span></td>' +
+        '<td>' + it.spec + '</td>' +
+        '<td class="num">' +
+          (st.can ? '<input type="number" min="1" value="' + it.qty + '" data-coq="' + i + '">'
+                  : it.qty) +
+        '</td>' +
+        '<td>' + (st.why ? '<span class="' + (st.can ? 'co-ok' : 'co-why') + '">' + st.why + '</span>' : '') + '</td>' +
+      '</tr>';
+    });
+    $('co-body').innerHTML = h;
+    syncCopyBtn();
+    Array.prototype.forEach.call($('co-body').querySelectorAll('input[data-co]'), function (cb) {
+      cb.addEventListener('change', syncCopyBtn);
+    });
+  }
+  function syncCopyBtn() {
+    var n = $('co-body').querySelectorAll('input[data-co]:checked').length;
+    $('co-add').disabled = (n === 0);
+    $('co-add').textContent = n ? '批次加入購物車（' + n + '）' : '批次加入購物車';
+  }
+
+  function coOpen()  { $('co-modal').classList.add('is-open'); }
+  function coClose() { $('co-modal').classList.remove('is-open'); }
+
+  $('copy-order').addEventListener('click', function () {
+    coOpen();
+    $('co-no').value = ''; $('co-meta').hidden = true;
+    $('co-result').hidden = true; $('co-add').disabled = true;
+    $('co-no').focus();
+  });
+  $('co-close').addEventListener('click', coClose);
+  $('co-x').addEventListener('click', coClose);
+  $('co-find').addEventListener('click', function () {
+    var v = $('co-no').value.trim();
+    if (v !== SRC_ORDER.no) { toast('查無此訂單，demo 只認得 ' + SRC_ORDER.no); return; }
+    $('co-meta').textContent = SRC_ORDER.no + '　' + SRC_ORDER.meta;
+    $('co-meta').hidden = false;
+    $('co-result').hidden = false;
+    renderCopy();
+  });
+  $('co-no').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); $('co-find').click(); }
+  });
+  $('co-all').addEventListener('change', function () {
+    var on = this.checked;
+    Array.prototype.forEach.call($('co-body').querySelectorAll('input[data-co]:not(:disabled)'), function (cb) {
+      cb.checked = on;
+    });
+    syncCopyBtn();
+  });
+  $('co-add').addEventListener('click', function () {
+    var n = 0;
+    Array.prototype.forEach.call($('co-body').querySelectorAll('input[data-co]:checked'), function (cb) {
+      var i = +cb.getAttribute('data-co'), it = SRC_ORDER.items[i];
+      var q = $('co-body').querySelector('input[data-coq="' + i + '"]');
+      cart.push({
+        id: 'co' + Date.now() + '-' + i, name: it.name, spec: it.spec,
+        line: it.line, price: it.price, qty: q ? Math.max(1, +q.value || 1) : it.qty
+      });
+      n++;
+    });
+    coClose();
+    render();
+    toast('已加入 ' + n + ' 項');
+  });
+
+  // ══════════════════════════════════════════
+  // 事件
+  // ══════════════════════════════════════════
+  fillCities();
+  $('rcv-city').addEventListener('change', function () { fillAreas(); renderZone(); });
+  $('rcv-area').addEventListener('change', renderZone);
+  // 手機欄與按鈕三種身分共用，實際行為看 memberMode。
+  // 會員：失焦自動查（同現行的 $("#VolMobile").change），按鈕是重查。
+  // 同步建新會員：失焦判斷這支號碼是不是已經有人，沒有才開放「建立會員」。
+  function onMobileBlur() {
+    if (memberMode === 2) { checkNewMobile(); }
+    else if (memberMode === 1 && $('vol-mobile').value.trim() !== '') { search(); }
+  }
+  $('vol-mobile').addEventListener('blur', onMobileBlur);
+  $('vol-mobile').addEventListener('input', function () {
+    if (memberMode === 2 && newMemberId === null) {
+      $('vol-search').disabled = true;
+      $('nm-hint').textContent = ''; $('nm-hint').className = 'nm-hint';
+    }
+  });
+  $('vol-search').addEventListener('click', function () {
+    if (memberMode === 2) { createMember(); } else { search(); }
+  });
+  $('vol-mobile').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (memberMode === 2) { checkNewMobile(); } else { search(); }
+  });
+  $('use-bonus').addEventListener('input', renderAmount);
+  $('use-rp').addEventListener('input', renderAmount);
+  $('amt-fix').addEventListener('input', renderAmount);
+
+  $('cart-clear').addEventListener('click', function () { cart = []; render(); toast('已清空購物車'); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="IsMember"]'), function (r) {
+    r.addEventListener('change', function () { applyMemberMode(+this.value); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="PaymentType"]'), function (r) {
+    r.addEventListener('change', applyDeps);
+  });
+  ['carrier-type', 'inv-type', 'delivery-type'].forEach(function (id) {
+    $(id).addEventListener('change', applyDeps);
+  });
+
+  $('copy-buyer').addEventListener('change', function () {
+    if (!this.checked) return;
+    $('rcv-name').value = $('buyer-name').value;
+    $('rcv-mobile').value = $('buyer-mobile').value;
+  });
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-add]'),
+        del = e.target.closest('[data-del]'),
+        rm = e.target.closest('[data-rm]');
+    if (a) { added.push(a.getAttribute('data-add')); render(); toast('已加入本單'); }
+    else if (del) {
+      added = added.filter(function (n) { return n !== del.getAttribute('data-del'); });
+      render(); toast('已移除');
+    } else if (rm) {
+      var id = rm.getAttribute('data-rm');
+      cart = cart.filter(function (p) { return p.id !== id; });
+      render(); toast('已移除商品');
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    if (e.target.name === 'RadCoupon') { useCoupon = (e.target.value === '1'); renderAmount(); }
+  });
+
+  function toast(msg) {
+    var host = $('gox-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'gox-toast-host';
+      host.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+      document.body.appendChild(host);
+    }
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-family:inherit;';
+    host.appendChild(t);
+    setTimeout(function () { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
+    setTimeout(function () { t.remove(); }, 2200);
+  }
+
+
+  // ══════════════════════════════════════════════════════
+  // 商品：打字搜尋（模擬現行的 jQuery UI autocomplete）
+  //
+  // 現行的來源是 productsStr，每筆 label 為「產品 ID-規格 ID-名稱」，
+  // 選中後 split('-') 取出兩個 ID 打 GetProductObject 拿單價，
+  // 再把 addToCart(pid, pdid) 綁到「加入」按鈕上（CreatePayment.cshtml:748）。
+  // demo 只放四筆，重點是把「這是搜尋不是純輸入」這件事留在畫面上。
+  // ══════════════════════════════════════════════════════
+  var PRODUCTS_SRC = [
+    { pid: 55201, pdid: 74310, name: '有機蔬菜箱', spec: '中箱／每週配送', line: '蔬菜箱', price: 680 },
+    // 同一個產品兩個規格：匯入文字檔只比對得到商品名，比到多個規格時要讓客服自己選
+    { pid: 55201, pdid: 74311, name: '有機蔬菜箱', spec: '小箱／每週配送', line: '蔬菜箱', price: 480 },
+    { pid: 55202, pdid: 74320, name: '當季水果禮盒', spec: '綜合 6 入', line: '水果', price: 520 },
+    { pid: 57202, pdid: 80325, name: '鮮乳坊豐樂鮮乳', spec: '936ml', line: '鮮乳', price: 150 },
+    // 現行有一條特殊規則：品名含「送一份水果」時自動取消簡訊、付款方式改「無」
+    { pid: 55999, pdid: 79001, name: '產地直送 送一份水果', spec: '活動贈品', line: '水果', price: 0 }
+  ];
+  var rowSeq = 0;
+
+  function prodRowHtml(i) {
+    return '<div class="prod-row" data-row="' + i + '">' +
+      '<div class="ac">' +
+        '<input type="text" class="ac-input" placeholder="打字搜尋商品名稱或產品 ID" autocomplete="off">' +
+        '<div class="ac-list"></div>' +
+      '</div>' +
+      '<span>×</span>' +
+      '<input type="number" class="prod-qty" value="1" min="1">' +
+      '<span class="prod-price">—</span>' +
+      '<button type="button" class="oc-btn" data-row-rm="' + i + '">移除</button>' +
+    '</div>';
+  }
+
+  function addProdRow() {
+    $('prod-rows').insertAdjacentHTML('beforeend', prodRowHtml(++rowSeq));
+  }
+
+  function acRender(row, kw) {
+    var list = row.querySelector('.ac-list');
+    var hit = PRODUCTS_SRC.filter(function (p) {
+      var label = p.pid + '-' + p.pdid + '-' + p.name;
+      return !kw || label.indexOf(kw) >= 0 || p.name.indexOf(kw) >= 0 || p.spec.indexOf(kw) >= 0;
+    });
+    if (!hit.length) {
+      // 現行的來源是全站商品（productsStr），demo 只放 4 筆，所以很容易查無
+      list.innerHTML = '<div class="ac-empty">查無商品</div>';
+    } else {
+      list.innerHTML = hit.map(function (p) {
+        return '<div class="ac-item" data-pid="' + p.pid + '" data-pdid="' + p.pdid + '">' +
+          '<b>' + esc(p.name) + '</b>（' + esc(p.spec) + '）　$' + fmt(p.price) +
+          '<div class="code">' + p.pid + '-' + p.pdid + '　產線 ' + esc(p.line) + '</div>' +
+        '</div>';
+      }).join('');
+    }
+    list.classList.add('is-open');
+  }
+
+  function acPick(row, pid, pdid) {
+    var pr = PRODUCTS_SRC.filter(function (p) { return p.pid == pid && p.pdid == pdid; })[0];
+    if (!pr) return;
+    row.querySelector('.ac-input').value = pr.name + '（' + pr.spec + '）';
+    row.querySelector('.prod-price').textContent = '$' + fmt(pr.price);
+    row.dataset.pid = pid;
+    row.dataset.pdid = pdid;
+    row.querySelector('.ac-list').classList.remove('is-open');
+
+    // 現行的特殊規則（CreatePayment.cshtml:750）
+    if (pr.name.indexOf('送一份水果') >= 0) {
+      $('send-sms').checked = false;
+      var no = document.querySelector('input[name="PaymentType"][value="無"]');
+      if (no && !no.disabled) { no.checked = true; }
+      applyDeps();
+      toast('活動贈品：已自動取消簡訊、付款方式改為「無」');
+    }
+  }
+
+  $('prod-add-row').addEventListener('click', addProdRow);
+
+  $('prod-rows').addEventListener('input', function (e) {
+    if (!e.target.classList.contains('ac-input')) return;
+    acRender(e.target.closest('.prod-row'), e.target.value.trim());
+  });
+  $('prod-rows').addEventListener('focusin', function (e) {
+    if (!e.target.classList.contains('ac-input')) return;
+    acRender(e.target.closest('.prod-row'), e.target.value.trim());
+  });
+  $('prod-rows').addEventListener('click', function (e) {
+    var item = e.target.closest('.ac-item');
+    if (item) {
+      acPick(e.target.closest('.prod-row'), item.getAttribute('data-pid'), item.getAttribute('data-pdid'));
+      return;
+    }
+    var rm = e.target.closest('[data-row-rm]');
+    if (rm) {
+      var rows = $('prod-rows').querySelectorAll('.prod-row');
+      if (rows.length <= 1) { addProdRow(); }
+      rm.closest('.prod-row').remove();
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.ac')) return;
+    Array.prototype.forEach.call(document.querySelectorAll('.ac-list'), function (l) { l.classList.remove('is-open'); });
+  });
+
+  $('prod-to-cart').addEventListener('click', function () {
+    var added2 = 0;
+    Array.prototype.forEach.call($('prod-rows').querySelectorAll('.prod-row'), function (row) {
+      if (!row.dataset.pid) return;
+      var pr = PRODUCTS_SRC.filter(function (p) { return p.pid == row.dataset.pid && p.pdid == row.dataset.pdid; })[0];
+      var qty = Math.max(1, Number(row.querySelector('.prod-qty').value || 1));
+      var exist = cart.filter(function (c) { return c.id === 'p' + pr.pdid; })[0];
+      if (exist) { exist.qty += qty; }
+      else {
+        cart.push({ id: 'p' + pr.pdid, name: pr.name, spec: pr.spec, line: pr.line, price: pr.price, qty: qty });
+      }
+      added2++;
+    });
+    if (!added2) { toast('請先從搜尋清單選一個商品'); return; }
+    $('prod-rows').innerHTML = '';
+    rowSeq = 0;
+    addProdRow();
+    render();
+    toast('已加入購物車');
+  });
+
+  addProdRow();
+
+  // ══════════════════════════════════════════════════════
+  // 全家選店：現行是 POST 整張表單去 FamiOrderDetail、跳離本頁再導回，
+  // demo 用假彈窗模擬「選到店之後畫面會變成什麼樣」。
+  // ══════════════════════════════════════════════════════
+  var FAMI_STORES = [
+    { no: '012345', nm: '全家板橋中山店', ad: '新北市板橋區中山路一段 88 號' },
+    { no: '023456', nm: '全家信義松高店', ad: '台北市信義區松高路 12 號' },
+    { no: '034567', nm: '全家桃園藝文店', ad: '桃園市桃園區同德六街 55 號' }
+  ];
+  var famiMask = $('fami-mask');
+  $('fami-list').innerHTML = FAMI_STORES.map(function (s) {
+    return '<button type="button" class="mk-store" data-store="' + s.nm + '">' +
+      '<span class="no">' + s.no + '</span>' +
+      '<span><span class="nm">' + s.nm + '</span><span class="ad">' + s.ad + '</span></span>' +
+    '</button>';
+  }).join('');
+
+  function famiCancel() {
+    famiMask.classList.remove('is-open');
+    $('delivery-type').value = '黑貓';
+    applyDeps();
+  }
+  famiMask.addEventListener('click', function (e) {
+    var s = e.target.closest('[data-store]');
+    if (s) {
+      $('store-name').value = s.getAttribute('data-store');
+      famiMask.classList.remove('is-open');
+      toast('已選門市：' + s.getAttribute('data-store'));
+      return;
+    }
+    if (e.target === famiMask || e.target.closest('[data-fami-close]') || e.target.closest('[data-fami-cancel]')) {
+      famiCancel();
+    }
+  });
+  $('delivery-type').addEventListener('change', function () {
+    if (this.value === '全家') { famiMask.classList.add('is-open'); }
+  });
+
+  // ── 開發者面板 ──
+  var SCENE_LABELS = [
+    ['normal', '有 4 張券（預設）', '含一張替換品項、一張補貨中、一張整台車限一張'],
+    ['alloos', '券都在補貨中', '兩張券的品項全缺，都不能加'],
+    ['empty', '這位會員沒有券', '已兌換與過期的不會列出']
+  ];
+  var devbar = $('devbar');
+  devbar.querySelector('.toggle').addEventListener('click', function () { devbar.classList.toggle('is-open'); });
+  var list = $('dev-scenes');
+  list.innerHTML = SCENE_LABELS.map(function (s) {
+    return '<button type="button" data-scene="' + s[0] + '" title="' + s[2] + '">' + s[1] + '</button>';
+  }).join('');
+  list.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-scene]');
+    if (!b) return;
+    scene = b.getAttribute('data-scene'); added = [];
+    Array.prototype.forEach.call(list.querySelectorAll('button'), function (x) { x.classList.toggle('is-on', x === b); });
+    render();
+  });
+  list.querySelector('button').classList.add('is-on');
+
+  $('dev-zones').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-zone]'); if (!b) return;
+    var pair = b.getAttribute('data-zone').split('|');
+    $('rcv-city').value = pair[0]; fillAreas();
+    $('rcv-area').value = pair[1]; renderZone();
+  });
+  // 三段 fallback 是這次改動的重點，但光看畫面看不出來，所以做成可切換的
+  $('dev-pick').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick]'); if (!b) return;
+    var mode = b.getAttribute('data-pick');
+    MEMBER_POOL[0].lastLogin = (mode === 'login') ? '2026/09/09' : null;
+    MEMBER_POOL[0].lastOrder = (mode === 'none') ? null : '2026/05/12';
+    MEMBER_POOL[1].lastOrder = (mode === 'none') ? null : '2026/09/05';
+    Array.prototype.forEach.call($('dev-pick').querySelectorAll('button'), function (x) {
+      x.classList.toggle('is-on', x.getAttribute('data-pick') === mode);
+    });
+    // 單一帳號是常態，多帳號才是例外（3,557 / 267,086）。
+    // 切到 solo 用另一支手機，驗證沒有多帳號時完全不會冒出提示。
+    $('vol-mobile').value = (mode === 'solo') ? '0900000009' : MEMBER_POOL[0].mobile;
+    search();
+  });
+
+  $('dev-import').addEventListener('click', function () { $('import-text').click(); });
+  $('dev-copy').addEventListener('click', function () {
+    $('copy-order').click();
+    $('co-no').value = SRC_ORDER.no;
+    $('co-find').click();
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
