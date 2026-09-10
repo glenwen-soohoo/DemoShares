@@ -846,6 +846,8 @@ img { vertical-align: middle; }
   /* 上傳 */
   .fld-upload { display: flex; align-items: center; gap: 12px; height: 42px; }
   .fld-hint { font-size: 13px; color: var(--ac-muted); }
+  /* .fld-radios 是固定高 42px 的 flex，提示要另起一行放在它外面 */
+  .fld-hint--rt { display: block; margin-top: -4px; }
 
   /* 按鈕 */
   .btn-primary {
@@ -1168,9 +1170,11 @@ img { vertical-align: middle; }
       <div class="fld fld--half">
         <span class="fld-label">預設收件時間</span>
         <div class="fld-radios">
+          <label><input type="radio" name="ac-rt" checked><span>不指定</span></label>
           <label><input type="radio" name="ac-rt"><span>13 時前</span></label>
           <label><input type="radio" name="ac-rt"><span>14–18 時</span></label>
         </div>
+        <span class="fld-hint fld-hint--rt">實際配送時間以物流公司安排為主</span>
       </div>
       <div class="fld fld--half">
         <label class="fld-label" for="ac-carrier">發票載具</label>

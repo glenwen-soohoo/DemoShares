@@ -643,6 +643,8 @@ img { vertical-align: middle; }
   .mc3 .stat-num { font-size: 34px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
   .mc3 .stat-num small { font-size: 18px; font-weight: 500; color: var(--muted); margin-left: 4px; }
   .mc3 .stat-warn { display: block; font-size: 16px; color: var(--warn-dark); margin-top: 4px; }
+  /* 這一行只是限定上面那句的範圍，字級要比它小、顏色要淡 */
+  .mc3 .stat-warn-note { display: block; font-size: 13px; color: #8a8f8b; margin-top: 2px; }
   .mc3 .btn-record {
     background: #fff; color: var(--green); border: 1px solid var(--green); border-radius: 6px;
     font-size: 17px; font-weight: 600; padding: 8px 20px; cursor: pointer; white-space: nowrap;
@@ -952,6 +954,7 @@ img { vertical-align: middle; }
           <div class="stat-label">紅利點數</div>
           <div class="stat-num">840<small>點</small></div>
           <span class="stat-warn">120 點將於 09/30 到期</span>
+          <span class="stat-warn-note">僅顯示最近到期之點數</span>
         </div>
         <button type="button" class="btn-record" data-record="point">歷史紀錄</button>
       </div>
@@ -1335,7 +1338,7 @@ img { vertical-align: middle; }
       ]
     },
     point: {
-      title: '紅利點數-歷史紀錄', sum: '目前 840 點，其中 120 點將於 09/30 到期',
+      title: '紅利點數-歷史紀錄', sum: '目前 840 點，其中 120 點將於 09/30 到期（僅顯示最近到期之點數）',
       rows: [
         ['260728751042', 126, '消費累積', '2026/07/28 14:22'],
         ['260712750988', 88, '消費累積', '2026/07/12 09:05'],
