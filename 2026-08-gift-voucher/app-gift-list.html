@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>App 我的禮物券 — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ──────────────────────────────────────────────────────────────
+   App demo 的共用外殼。
+   色票與尺寸全部取自 fruit_app 的真實值，不要自己改：
+     theme.primary  #4BA83B   src/utils/constant.ts
+     theme.bgColor  #F2F2F2
+     VIP 文字       #F9C158   MemberScreen fontMembership
+     售價紅         #FF0000   CartScreen/ProductItem
+     次要灰         #8A8A8E   InfoItem / MemberCouponScreen
+     分隔線         #C6C6C8   CartScreen/ProductItem
+     卡片圓角       20        containerDiscount / containerOrder / containerSetting
+     圖片圓角       8         ProductItem coverImg
+   header 綠底白字無陰影、底部 tab 不顯示文字，都是現行設定。
+   ────────────────────────────────────────────────────────────── */
+
+* , *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 32px 16px 48px;
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: #e6e9e7;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage { max-width: 1200px; margin: 0 auto; }
+
+.stage-head { text-align: center; margin-bottom: 20px; }
+.stage-head h1 { font-size: 22px; margin: 0 0 4px; color: #008000; }
+.stage-head p { margin: 0; font-size: 14px; color: #6b706c; }
+.stage-head a { color: #008000; }
+
+.phones { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; }
+.phone-wrap { width: 375px; }
+.phone-label { text-align: center; font-size: 14px; color: #4a4f4b; margin-bottom: 8px; font-weight: 700; }
+
+/* 機身 */
+.phone {
+  position: relative;
+  width: 375px; height: 812px;
+  background: #F2F2F2;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  display: flex; flex-direction: column;
+}
+
+/* 狀態列（純裝飾，讓它看起來是手機） */
+.st-bar {
+  height: 28px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; font-size: 12px; font-weight: 600; flex: 0 0 auto;
+}
+
+/* header：綠底、白字、無陰影 */
+.app-head {
+  height: 48px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; padding: 0 8px; flex: 0 0 auto;
+}
+.app-head .back {
+  width: 32px; height: 32px; border: 0; background: none; color: #fff;
+  font-size: 22px; line-height: 1; cursor: pointer; padding: 0;
+}
+.app-head h2 { flex: 1; margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
+.app-head .head-pad { width: 32px; }
+
+.app-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.app-body::-webkit-scrollbar { width: 0; }
+
+/* 底部 tab：現行設定 tabBarShowLabel: false，所以只有圖示 */
+.tabbar {
+  flex: 0 0 auto; height: 56px; background: #fff;
+  border-top: 0.5px solid #C6C6C8;
+  display: flex; align-items: center;
+}
+.tabbar a {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #8A8A8E; text-decoration: none; position: relative;
+}
+.tabbar a.is-on { color: #4BA83B; }
+.tabbar svg { width: 26px; height: 26px; fill: currentColor; }
+.tabbar .badge {
+  position: absolute; top: 6px; right: 24px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; background: #FF4040; color: #fff;
+  font-size: 10px; line-height: 16px; text-align: center; font-weight: 700;
+}
+
+/* 卡片 */
+.card { background: #fff; border-radius: 20px; }
+.mx { margin: 0 16px; }
+
+/* 標籤 */
+.tag {
+  display: inline-block; border-radius: 4px;
+  padding: 2px 4px; font-size: 12px; line-height: 1.4;
+  border: 1px solid currentColor;
+}
+.tag-spec { color: #909090; }
+.tag-temp { color: #FFA451; }
+.tag-gift { color: #4BA83B; }
+.tag-sub  { color: #2F6B1F; background: #EFF5E5; border-color: #A9CE8A; }
+.tag-oos  { color: #6f6f6f; background: #ececec; border-color: #d4d4d4; }
+
+/* 按鈕 */
+.btn {
+  display: block; width: 100%; border: 0; border-radius: 20px;
+  padding: 10px 16px; font-size: 16px; font-weight: 600;
+  font-family: inherit; cursor: pointer; text-align: center;
+}
+.btn-primary { background: #4BA83B; color: #fff; }
+.btn-primary:active { background: #3f8f32; }
+.btn-done { background: #E4E7E5; color: #8A8A8E; cursor: default; }
+.btn-line { background: #fff; color: #4BA83B; border: 1px solid #4BA83B; text-decoration: none; }
+
+/* 彈窗 */
+.mask {
+  position: absolute; inset: 0; background: rgba(0,0,0,.45);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+  z-index: 20;
+}
+.mask.is-open { display: flex; }
+.sheet {
+  width: 100%; background: #fff; border-radius: 20px; overflow: hidden;
+  max-height: 100%; display: flex; flex-direction: column;
+}
+.sheet-head {
+  background: #4BA83B; color: #fff; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sheet-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.sheet-head button { background: none; border: 0; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; }
+.sheet-body { padding: 16px; overflow-y: auto; }
+.sheet-foot { padding: 0 16px 16px; }
+
+/* toast */
+.toast {
+  position: absolute; left: 50%; bottom: 88px; transform: translateX(-50%);
+  background: rgba(0,0,0,.82); color: #fff; font-size: 14px;
+  padding: 8px 16px; border-radius: 20px; opacity: 0;
+  transition: opacity .18s; pointer-events: none; z-index: 30; max-width: 88%;
+  text-align: center;
+}
+.toast.is-on { opacity: 1; }
+</style>
+<style>
+  .gv-top { padding: 12px 16px 4px; display: flex; justify-content: space-between; align-items: baseline; }
+  .gv-top .t { font-size: 14px; color: #3a3f3b; font-weight: 600; }
+  .gv-top .m { font-size: 13px; color: #8A8A8E; }
+
+  .gv-list { padding: 4px 16px 16px; }
+  .gv-card { background: #fff; border-radius: 20px; padding: 12px; margin-bottom: 12px; }
+  .gv-main { display: flex; gap: 12px; }
+  .gv-thumb { width: 96px; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; background: #C6C6C6; flex: 0 0 auto; }
+  .gv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gv-info { flex: 1; min-width: 0; }
+  .gv-vtype { font-size: 16px; font-weight: 600; color: #1a1a1a; line-height: 1.4; }
+  .gv-name { font-size: 14px; color: #8A8A8E; margin-top: 2px; line-height: 1.5; }
+  .gv-name .tag { margin-left: 4px; vertical-align: 1px; }
+  .gv-exp { font-size: 13px; color: #8A8A8E; margin-top: 6px; }
+  .gv-exp.is-soon { color: #db0000; font-weight: 600; }
+  .gv-note { font-size: 12px; color: #A0A4A1; margin-top: 4px; line-height: 1.5;
+             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .gv-act { margin-top: 16px; }
+
+  .gv-empty { text-align: center; color: #8A8A8E; font-size: 15px; padding: 48px 16px; }
+
+  /* 彈窗內容 */
+  .sh-vtype { font-size: 22px; font-weight: 700; text-align: center; color: #1a1a1a; line-height: 1.3; }
+  .sh-pic { width: 200px; aspect-ratio: 4 / 3; margin: 12px auto; border-radius: 8px; overflow: hidden; background: #C6C6C6; }
+  .sh-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sh-name { font-size: 18px; font-weight: 600; text-align: center; }
+  .sh-spec { font-size: 15px; color: #8A8A8E; text-align: center; margin-top: 4px; }
+  .sh-code { font-size: 13px; color: #A0A4A1; text-align: center; margin-top: 6px; }
+  .sh-sub { background: #E8F3DC; border: 1px solid #A9CE8A; border-radius: 8px; padding: 12px; margin-top: 16px; }
+  .sh-sub h4 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: #2F6B1F; }
+  .sh-sub div { font-size: 14px; color: #3D5C2E; line-height: 1.7; }
+  .sh-note h4 { margin: 16px 0 4px; font-size: 15px; }
+  .sh-note div { font-size: 14px; color: #595757; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="stage-head">
+    <h1>App 我的禮物券</h1>
+    <p>點「使用」會跳禮物說明，確認後才加入購物車。<a href="app-member.html">上一頁</a>　<a href="index.html">回索引</a></p>
+  </div>
+
+  <div class="phones">
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head">
+          <a class="back" href="app-member.html" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">‹</a>
+          <h2>我的禮物券</h2>
+          <span class="head-pad"></span>
+        </div>
+
+        <div class="app-body">
+          <div class="gv-top"><span class="t">目前持有</span><span class="m" id="meta"></span></div>
+          <div class="gv-list" id="list"></div>
+        </div>
+
+        <nav class="tabbar">
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6h-2v6H6V11H3z"/></svg></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></a>
+          <a href="app-cart.html"><svg viewBox="0 0 24 24"><path d="M3 4h3l3 11h9l2-7H8"/><circle cx="10" cy="19" r="1.6"/><circle cx="18" cy="19" r="1.6"/></svg><span class="badge" id="cart-badge">2</span></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 016 6v4l2 3H4l2-3V9a6 6 0 016-6zM10 19h4a2 2 0 01-4 0z"/></svg></a>
+          <a class="is-on" href="app-member.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6z"/></svg></a>
+        </nav>
+
+        <!-- 禮物說明 -->
+        <div class="mask" id="mask">
+          <div class="sheet">
+            <div class="sheet-head"><h3>禮物說明</h3><button type="button" data-close>&times;</button></div>
+            <div class="sheet-body" id="sheet-body"></div>
+            <div class="sheet-foot"><button type="button" class="btn btn-primary" id="ok">加入菜籃</button></div>
+          </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // 假資料與網頁版 member-center-c.html 的 GIFTS 完全一致，改一邊要改兩邊
+  var GIFTS = [
+    { id: '1', code: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包',
+      spec: '1 包（生日禮專用）', exp: '09/09 到期，剩 2 天', soon: true,
+      img: 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp',
+      note: '寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。' },
+    { id: '2', code: 'MF-260801-0107', vtype: '中秋限定禮', name: '有機米餅 二入',
+      spec: '2 入（中秋禮專用）', exp: '09/15 到期，剩 8 天',
+      img: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
+      note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' },
+    { id: '3', code: 'OR-260701-0011', vtype: '訂單回饋禮', name: '季節果乾 隨手包',
+      spec: '1 包（回饋禮專用）', exp: '10/31 到期，剩 54 天', oos: true,
+      img: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg',
+      note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' },
+    { id: '4', code: 'OR-260701-0012', vtype: '訂單回饋禮', name: '有機米餅 二入',
+      spec: '2 入（替代品專用）', exp: '10/31 到期，剩 54 天', sub: true,
+      img: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
+      subText: '原禮物「季節果乾 隨手包」目前缺貨，<br>已為你換成同等價值的禮物，可直接兌換。',
+      note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' }
+  ];
+
+  var added = {};
+  var current = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+  function btnHtml(g) {
+    if (g.oos) {
+      return '<a class="btn btn-line" href="https://lin.ee/djMfdxH" target="_blank" rel="noopener">請聯繫客服</a>';
+    }
+    if (added[g.id]) {
+      return '<button type="button" class="btn btn-done" disabled>已加入</button>';
+    }
+    return '<button type="button" class="btn btn-primary" data-use="' + g.id + '">使用</button>';
+  }
+
+  function flagHtml(g) {
+    if (g.oos) return '<span class="tag tag-oos">補貨中</span>';
+    if (g.sub) return '<span class="tag tag-sub">替換品項</span>';
+    return '';
+  }
+
+  function render() {
+    var h = '';
+    GIFTS.forEach(function (g) {
+      h += '<div class="gv-card">'
+        +   '<div class="gv-main">'
+        +     '<div class="gv-thumb"><img src="' + g.img + '" alt="' + esc(g.name) + '"></div>'
+        +     '<div class="gv-info">'
+        +       '<div class="gv-vtype">' + esc(g.vtype) + '</div>'
+        +       '<div class="gv-name">' + esc(g.name) + flagHtml(g) + '</div>'
+        +       '<div class="gv-exp' + (g.soon ? ' is-soon' : '') + '">' + esc(g.exp) + '</div>'
+        +       '<div class="gv-note">' + esc(g.note) + '</div>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="gv-act">' + btnHtml(g) + '</div>'
+        + '</div>';
+    });
+    $('list').innerHTML = h;
+
+    // 計數與網頁版同一套算法：可用 ＝ 總數 − 補貨中 − 已加入
+    var total = GIFTS.length;
+    var oos = GIFTS.filter(function (g) { return g.oos; }).length;
+    var n = 0, k;
+    for (k in added) { if (added[k]) n++; }
+    var parts = ['可用 ' + (total - oos - n) + ' 張'];
+    if (n) parts.push('已加入 ' + n + ' 張');
+    if (oos) parts.push('補貨中 ' + oos + ' 張');
+    $('meta').textContent = parts.join('・');
+    $('cart-badge').textContent = String(2 + n);
+  }
+
+  function openSheet(id) {
+    var g = GIFTS.filter(function (x) { return x.id === id; })[0];
+    if (!g) return;
+    current = g;
+    var h = '<div class="sh-vtype">' + esc(g.vtype) + '</div>'
+      + '<div class="sh-pic"><img src="' + g.img + '" alt="' + esc(g.name) + '"></div>'
+      + '<div class="sh-name">' + esc(g.name) + '</div>'
+      + '<div class="sh-spec">規格：' + esc(g.spec) + '</div>'
+      + '<div class="sh-code">券號 ' + esc(g.code) + '</div>';
+    if (g.sub) {
+      h += '<div class="sh-sub"><h4>替換品項</h4><div>' + g.subText + '</div></div>';
+    }
+    h += '<div class="sh-note"><h4>活動說明</h4><div>' + esc(g.note) + '</div></div>';
+    $('sheet-body').innerHTML = h;
+    $('mask').classList.add('is-open');
+  }
+
+  function closeSheet() { $('mask').classList.remove('is-open'); current = null; }
+
+  var tid;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg; t.classList.add('is-on');
+    clearTimeout(tid); tid = setTimeout(function () { t.classList.remove('is-on'); }, 2200);
+  }
+
+  $('list').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-use]');
+    if (b) openSheet(b.getAttribute('data-use'));
+  });
+  $('mask').addEventListener('click', function (e) {
+    if (e.target === $('mask') || e.target.closest('[data-close]')) closeSheet();
+  });
+  $('ok').addEventListener('click', function () {
+    if (!current) return;
+    added[current.id] = true;
+    var name = current.name;
+    closeSheet();
+    render();
+    toast('已將「' + name + '」加入菜籃');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

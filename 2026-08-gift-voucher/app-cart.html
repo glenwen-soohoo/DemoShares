@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>App 購物車（含禮物列） — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ──────────────────────────────────────────────────────────────
+   App demo 的共用外殼。
+   色票與尺寸全部取自 fruit_app 的真實值，不要自己改：
+     theme.primary  #4BA83B   src/utils/constant.ts
+     theme.bgColor  #F2F2F2
+     VIP 文字       #F9C158   MemberScreen fontMembership
+     售價紅         #FF0000   CartScreen/ProductItem
+     次要灰         #8A8A8E   InfoItem / MemberCouponScreen
+     分隔線         #C6C6C8   CartScreen/ProductItem
+     卡片圓角       20        containerDiscount / containerOrder / containerSetting
+     圖片圓角       8         ProductItem coverImg
+   header 綠底白字無陰影、底部 tab 不顯示文字，都是現行設定。
+   ────────────────────────────────────────────────────────────── */
+
+* , *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 32px 16px 48px;
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: #e6e9e7;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage { max-width: 1200px; margin: 0 auto; }
+
+.stage-head { text-align: center; margin-bottom: 20px; }
+.stage-head h1 { font-size: 22px; margin: 0 0 4px; color: #008000; }
+.stage-head p { margin: 0; font-size: 14px; color: #6b706c; }
+.stage-head a { color: #008000; }
+
+.phones { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; }
+.phone-wrap { width: 375px; }
+.phone-label { text-align: center; font-size: 14px; color: #4a4f4b; margin-bottom: 8px; font-weight: 700; }
+
+/* 機身 */
+.phone {
+  position: relative;
+  width: 375px; height: 812px;
+  background: #F2F2F2;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  display: flex; flex-direction: column;
+}
+
+/* 狀態列（純裝飾，讓它看起來是手機） */
+.st-bar {
+  height: 28px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; font-size: 12px; font-weight: 600; flex: 0 0 auto;
+}
+
+/* header：綠底、白字、無陰影 */
+.app-head {
+  height: 48px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; padding: 0 8px; flex: 0 0 auto;
+}
+.app-head .back {
+  width: 32px; height: 32px; border: 0; background: none; color: #fff;
+  font-size: 22px; line-height: 1; cursor: pointer; padding: 0;
+}
+.app-head h2 { flex: 1; margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
+.app-head .head-pad { width: 32px; }
+
+.app-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.app-body::-webkit-scrollbar { width: 0; }
+
+/* 底部 tab：現行設定 tabBarShowLabel: false，所以只有圖示 */
+.tabbar {
+  flex: 0 0 auto; height: 56px; background: #fff;
+  border-top: 0.5px solid #C6C6C8;
+  display: flex; align-items: center;
+}
+.tabbar a {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #8A8A8E; text-decoration: none; position: relative;
+}
+.tabbar a.is-on { color: #4BA83B; }
+.tabbar svg { width: 26px; height: 26px; fill: currentColor; }
+.tabbar .badge {
+  position: absolute; top: 6px; right: 24px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; background: #FF4040; color: #fff;
+  font-size: 10px; line-height: 16px; text-align: center; font-weight: 700;
+}
+
+/* 卡片 */
+.card { background: #fff; border-radius: 20px; }
+.mx { margin: 0 16px; }
+
+/* 標籤 */
+.tag {
+  display: inline-block; border-radius: 4px;
+  padding: 2px 4px; font-size: 12px; line-height: 1.4;
+  border: 1px solid currentColor;
+}
+.tag-spec { color: #909090; }
+.tag-temp { color: #FFA451; }
+.tag-gift { color: #4BA83B; }
+.tag-sub  { color: #2F6B1F; background: #EFF5E5; border-color: #A9CE8A; }
+.tag-oos  { color: #6f6f6f; background: #ececec; border-color: #d4d4d4; }
+
+/* 按鈕 */
+.btn {
+  display: block; width: 100%; border: 0; border-radius: 20px;
+  padding: 10px 16px; font-size: 16px; font-weight: 600;
+  font-family: inherit; cursor: pointer; text-align: center;
+}
+.btn-primary { background: #4BA83B; color: #fff; }
+.btn-primary:active { background: #3f8f32; }
+.btn-done { background: #E4E7E5; color: #8A8A8E; cursor: default; }
+.btn-line { background: #fff; color: #4BA83B; border: 1px solid #4BA83B; text-decoration: none; }
+
+/* 彈窗 */
+.mask {
+  position: absolute; inset: 0; background: rgba(0,0,0,.45);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+  z-index: 20;
+}
+.mask.is-open { display: flex; }
+.sheet {
+  width: 100%; background: #fff; border-radius: 20px; overflow: hidden;
+  max-height: 100%; display: flex; flex-direction: column;
+}
+.sheet-head {
+  background: #4BA83B; color: #fff; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sheet-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.sheet-head button { background: none; border: 0; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; }
+.sheet-body { padding: 16px; overflow-y: auto; }
+.sheet-foot { padding: 0 16px 16px; }
+
+/* toast */
+.toast {
+  position: absolute; left: 50%; bottom: 88px; transform: translateX(-50%);
+  background: rgba(0,0,0,.82); color: #fff; font-size: 14px;
+  padding: 8px 16px; border-radius: 20px; opacity: 0;
+  transition: opacity .18s; pointer-events: none; z-index: 30; max-width: 88%;
+  text-align: center;
+}
+.toast.is-on { opacity: 1; }
+</style>
+<style>
+  .grp { background: #fff; margin-bottom: 8px; }
+  .grp-head { padding: 12px 16px 0; font-size: 14px; font-weight: 600; color: #3a3f3b; }
+
+  /* 單列：照 CartScreen/ProductItem 的實際值 */
+  .row { display: flex; padding: 16px 16px 12px; border-bottom: 0.5px solid #C6C6C8; }
+  .row:last-child { border-bottom: 0; }
+  .row-img { width: 88px; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
+             background: #C6C6C6; margin-right: 8px; flex: 0 0 auto; }
+  .row-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .row-body { flex: 1; min-width: 0; }
+
+  .row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; gap: 4px; }
+  .row-name { font-size: 16px; flex: 1; line-height: 1.4; }
+  .row-x { width: 24px; height: 24px; border: 0; background: none; padding: 0; cursor: pointer;
+           color: #C6C6C8; font-size: 22px; line-height: 1; }
+  .row-tags { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+  .row-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+  .row-price { color: #FF0000; font-size: 18px; }
+  .row-origin { color: #999; text-decoration: line-through; font-size: 13px; margin-right: 4px; }
+
+  /* 數量選擇器 */
+  .qty { display: flex; align-items: center; border: 1px solid #C6C6C8; border-radius: 4px; overflow: hidden; }
+  .qty button { width: 28px; height: 28px; border: 0; background: #fff; font-size: 16px;
+                color: #4BA83B; cursor: pointer; padding: 0; font-family: inherit; }
+  .qty span { min-width: 32px; text-align: center; font-size: 15px; }
+  /* 加購品現行就是隱藏數量選擇器，禮物列沿用同一個做法 */
+  .qty-fixed { font-size: 14px; color: #8A8A8E; }
+
+  .gift-btn { background: none; border: 0; padding: 0; margin-left: 8px; cursor: pointer;
+              color: #4BA83B; font-size: 13px; text-decoration: underline; font-family: inherit; }
+
+  /* 金額 */
+  .sum { background: #fff; padding: 16px; }
+  .sum-row { display: flex; justify-content: space-between; font-size: 15px; line-height: 2; color: #3a3f3b; }
+  .sum-row.is-total { border-top: 1px solid #EDEFEE; margin-top: 8px; padding-top: 8px;
+                      font-size: 17px; font-weight: 700; }
+  .sum-row.is-total .v { color: #FF0000; }
+  .sum-note { font-size: 12px; color: #8A8A8E; line-height: 1.7; margin-top: 8px; }
+
+  .bottombar { flex: 0 0 auto; background: #fff; border-top: 0.5px solid #C6C6C8;
+               padding: 8px 16px; display: flex; align-items: center; gap: 12px; }
+  .bottombar .bb-total { flex: 1; }
+  .bottombar .bb-total .lb { font-size: 12px; color: #8A8A8E; }
+  .bottombar .bb-total .vl { font-size: 20px; font-weight: 700; color: #FF0000; }
+  .bottombar .btn { width: auto; padding: 10px 24px; }
+
+  .sh-pic { width: 200px; aspect-ratio: 4 / 3; margin: 0 auto 12px; border-radius: 8px; overflow: hidden; background: #C6C6C6; }
+  .sh-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sh-vtype { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 12px; }
+  .sh-name { font-size: 18px; font-weight: 600; text-align: center; }
+  .sh-spec { font-size: 15px; color: #8A8A8E; text-align: center; margin-top: 4px; }
+  .sh-code { font-size: 13px; color: #A0A4A1; text-align: center; margin-top: 6px; }
+  .sh-note h4 { margin: 16px 0 4px; font-size: 15px; }
+  .sh-note div { font-size: 14px; color: #595757; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="stage-head">
+    <h1>App 購物車：禮物列</h1>
+    <p>禮物就是購物車裡的一列 0 元商品，數量鎖 1、可以刪除。<a href="app-gift-list.html">上一頁</a>　<a href="index.html">回索引</a></p>
+  </div>
+
+  <div class="phones">
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><span class="head-pad"></span><h2>購物車</h2><span class="head-pad"></span></div>
+
+        <div class="app-body">
+          <div class="grp">
+            <div class="grp-head">粥寶寶專區・常溫</div>
+            <div id="rows"></div>
+          </div>
+
+          <div class="sum">
+            <div class="sum-row"><span>商品小計</span><span id="s-sub">$1,400</span></div>
+            <div class="sum-row"><span>運費</span><span id="s-fee">$150</span></div>
+            <div class="sum-row is-total"><span>應付金額</span><span class="v" id="s-total">$1,550</span></div>
+            <p class="sum-note" id="s-note"></p>
+          </div>
+        </div>
+
+        <div class="bottombar">
+          <div class="bb-total"><div class="lb">應付金額</div><div class="vl" id="bb-total">$1,550</div></div>
+          <button type="button" class="btn btn-primary" onclick="return false;">前往結帳</button>
+        </div>
+
+        <div class="mask" id="mask">
+          <div class="sheet">
+            <div class="sheet-head"><h3>禮物說明</h3><button type="button" data-close>&times;</button></div>
+            <div class="sheet-body">
+              <div class="sh-vtype">寶寶生日禮</div>
+              <div class="sh-pic"><img src="https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp" alt="寶寶果泥 隨手包"></div>
+              <div class="sh-name">寶寶果泥 隨手包</div>
+              <div class="sh-spec">規格：1 包（生日禮專用）</div>
+              <div class="sh-code">券號 BD-BABY-0052</div>
+              <div class="sh-note">
+                <h4>活動說明</h4>
+                <div>寶寶滿一歲的專屬生日禮，每位寶寶限領一次。券自發放日起 14 天內有效，逾期不補發。兌換時運費依一般規則計算，湊滿免運門檻即可免運。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+
+        <nav class="tabbar">
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6h-2v6H6V11H3z"/></svg></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></a>
+          <a class="is-on" href="javascript:;"><svg viewBox="0 0 24 24"><path d="M3 4h3l3 11h9l2-7H8"/><circle cx="10" cy="19" r="1.6"/><circle cx="18" cy="19" r="1.6"/></svg><span class="badge" id="badge">3</span></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 016 6v4l2 3H4l2-3V9a6 6 0 016-6zM10 19h4a2 2 0 01-4 0z"/></svg></a>
+          <a href="app-member.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6z"/></svg></a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var FREE_THRESHOLD = 1500, FEE = 150;
+  // 品項與網頁版 checkout-cart.html 一致
+  var ITEMS = [
+    { id: 'a', name: '寶寶粥 鮮蔬雞肉', spec: '1 包 150g', price: 680, qty: 2, stock: 12,
+      img: 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp' },
+    { id: 'b', name: '寶寶果汁 蘋果', spec: '1 瓶 120ml', price: 40, qty: 1, stock: 30,
+      img: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg' },
+    { id: 'g', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）', price: 0, origin: 199, qty: 1, gift: true,
+      img: 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp' }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var money = function (n) { return '$' + n.toLocaleString('en-US'); };
+
+  function rowHtml(it) {
+    var price = it.gift
+      ? '<span class="row-origin">' + money(it.origin) + '</span><span class="row-price">$0</span>'
+      : '<span class="row-price">' + money(it.price) + '</span>';
+    var qty = it.gift
+      ? '<span class="qty-fixed">數量 1</span>'
+      : '<div class="qty"><button type="button" data-dec="' + it.id + '">−</button>'
+        + '<span>' + it.qty + '</span>'
+        + '<button type="button" data-inc="' + it.id + '">＋</button></div>';
+    var tags = '<span class="tag tag-spec">規格：' + esc(it.spec) + '</span>'
+             + '<span class="tag tag-temp">常溫</span>'
+             + (it.gift ? '<span class="tag tag-gift">禮物券兌換</span>'
+                        + '<button type="button" class="gift-btn" data-info>禮物券說明</button>' : '');
+    return '<div class="row" data-row="' + it.id + '">'
+      +   '<div class="row-img"><img src="' + it.img + '" alt="' + esc(it.name) + '"></div>'
+      +   '<div class="row-body">'
+      +     '<div class="row-top"><span class="row-name">' + esc(it.name) + '</span>'
+      +       '<button type="button" class="row-x" data-del="' + it.id + '" aria-label="移除">×</button></div>'
+      +     '<div class="row-tags">' + tags + '</div>'
+      +     '<div class="row-foot">' + price + qty + '</div>'
+      +   '</div>'
+      + '</div>';
+  }
+
+  function render() {
+    $('rows').innerHTML = ITEMS.map(rowHtml).join('');
+    // 禮物 0 元，不計入小計、也不幫忙墊免運門檻
+    var sub = ITEMS.reduce(function (s, it) { return s + it.price * it.qty; }, 0);
+    var fee = sub >= FREE_THRESHOLD ? 0 : FEE;
+    $('s-sub').textContent = money(sub);
+    $('s-fee').textContent = fee === 0 ? '免運' : money(fee);
+    $('s-total').textContent = money(sub + fee);
+    $('bb-total').textContent = money(sub + fee);
+    $('badge').textContent = String(ITEMS.reduce(function (s, it) { return s + it.qty; }, 0));
+    var hasGift = ITEMS.some(function (it) { return it.gift; });
+    var diff = FREE_THRESHOLD - sub;
+    var note = [];
+    if (hasGift) note.push('禮物券兌換的商品以 $0 併入這張訂單，跟自己買的商品一起結帳、一起出貨。');
+    if (diff > 0) note.push('禮物的 $0 不計入免運門檻，再買 ' + money(diff) + ' 就免運。');
+    $('s-note').innerHTML = note.join('<br>');
+  }
+
+  var tid;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg; t.classList.add('is-on');
+    clearTimeout(tid); tid = setTimeout(function () { t.classList.remove('is-on'); }, 2600);
+  }
+
+  $('rows').addEventListener('click', function (e) {
+    var inc = e.target.closest('[data-inc]'), dec = e.target.closest('[data-dec]');
+    var del = e.target.closest('[data-del]'), info = e.target.closest('[data-info]');
+    if (info) { $('mask').classList.add('is-open'); return; }
+    var id = (inc && inc.getAttribute('data-inc')) || (dec && dec.getAttribute('data-dec'))
+          || (del && del.getAttribute('data-del'));
+    if (!id) return;
+    var i = ITEMS.findIndex(function (x) { return x.id === id; });
+    if (i < 0) return;
+    if (inc) { if (ITEMS[i].qty + 1 <= ITEMS[i].stock) ITEMS[i].qty++; }
+    else if (dec) { if (ITEMS[i].qty > 1) ITEMS[i].qty--; }
+    else if (del) {
+      var wasGift = ITEMS[i].gift;
+      ITEMS.splice(i, 1);
+      if (wasGift) toast('已移除禮物，禮物券仍保留在會員中心，可以再加入一次');
+    }
+    render();
+  });
+
+  $('mask').addEventListener('click', function (e) {
+    if (e.target === $('mask') || e.target.closest('[data-close]')) $('mask').classList.remove('is-open');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

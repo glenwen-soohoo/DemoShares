@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>App 會員中心（禮物券入口） — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ──────────────────────────────────────────────────────────────
+   App demo 的共用外殼。
+   色票與尺寸全部取自 fruit_app 的真實值，不要自己改：
+     theme.primary  #4BA83B   src/utils/constant.ts
+     theme.bgColor  #F2F2F2
+     VIP 文字       #F9C158   MemberScreen fontMembership
+     售價紅         #FF0000   CartScreen/ProductItem
+     次要灰         #8A8A8E   InfoItem / MemberCouponScreen
+     分隔線         #C6C6C8   CartScreen/ProductItem
+     卡片圓角       20        containerDiscount / containerOrder / containerSetting
+     圖片圓角       8         ProductItem coverImg
+   header 綠底白字無陰影、底部 tab 不顯示文字，都是現行設定。
+   ────────────────────────────────────────────────────────────── */
+
+* , *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 32px 16px 48px;
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: #e6e9e7;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage { max-width: 1200px; margin: 0 auto; }
+
+.stage-head { text-align: center; margin-bottom: 20px; }
+.stage-head h1 { font-size: 22px; margin: 0 0 4px; color: #008000; }
+.stage-head p { margin: 0; font-size: 14px; color: #6b706c; }
+.stage-head a { color: #008000; }
+
+.phones { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; }
+.phone-wrap { width: 375px; }
+.phone-label { text-align: center; font-size: 14px; color: #4a4f4b; margin-bottom: 8px; font-weight: 700; }
+
+/* 機身 */
+.phone {
+  position: relative;
+  width: 375px; height: 812px;
+  background: #F2F2F2;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  display: flex; flex-direction: column;
+}
+
+/* 狀態列（純裝飾，讓它看起來是手機） */
+.st-bar {
+  height: 28px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; font-size: 12px; font-weight: 600; flex: 0 0 auto;
+}
+
+/* header：綠底、白字、無陰影 */
+.app-head {
+  height: 48px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; padding: 0 8px; flex: 0 0 auto;
+}
+.app-head .back {
+  width: 32px; height: 32px; border: 0; background: none; color: #fff;
+  font-size: 22px; line-height: 1; cursor: pointer; padding: 0;
+}
+.app-head h2 { flex: 1; margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
+.app-head .head-pad { width: 32px; }
+
+.app-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.app-body::-webkit-scrollbar { width: 0; }
+
+/* 底部 tab：現行設定 tabBarShowLabel: false，所以只有圖示 */
+.tabbar {
+  flex: 0 0 auto; height: 56px; background: #fff;
+  border-top: 0.5px solid #C6C6C8;
+  display: flex; align-items: center;
+}
+.tabbar a {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #8A8A8E; text-decoration: none; position: relative;
+}
+.tabbar a.is-on { color: #4BA83B; }
+.tabbar svg { width: 26px; height: 26px; fill: currentColor; }
+.tabbar .badge {
+  position: absolute; top: 6px; right: 24px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; background: #FF4040; color: #fff;
+  font-size: 10px; line-height: 16px; text-align: center; font-weight: 700;
+}
+
+/* 卡片 */
+.card { background: #fff; border-radius: 20px; }
+.mx { margin: 0 16px; }
+
+/* 標籤 */
+.tag {
+  display: inline-block; border-radius: 4px;
+  padding: 2px 4px; font-size: 12px; line-height: 1.4;
+  border: 1px solid currentColor;
+}
+.tag-spec { color: #909090; }
+.tag-temp { color: #FFA451; }
+.tag-gift { color: #4BA83B; }
+.tag-sub  { color: #2F6B1F; background: #EFF5E5; border-color: #A9CE8A; }
+.tag-oos  { color: #6f6f6f; background: #ececec; border-color: #d4d4d4; }
+
+/* 按鈕 */
+.btn {
+  display: block; width: 100%; border: 0; border-radius: 20px;
+  padding: 10px 16px; font-size: 16px; font-weight: 600;
+  font-family: inherit; cursor: pointer; text-align: center;
+}
+.btn-primary { background: #4BA83B; color: #fff; }
+.btn-primary:active { background: #3f8f32; }
+.btn-done { background: #E4E7E5; color: #8A8A8E; cursor: default; }
+.btn-line { background: #fff; color: #4BA83B; border: 1px solid #4BA83B; text-decoration: none; }
+
+/* 彈窗 */
+.mask {
+  position: absolute; inset: 0; background: rgba(0,0,0,.45);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+  z-index: 20;
+}
+.mask.is-open { display: flex; }
+.sheet {
+  width: 100%; background: #fff; border-radius: 20px; overflow: hidden;
+  max-height: 100%; display: flex; flex-direction: column;
+}
+.sheet-head {
+  background: #4BA83B; color: #fff; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sheet-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.sheet-head button { background: none; border: 0; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; }
+.sheet-body { padding: 16px; overflow-y: auto; }
+.sheet-foot { padding: 0 16px 16px; }
+
+/* toast */
+.toast {
+  position: absolute; left: 50%; bottom: 88px; transform: translateX(-50%);
+  background: rgba(0,0,0,.82); color: #fff; font-size: 14px;
+  padding: 8px 16px; border-radius: 20px; opacity: 0;
+  transition: opacity .18s; pointer-events: none; z-index: 30; max-width: 88%;
+  text-align: center;
+}
+.toast.is-on { opacity: 1; }
+</style>
+<style>
+  /* 會員區塊：綠底、下方兩角圓 20，內距 16，置中 */
+  .m-top { background: #4BA83B; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; padding: 16px; }
+  .m-who { display: flex; flex-direction: column; align-items: center; }
+  .m-avatar { width: 72px; height: 72px; border-radius: 36px; background: #fff; }
+  .m-name-wrap { margin: 16px 0; text-align: center; }
+  .m-name { font-size: 16px; font-weight: 600; line-height: 22px; color: #fff; }
+  .m-vip  { font-size: 14px; font-weight: 600; line-height: 22px; color: #F9C158; }
+
+  /* 白色膠囊卡：現行是三格（購物金／紅利／優惠券），這裡變四格 */
+  .m-stats { display: flex; border-radius: 20px; background: #fff; padding: 8px 8px; }
+  .m-stat { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            margin: 8px 0; text-decoration: none; }
+  .m-stat .lb { font-size: 14px; color: #4BA83B; padding: 2px 0; white-space: nowrap; }
+  .m-stat .vl { font-size: 16px; color: #4BA83B; padding: 2px 0; display: flex; align-items: center; gap: 2px; }
+  .m-stat .vl svg { width: 14px; height: 14px; fill: #8A8A8E; }
+  .m-div { width: 1px; background: #E4E7E5; margin: 8px 0; }
+
+  .m-rest { margin: 16px; }
+  .m-orders { display: flex; border-radius: 20px; background: #fff; padding: 8px 16px; margin-bottom: 8px; }
+  .m-order { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; }
+  .m-order svg { width: 24px; height: 24px; fill: #4BA83B; }
+  .m-order span { font-size: 13px; color: #3a3f3b; }
+
+  .m-list { background: #fff; border-radius: 20px; }
+  .m-row { display: flex; justify-content: space-between; align-items: center;
+           padding: 11px 16px; margin: 8px 0; font-size: 15px; color: #3a3f3b; text-decoration: none; }
+  .m-row .r { display: flex; align-items: center; gap: 4px; color: #8A8A8E; font-size: 13px; }
+  .m-row .r svg { width: 14px; height: 14px; fill: #8A8A8E; }
+  .m-row + .m-row { border-top: 0.5px solid #EDEFEE; }
+
+  .m-hint { font-size: 12px; color: #8A8A8E; text-align: center; margin: 16px 0 24px; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="stage-head">
+    <h1>App 會員中心：禮物券入口</h1>
+    <p>禮物券入口放九宮格第四格（2026-09-10 定案）。<a href="index.html">回索引</a></p>
+  </div>
+
+  <div class="phones">
+
+    <div class="phone-wrap">
+      <div class="phone-label">現行</div>
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><span class="head-pad"></span><h2>會員中心</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="m-top">
+            <div class="m-who">
+              <div class="m-avatar"></div>
+              <div class="m-name-wrap">
+                <div class="m-name">王小綠</div>
+                <div class="m-vip">綠寶石會員</div>
+              </div>
+            </div>
+            <div class="m-stats">
+              <a class="m-stat" href="javascript:;"><span class="lb">購物金</span><span class="vl">320</span></a>
+              <div class="m-div"></div>
+              <a class="m-stat" href="javascript:;"><span class="lb">紅利點數</span><span class="vl">1,480</span></a>
+              <div class="m-div"></div>
+              <a class="m-stat" href="javascript:;"><span class="lb">優惠券</span><span class="vl">3<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+            </div>
+          </div>
+          <div class="m-rest">
+            <div class="m-orders">
+              <div class="m-order"><svg viewBox="0 0 24 24"><path d="M7 4h10l1 4H6zM5 9h14l-1 11H6z"/></svg><span>待出貨</span></div>
+              <div class="m-order"><svg viewBox="0 0 24 24"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>已出貨</span></div>
+              <div class="m-order"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.6 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg><span>待評價</span></div>
+            </div>
+            <div class="m-list">
+              <a class="m-row" href="javascript:;">訂單查詢<span class="r"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+              <a class="m-row" href="javascript:;">常用收件人<span class="r"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+              <a class="m-row" href="javascript:;">會員資料<span class="r"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+            </div>
+            <p class="m-hint">版本 5.0.0</p>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6h-2v6H6V11H3z"/></svg></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></a>
+          <a href="app-cart.html"><svg viewBox="0 0 24 24"><path d="M3 4h3l3 11h9l2-7H8"/><circle cx="10" cy="19" r="1.6"/><circle cx="18" cy="19" r="1.6"/></svg><span class="badge">2</span></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 016 6v4l2 3H4l2-3V9a6 6 0 016-6zM10 19h4a2 2 0 01-4 0z"/></svg></a>
+          <a class="is-on" href="javascript:;"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6z"/></svg></a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone-label">定案：九宮格加第四格</div>
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><span class="head-pad"></span><h2>會員中心</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="m-top">
+            <div class="m-who">
+              <div class="m-avatar"></div>
+              <div class="m-name-wrap">
+                <div class="m-name">王小綠</div>
+                <div class="m-vip">綠寶石會員</div>
+              </div>
+            </div>
+            <div class="m-stats">
+              <a class="m-stat" href="javascript:;"><span class="lb">購物金</span><span class="vl">320</span></a>
+              <div class="m-div"></div>
+              <a class="m-stat" href="javascript:;"><span class="lb">紅利點數</span><span class="vl">1,480</span></a>
+              <div class="m-div"></div>
+              <a class="m-stat" href="javascript:;"><span class="lb">優惠券</span><span class="vl">3</span></a>
+              <div class="m-div"></div>
+              <a class="m-stat" href="app-gift-list.html"><span class="lb">禮物券</span><span class="vl">3<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+            </div>
+          </div>
+          <div class="m-rest">
+            <div class="m-orders">
+              <div class="m-order"><svg viewBox="0 0 24 24"><path d="M7 4h10l1 4H6zM5 9h14l-1 11H6z"/></svg><span>待出貨</span></div>
+              <div class="m-order"><svg viewBox="0 0 24 24"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>已出貨</span></div>
+              <div class="m-order"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.6 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg><span>待評價</span></div>
+            </div>
+            <div class="m-list">
+              <a class="m-row" href="javascript:;">訂單查詢<span class="r"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+              <a class="m-row" href="javascript:;">常用收件人<span class="r"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+              <a class="m-row" href="javascript:;">會員資料<span class="r"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#8A8A8E" stroke-width="2" fill="none"/></svg></span></a>
+            </div>
+            <p class="m-hint">版本 5.0.0</p>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6h-2v6H6V11H3z"/></svg></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></a>
+          <a href="app-cart.html"><svg viewBox="0 0 24 24"><path d="M3 4h3l3 11h9l2-7H8"/><circle cx="10" cy="19" r="1.6"/><circle cx="18" cy="19" r="1.6"/></svg><span class="badge">2</span></a>
+          <a href="javascript:;"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 016 6v4l2 3H4l2-3V9a6 6 0 016-6zM10 19h4a2 2 0 01-4 0z"/></svg></a>
+          <a class="is-on" href="javascript:;"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6z"/></svg></a>
+        </nav>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
