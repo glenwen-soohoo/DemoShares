@@ -32,6 +32,8 @@
 | `member-center-b-superseded-by-c.html` | `member-center-c.html` | 2026-09-03。同一份內容的早期排版方案，C 版多做了等級切換與預設頭像 |
 | `member-center-new2-superseded-by-c.html` | `member-center-c.html` | 同上。**檔名的 new2 沒有時序意義**，它比 C 版舊 |
 | `admin-order-create-gift-superseded-by-b.html` | `admin-order-create-gift-b.html` | 2026-09-07。第一版是六區版面，b 版收成四區並加上金額自動計算。一度保留在索引上供對照排版差異，定案後封存 |
+| `admin-order-create-gift-b-superseded-by-c.html` | `admin-order-create-gift-c.html` | 2026-09-10。客服回饋改版：會員身分三選項、依收件地區判定配送方式、複製訂單、匯入文字檔補實作 |
+| `admin-member-gift-superseded-by-b.html` | `admin-member-gift-b.html` | 2026-09-10。客服回饋改版：會員等級分色徽章＋年度消費、收件時間對齊前台、兩個備註欄正名、購物金原因常用詞 |
 
 ### 改動前的快照
 
