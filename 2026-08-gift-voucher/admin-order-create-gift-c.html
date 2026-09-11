@@ -817,6 +817,13 @@ a:hover { text-decoration: underline; }
   .inline-row select { width: auto; flex: 1; min-width: 0; }
 
   .ro { color: var(--gox-text-muted); font-size: 13px; }
+  /* 優惠券一列的三段：名稱、面額、條件。名稱要能一眼掃到，所以加粗；
+     條件是次要資訊，降一級。現行畫面只有面額，客服分不出同面額的兩張券。 */
+  .cp-name { font-weight: 600; }
+  .cp-amt { margin-left: 8px; color: var(--gox-danger); font-variant-numeric: tabular-nums; }
+  .cp-sub { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 2px; }
+  .rad-grp label.is-off .cp-name, .rad-grp label.is-off .cp-amt { color: var(--gox-text-muted); }
+
   .oc-noresult { color: var(--gox-danger); font-size: 13px; display: none; }
   .oc-noresult.is-on { display: inline; }
   .oc-found { color: var(--gox-green-hover); font-size: 13px; font-weight: 600; display: none; }
@@ -1256,12 +1263,19 @@ a:hover { text-decoration: underline; }
                  · 來源 productsStr，每筆 label 為「產品 ID-規格 ID-名稱」
                  · select 時 split('-') 取兩個 ID，打 GetProductObject 取回單價
                  · 再把 addToCart(pid, pdid) 綁到「加入」按鈕上
-               「＋ 再加一項」對應現行的 Add_Product()（可加多列，name 為 item2[n]）。
-               這兩件都不要因為 demo 看起來簡單就拿掉。 -->
+               這一件不要因為 demo 看起來簡單就拿掉。
+
+               ⚠️ 「＋ 再加一項」已移除（2026-09-11）。現行 CreatePayment.cshtml:784 的
+               Add_Product() 確實可以長出第 2、3 列（上限 20），但那是個半死的功能：
+                 · 那些列的欄位叫 item2[n].ProductName / item2[n].amount，
+                   整包 .cs 搜不到任何地方接這組欄位，POST 上去沒人收
+                 · 「加入」只有一顆（id="cart-btn"，單一元素），它的 onclick 會被
+                   最後一次自動完成選中的商品覆蓋（order-create-payment.js:539 / 563）
+               所以填了五列也只會加進最後選的那一件。實際流程本來就是
+               「搜一個、按加入、再搜下一個」，一次一件。留著只會讓客服以為填了就會進車。 -->
           <div class="fld">
             <div id="prod-rows"></div>
             <div class="inline-row" style="margin-top:2px">
-              <button type="button" class="oc-btn" id="prod-add-row">＋ 再加一項</button>
               <button type="button" class="oc-btn oc-btn-primary" id="prod-to-cart">加入購物車</button>
               <button type="button" class="oc-btn" id="import-text">匯入文字檔</button>
               <button type="button" class="oc-btn" id="copy-order">複製訂單</button>
@@ -1605,7 +1619,25 @@ a:hover { text-decoration: underline; }
   // 免運門檻與運費沿用購物車 demo 的同一組（checkout-cart.html: THRESHOLD/FREIGHT）
   var THRESHOLD = 1500, FREIGHT = 150;
   var COD_FEE = 30;          // 貨到付款手續費，照 CreatePayment.cshtml 的 #fee
-  var COUPON = { amount: 100, minSpend: 1000 };
+  // 優惠券。現行畫面只印面額＋張數＋最低消費＋效期，看不出「這是哪一種券」。
+  // 名稱在 dbo.Coupon 沒有欄位，但 Origin 這一欄本來就存著人看得懂的發放來源
+  // （程式裡寫死的值長這樣：VIP折扣券／產品回饋輪盤／週年慶轉盤抽抽樂／七週年慶優惠券／中元節搶孤…）。
+  // 這裡刻意放兩張同樣 100 元但條件不同的券，因為現行是 GroupBy(Amount)，
+  // 這兩張會被併成一列「100 元的折價券有 2 張」，最低消費與效期只顯示其中一張的。
+  // isPercent：面額型（折 N 元）與折扣型（打 N 折）在現行是兩條完全不同的計算路徑。
+  // lines：適用產線，對應 Coupon.TypeConstraint（存產線 id 的 JSON 陣列）；空陣列＝不限。
+  //   ⚠️ 現行只有折扣型會真的吃這個限制（OrderModel.GetCouponAmount 的 Amount < 1 分支）。
+  //      面額型直接 return coupon.Amount，產線完全不看。而且後台建單整條路都沒有呼叫
+  //      IsPassCouponCheck（那支只有前台 Controllers/OrdersController 在用），
+  //      所以客服把一張限蔬菜箱的券用在一車水果上，系統不會擋。
+  //      畫面照實顯示限制，是為了讓客服自己看得到；系統要不要擋是另一個決定。
+  var COUPONS = [
+    { id: 5001, origin: '生日禮金',       isPercent: false, amount: 100,  minSpend: 1000, lines: [],                endTime: '2026/09/30' },
+    { id: 5002, origin: '週年慶轉盤抽抽樂', isPercent: false, amount: 100,  minSpend: 0,    lines: ['蔬菜箱'],         endTime: '2026/12/31' },
+    { id: 5003, origin: 'VIP折扣券',      isPercent: true,  amount: 0.88, minSpend: 0,    lines: ['蔬菜箱'],         endTime: '2026/10/15' },
+    { id: 5004, origin: '滿千折88',       isPercent: false, amount: 88,   minSpend: 1000, lines: [],                endTime: '2026/11/30' }
+  ];
+  function couponLabel(c) { return c.isPercent ? Math.round(c.amount * 100) + ' 折' : c.amount + ' 元'; }
 
   // ══════════════════════════════════════════════════════
   // 會員池
@@ -1728,6 +1760,7 @@ a:hover { text-decoration: underline; }
   }
 
   var scene = 'normal', found = false, isMember = true, added = [], useCoupon = false;
+  var couponId = 0;   // 0 = 不使用；其餘是選中的那張券的 Id
   // memberMode：1 會員 / 0 非會員 / 2 同步建立會員
   var memberMode = 1, newMemberId = null;
 
@@ -1792,8 +1825,20 @@ a:hover { text-decoration: underline; }
   function calc() {
     var sub = subtotal();                       // 禮物是 0 元，不進小計
     var act = 0;                                // 活動折扣（demo 無活動）
-    var couponOk = useCoupon && found && sub >= COUPON.minSpend;
-    var coupon = couponOk ? COUPON.amount : 0;
+    var picked = couponId ? COUPONS.filter(function (c) { return c.id === couponId; })[0] : null;
+    var couponOk = !!picked && found && sub >= picked.minSpend;
+    // 折扣型照現行只折「符合產線」的品項；面額型現行直接折面額、不看產線（見 COUPONS 的註解）
+    var coupon = 0;
+    if (couponOk) {
+      if (!picked.isPercent) {
+        coupon = picked.amount;
+      } else {
+        var base = cart.filter(function (it) {
+          return !picked.lines.length || picked.lines.indexOf(it.line) >= 0;
+        }).reduce(function (n, it) { return n + it.price * it.qty; }, 0);
+        coupon = Math.round(base * (1 - picked.amount));
+      }
+    }
 
     // 購物金／紅利：先夾在剩餘額度，再夾在「還沒付掉的金額」，不能折到負的
     var bonusCap = found ? MEMBER.bonus : 0;
@@ -1932,23 +1977,37 @@ a:hover { text-decoration: underline; }
     }).join('') + '</div>';
   }
 
-  // 優惠券：未達最低消費就不給選，並寫明原因（現行只寫「最低消費」不擋）
+  // 優惠券：一張一列，帶名稱與效期；未達最低消費就不給選，並寫明原因
+  // （現行只寫「最低消費」不擋，而且沒有名稱、同面額的券還會被併成一列）
   function renderCoupon() {
     var el = $('coupon-area');
     if (!found) { el.innerHTML = '<span class="ro">先查詢會員，才會列出他的優惠券。</span>'; return; }
     var sub = subtotal();
-    var ok = sub >= COUPON.minSpend;
-    if (!ok) useCoupon = false;
-    el.innerHTML =
-      '<div class="rad-grp is-stack">' +
-        '<label><input type="radio" name="RadCoupon" value="0"' + (useCoupon ? '' : ' checked') + '><span>不使用優惠券</span></label>' +
-        '<label class="' + (ok ? '' : 'is-off') + '">' +
-          '<input type="radio" name="RadCoupon" value="1"' + (useCoupon ? ' checked' : '') + (ok ? '' : ' disabled') + '>' +
-          '<span>' + COUPON.amount + ' 元的折價券有 1 張（最低消費 ' + fmt(COUPON.minSpend) + '）' +
-            (ok ? '' : '<span class="why">　小計 ' + fmt(sub) + '，未達最低消費</span>') +
+
+    // 選中的那張若因為小計變動而失去資格，自動退回「不使用」，不要留一個選不到的選項被選著
+    var cur = couponId ? COUPONS.filter(function (c) { return c.id === couponId; })[0] : null;
+    if (cur && sub < cur.minSpend) couponId = 0;
+
+    var h = '<div class="rad-grp is-stack">' +
+      '<label><input type="radio" name="RadCoupon" value="0"' + (couponId ? '' : ' checked') + '><span>不使用優惠券</span></label>';
+    COUPONS.forEach(function (c) {
+      var ok = sub >= c.minSpend;
+      h += '<label class="' + (ok ? '' : 'is-off') + '">' +
+        '<input type="radio" name="RadCoupon" value="' + c.id + '"' +
+          (couponId === c.id ? ' checked' : '') + (ok ? '' : ' disabled') + '>' +
+        '<span>' +
+          '<span class="cp-name">' + c.origin + '</span>' +
+          '<span class="cp-amt">' + couponLabel(c) + '</span>' +
+          '<span class="cp-sub">' +
+            (c.lines.length ? '限 ' + c.lines.join('、') : '不限產線') +
+            '・最低消費 ' + (c.minSpend ? fmt(c.minSpend) : '無') +
+            '・有效至 ' + c.endTime +
           '</span>' +
-        '</label>' +
-      '</div>';
+          (ok ? '' : '<span class="why">小計 ' + fmt(sub) + '，未達最低消費</span>') +
+        '</span>' +
+      '</label>';
+    });
+    el.innerHTML = h + '</div>';
   }
 
 
@@ -2044,7 +2103,7 @@ a:hover { text-decoration: underline; }
     var hits = MEMBER_POOL.filter(function (v) { return v.mobile === m; });
     var ok = hits.length > 0;
     if (ok) MEMBER = pickMember(hits);
-    found = ok; added = []; useCoupon = false;
+    found = ok; added = []; useCoupon = false; couponId = 0;
     $('vol-noresult').classList.toggle('is-on', !ok && m !== '');
     $('vol-found').style.display = ok ? 'inline' : 'none';
 
@@ -2238,7 +2297,7 @@ a:hover { text-decoration: underline; }
       btn.disabled = (mode === 0);
     }
 
-    if (mode === 0) { found = false; added = []; useCoupon = false; }
+    if (mode === 0) { found = false; added = []; useCoupon = false; couponId = 0; }
     render();
   }
 
@@ -2528,7 +2587,7 @@ a:hover { text-decoration: underline; }
   });
 
   document.addEventListener('change', function (e) {
-    if (e.target.name === 'RadCoupon') { useCoupon = (e.target.value === '1'); renderAmount(); }
+    if (e.target.name === 'RadCoupon') { couponId = +e.target.value; useCoupon = (couponId > 0); renderAmount(); }
   });
 
   function toast(msg) {
@@ -2576,7 +2635,6 @@ a:hover { text-decoration: underline; }
       '<span>×</span>' +
       '<input type="number" class="prod-qty" value="1" min="1">' +
       '<span class="prod-price">—</span>' +
-      '<button type="button" class="oc-btn" data-row-rm="' + i + '">移除</button>' +
     '</div>';
   }
 
@@ -2623,8 +2681,6 @@ a:hover { text-decoration: underline; }
     }
   }
 
-  $('prod-add-row').addEventListener('click', addProdRow);
-
   $('prod-rows').addEventListener('input', function (e) {
     if (!e.target.classList.contains('ac-input')) return;
     acRender(e.target.closest('.prod-row'), e.target.value.trim());
@@ -2639,37 +2695,30 @@ a:hover { text-decoration: underline; }
       acPick(e.target.closest('.prod-row'), item.getAttribute('data-pid'), item.getAttribute('data-pdid'));
       return;
     }
-    var rm = e.target.closest('[data-row-rm]');
-    if (rm) {
-      var rows = $('prod-rows').querySelectorAll('.prod-row');
-      if (rows.length <= 1) { addProdRow(); }
-      rm.closest('.prod-row').remove();
-    }
   });
   document.addEventListener('click', function (e) {
     if (e.target.closest('.ac')) return;
     Array.prototype.forEach.call(document.querySelectorAll('.ac-list'), function (l) { l.classList.remove('is-open'); });
   });
 
+  // 一次加一件：加完就把那一列清空，游標回到搜尋框，讓客服直接打下一個。
+  // 這就是現行的實際流程，不是簡化。
   $('prod-to-cart').addEventListener('click', function () {
-    var added2 = 0;
-    Array.prototype.forEach.call($('prod-rows').querySelectorAll('.prod-row'), function (row) {
-      if (!row.dataset.pid) return;
-      var pr = PRODUCTS_SRC.filter(function (p) { return p.pid == row.dataset.pid && p.pdid == row.dataset.pdid; })[0];
-      var qty = Math.max(1, Number(row.querySelector('.prod-qty').value || 1));
-      var exist = cart.filter(function (c) { return c.id === 'p' + pr.pdid; })[0];
-      if (exist) { exist.qty += qty; }
-      else {
-        cart.push({ id: 'p' + pr.pdid, name: pr.name, spec: pr.spec, line: pr.line, price: pr.price, qty: qty });
-      }
-      added2++;
-    });
-    if (!added2) { toast('請先從搜尋清單選一個商品'); return; }
+    var row = $('prod-rows').querySelector('.prod-row');
+    if (!row || !row.dataset.pid) { toast('請先從搜尋清單選一個商品'); return; }
+    var pr = PRODUCTS_SRC.filter(function (p) { return p.pid == row.dataset.pid && p.pdid == row.dataset.pdid; })[0];
+    var qty = Math.max(1, Number(row.querySelector('.prod-qty').value || 1));
+    var exist = cart.filter(function (c) { return c.id === 'p' + pr.pdid; })[0];
+    if (exist) { exist.qty += qty; }
+    else {
+      cart.push({ id: 'p' + pr.pdid, name: pr.name, spec: pr.spec, line: pr.line, price: pr.price, qty: qty });
+    }
     $('prod-rows').innerHTML = '';
     rowSeq = 0;
     addProdRow();
+    $('prod-rows').querySelector('.ac-input').focus();
     render();
-    toast('已加入購物車');
+    toast('已加入 ' + pr.name + ' × ' + qty);
   });
 
   addProdRow();
