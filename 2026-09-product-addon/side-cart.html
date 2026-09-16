@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>側邊購物車・加價購商品｜無毒農 1:1 原型</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+  /* 側邊購物車＝platform-components-webpack（React＋MUI Drawer＋Tailwind），依該 repo 原始碼 src/components/cart 1:1 還原：
+     溫層色 src/styles/cart.css（常溫 #ff8e88／冷藏 #73bf00／冷凍 #cff6ff）、drawer w-290 bg #f1ffee、
+     cartItem（圖96、預購黃標#FFCC00、品名 text-sm/700、規格 #262626/700 op70、X數量·金額、刪除白）。
+     此頁呈現「地區已選好」狀態：頂部列各產線運費摘要（含運費、離免運門檻）＋總額＋結帳，取代地區下拉。
+     加購品列為新功能（真站尚未上線）：唯讀呈現＋可刪除（§7-1 只呈現，但依主人指示保留刪除）。刪除機制為真、金額自動重算。 */
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; color:#333;
+        background:#eef1ee; min-height:100vh; }
+  .sc-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.1); z-index:1; }
+
+  .sc-drawer{ position:fixed; top:0; right:0; z-index:2; width:290px; max-width:100%; height:100vh;
+              background:#f1ffee; box-shadow:-4px 0 16px rgba(0,0,0,.12); display:flex; flex-direction:column; overflow-y:auto; }
+
+  /* header */
+  .sc-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 16px 0; }
+  .sc-head h3{ margin:0; font-size:16px; font-weight:700; color:#4ba83b; }
+  .sc-head .close{ background:none; border:0; color:#4ba83b; font-size:20px; cursor:pointer; line-height:1; padding:0; }
+  .sc-clear{ text-align:right; padding:2px 16px 0; }
+  .sc-clear button{ background:none; border:0; font-size:14px; color:#595959; cursor:pointer; font-family:inherit; margin-bottom:5px; }
+
+  /* info：地區選好後的各產線運費摘要＋贈品＋總額＋結帳 */
+  .sc-info{ padding:0 16px 16px; }
+  .sc-line-sum{ background:#fff; border:1px solid #dbe8d4; border-radius:4px; padding:8px 12px; margin-bottom:8px; }
+  .sc-line-sum .r{ display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; color:#333; }
+  .sc-line-sum .r small{ font-size:12px; font-weight:400; color:#666; }
+  .sc-line-sum .short{ display:flex; justify-content:space-between; margin-top:4px; font-size:13px; font-weight:700; color:#ff0000; }
+  .sc-gift{ border:1px solid #4ba83b; border-radius:4px; padding:8px; text-align:center; font-size:14px; font-weight:600; color:#4ba83b; background:#fff; margin-bottom:8px; }
+  .sc-total{ display:flex; justify-content:space-between; font-weight:700; color:#4ba83b; font-size:16px; margin:4px 0 0; }
+  .sc-checkout{ margin-top:12px; height:40px; display:flex; align-items:center; justify-content:center;
+                border-radius:4px; background:#4ba83b; color:#fff; font-size:16px; font-weight:500; cursor:pointer; }
+
+  /* 溫層組 */
+  .sc-group{ padding-bottom:16px; }
+  .sc-group[data-temp="normal"]{ background:#ff8e88; color:#fff; }
+  .sc-group[data-temp="refrigerated"]{ background:#73bf00; color:#fff; }
+  .sc-group .temp-title{ margin:0 12px; padding:8px 0; font-size:20px; font-weight:600; border:0; border-bottom:4px solid #fff; }
+  .line-cap{ display:inline-block; margin:12px 16px 4px; font-size:16px; font-weight:500; border:1px solid #fff; border-radius:4px; padding:2px 16px; }
+
+  /* 主商品 cartItem */
+  .sc-item{ display:flex; padding-top:12px; }
+  .sc-item .imgbox{ position:relative; margin-left:12px; width:96px; height:96px; flex:0 0 auto; display:flex; align-items:center; }
+  .sc-item .imgbox img{ width:100%; height:100%; object-fit:cover; }
+  .sc-item .pre{ position:absolute; left:0; right:0; bottom:8px; text-align:center; }
+  .sc-item .pre span{ background:#FFCC00; color:#434343; font-size:12px; padding:0 4px; border-radius:4px; }
+  .sc-item .info2{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; justify-content:space-between; padding-left:8px; }
+  .sc-item .nm{ font-size:14px; font-weight:700; line-height:1.35; }
+  .sc-item .spec{ margin-top:4px; font-size:10px; font-weight:700; color:#262626; opacity:.7; }
+  .sc-item .qp{ margin-top:12px; display:flex; justify-content:space-between; font-weight:700; font-size:16px; }
+  .sc-item .rm{ flex:0 0 auto; background:none; border:0; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 12px; font-size:20px; }
+
+  /* 加價購商品（唯讀呈現＋可刪除）：融入溫層底色、半透明白卡從主商品向下延伸 */
+  .sc-coa{ margin:8px 12px 0 20px; background:rgba(255,255,255,.16); border-radius:4px; padding:4px 10px 8px; position:relative; }
+  .sc-coa::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:rgba(255,255,255,.75); border-radius:4px 0 0 4px; }
+  .sc-coa-title{ font-size:12px; font-weight:700; padding:6px 0; opacity:.95; }
+  .sc-coa-row{ display:flex; gap:9px; align-items:center; padding:7px 0; border-top:1px solid rgba(255,255,255,.3); }
+  .sc-coa-row:first-of-type{ border-top:none; }
+  .sc-coa-row img{ width:44px; height:44px; object-fit:cover; flex:0 0 auto; align-self:flex-start; }
+  .sc-coa-row .body{ flex:1 1 auto; min-width:0; }
+  .sc-coa-row .nm{ font-size:13px; font-weight:500; line-height:1.3; }
+  .sc-coa-row .sub{ font-size:11px; opacity:.85; margin-top:2px; }
+  .sc-coa-row .meta{ display:flex; align-items:baseline; justify-content:space-between; margin-top:4px; }
+  .sc-coa-row .qn{ font-size:11px; opacity:.85; }
+  .sc-coa-row .price .o{ text-decoration:line-through; opacity:.7; font-size:11px; margin-right:5px; }
+  .sc-coa-row .price .n{ font-weight:700; font-size:13px; }
+  .sc-coa-row .rm{ flex:0 0 auto; background:none; border:0; color:#fff; opacity:.85; cursor:pointer; font-size:15px; padding:0 2px; align-self:flex-start; }
+</style>
+</head>
+<body>
+  <div class="sc-backdrop"></div>
+
+  <aside class="sc-drawer">
+    <div class="sc-head">
+      <h3>我的菜籃</h3>
+      <button class="close" title="展開"><i class="fa fa-long-arrow-right"></i></button>
+    </div>
+    <div class="sc-clear"><button>清空購物車</button></div>
+
+    <!-- info：地區選好後的各產線運費摘要 -->
+    <div class="sc-info">
+      <div class="sc-line-sum" data-line="origin">
+        <div class="r"><span>產地直送<small>（含運費 $0）</small></span><span data-linetotal>NT$1,299</span></div>
+      </div>
+      <div class="sc-line-sum" data-line="frozen">
+        <div class="r"><span>冷凍超市<small>（含運費 $150）</small></span><span data-linetotal>NT$1,629</span></div>
+        <div class="short"><span>離免運門檻尚差</span><span data-short>$271</span></div>
+      </div>
+      <div class="sc-gift">贈品活動將於結帳頁面自動計算</div>
+      <div class="sc-total"><span>總額</span><span data-grandtotal>NT$2,928</span></div>
+      <div class="sc-checkout">結帳</div>
+    </div>
+
+    <!-- 常溫組（產地直送）／木瓜＋其加購 -->
+    <div class="sc-group" data-temp="normal">
+      <div class="temp-title">常溫</div>
+      <div class="line-cap">產地直送</div>
+
+      <div class="sc-order" data-line="origin">
+        <div class="sc-item" data-price="699">
+          <div class="imgbox">
+            <div class="pre"><span>預購</span></div>
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509190336361.jpg" alt="木瓜">
+          </div>
+          <div class="info2">
+            <div class="nm">農友平台測試【無毒農N號木瓜】小農直送</div>
+            <div class="spec">8 斤裝</div>
+            <div class="qp"><span>X 1</span><span>$699</span></div>
+          </div>
+          <button class="rm" title="移除商品"><i class="fa fa-trash"></i></button>
+        </div>
+        <div class="sc-coa">
+          <div class="sc-coa-title">加價購商品</div>
+          <div class="sc-coa-row" data-price="360">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+            <div class="body">
+              <div class="nm">【冷壓初榨苦茶油】小農直送</div>
+              <div class="sub">規格：250ml</div>
+              <div class="meta"><span class="qn">數量 1</span><span class="price"><span class="o">$420</span><span class="n">$360</span></span></div>
+            </div>
+            <button class="rm" title="移除加購品"><i class="fa fa-trash"></i></button>
+          </div>
+          <div class="sc-coa-row" data-price="240">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509181007201.jpg" alt="">
+            <div class="body">
+              <div class="nm">【有機黑芝麻粉】</div>
+              <div class="sub">規格：300g</div>
+              <div class="meta"><span class="qn">數量 1</span><span class="price"><span class="o">$280</span><span class="n">$240</span></span></div>
+            </div>
+            <button class="rm" title="移除加購品"><i class="fa fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 冷藏組（冷凍超市）／白草莓＋其加購 -->
+    <div class="sc-group" data-temp="refrigerated">
+      <div class="temp-title">冷藏</div>
+      <div class="line-cap">冷凍超市</div>
+
+      <div class="sc-order" data-line="frozen">
+        <div class="sc-item" data-price="1099">
+          <div class="imgbox">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="白草莓">
+          </div>
+          <div class="info2">
+            <div class="nm">單品流程優化測試【有機日系白草莓】</div>
+            <div class="spec">15 粒裝</div>
+            <div class="qp"><span>X 1</span><span>$1,099</span></div>
+          </div>
+          <button class="rm" title="移除商品"><i class="fa fa-trash"></i></button>
+        </div>
+        <div class="sc-coa">
+          <div class="sc-coa-title">加價購商品</div>
+          <div class="sc-coa-row" data-price="120">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
+            <div class="body">
+              <div class="nm">【放牧土雞蛋】農場晃晃</div>
+              <div class="sub">規格：10 入</div>
+              <div class="meta"><span class="qn">數量 1</span><span class="price"><span class="o">$150</span><span class="n">$120</span></span></div>
+            </div>
+            <button class="rm" title="移除加購品"><i class="fa fa-trash"></i></button>
+          </div>
+          <div class="sc-coa-row" data-price="260">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
+            <div class="body">
+              <div class="nm">【北海道風味生乳優格】</div>
+              <div class="sub">規格：4 杯</div>
+              <div class="meta"><span class="qn">數量 1</span><span class="price"><span class="o">$320</span><span class="n">$260</span></span></div>
+            </div>
+            <button class="rm" title="移除加購品"><i class="fa fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    // 各產線免運設定：origin 一律免運；frozen 門檻 $1,750、未達收運費 $150
+    const LINES = {
+      origin: { name: '產地直送', threshold: 0,    freightFee: 0   },
+      frozen: { name: '冷凍超市', threshold: 1750, freightFee: 150 },
+    };
+    const fmt = n => '$' + n.toLocaleString('en-US');
+
+    function recalc(){
+      let grand = 0;
+      Object.keys(LINES).forEach(line => {
+        const cfg = LINES[line];
+        const order = document.querySelector(`.sc-order[data-line="${line}"]`);
+        const sumBox = document.querySelector(`.sc-line-sum[data-line="${line}"]`);
+        // 該產線商品總額（主商品＋所有加購品折後價）
+        let goods = 0;
+        if(order){
+          order.querySelectorAll('[data-price]').forEach(el => goods += Number(el.dataset.price));
+        }
+        // 產線整條被刪光 → 移除商品區與頂部摘要行
+        if(!order || goods === 0){
+          if(order) order.closest('.sc-group')?.remove();
+          sumBox?.remove();
+          return;
+        }
+        const freight = (cfg.threshold > 0 && goods < cfg.threshold) ? cfg.freightFee : 0;
+        const shortfall = (cfg.threshold > 0 && goods < cfg.threshold) ? cfg.threshold - goods : 0;
+        const lineTotal = goods + freight;
+        grand += lineTotal;
+        // 更新頂部摘要行
+        if(sumBox){
+          sumBox.querySelector('small').textContent = `（含運費 ${fmt(freight)}）`;
+          sumBox.querySelector('[data-linetotal]').textContent = 'NT' + fmt(lineTotal);
+          const short = sumBox.querySelector('.short');
+          if(shortfall > 0){
+            short.style.display = '';
+            short.querySelector('[data-short]').textContent = fmt(shortfall);
+          } else if(short){
+            short.style.display = 'none';
+          }
+        }
+      });
+      document.querySelector('[data-grandtotal]').textContent = 'NT' + fmt(grand);
+    }
+
+    // 刪除委派：加購品刪自己那列；主商品刪整個 order（含加購）
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.rm');
+      if(!btn) return;
+      const coaRow = btn.closest('.sc-coa-row');
+      if(coaRow){
+        const coa = coaRow.closest('.sc-coa');
+        coaRow.remove();
+        // 加購品全刪光 → 收起整個加價購區塊
+        if(coa && !coa.querySelector('.sc-coa-row')) coa.remove();
+      } else {
+        const order = btn.closest('.sc-order');
+        const group = order?.closest('.sc-group');
+        order?.remove();
+        // 該溫層組已無任何商品 → 連溫層標題與產線膠囊一起移除
+        if(group && !group.querySelector('.sc-order')) group.remove();
+      }
+      recalc();
+    });
+  </script>
+</body>
+</html>

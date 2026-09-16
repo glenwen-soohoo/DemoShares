@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>商品頁加購品 demo 索引</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; padding:56px 20px; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;
+        font-size:16px; line-height:1.7; color:#1a1a1a; background:#fafbfb; }
+  .wrap{ max-width:960px; margin:0 auto; }
+  h1{ font-size:30px; margin:0 0 4px; color:#4ba83b; }
+  .sub{ color:#999; font-size:14px; margin:0 0 8px; }
+  .intro{ color:#595757; font-size:14px; margin:0 0 32px; padding:14px 16px; background:#fff; border:1px solid #e0e4e6; border-radius:4px; }
+  .intro b{ color:#1a1a1a; }
+
+  .side{ margin-bottom:40px; }
+  .side>h2{ font-size:20px; font-weight:700; color:#1a1a1a; margin:0 0 2px; padding-left:12px; border-left:4px solid #4ba83b; }
+  .side-note{ color:#8a8f8b; font-size:13px; margin:0 0 16px; padding-left:16px; }
+
+  .entries{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width:760px){ .entries{ grid-template-columns:1fr; } }
+
+  .entry{ display:flex; flex-direction:column; background:#fff; border:1px solid #e0e4e6; border-radius:4px;
+          padding:20px; text-decoration:none; color:inherit; transition:border-color .15s, box-shadow .15s, transform .15s; }
+  .entry.ready:hover{ border-color:#4ba83b; box-shadow:0 4px 14px rgba(0,0,0,.08); transform:translateY(-2px); }
+  .entry.todo{ opacity:.6; cursor:default; border-style:dashed; }
+  .entry .tag{ align-self:flex-start; font-size:12px; font-weight:700; padding:2px 8px; border-radius:3px; margin-bottom:10px; }
+  .entry.ready .tag{ background:#eaf6e6; color:#3d8c30; }
+  .entry.todo .tag{ background:#f0f0f0; color:#999; }
+  .entry .name{ font-size:16px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+  .entry.ready .name{ color:#4ba83b; }
+  .entry .desc{ font-size:13px; color:#595757; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>商品頁加購品・demo</h1>
+  <p class="sub">2026-09　產品部 Yumi｜前台選購入口與後台設定的 1:1 還原原型</p>
+
+  <div class="intro">
+    正式站頁面 1:1 還原，供工程照抄。一頁一檔，本頁為索引。
+  </div>
+
+  <div class="side">
+    <h2>前台（C 前台呈現）</h2>
+    <p class="side-note">客人看得到、能勾選加購的地方</p>
+    <div class="entries">
+      <a class="entry ready" href="product-detail.html">
+        <span class="tag">已完成</span>
+        <span class="name">商品詳情頁</span>
+        <span class="desc">商品資訊卡片下方的加價購區塊。</span>
+      </a>
+      <a class="entry ready" href="checkout.html">
+        <span class="tag">已完成</span>
+        <span class="name">結帳頁</span>
+        <span class="desc">加購品掛在主商品列下方，可就地選購。</span>
+      </a>
+      <a class="entry ready" href="quick-view.html">
+        <span class="tag">已完成</span>
+        <span class="name">快速預覽彈窗</span>
+        <span class="desc">列表頁快速預覽彈窗的加購區塊。</span>
+      </a>
+      <a class="entry ready" href="side-cart.html">
+        <span class="tag">已完成</span>
+        <span class="name">側邊購物車</span>
+        <span class="desc">唯讀呈現已購入加購品，縮排掛在主商品下。</span>
+      </a>
+      <a class="entry ready" href="app-product.html">
+        <span class="tag">已完成</span>
+        <span class="name">APP 商品詳情頁</span>
+        <span class="desc">App 商品詳情頁的加購卡。</span>
+      </a>
+      <a class="entry ready" href="app-cart.html">
+        <span class="tag">已完成</span>
+        <span class="name">APP 購物車</span>
+        <span class="desc">App 購物車的加購品：已加購框＋可加購下拉，金額即時重算。</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="side">
+    <h2>後台（B 後台設定 ／ E 限定分類）</h2>
+    <p class="side-note">營運設定加購品的地方</p>
+    <div class="entries">
+      <a class="entry ready" href="admin-addon-list.html">
+        <span class="tag">已完成</span>
+        <span class="name">加購設定列表</span>
+        <span class="desc">入口：依加購品／依主商品兩檢視＋產線篩選；右上「批次操作」開大彈窗做群批次掛載／取下。</span>
+      </a>
+      <a class="entry ready" href="admin-addon-setting.html">
+        <span class="tag">已完成</span>
+        <span class="name">加購設定頁（編輯）</span>
+        <span class="desc">路徑一：從列表點入的編輯頁，兩視角就地設折扣與掛載、打字搜尋加入，可互相切換編輯對象。</span>
+      </a>
+      <a class="entry ready" href="admin-spec-addon.html">
+        <span class="tag">已完成</span>
+        <span class="name">規格編輯頁內嵌</span>
+        <span class="desc">路徑二：規格限制勾「可作為加購品」展開折扣（比照產品編輯規格區塊）。</span>
+      </a>
+      <span class="entry todo">
+        <span class="tag">另議</span>
+        <span class="name">加購產品設定・限定子分類</span>
+        <span class="desc">既有產線加購品擴充「限定子分類」，首版另議。</span>
+      </span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

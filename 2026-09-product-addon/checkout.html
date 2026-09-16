@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>結帳頁・加價購商品｜無毒農 1:1 原型</title>
+  <link rel="icon" href="data:,">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- ▼ 連真站結帳頁的 CSS bundle（實際基底：購物車列／超值加購 banner 都靠這幾支渲染） -->
+  <link href="https://www.greenbox.tw/Dist/Css/layout-min.css?v=3.3.4.4" rel="stylesheet">
+  <link href="https://www.greenbox.tw/Dist/Css/Order/order-payment-min.css?v=8" rel="stylesheet">
+  <link href="https://www.greenbox.tw/Dist/Css/Order/ConfirmOrder-min.css?v=8" rel="stylesheet">
+  <!-- slick 從 cdnjs 載（真站的 slick 字型跨域被 CORS 擋；cdnjs 同源附字型、有 CORS 標頭） -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css" rel="stylesheet">
+  <!-- 官網樣式套件 header / footer -->
+  <link rel="stylesheet" href="header.css">
+  <link rel="stylesheet" href="footer.css">
+  <style>
+    /* 真站結帳頁根字級是 10px（ConfirmOrder-min.css 用 rem 計算，一定要設，否則尺寸全跑掉） */
+    html{ font-size:10px; }
+    body{ font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; background:#f2f2f0; color:#33435a; font-size:14px; }
+    .icon{ display:inline-block; width:1em; text-align:center; font-style:normal; line-height:1; }
+    .co-wrap{ max-width:1040px; margin:0 auto; padding:20px; }
+    .co-wrap::after{ content:''; display:table; clear:both; }
+    /* 購物車外層是「純白容器」：只給白底＋清浮動。千萬不要加 border-radius／overflow:hidden／多餘 padding-margin
+       —— 加了 overflow+圓角會把裡面每塊 .order-field-basc 自帶的框裁掉（擠成一坨）；整個拿掉又會讓區塊間露出頁面灰底 */
+    .co-cartbox{ background:#fff; margin-bottom:16px; }
+    .co-cartbox::after{ content:''; display:table; clear:both; }
+    #page-top, .coa, #SA-Area, .co-sum, .co-promo, .proto-note{ clear:both; }
+    /* 商品圖 150px（真站 .cartItem-area .field-pd img）、刪除 icon 灰（真站無色規則、預設灰） */
+    .co-cartbox .cartItem-area .field-pd img{ width:150px; height:auto; }
+    .co-cartbox .field-delete a{ color:#8a8a8a; }
+    .co-cartbox .field-delete a:hover{ color:#dc4e43; }
+    /* 溫層分層卡（真站：白底 order-field-basc 粗體溫層名） */
+    .co-temp-row{ font-weight:bolder; background:#fff; font-size:1.3em; padding:13px; }
+    /* 優惠方案卡（既有區塊；用真站卡框 .order-field-basc，內容比照真站版位重建） */
+    .co-promo{ background:#fff; border:1px solid #dbdbdb; box-shadow:1px 0 5px rgba(0,0,0,.1); padding:16px 18px; margin-bottom:16px; }
+    .co-promo .hd{ display:flex; align-items:center; gap:8px; font-size:18px; font-weight:bold; color:#333; margin-bottom:14px; }
+    .co-promo .hd img{ width:26px; }
+    .co-promo .hd .note{ font-size:13px; font-weight:400; color:#dc4e43; }
+    .co-promo .row2{ display:flex; align-items:center; flex-wrap:wrap; gap:12px 22px; }
+    .co-promo .fld{ display:flex; align-items:center; gap:8px; }
+    .co-promo .fld > span{ color:#555; font-size:14px; }
+    .co-promo .fld .red{ color:#dc4e43; }
+    .co-promo input{ width:120px; height:34px; border:1px solid #ccc; border-radius:4px; padding:0 8px; font-family:inherit; }
+    .co-promo input.num{ width:64px; }
+    .co-promo .btn{ background:#4ba83b; color:#fff; border:0; border-radius:4px; padding:8px 16px; cursor:pointer; font-family:inherit; }
+    .co-promo .rem{ color:#999; font-size:12px; }
+
+    /* ▼ 加價購商品掛在主商品列下方（新功能，正式站尚無）。與現行購物車同一套 12-col 欄位：
+       加購品的 單價／數量／總計／刪除 各自落在主商品的 field-price／field-amt／field-pd-total／field-delete 同一欄，
+       方便對齊閱讀（實測與主商品欄位 left 對齊）。淡綠底＋右側綠連接條＝從主商品向下延伸的歸屬。 */
+    /* 文章縮排感：框左側縮排 8px 留白＋左邊綠粗線標示歸屬，右邊貼齊主商品；
+       內部加購列用負 margin 補償（往左拉回 8px、加寬 8px），讓欄位仍與主商品精準對齊 */
+    /* 框只當定位容器；淡綠底＋邊框＋左綠條由 ::before 畫成「左側縮排 15px」的一層 → 左邊與邊界留白、右邊貼齊；
+       內容（列／標題）維持正常寬度、欄位與主商品精準對齊，圖名再用 padding 縮進做出文章縮排感 */
+    .coa{ clear:both; margin:0 0 12px; position:relative; }
+    .coa::after{ content:''; display:table; clear:both; }
+    .coa::before{ content:""; position:absolute; left:30px; right:0; top:0; bottom:0; background:#eef6e7; border:1px solid #cfe3c0; border-top:none; border-left:4px solid #7fbf5f; z-index:0; }
+    .coa > *{ position:relative; z-index:1; }
+    /* 標題／提示：padding-left 30px，與縮進後的加購品名對齊 */
+    .coa-added-title{ clear:both; font-size:13px; color:#3d8c30; font-weight:700; padding:8px 15px 2px 45px; }
+    /* 展開加購優惠：做成明確的按鈕樣式（綠框、緊湊、非整行文字） */
+    .coa-prompt{ clear:both; display:inline-flex; align-items:center; gap:6px; margin:10px 0 10px 45px; padding:7px 16px; border:1px solid #4ba83b; border-radius:6px; background:#fff; color:#3d8c30; font-size:14px; font-weight:500; cursor:pointer; }
+    .coa-prompt:hover{ background:#f0f8ec; }
+    .coa-prompt .arrow{ color:#4ba83b; }
+    .coa-pick{ margin:0; }
+    .coa-pick[hidden]{ display:none; }
+    .coa-pick-foot{ clear:both; padding:10px 15px; text-align:right; }
+    .coa-pick-foot button{ background:#d24c4c; color:#fff; border:0; border-radius:5px; padding:8px 20px; font-size:14px; cursor:pointer; font-family:inherit; }
+
+    /* 加購列：外層 col-xs-12 order-field-basc（繼承主商品「把 col padding 清 0」的規則，讓欄位與主商品精準對齊），
+       再覆蓋掉 order-field-basc 的白底／邊框／陰影，只留一條細分隔線 */
+    /* 加購列改用 CSS Grid：12 等分對齊主商品 col-xs（4/2/1/2/2/1），避免 float＋flex 混用在不同環境下的
+       不可預測（先前 checkbox 會跑到框外就是這個原因）。checkbox 必定落在 grid 第一欄（field-pd）內縮排之後 */
+    .coa-added, .coa-pk{ position:relative; clear:both; display:grid; grid-template-columns:4fr 2fr 1fr 2fr 2fr 1fr; align-items:stretch;
+      margin:0 !important; padding:0 !important; background:transparent !important; box-shadow:none !important; border:none !important; }
+    /* 分隔線畫在框內（left:30 起，對齊框的縮排層） */
+    .coa-added::before, .coa-pk::before{ content:''; position:absolute; top:0; left:30px; right:0; height:1px; background:#dcebd0; }
+    .coa-added-block .coa-added:first-of-type::before{ display:none; }
+    .coa-pk.checked{ background:rgba(255,255,255,.55); }
+    /* grid item：取消 col-xs 原本的 float／width，交給 grid track 決定；內部再用 flex 做垂直置中 */
+    .coa-added > .base-field, .coa-pk > .base-field{ float:none !important; width:auto !important; min-height:64px; padding:0 !important; display:flex; align-items:center; }
+    /* 商品欄（checkbox＋圖＋名）往框內縮排，做出文章縮排 */
+    .coa .field-pd{ gap:10px; padding-left:45px !important; }
+    .coa-added .field-pd{ padding-left:72px !important; } /* 已加購列無 checkbox，補 checkbox(17)＋gap(10) 讓圖與尚未加購列對齊 */
+    .coa-ck{ width:17px; height:17px; accent-color:#4ba83b; flex:0 0 auto; }
+    .coa-thumb{ width:52px; height:52px; object-fit:cover; flex:0 0 auto; }
+    .coa-desc{ min-width:0; }
+    .coa .nm{ font-size:14px; color:#333; line-height:1.3; }
+    .coa .sub{ font-size:12px; color:#7a8a6e; margin-top:2px; }
+    .coa-temp{ display:inline-block; background:#4e9854; color:#fff; font-size:11px; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+    .coa .field-order-time{ justify-content:center; color:#7a8a6e; font-size:12px; text-align:center; }
+    .coa .field-price{ flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+    .coa .field-price .o{ text-decoration:line-through; color:#aaa; font-size:12px; }
+    .coa .field-price .n{ color:#dc4e43; font-weight:700; }
+    .coa .field-amt{ justify-content:center; }
+    .coa .field-amt select{ width:52px; height:28px; border:1px solid #ccc; border-radius:4px; background:#fff; }
+    .coa .field-pd-total{ justify-content:center; color:#dc4e43; font-weight:700; }
+    .coa .field-delete{ justify-content:center; }
+    .coa .field-delete .rm{ color:#8a8a8a; cursor:pointer; }
+    .coa .field-delete .rm:hover{ color:#dc4e43; }
+
+    /* 超值加購 slick 卡片內圖片與 slide 間距（真站靠這頁沒載到的 CSS 補齊，避免 slide 內圖無約束破版） */
+    .sa-pd-slick .slick-slide{ padding:0 8px; box-sizing:border-box; }
+    .sa-pd-slick .slick-slide img{ max-width:100%; height:auto; display:block; margin:0 auto; }
+    .sa-pd-slick .pd-title{ text-align:center; font-size:14px; color:#333; }
+    .sa-pd-slick .price-area,.sa-pd-slick .dis-price-area{ text-align:center; font-size:13px; }
+    .sa-pd-slick .dis-price-area .DiscountPrice{ color:#dc4e43; font-weight:700; }
+    .sa-pd-slick .buybutton{ display:block; width:100%; background:#d24c4c; color:#fff; border:0; border-radius:5px; padding:8px 0; cursor:pointer; font-family:inherit; }
+
+    /* 小計（簡化，非本次重點） */
+    .co-sum{ background:#fff; border-radius:6px; padding:16px; text-align:right; margin-bottom:16px; }
+    .co-sum .r{ margin:4px 0; color:#555; }
+    .co-sum .total{ font-size:20px; color:#d24c4c; font-weight:700; }
+    .co-sum .go{ display:inline-block; margin-top:10px; background:#d24c4c; color:#fff; padding:11px 40px; border-radius:5px; cursor:pointer; }
+    .proto-note{ max-width:1040px; margin:8px auto 40px; padding:14px 16px; color:#999; font-size:13px; line-height:1.8; text-align:center; }
+
+    /* 開發預覽面板（左下） */
+    .devpanel{ position:fixed; bottom:14px; left:14px; z-index:9999; width:230px; background:#2b2f33; color:#e8eaed; border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.25); font-size:13px; overflow:hidden; }
+    .devpanel-hd{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#1f2225; font-weight:700; }
+    .devpanel-hd button{ background:none; border:0; color:#e8eaed; font-size:16px; cursor:pointer; }
+    .devpanel-bd{ padding:12px; display:flex; flex-direction:column; gap:10px; }
+    .devpanel.collapsed .devpanel-bd{ display:none; }
+    .devseg{ display:flex; gap:6px; }
+    .devseg button{ flex:1; padding:5px 0; background:#3a3f44; color:#e8eaed; border:1px solid #4a5057; border-radius:4px; cursor:pointer; font-family:inherit; }
+    .devseg button.on{ background:#4ba83b; border-color:#4ba83b; color:#fff; }
+    .devnote{ margin:0; color:#9aa0a6; font-size:11px; line-height:1.5; }
+
+    /* ▼ RWD：縮視窗即手機版（真站 <941px）。照真站手機版還原：商品列只留 圖／品名／刪除／數量(+剩餘)／規格；不顯示 出貨時間・單價・總計（金額只在小計） */
+    @media (max-width:941px){
+      .co-wrap{ padding:12px; }
+      /* 步驟區：真站 .web-show 在窄螢幕被隱藏，覆蓋回來並直排 */
+      #page-top .web-show{ display:block !important; }
+      #page-top .titles{ float:none; display:block; font-size:19px; }
+      #page-top .step{ float:none; display:block; font-size:13px; margin-top:6px; }
+      /* 手機版不顯示欄名表頭（真站手機版也沒有） */
+      .co-cartbox .top-field{ display:none; }
+      /* 商品列：比照真站手機版——隱藏 出貨時間／單價／總計 */
+      .co-cartbox .cartItem-area{ position:relative; padding:12px 14px; }
+      .co-cartbox .cartItem-area .field-order-time,
+      .co-cartbox .cartItem-area .field-price,
+      .co-cartbox .cartItem-area .field-pd-total{ display:none !important; }
+      .co-cartbox .cartItem-area .base-field{ float:none !important; }
+      .co-cartbox .cartItem-area .field-pd{ display:flex; gap:12px; padding:0 !important; width:100% !important; }
+      .co-cartbox .cartItem-area .field-pd > .col-xs-4{ width:33% !important; max-width:120px; flex:0 0 33%; float:none !important; padding:0 !important; }
+      .co-cartbox .cartItem-area .field-pd img{ width:100% !important; }
+      .co-cartbox .cartItem-area .field-pd .pd-descs{ flex:1; min-width:0; display:block !important; height:auto !important; }
+      .co-cartbox .cartItem-area .field-pd .pd-spec{ position:static !important; top:auto !important; margin-top:6px; }
+      .co-cartbox .cartItem-area .field-amt{ width:100% !important; text-align:left !important; padding:8px 0 0 !important; }
+      .co-cartbox .cartItem-area .field-amt select{ margin:0 !important; }
+      .co-cartbox .cartItem-area .field-delete{ position:absolute !important; top:10px; right:12px; width:auto !important; padding:0 !important; }
+      /* 小計卡 */
+      .co-cartbox .cart-order-totel .content > .col-xs-6{ display:none; }
+      .co-cartbox .cart-order-totel .field-pd-total,
+      .co-cartbox .cart-order-totel .field-delete{ width:auto !important; display:inline-block; }
+      /* 加購列（grid → 窄版改單欄堆疊）：隱藏 出貨／單價／總計；圖名一行、數量另起一行、刪除定位右上。
+         窄版框只縮排 8px；分隔線也對齊窄版框左緣（left:8），避免超出框 */
+      .coa::before{ left:8px !important; }
+      .coa-added::before, .coa-pk::before{ left:8px !important; }
+      .coa .field-order-time, .coa .field-price, .coa .field-pd-total{ display:none !important; }
+      .coa-added, .coa-pk{ display:block !important; position:relative; padding:10px 12px !important; }
+      .coa-added > .base-field, .coa-pk > .base-field{ min-height:0 !important; }
+      .coa .field-pd{ padding-left:0 !important; }
+      .coa-added .field-pd{ padding-left:27px !important; }
+      .coa .field-amt{ justify-content:flex-start !important; padding:8px 0 0 !important; }
+      .coa .field-delete{ position:absolute !important; top:10px; right:12px; }
+      /* 優惠方案：直排 */
+      .co-promo .row2{ flex-direction:column; align-items:stretch; gap:12px; }
+      .co-promo input{ width:100%; }
+      .co-promo input.num{ width:90px; }
+      /* 開發面板縮小、不擋滿版 */
+      .devpanel{ width:200px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 開發預覽面板 -->
+<div class="devpanel" id="devpanel">
+  <div class="devpanel-hd"><span>開發預覽面板</span><button id="devToggle" type="button">－</button></div>
+  <div class="devpanel-bd">
+    <div>主商品①的加購狀態
+      <div class="devseg" id="devState">
+        <button type="button" data-st="part" class="on">部分已加購</button>
+        <button type="button" data-st="none">未加購</button>
+      </div>
+    </div>
+    <p class="devnote">切換主商品①的加購狀態，預覽「已加購＋尚未加購並存」與「只有尚未加購」。此面板僅供預覽，正式頁不會有。</p>
+  </div>
+</div>
+
+<!-- ======= Header ======= -->
+<header class="gb-head">
+  <div class="top-bar">
+    <div class="logo-wrap"><a href="/"><img src="images/logo.svg" alt="無毒農"></a></div>
+    <div class="search-box"><i class="icon">&#128269;</i><input type="text" placeholder="請輸入關鍵字"></div>
+    <div class="spacer"></div>
+    <div class="right-area">
+      <a class="member-wrap-link" href="#"><img src="images/smallNormal.svg" width="16" alt=""><span class="username">農粉會員　|　會員中心　|</span></a>
+      <a class="member-wrap-link" href="#">登出</a>
+      <button class="cart-btn" type="button"><i class="icon">&#128722;</i><span class="badge">3</span></button>
+    </div>
+  </div>
+  <nav class="nav-row">
+    <a href="#">關於無毒農</a><a href="#">粥寶寶</a><a href="#">益菓保</a>
+    <a href="#"><span class="new-badge">NEW!</span>綠時光</a>
+    <a href="#">產地直送(免運)</a><a href="#">冷凍超市</a><a href="#">等家寶寶</a><a href="#">部落格</a>
+  </nav>
+</header>
+
+<div class="co-wrap">
+
+  <!-- 訂單結帳標題＋步驟（真站 #page-top，真 class，由 linked CSS 渲染成圓圈步驟） -->
+  <section id="page-top">
+    <div class="container web-show">
+      <div class="col-xs-2 p-0 titles">訂單結帳</div>
+      <div class="col-xs-10 step">
+        <span class="num">1</span>確認訂單 ------------
+        <span class="num-empty">2</span>填寫資訊 ------------
+        <span class="num-empty">3</span>訂購成功
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= 購物車（實際基底：真站 .order-field-basc 各塊，外層只包純白容器 .co-cartbox）＋ 加價購（自刻） ======= -->
+  <div class="co-cartbox">
+
+      <!-- 表頭（真站 top-field） -->
+      <section class="col-xs-12 order-field-basc top-field">
+        <div class="base-field field-pd col-xs-4">商品</div>
+        <div class="base-field field-order-time col-xs-2">出貨時間</div>
+        <div class="base-field field-price col-xs-1">單價</div>
+        <div class="base-field field-amt col-xs-2">數量</div>
+        <div class="base-field field-pd-total col-xs-2">總計</div>
+        <div class="base-field field-delete col-xs-1">刪除</div>
+      </section>
+
+      <!-- 產線標題（真站 categorey-title） -->
+      <section class="col-xs-12 base-field order-field-basc categorey-title" data-type="0">
+        <img src="https://fruitbox.blob.core.windows.net/pagematerials/shared/產地直送_icon.png" />
+        <span>產地直送</span>
+      </section>
+
+      <!-- 溫層分層卡（真站：白底 order-field-basc 粗體溫層名） -->
+      <div class="col-xs-12 order-field-basc co-temp-row"><span>常溫</span></div>
+
+      <!-- 主商品①（真站 cartItem-area） -->
+      <section class="col-xs-12 order-field-basc cartItem-area pd-mark">
+        <div class="base-field field-pd col-xs-4">
+          <div id="pd-img-fillPaymentInfo" class="col-xs-4 p-0">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="老欉文旦禮盒" />
+          </div>
+          <div class="col-xs-8 pd-descs">
+            <div class="pd-title">早鳥預購 文旦季【老欉文旦禮盒】樂古農園</div>
+            <div class="pd-spec">規格：1 盒 (優選 5 斤裝)</div>
+          </div>
+        </div>
+        <div class="base-field field-order-time col-xs-2">09/14～09/28</div>
+        <div class="base-field field-price col-xs-1">$829</div>
+        <div class="base-field field-amt col-xs-2">
+          <select class="form-control" style="width:65px;margin:auto;display:inline"><option>1</option><option>2</option></select>
+          <div class="amt-alert">最後 3 組</div>
+        </div>
+        <div class="base-field field-pd-total col-xs-2">$829</div>
+        <div class="base-field field-delete col-xs-1"><a href="javascript:void(0)"><i class="fa fa-trash" style="font-size:22px;"></i></a></div>
+      </section>
+
+      <!-- 加價購①：部分已加購（已加購 + 尚未加購並存） -->
+      <div class="coa" id="coa1">
+        <div class="coa-added-block">
+          <div class="coa-added-title">加價購商品</div>
+          <div class="coa-added col-xs-12 order-field-basc">
+            <div class="base-field field-pd col-xs-4">
+              <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+              <div class="coa-desc"><div class="nm">【冷壓初榨苦茶油】小農直送<span class="coa-temp">常溫</span></div><div class="sub">規格：250ml</div></div>
+            </div>
+            <div class="base-field field-order-time col-xs-2">09/14～09/28</div>
+            <div class="base-field field-price col-xs-1"><span class="o">$420</span><span class="n">$360</span></div>
+            <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="base-field field-pd-total col-xs-2">$360</div>
+            <div class="base-field field-delete col-xs-1"><span class="rm" title="移除"><i class="fa fa-trash"></i></span></div>
+          </div>
+        </div>
+        <div class="coa-prompt" data-target="coa1pick">加價購優惠（<b>2</b>）<span class="arrow">▾</span></div>
+        <div class="coa-pick" id="coa1pick" hidden>
+          <label class="coa-pk col-xs-12 order-field-basc">
+            <div class="base-field field-pd col-xs-4">
+              <input type="checkbox" class="coa-ck">
+              <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
+              <div class="coa-desc"><div class="nm">【放牧土雞蛋】農場晃晃<span class="coa-temp">冷藏</span></div><div class="sub">規格：10 入</div></div>
+            </div>
+            <div class="base-field field-order-time col-xs-2"></div>
+            <div class="base-field field-price col-xs-1"><span class="o">$150</span><span class="n">$120</span></div>
+            <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="base-field field-pd-total col-xs-2">$120</div>
+            <div class="base-field field-delete col-xs-1"></div>
+          </label>
+          <label class="coa-pk col-xs-12 order-field-basc">
+            <div class="base-field field-pd col-xs-4">
+              <input type="checkbox" class="coa-ck">
+              <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509181007201.jpg" alt="">
+              <div class="coa-desc"><div class="nm">【有機黑芝麻粉】<span class="coa-temp">常溫</span></div><div class="sub">規格：300g</div></div>
+            </div>
+            <div class="base-field field-order-time col-xs-2"></div>
+            <div class="base-field field-price col-xs-1"><span class="o">$280</span><span class="n">$240</span></div>
+            <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="base-field field-pd-total col-xs-2">$240</div>
+            <div class="base-field field-delete col-xs-1"></div>
+          </label>
+          <div class="coa-pick-foot"><button type="button">加入購物車</button></div>
+        </div>
+      </div>
+
+      <!-- 主商品②（真站 cartItem-area） -->
+      <section class="col-xs-12 order-field-basc cartItem-area pd-mark">
+        <div class="base-field field-pd col-xs-4">
+          <div id="pd-img-fillPaymentInfo" class="col-xs-4 p-0">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509190336361.jpg" alt="蔬菜箱" />
+          </div>
+          <div class="col-xs-8 pd-descs">
+            <div class="pd-title">【當季鮮採蔬菜箱】小農直送</div>
+            <div class="pd-spec">規格：1 箱</div>
+          </div>
+        </div>
+        <div class="base-field field-order-time col-xs-2">09/15～09/22</div>
+        <div class="base-field field-price col-xs-1">$560</div>
+        <div class="base-field field-amt col-xs-2">
+          <select class="form-control" style="width:65px;margin:auto;display:inline"><option>1</option><option>2</option></select>
+        </div>
+        <div class="base-field field-pd-total col-xs-2">$560</div>
+        <div class="base-field field-delete col-xs-1"><a href="javascript:void(0)"><i class="fa fa-trash" style="font-size:22px;"></i></a></div>
+      </section>
+
+      <!-- 加價購②：只有尚未加購 -->
+      <div class="coa">
+        <div class="coa-prompt" data-target="coa2pick">加價購優惠（<b>2</b>）<span class="arrow">▾</span></div>
+        <div class="coa-pick" id="coa2pick" hidden>
+          <label class="coa-pk col-xs-12 order-field-basc">
+            <div class="base-field field-pd col-xs-4">
+              <input type="checkbox" class="coa-ck">
+              <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+              <div class="coa-desc"><div class="nm">【冷壓初榨苦茶油】小農直送<span class="coa-temp">常溫</span></div><div class="sub">規格：250ml</div></div>
+            </div>
+            <div class="base-field field-order-time col-xs-2"></div>
+            <div class="base-field field-price col-xs-1"><span class="o">$420</span><span class="n">$360</span></div>
+            <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="base-field field-pd-total col-xs-2">$360</div>
+            <div class="base-field field-delete col-xs-1"></div>
+          </label>
+          <label class="coa-pk col-xs-12 order-field-basc">
+            <div class="base-field field-pd col-xs-4">
+              <input type="checkbox" class="coa-ck">
+              <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="">
+              <div class="coa-desc"><div class="nm">【台灣龍眼蜂蜜】<span class="coa-temp">常溫</span></div><div class="sub">規格：700g</div></div>
+            </div>
+            <div class="base-field field-order-time col-xs-2"></div>
+            <div class="base-field field-price col-xs-1"><span class="o">$680</span><span class="n">$580</span></div>
+            <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="base-field field-pd-total col-xs-2">$580</div>
+            <div class="base-field field-delete col-xs-1"></div>
+          </label>
+          <div class="coa-pick-foot"><button type="button">加入購物車</button></div>
+        </div>
+      </div>
+
+      <!-- 小計卡（真站 order-field-basc cart-order-totel） -->
+      <section class="col-xs-12 order-field-basc cart-order-totel" data-type="0">
+        <div class="col-xs-12 content">
+          <div class="col-xs-6"></div>
+          <div class="base-field field-pd-total col-xs-3 p-0">小計</div>
+          <div class="base-field field-delete col-xs-3 cartorder_statistics-money">$1,749</div>
+        </div>
+      </section>
+
+  </div>
+
+  <!-- ======= 既有「超值加購專區」banner（實際基底：真站 panel + sa-pd-slick 真 class） ======= -->
+  <div class="col-xs-12 p-0 cartorder" id="SA-Area">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <div class="info_frame-title">
+          <span class="info_frame-title-text">超值加購專區</span>
+          <span class="info_frame-title-text sa-title-web">&emsp;(每樣加購商品至多購買一組)</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="col-xs-12 sa-title-mob">每樣加購商品至多購買一組</div>
+        <div class="col-xs-12 p-0 sa-pd-slick">
+          <div class="col-xs-12">
+            <div><img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509181007201.jpg" /></div>
+            <div class="col-xs-12 p-0 m-t-5 pd-title slick-pd-hight" style="min-height:6em;">
+              <span class="temperature_layer_icon_1">常溫</span> 【有機黑芝麻粉】 300g
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0 price-area">原價 <span style="text-decoration:line-through">280</span></div>
+              <div class="col-xs-6 col-md-6 p-0 dis-price-area">加購價 <span class="DiscountPrice">240</span> 元</div>
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0"><span class="amt-name">數量</span> <select class="saDropdown form-control"><option value="1">1</option></select></div>
+              <div class="col-xs-6 col-md-6 p-0"><button type="button" class="buybutton"><div class="content"><i class="fa fa-shopping-basket"></i> 加入菜籃</div></button></div>
+            </div>
+          </div>
+          <div class="col-xs-12">
+            <div><img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" /></div>
+            <div class="col-xs-12 p-0 m-t-5 pd-title slick-pd-hight" style="min-height:6em;">
+              <span class="temperature_layer_icon_2">冷藏</span> 【放牧土雞蛋】 10 入
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0 price-area">原價 <span style="text-decoration:line-through">150</span></div>
+              <div class="col-xs-6 col-md-6 p-0 dis-price-area">加購價 <span class="DiscountPrice">120</span> 元</div>
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0"><span class="amt-name">數量</span> <select class="saDropdown form-control"><option value="1">1</option></select></div>
+              <div class="col-xs-6 col-md-6 p-0"><button type="button" class="buybutton"><div class="content"><i class="fa fa-shopping-basket"></i> 加入菜籃</div></button></div>
+            </div>
+          </div>
+          <div class="col-xs-12">
+            <div><img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" /></div>
+            <div class="col-xs-12 p-0 m-t-5 pd-title slick-pd-hight" style="min-height:6em;">
+              <span class="temperature_layer_icon_1">常溫</span> 【冷壓初榨苦茶油】 250ml
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0 price-area">原價 <span style="text-decoration:line-through">420</span></div>
+              <div class="col-xs-6 col-md-6 p-0 dis-price-area">加購價 <span class="DiscountPrice">360</span> 元</div>
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0"><span class="amt-name">數量</span> <select class="saDropdown form-control"><option value="1">1</option></select></div>
+              <div class="col-xs-6 col-md-6 p-0"><button type="button" class="buybutton"><div class="content"><i class="fa fa-shopping-basket"></i> 加入菜籃</div></button></div>
+            </div>
+          </div>
+          <div class="col-xs-12">
+            <div><img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" /></div>
+            <div class="col-xs-12 p-0 m-t-5 pd-title slick-pd-hight" style="min-height:6em;">
+              <span class="temperature_layer_icon_1">常溫</span> 【台灣龍眼蜂蜜】 700g
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0 price-area">原價 <span style="text-decoration:line-through">680</span></div>
+              <div class="col-xs-6 col-md-6 p-0 dis-price-area">加購價 <span class="DiscountPrice">580</span> 元</div>
+            </div>
+            <div class="col-xs-12 m-t-10 p-0">
+              <div class="col-xs-6 col-md-6 p-0"><span class="amt-name">數量</span> <select class="saDropdown form-control"><option value="1">1</option></select></div>
+              <div class="col-xs-6 col-md-6 p-0"><button type="button" class="buybutton"><div class="content"><i class="fa fa-shopping-basket"></i> 加入菜籃</div></button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= 優惠方案（既有區塊：真站卡框，內容比照真站版位重建） ======= -->
+  <section class="co-promo">
+    <div class="hd"><img src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">優惠方案 <span class="note">(同筆訂單中折扣碼與優惠券請擇一使用)</span></div>
+    <div class="row2">
+      <div class="fld"><span>折扣碼</span><input type="text" placeholder="輸入折扣碼"><button class="btn" type="button">使用</button></div>
+      <div class="fld"><span>優惠券</span><button class="btn" type="button">使用優惠券</button></div>
+      <div class="fld"><span class="red">使用紅利點數</span><input class="num" type="text" value="0"><span class="rem">(剩餘：8)</span></div>
+      <div class="fld"><span>使用購物金</span><input class="num" type="text" value="0"><span class="rem">(剩餘：50)</span></div>
+    </div>
+  </section>
+
+  <!-- 最終金額（簡化） -->
+  <div class="co-sum">
+    <div class="r">商品小計：<span id="coSubtotal">$1,749</span></div>
+    <div class="r">運費：$0</div>
+    <div class="total">應付金額：<span id="coPayable">$1,749</span></div>
+    <div class="go">前往填寫資訊</div>
+  </div>
+</div>
+
+<!-- ======= Footer ======= -->
+<footer class="gb-footer">
+  <div class="wrap">
+    <div><h4>無毒農標準</h4><a href="#">安心檢驗日報</a><a href="#">PGS參與式驗證</a><a href="#">無毒農部落格</a></div>
+    <div><h4>安心選購</h4><a href="#">粥寶寶</a><a href="#">益菓保</a><a href="#">產地直送</a><a href="#">冷凍超市</a></div>
+    <div><h4>幫助/政策</h4><a href="#">常見問題</a><a href="#">隱私權政策</a><a href="#">使用者條款</a><a href="#">退貨辦法</a></div>
+    <div><h4>認識無毒農</h4><a href="#">關於無毒農</a><a href="#">團隊介紹</a><a href="#">人才招募</a><a href="#">等家寶寶</a></div>
+    <div><h4>追蹤我們</h4>
+      <div class="social"><a href="#"><img src="images/fb.svg" alt="FB"></a><a href="#"><img src="images/line.svg" alt="LINE"></a><a href="#"><img src="images/ig.svg" alt="IG"></a><a href="#"><img src="images/yt.svg" alt="YT"></a></div>
+      <div class="info">總部地址：106 臺北市大安區仁愛路四段 2 號 11 樓<br>電話：(02) 2771-2900</div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="slogan"><img src="images/footer_logo.svg" alt="無毒農"><span>用信任連結產地和餐桌</span></div>
+    <div class="legal"><p>舒果農企業有限公司／無毒農　統編：42829375</p><p>© 無毒農 All Rights Reserved.</p></div>
+  </div>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+<script>
+  // 超值加購專區：真站是 slick 輪播，用真站的 slick 設定（CompanyGift.js:63）
+  $('.sa-pd-slick').slick({
+    infinite:false, slidesToShow:4, slidesToScroll:1, centerMode:false, centerPadding:'30px',
+    responsive:[
+      { breakpoint:1250, settings:{ slidesToShow:3, slidesToScroll:1 } },
+      { breakpoint:769,  settings:{ centerMode:true, slidesToShow:2, slidesToScroll:1 } },
+      { breakpoint:580,  settings:{ centerMode:true, slidesToShow:1, slidesToScroll:1 } }
+    ]
+  });
+
+  const money = n => '$' + n.toLocaleString('en-US');
+  const parseMoney = t => parseInt(String(t||'').replace(/[^\d]/g,'')) || 0;
+
+  // 金額自動計算：主商品 單價×數量 → 總計；小計 = 主商品 + 已加購；同步小計卡與應付金額
+  function recalc(){
+    let subtotal = 0;
+    document.querySelectorAll('.co-cartbox .cartItem-area').forEach(row=>{
+      const price = parseMoney(row.querySelector('.field-price')?.textContent);
+      const qty = parseInt(row.querySelector('.field-amt select')?.value) || 1;
+      const total = price * qty;
+      const tEl = row.querySelector('.field-pd-total');
+      if(tEl) tEl.textContent = money(total);
+      subtotal += total;
+    });
+    document.querySelectorAll('.coa-added').forEach(a=>{
+      const p = parseMoney(a.querySelector('.field-price .n')?.textContent);
+      const q = parseInt(a.querySelector('.field-amt select')?.value)||1;
+      const t = p*q;
+      const tEl = a.querySelector('.field-pd-total');
+      if(tEl) tEl.textContent = money(t);
+      subtotal += t;
+    });
+    const totEl = document.querySelector('.cart-order-totel .cartorder_statistics-money');
+    if(totEl) totEl.textContent = money(subtotal);
+    document.getElementById('coSubtotal').textContent = money(subtotal);
+    document.getElementById('coPayable').textContent = money(subtotal);
+  }
+
+  // 勾選就地選購列（把某項移進已加購）
+  function addToCartFromPick(btn){
+    const coa = btn.closest('.coa');
+    const checked = [...coa.querySelectorAll('.coa-pk')].filter(pk=>pk.querySelector('input').checked);
+    if(!checked.length) return;
+    let block = coa.querySelector('.coa-added-block');
+    if(!block){
+      block = document.createElement('div');
+      block.className = 'coa-added-block';
+      block.innerHTML = '<div class="coa-added-title">加價購商品</div>';
+      coa.insertBefore(block, coa.firstElementChild);
+    }
+    checked.forEach(pk=>{
+      const g = s => pk.querySelector(s);
+      const qty = g('select').value;
+      const opts = [1,2,3].map(v=>`<option${String(v)===qty?' selected':''}>${v}</option>`).join('');
+      const unit = parseMoney(g('.field-price .n').textContent);
+      block.insertAdjacentHTML('beforeend',
+        `<div class="coa-added col-xs-12 order-field-basc">`+
+        `<div class="base-field field-pd col-xs-4"><img class="coa-thumb" src="${g('.coa-thumb').src}" alt="">`+
+        `<div class="coa-desc"><div class="nm">${g('.nm').innerHTML}</div><div class="sub">${g('.sub').textContent}</div></div></div>`+
+        `<div class="base-field field-order-time col-xs-2">依主商品</div>`+
+        `<div class="base-field field-price col-xs-1"><span class="o">${g('.field-price .o').textContent}</span><span class="n">${g('.field-price .n').textContent}</span></div>`+
+        `<div class="base-field field-amt col-xs-2"><select>${opts}</select></div>`+
+        `<div class="base-field field-pd-total col-xs-2">${money(unit*Number(qty))}</div>`+
+        `<div class="base-field field-delete col-xs-1"><span class="rm" title="移除"><i class="fa fa-trash"></i></span></div>`+
+        `</div>`);
+      pk.remove();
+    });
+    const remain = coa.querySelectorAll('.coa-pk').length;
+    const prompt = coa.querySelector('.coa-prompt');
+    if(prompt && prompt.querySelector('b')) prompt.querySelector('b').textContent = remain;
+    if(remain===0 && prompt){ prompt.style.display='none'; coa.querySelector('.coa-pick').hidden=true; }
+    recalc();
+  }
+
+  // 超值加購「加入菜籃」→ 以加購價新增一列到購物車
+  function addSaToCart(btn){
+    const card = btn.closest('.slick-slide') || btn.closest('[class*="col-xs"]');
+    if(!card) return;
+    const img = card.querySelector('img')?.src || '';
+    const nm = (card.querySelector('.pd-title')?.textContent || '').replace(/常溫|冷藏|冷凍/g,'').trim();
+    const price = parseMoney(card.querySelector('.DiscountPrice')?.textContent);
+    const totel = document.querySelector('.co-cartbox .cart-order-totel');
+    const row = document.createElement('section');
+    row.className = 'col-xs-12 order-field-basc cartItem-area pd-mark';
+    row.innerHTML =
+      `<div class="base-field field-pd col-xs-4"><div class="col-xs-4 p-0"><img src="${img}" alt=""></div>`+
+      `<div class="col-xs-8 pd-descs"><div class="pd-title">${nm}</div><div class="pd-spec">超值加購</div></div></div>`+
+      `<div class="base-field field-order-time col-xs-2">依主商品</div>`+
+      `<div class="base-field field-price col-xs-1">${money(price)}</div>`+
+      `<div class="base-field field-amt col-xs-2"><select class="form-control" style="width:65px;margin:auto;display:inline"><option>1</option></select></div>`+
+      `<div class="base-field field-pd-total col-xs-2">${money(price)}</div>`+
+      `<div class="base-field field-delete col-xs-1"><a href="javascript:void(0)"><i class="fa fa-trash" style="font-size:22px;"></i></a></div>`;
+    totel.parentNode.insertBefore(row, totel);
+    recalc();
+  }
+
+  // 點擊：委派處理（含動態新增的列）
+  document.addEventListener('click', e=>{
+    const del = e.target.closest('.cartItem-area .field-delete a');
+    if(del){ e.preventDefault(); const row=del.closest('.cartItem-area'); const nx=row.nextElementSibling; if(nx&&nx.classList.contains('coa'))nx.remove(); row.remove(); recalc(); return; }
+    const rm = e.target.closest('.coa-added .rm');
+    if(rm){ const a=rm.closest('.coa-added'); const blk=a.closest('.coa-added-block'); a.remove(); if(blk&&!blk.querySelector('.coa-added'))blk.remove(); recalc(); return; }
+    const addBtn = e.target.closest('.coa-pick-foot button');
+    if(addBtn){ addToCartFromPick(addBtn); return; }
+    const saBtn = e.target.closest('.sa-pd-slick .buybutton');
+    if(saBtn){ addSaToCart(saBtn); return; }
+    const prompt = e.target.closest('.coa-prompt');
+    if(prompt){ const box=document.getElementById(prompt.dataset.target); box.hidden=!box.hidden; prompt.querySelector('.arrow').textContent=box.hidden?'▾':'▴'; return; }
+  });
+
+  // 數量改變 → 重算；勾選就地選購列 highlight
+  document.addEventListener('change', e=>{
+    if(e.target.matches('.cartItem-area .field-amt select, .coa-added select')) recalc();
+    if(e.target.matches('.coa-pk input[type=checkbox]')) e.target.closest('.coa-pk').classList.toggle('checked', e.target.checked);
+  });
+
+  // 開發預覽面板
+  document.getElementById('devState').addEventListener('click', e=>{
+    const b=e.target.closest('button[data-st]'); if(!b) return;
+    document.querySelectorAll('#devState button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    const blk = document.querySelector('#coa1 .coa-added-block');
+    if(blk) blk.style.display = b.dataset.st==='none' ? 'none' : '';
+  });
+  document.getElementById('devToggle').addEventListener('click', function(){
+    const p=document.getElementById('devpanel'); p.classList.toggle('collapsed');
+    this.textContent=p.classList.contains('collapsed')?'＋':'－';
+  });
+
+  recalc();
+</script>
+</body>
+</html>

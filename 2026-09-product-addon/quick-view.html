@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>快速預覽彈窗・加價購商品｜無毒農 1:1 原型</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+  /* 快速預覽彈窗（列表頁點商品跳出）＝線上舊版彈窗，依主人提供的正式站截圖 1:1 還原：
+     白卡彈窗＋關閉紅圓鈕、商品圖、商品名（綠 #439854）；
+     規格採「每列一個規格鈕＋右側數量下拉」，選中規格鈕 bg #439854 白字、未選白底灰邊；
+     規格鈕內：規格：{單位} / 描述 / $折後 $原價(刪除線) 剩餘：N；底部單一「加入菜籃」紅鈕（bg #dc4e43）。
+     （註：react-component-export 的 modal 是未上線重構版，每規格無下拉，與線上不同，故以截圖為準。）
+     加購區塊為新功能：依 §5-3 接在「加入菜籃」下方、依 §5-1 窄版（單欄、勾選後才展開 −1＋、加入鈕文字動態）；
+     風格與結帳頁統一（淡綠框 #eef6e7／#cfe3c0、左綠條、溫層 tag 接名後）。機制為真。 */
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; color:#333;
+        background:#eef1ee; min-height:100vh; }
+
+  .qv-mask{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .qv-modal{ position:relative; width:360px; max-width:100%; background:#fff; border-radius:8px; }
+  .qv-close{ position:absolute; right:-16px; top:-16px; width:40px; height:40px; border-radius:9999px;
+             border:1px solid #fff; background:#dc4e43; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .qv-scroll{ max-height:80vh; overflow-y:auto; padding:20px 24px; }
+  .qv-divider{ height:1px; background:rgba(5,5,5,.06); margin:24px 0; }
+
+  /* 商品資訊 */
+  .qv-img{ width:100%; border-radius:6px; display:block; }
+  .qv-meta{ display:flex; align-items:center; justify-content:space-between; padding:8px 0; }
+  .qv-place{ font-size:16px; font-weight:700; color:#439854; }
+  .qv-report{ display:inline-flex; align-items:center; gap:4px; background:#439854; color:#fff; border:0;
+              border-radius:6px; padding:4px 8px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .qv-name{ margin:8px 0; font-size:20px; color:#439854; font-weight:500; }
+
+  /* 規格列：規格鈕 ＋ 右側數量下拉 */
+  .qv-spec-row{ display:flex; align-items:center; gap:8px; margin:8px 0; }
+  .qv-spec{ flex:1 1 auto; min-width:0; border:1px solid #d1d5db; border-radius:6px; padding:8px; background:#fff;
+            cursor:pointer; filter:drop-shadow(0 1px 1px rgba(0,0,0,.05)); }
+  .qv-spec.on{ border-color:#439854; background:#439854; color:#fff; }
+  .qv-spec .r0{ font-size:16px; }
+  .qv-spec .desc{ font-size:18px; font-weight:700; margin:2px 0; }
+  .qv-spec .row{ display:flex; align-items:center; justify-content:space-between; }
+  .qv-spec .now{ font-size:18px; font-weight:700; margin-right:4px; }
+  .qv-spec .ori{ font-size:16px; text-decoration:line-through; color:#9ca3af; }
+  .qv-spec.on .ori{ color:#f3f4f6; }
+  .qv-spec .stock{ color:rgba(0,0,0,.8); font-size:15px; }
+  .qv-spec.on .stock{ color:rgba(255,255,255,.8); }
+  .qv-spec-row select{ flex:0 0 auto; width:52px; height:36px; border:1px solid #d1d5db; border-radius:6px; background:#fff; font-family:inherit; padding:0 4px; }
+
+  /* 加入菜籃（底部單一） */
+  .qv-addcart{ margin-top:16px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+               border:0; border-radius:6px; background:#dc4e43; color:#fff; font-size:16px; padding:12px 0; cursor:pointer; font-family:inherit; }
+
+  /* ── 加價購區塊（新・窄版・接加入菜籃下方）：風格與結帳頁 .coa 統一 ── */
+  .coa{ margin-top:16px; background:#eef6e7; border:1px solid #cfe3c0; border-radius:6px; padding:4px 12px 8px; }
+  .coa-prompt{ display:flex; align-items:center; gap:8px; padding:10px 0; color:#3d8c30; font-size:16px; font-weight:700; cursor:pointer; }
+  .coa-prompt .arrow{ margin-left:auto; color:#8a8a8a; transition:transform .15s; }
+  .coa.open .coa-prompt .arrow{ transform:rotate(180deg); }
+  .coa-list[hidden]{ display:none; }
+  .coa-pk{ display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid #dcebd0; margin:0; }
+  .coa-pk input{ width:18px; height:18px; margin-top:1px; accent-color:#4ba83b; flex:0 0 auto; cursor:pointer; }
+  .coa-pk img{ width:52px; height:52px; object-fit:cover; flex:0 0 auto; border-radius:4px; }
+  .coa-pk .body{ flex:1 1 auto; min-width:0; }
+  .coa-pk .nm{ font-size:14px; color:#333; line-height:1.3; }
+  .coa-temp{ display:inline-block; background:#4e9854; color:#fff; font-size:11px; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+  .coa-pk .sub{ font-size:12px; color:#7a8a6e; margin-top:2px; }
+  .coa-pk .price{ margin-top:4px; }
+  .coa-pk .price .o{ text-decoration:line-through; color:#aaa; font-size:12px; margin-right:5px; }
+  .coa-pk .price .n{ color:#dc4e43; font-weight:700; font-size:14px; }
+  .coa-pk .stepper{ display:none; align-items:center; margin-top:8px; border:1px solid #d5d5d5; border-radius:6px; width:fit-content; overflow:hidden; background:#fff; }
+  .coa-pk.checked .stepper{ display:inline-flex; }
+  .coa-pk .stepper button{ width:28px; height:28px; border:0; background:#fff; color:#555; cursor:pointer; font-size:14px; }
+  .coa-pk .stepper .n{ width:34px; text-align:center; font-size:14px; }
+
+  /* 商品內容／底部標籤（簡化佔位） */
+  .qv-content{ font-size:14px; color:#595757; line-height:1.7; }
+  .qv-labels{ display:flex; flex-wrap:wrap; gap:8px; }
+  .qv-labels span{ font-size:13px; color:#595757; background:#f2f5ef; border-radius:4px; padding:4px 10px; }
+</style>
+</head>
+<body>
+  <div class="qv-mask">
+    <div class="qv-modal">
+      <button class="qv-close" title="關閉"><i class="fa fa-times"></i></button>
+      <div class="qv-scroll">
+
+        <!-- 商品資訊 -->
+        <img class="qv-img" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="文旦禮盒">
+        <div class="qv-meta">
+          <span class="qv-place">產地：台南麻豆</span>
+          <button class="qv-report"><i class="fa fa-file-text-o"></i>檢驗報告</button>
+        </div>
+        <h5 class="qv-name">早鳥預購 文旦季【老欉文旦禮盒】樂古農園</h5>
+
+        <div class="qv-divider"></div>
+
+        <!-- 規格：每列一個規格鈕＋右側數量下拉 -->
+        <div id="specWrap">
+          <div class="qv-spec-row">
+            <div class="qv-spec on">
+              <div class="r0">規格：1 盒</div>
+              <div class="desc">優選 5 斤裝，限購 1 盒</div>
+              <div class="row"><div><span class="now">$829</span><span class="ori">$920</span></div><span class="stock">剩餘：12 組</span></div>
+            </div>
+            <select><option>1</option></select>
+          </div>
+          <div class="qv-spec-row">
+            <div class="qv-spec">
+              <div class="r0">規格：1 盒</div>
+              <div class="desc">嚴選 8 斤裝</div>
+              <div class="row"><div><span class="now">$1,280</span><span class="ori">$1,420</span></div><span class="stock">剩餘：8 組</span></div>
+            </div>
+            <select><option>1</option><option>2</option></select>
+          </div>
+          <div class="qv-spec-row">
+            <div class="qv-spec">
+              <div class="r0">規格：3 盒</div>
+              <div class="desc">多盒優惠，優選 5 斤裝</div>
+              <div class="row"><div><span class="now">$2,370</span><span class="ori">$2,760</span></div><span class="stock">剩餘：6 組</span></div>
+            </div>
+            <select><option>1</option><option>2</option><option>3</option></select>
+          </div>
+        </div>
+
+        <!-- 加價購區塊（在加入菜籃上方・窄版・風格同結帳頁） -->
+        <div class="coa" id="addon">
+          <div class="coa-prompt" id="addonToggle">優惠加購商品<span class="arrow">▾</span></div>
+          <div class="coa-list" id="addonList" hidden>
+            <label class="coa-pk" data-price="360">
+              <input type="checkbox">
+              <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+              <div class="body">
+                <div class="nm">【冷壓初榨苦茶油】小農直送<span class="coa-temp">常溫</span></div>
+                <div class="sub">規格：250ml</div>
+                <div class="price"><span class="o">$420</span><span class="n">$360</span></div>
+                <div class="stepper"><button type="button" data-d="-1">－</button><span class="n">1</span><button type="button" data-d="1">＋</button></div>
+              </div>
+            </label>
+            <label class="coa-pk" data-price="240">
+              <input type="checkbox">
+              <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509181007201.jpg" alt="">
+              <div class="body">
+                <div class="nm">【有機黑芝麻粉】<span class="coa-temp">常溫</span></div>
+                <div class="sub">規格：300g</div>
+                <div class="price"><span class="o">$280</span><span class="n">$240</span></div>
+                <div class="stepper"><button type="button" data-d="-1">－</button><span class="n">1</span><button type="button" data-d="1">＋</button></div>
+              </div>
+            </label>
+            <label class="coa-pk" data-price="120">
+              <input type="checkbox">
+              <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
+              <div class="body">
+                <div class="nm">【放牧土雞蛋】農場晃晃<span class="coa-temp">冷藏</span></div>
+                <div class="sub">規格：10 入</div>
+                <div class="price"><span class="o">$150</span><span class="n">$120</span></div>
+                <div class="stepper"><button type="button" data-d="-1">－</button><span class="n">1</span><button type="button" data-d="1">＋</button></div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 加入菜籃（主商品＋已勾加購，底部單一，文字依勾選動態） -->
+        <button class="qv-addcart" id="addcart"><i class="fa fa-shopping-cart"></i>加入菜籃</button>
+
+        <div class="qv-divider"></div>
+        <div class="qv-content">老欉文旦，果肉Q彈、果香清雅。中秋送禮首選，早鳥預購享優惠。</div>
+        <div class="qv-divider"></div>
+        <div class="qv-labels"><span>常溫配送</span><span>產地直送</span><span>免運</span></div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 選規格：高亮
+    document.getElementById('specWrap').addEventListener('click', e => {
+      const spec = e.target.closest('.qv-spec');
+      if(!spec) return;
+      document.querySelectorAll('.qv-spec').forEach(s => s.classList.remove('on'));
+      spec.classList.add('on');
+    });
+
+    // 加購收合提示列
+    const addon = document.getElementById('addon');
+    document.getElementById('addonToggle').addEventListener('click', () => {
+      const list = document.getElementById('addonList');
+      const open = list.hidden;
+      list.hidden = !open;
+      addon.classList.toggle('open', open);
+    });
+
+    // 勾選加購 → 展開數量、更新底部按鈕文字
+    function refreshFoot(){
+      const checked = document.querySelectorAll('.coa-pk.checked').length;
+      const btn = document.getElementById('addcart');
+      btn.innerHTML = '<i class="fa fa-shopping-cart"></i>加入菜籃' + (checked > 0 ? '（含 ' + checked + ' 項加購）' : '');
+    }
+    document.getElementById('addonList').addEventListener('change', e => {
+      const ck = e.target.closest('input[type="checkbox"]');
+      if(!ck) return;
+      ck.closest('.coa-pk').classList.toggle('checked', ck.checked);
+      refreshFoot();
+    });
+    document.getElementById('addonList').addEventListener('click', e => {
+      const btn = e.target.closest('.stepper button');
+      if(!btn) return;
+      e.preventDefault();
+      const nEl = btn.parentElement.querySelector('.n');
+      nEl.textContent = Math.max(1, Number(nEl.textContent) + Number(btn.dataset.d));
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+/* ===========================================================
+   header.css — 無毒農主站 header
+   設計參考：D:\Project\Gift\src\components\Header.jsx + index.css
+   主色：#4ba83b（按鈕綠）、#caa940（hover 金）、#dc4e43（badge 紅）
+   max-width 1200 與內容容器對齊
+   =========================================================== */
+
+.gb-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  border-bottom: 1px solid rgba(211, 211, 211, 0.74);
+}
+
+.gb-head .top-bar {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  gap: 14px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.gb-head .logo-wrap img { height: 36px; }
+
+.gb-head .search-box {
+  flex: 0 0 260px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 18px;
+  font-size: 13px;
+}
+.gb-head .search-box input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  flex: 1;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.gb-head .spacer { flex: 1; }
+
+.gb-head .right-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gb-head .member-wrap-link {
+  color: #4ba83b;
+  font-size: 15px;
+  margin: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gb-head .member-wrap-link:hover { opacity: 0.8; }
+
+.gb-head .cart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 18px;
+  background: #4ba83b;
+  color: #fff;
+  font-size: 13px;
+  position: relative;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.gb-head .cart-btn:hover { background: #3d8c30; }
+
+.gb-head .cart-btn .badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc4e43;
+  color: #fff;
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.gb-head .nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px 8px;
+  font-size: 15px;
+  font-weight: 700;
+  overflow-x: auto;
+  white-space: nowrap;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.gb-head .nav-row a {
+  color: #4ba83b;
+  padding: 4px 2px;
+  position: relative;
+}
+.gb-head .nav-row a:hover { color: #caa940; }
+.gb-head .new-badge {
+  color: red;
+  margin-right: 4px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+@media (max-width: 960px) {
+  .gb-head .search-box { display: none; }
+  .gb-head .nav-row { font-size: 13px; gap: 14px; padding: 6px 12px; }
+}
+@media (max-width: 720px) {
+  .gb-head .top-bar { padding: 8px 12px; gap: 8px; }
+  .gb-head .top-bar .username { display: none; }
+}

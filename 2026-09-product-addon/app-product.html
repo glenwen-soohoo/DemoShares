@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>APP 商品詳情頁・加價購商品｜無毒農 1:1 原型</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+  /* App 商品詳情頁：依 fruit_app（React Native）src/screens/ProductDetailScreen 1:1 還原——
+     ScrollView 卡片式版型（.containerCard 白底 radius8 padding16 marginBottom8、外層 marginHorizontal16）、
+     商品圖 4:3 輪播（dots 綠 #22E788/#A7F5CF）、商品資訊（產地14/600、名20/lh24、價格範圍紅#FF0000/18、已售出#C4C4C4/16）、
+     商品規格卡（chips 橫列 border#8A8A8E radius8 padding8 字12、點開規格 modal）、運費卡、規格說明卡、底部 ProductShoppingTab
+     （毛玻璃半透明白、購物車圓 icon border theme.primary、加入購物車紅膠囊 radius24 theme.red #FF4040）。
+     色票 fruit_app theme：primary #4BA83B、red #FF4040；溫層 常溫#FFA451／冷藏#00D1FF／冷凍#3253FF。
+     加購卡為新功能（RN 端尚無），依 §5-6＋§5-1 窄版自刻、融入 App 卡片風格：顯 2 筆＋更多、勾選後展開 −1＋、加入鈕文字動態。 */
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; background:#c9ccce; color:#000;
+        display:flex; justify-content:center; padding:24px 0; }
+  .app{ width:390px; max-width:100%; height:812px; background:#F2F2F2; border-radius:28px; overflow:hidden;
+        box-shadow:0 12px 40px rgba(0,0,0,.22); position:relative; display:flex; flex-direction:column; }
+
+  /* 狀態列＋App Bar（原生 navigator 提供） */
+  .statusbar{ height:34px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 20px; font-size:13px; font-weight:700; }
+  .statusbar .icons{ display:flex; gap:6px; font-size:12px; }
+  .appbar{ height:48px; background:#fff; display:flex; align-items:center; padding:0 6px; }
+  .appbar button{ width:40px; height:40px; border:0; background:none; font-size:22px; color:#000; cursor:pointer; }
+  .appbar .title{ flex:1; text-align:center; font-size:16px; font-weight:600; }
+  .appbar .right{ display:flex; }
+
+  .scroll{ flex:1; overflow-y:auto; }
+
+  /* 商品圖輪播 4:3 */
+  .swiper{ margin-bottom:16px; position:relative; }
+  .swiper img{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
+  .dots{ display:flex; justify-content:center; gap:10px; margin-top:12px; }
+  .dots i{ width:8px; height:8px; border-radius:4px; background:#A7F5CF; display:block; }
+  .dots i.on{ background:#22E788; }
+
+  .cards{ margin:0 16px; }
+  .card{ background:#fff; border-radius:8px; padding:16px; margin-bottom:8px; }
+  .row{ display:flex; justify-content:space-between; }
+  .row.sub{ align-items:center; }
+  .place{ font-size:14px; font-weight:600; flex:1; }
+  .stars{ color:#f5c518; font-size:13px; letter-spacing:1px; flex:0 0 auto; }
+  .name{ font-size:20px; line-height:24px; margin:16px 0; }
+  .price{ font-size:18px; line-height:21px; color:#FF0000; }
+  .sold{ font-size:16px; line-height:21px; color:#C4C4C4; }
+  .headline{ font-size:18px; }
+  .chev{ color:#8A8A8E; font-size:18px; }
+  .details{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .detail{ padding:8px; border:1px solid #8A8A8E; border-radius:8px; }
+  .detail span{ font-size:12px; line-height:14px; color:#8A8A8E; }
+  .desc{ margin-top:8px; }
+  .desc p{ margin:0; font-size:14px; color:#666; line-height:1.7; }
+  .fee-now{ font-size:18px; color:#FF0000; }
+
+  /* ── 加價購卡（新功能・§5-1 窄版・融入 App 卡片風格）── */
+  .addon-hd{ display:flex; align-items:center; justify-content:space-between; }
+  .addon-hd .t{ font-size:18px; font-weight:700; color:#4BA83B; }
+  .addon-list{ margin-top:4px; }
+  .addon-row{ display:flex; align-items:flex-start; gap:10px; padding:12px 0; border-top:1px solid #F0F0F0; }
+  .addon-row:first-child{ border-top:none; }
+  .addon-row.extra[hidden]{ display:none; }
+  .addon-ck{ width:18px; height:18px; margin-top:2px; accent-color:#4BA83B; flex:0 0 auto; cursor:pointer; }
+  .addon-thumb{ width:58px; height:58px; object-fit:cover; border-radius:8px; flex:0 0 auto; }
+  .addon-info{ flex:1; min-width:0; }
+  .addon-name{ font-size:14px; line-height:1.4; }
+  /* 比照一般商品列：規格用 border 框、溫層用獨立行 tag */
+  .addon-spec{ margin-top:4px; }
+  .addon-spec span{ border:1px solid #909090; color:#909090; border-radius:4px; padding:2px 4px; font-size:12px; }
+  .addon-temp-row{ margin-top:4px; display:flex; align-items:center; justify-content:space-between; }
+  .addon-temp{ display:inline-block; color:#fff; font-size:12px; line-height:14px; padding:2px; border-radius:4px; }
+  .addon-temp.normal{ background:#FFA451; }
+  .addon-temp.refrigerated{ background:#00D1FF; }
+  .addon-price{ flex:0 0 auto; }
+  .addon-price .o{ color:#C4C4C4; text-decoration:line-through; font-size:12px; margin-right:6px; }
+  .addon-price .n{ color:#FF4040; font-size:15px; font-weight:600; }
+  .addon-stepper{ display:none; align-items:center; margin-top:8px; border:1px solid #d5d5d5; border-radius:8px; width:fit-content; overflow:hidden; background:#fff; }
+  .addon-row.checked .addon-stepper{ display:inline-flex; }
+  .addon-stepper button{ width:30px; height:30px; border:0; background:#fff; color:#555; font-size:16px; cursor:pointer; }
+  .addon-stepper .n{ width:34px; text-align:center; font-size:14px; }
+  .addon-more{ display:flex; align-items:center; justify-content:center; gap:6px; width:100%; margin-top:8px; border:1px solid #E0E0E0; background:#fff;
+               border-radius:8px; color:#4BA83B; font-size:14px; padding:10px 0; cursor:pointer; font-family:inherit; }
+  .addon-more[hidden]{ display:none; }
+
+  /* 底部 ProductShoppingTab（毛玻璃） */
+  .shoptab{ flex:0 0 auto; height:68px; background:rgba(255,255,255,.72); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  .shoptab-in{ display:flex; align-items:center; padding:8px 0; margin:0 16px; height:100%; }
+  .shoptab .cart{ position:relative; width:40px; height:40px; border-radius:20px; border:1.5px solid #4BA83B; background:#fff;
+                  display:flex; align-items:center; justify-content:center; color:#4BA83B; font-size:22px; flex:0 0 auto; }
+  .shoptab .cart .badge{ position:absolute; top:-4px; right:-5px; min-width:16px; height:16px; border-radius:100px; border:1px solid #FD4040;
+                         background:#fff; color:#FD4040; font-size:11px; display:flex; align-items:center; justify-content:center; padding:0 3px; }
+  .shoptab .add{ margin-left:8px; flex:1; height:40px; border:0; border-radius:24px; background:#FF4040; color:#fff; font-size:17px; font-weight:600;
+                 cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="statusbar"><span>9:41</span><span class="icons"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+    <div class="appbar">
+      <button title="返回"><i class="fa fa-angle-left"></i></button>
+      <span class="title"></span>
+      <span class="right"><button title="分享"><i class="fa fa-share-alt"></i></button></span>
+    </div>
+
+    <div class="scroll">
+      <!-- 商品圖輪播 -->
+      <div class="swiper">
+        <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="文旦禮盒">
+        <div class="dots"><i class="on"></i><i></i><i></i></div>
+      </div>
+
+      <div class="cards">
+        <!-- 卡1：商品資訊 -->
+        <div class="card">
+          <div class="row"><span class="place">產地：台南麻豆</span><span class="stars">★★★★★ 5.0</span></div>
+          <div class="name">早鳥預購 文旦季【老欉文旦禮盒】樂古農園</div>
+          <div class="row sub"><span class="price">$829-2,370</span><span class="sold">已售出 30 盒</span></div>
+        </div>
+
+        <!-- 卡2：商品規格（點開規格選擇） -->
+        <div class="card">
+          <div class="row"><span class="headline">商品規格</span><i class="fa fa-angle-right chev"></i></div>
+          <div class="details">
+            <div class="detail"><span>優選 5 斤裝</span></div>
+            <div class="detail"><span>嚴選 8 斤裝</span></div>
+            <div class="detail"><span>多盒優惠 3 盒</span></div>
+          </div>
+        </div>
+
+        <!-- 卡3：運費 -->
+        <div class="card">
+          <div class="row"><span class="headline">常溫運費</span><span class="fee-now">$150</span></div>
+          <div class="desc"><p>產地直送(常溫)滿 1,200 元免運</p></div>
+        </div>
+
+        <!-- 加價購卡（選購入口・§5-1 窄版） -->
+        <div class="card">
+          <div class="addon-hd"><span class="t">加價購商品</span></div>
+          <div class="addon-list" id="addonList">
+            <label class="addon-row" data-price="360">
+              <input type="checkbox" class="addon-ck">
+              <img class="addon-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+              <div class="addon-info">
+                <div class="addon-name">【冷壓初榨苦茶油】小農直送</div>
+                <div class="addon-spec"><span>規格：250ml</span></div>
+                <div class="addon-temp-row"><span class="addon-temp normal">常溫</span><div class="addon-price"><span class="o">$420</span><span class="n">$360</span></div></div>
+                <div class="addon-stepper"><button type="button" data-d="-1">－</button><span class="n">1</span><button type="button" data-d="1">＋</button></div>
+              </div>
+            </label>
+            <label class="addon-row" data-price="240">
+              <input type="checkbox" class="addon-ck">
+              <img class="addon-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509181007201.jpg" alt="">
+              <div class="addon-info">
+                <div class="addon-name">【有機黑芝麻粉】</div>
+                <div class="addon-spec"><span>規格：300g</span></div>
+                <div class="addon-temp-row"><span class="addon-temp normal">常溫</span><div class="addon-price"><span class="o">$280</span><span class="n">$240</span></div></div>
+                <div class="addon-stepper"><button type="button" data-d="-1">－</button><span class="n">1</span><button type="button" data-d="1">＋</button></div>
+              </div>
+            </label>
+            <label class="addon-row extra" data-price="120" hidden>
+              <input type="checkbox" class="addon-ck">
+              <img class="addon-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
+              <div class="addon-info">
+                <div class="addon-name">【放牧土雞蛋】農場晃晃</div>
+                <div class="addon-spec"><span>規格：10 入</span></div>
+                <div class="addon-temp-row"><span class="addon-temp refrigerated">冷藏</span><div class="addon-price"><span class="o">$150</span><span class="n">$120</span></div></div>
+                <div class="addon-stepper"><button type="button" data-d="-1">－</button><span class="n">1</span><button type="button" data-d="1">＋</button></div>
+              </div>
+            </label>
+          </div>
+          <button class="addon-more" id="addonMore" type="button">更多加價購商品<i class="fa fa-angle-down"></i></button>
+        </div>
+
+        <!-- 卡4：規格說明 -->
+        <div class="card">
+          <div class="row"><span class="headline">規格說明</span></div>
+          <div class="desc"><p>1 盒（優選 5 斤裝），老欉文旦、果肉Q彈、果香清雅。</p></div>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+
+    <!-- 底部購買列 -->
+    <div class="shoptab">
+      <div class="shoptab-in">
+        <div class="cart"><i class="fa fa-shopping-cart"></i><span class="badge">2</span></div>
+        <button class="add" id="ctaAdd">加入購物車</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('addonMore').addEventListener('click', function(){
+      document.querySelectorAll('.addon-row.extra').forEach(r=>r.hidden=false);
+      this.hidden=true;
+    });
+    function refreshCta(){
+      const n=document.querySelectorAll('.addon-row.checked').length;
+      document.getElementById('ctaAdd').textContent='加入購物車'+(n>0?'（含 '+n+' 項加購）':'');
+    }
+    const list=document.getElementById('addonList');
+    list.addEventListener('change', e=>{
+      const ck=e.target.closest('.addon-ck'); if(!ck) return;
+      ck.closest('.addon-row').classList.toggle('checked', ck.checked);
+      refreshCta();
+    });
+    list.addEventListener('click', e=>{
+      const b=e.target.closest('.addon-stepper button'); if(!b) return;
+      e.preventDefault();
+      const nEl=b.parentElement.querySelector('.n');
+      nEl.textContent=Math.max(1, Number(nEl.textContent)+Number(b.dataset.d));
+    });
+  </script>
+</body>
+</html>

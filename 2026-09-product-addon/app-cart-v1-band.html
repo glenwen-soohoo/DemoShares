@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<title>APP 購物車・加價購商品｜無毒農 1:1 原型</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+  /* App 購物車：依 fruit_app src/screens/CartScreen 1:1 還原——
+     背景 theme.primary 綠 #4BA83B；ProductGroups（groupWrapper radius20 overflow-hidden margin16）按「產線」分組、
+     產線色標題 18/600 白（產地直送 #00D18B）；ProductItem（border-bottom .5 #C6C6C8、圖 0.2w×0.17w radius8、名16＋
+     close-circle 移除、規格框 border #909090 radius4、溫層 tag、價格紅 #FF0000/18＋QuantitySelector remove/add-circle #C6C6C8）；
+     運費列、商品小計（紅 #FF0000）；底部 BottomTab（半透明白、優惠方案列＋商品總金額＋結帳紅膠囊 radius24 theme.red #FF4040）。
+     色票 fruit_app theme／溫層（常溫#FFA451／冷藏#00D1FF）。
+     加購為新功能（RN 端只有既有「超值加購」ExtraProducts，勿混用）：依 §5-6 照結帳頁口徑（已加購＋尚未加購就地展開＋可加購）
+     掛在對應主商品下、融入 App 樣式；金額即時重算。 */
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; background:#c9ccce; color:#000;
+        display:flex; justify-content:center; padding:24px 0; }
+  .app{ width:390px; max-width:100%; height:812px; background:#4BA83B; border-radius:28px; overflow:hidden;
+        box-shadow:0 12px 40px rgba(0,0,0,.22); position:relative; display:flex; flex-direction:column; }
+
+  .statusbar{ height:34px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 20px; font-size:13px; font-weight:700; }
+  .statusbar .icons{ display:flex; gap:6px; font-size:12px; }
+  .appbar{ height:48px; background:#fff; display:flex; align-items:center; padding:0 6px; }
+  .appbar button{ width:40px; height:40px; border:0; background:none; font-size:22px; color:#000; cursor:pointer; }
+  .appbar .title{ flex:1; text-align:center; font-size:16px; font-weight:600; }
+
+  .scroll{ flex:1; overflow-y:auto; }
+
+  /* 產線分組 */
+  .group-wrap{ border-radius:20px; overflow:hidden; margin:16px; }
+  .group{ background:#fff; }
+  .group-title{ padding:16px; }
+  .group-title span{ margin-left:0; font-size:18px; font-weight:600; color:#fff; }
+
+  /* 商品列 ProductItem */
+  .item{ border-bottom:.5px solid #C6C6C8; padding:16px 16px 12px; display:flex; }
+  /* 一般商品：圖齊左、原尺寸（不留白），與加購品做區隔 */
+  .item .thumb{ width:78px; height:66px; border-radius:8px; object-fit:cover; background:#C6C6C6; margin-right:8px; flex:0 0 auto; }
+  .item .body{ flex:1; min-width:0; }
+  .item .top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
+  .item .nm{ font-size:16px; flex:1; margin-right:4px; line-height:1.35; }
+  .item .rm{ color:#C6C6C8; font-size:22px; cursor:pointer; flex:0 0 auto; }
+  .item .spec{ margin-bottom:4px; }
+  .item .spec span{ border:1px solid #909090; color:#909090; border-radius:4px; padding:2px 4px; font-size:13px; }
+  .item .temp{ margin-bottom:4px; }
+  .tag{ display:inline-block; color:#fff; font-size:12px; line-height:14px; border-radius:4px; padding:2px; }
+  .tag.normal{ background:#FFA451; } .tag.refrigerated{ background:#00D1FF; }
+  .item .pricerow{ display:flex; align-items:center; justify-content:space-between; }
+  .item .price{ color:#FF0000; font-size:18px; }
+  .qty{ display:inline-flex; align-items:center; }
+  .qty i{ color:#C6C6C8; font-size:24px; cursor:pointer; }
+  .qty .n{ margin:0 16px; font-size:16px; }
+
+  /* ── 單一商品加購（掛主商品下）：未加入時「收在購物車裡」，用可展開／收合的下拉列（.acoa-toggle）控制；
+     已加入者恆顯示、靠 CSS order 排在下拉列之上。排版比照一般商品列——圖同尺寸（縮小＋左留白）、名＋移除鈕、
+     規格框、溫層獨立行、價格（左）＋控制器（右）。每項獨立「加入」，加入後變數量控制器、出現移除鈕（不用 checkbox）。
+     各加購品限購 data-max（§5-1＝3），達上下限時 −／＋ 變灰不可再按。 ── */
+  .acoa{ background:#f5faf1; border-bottom:.5px solid #C6C6C8; padding:0 16px; display:flex; flex-direction:column; }
+  .acoa-item{ display:flex; gap:8px; padding:10px 0; border-top:1px solid #e2efd8; }
+  .acoa-item[data-added="1"]{ order:1; }   /* 已加入：恆顯示、置於下拉列之上 */
+  .acoa-toggle{ order:2; }
+  .acoa-item[data-added="0"]{ order:3; }    /* 未加入：收在下拉列內 */
+  .acoa:not(.open) .acoa-item[data-added="0"]{ display:none; }
+  .acoa > :first-child{ border-top:none; }  /* 緊接主商品灰線者，不再疊一條綠線 */
+  /* 加購品：圖縮小＋左留白（20px），做出與一般商品的區隔；資訊欄仍對齊主商品（左緣 102＝16+20+58+8）*/
+  .acoa-thumb{ width:58px; height:50px; border-radius:8px; object-fit:cover; margin-left:20px; flex:0 0 auto; background:#C6C6C6; }
+  .acoa-info{ flex:1; min-width:0; }
+  .acoa-top{ display:flex; align-items:flex-start; justify-content:space-between; }
+  .acoa-nm{ font-size:14px; line-height:1.35; flex:1; margin-right:4px; }
+  .acoa-rm{ color:#C6C6C8; font-size:22px; cursor:pointer; flex:0 0 auto; }
+  .acoa-item[data-added="0"] .acoa-rm{ visibility:hidden; }
+  .acoa-spec{ margin-top:4px; }
+  .acoa-spec span{ border:1px solid #909090; color:#909090; border-radius:4px; padding:2px 4px; font-size:12px; }
+  .acoa-temp-row{ margin-top:4px; }
+  .acoa-temp{ display:inline-block; color:#fff; font-size:12px; line-height:14px; padding:2px; border-radius:4px; }
+  .acoa-temp.normal{ background:#FFA451; } .acoa-temp.refrigerated{ background:#00D1FF; }
+  /* 價格（左）＋控制器（右）＝比照一般商品 pricerow */
+  .acoa-pricerow{ display:flex; align-items:center; justify-content:space-between; margin-top:6px; }
+  .acoa-price .o{ color:#C4C4C4; text-decoration:line-through; font-size:12px; margin-right:5px; }
+  .acoa-price .n{ color:#FF0000; font-size:18px; }
+  /* 未加入：加入按鈕（在數量控制器位置） */
+  .acoa-addbtn{ border:1px solid #4BA83B; background:#fff; color:#4BA83B; border-radius:16px; padding:5px 18px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .acoa-item[data-added="1"] .acoa-addbtn{ display:none; }
+  /* 已加入：數量控制器（比照一般商品 QuantitySelector） */
+  .acoa-qty{ display:none; align-items:center; }
+  .acoa-item[data-added="1"] .acoa-qty{ display:inline-flex; }
+  .acoa-qty i{ color:#C6C6C8; font-size:24px; cursor:pointer; }
+  .acoa-qty i.dis{ opacity:.35; cursor:default; }
+  .acoa-qty .n{ margin:0 16px; font-size:16px; }
+  /* 收合下拉列：像下展開、可以收合 */
+  .acoa-toggle{ display:flex; align-items:center; gap:6px; padding:11px 0; cursor:pointer; color:#3d8c30; font-size:14px; font-weight:600; border-top:1px solid #e2efd8; }
+  .acoa-toggle[hidden]{ display:none; }
+  .acoa-toggle .acoa-count{ color:#8a8f8b; font-size:13px; font-weight:400; }
+  .acoa-toggle .fa{ margin-left:auto; font-size:18px; color:#4BA83B; transition:transform .2s; }
+  .acoa.open .acoa-toggle .fa{ transform:rotate(180deg); }
+
+  /* 運費 / 小計 */
+  .ship{ border-bottom:.5px solid #C6C6C8; padding-left:16px; }
+  .ship-btn{ padding:12px 16px 12px 0; display:flex; justify-content:space-between; align-items:center; }
+  .ship-btn .l{ font-size:17px; } .ship-btn .free{ font-size:17px; color:#8A8A8E; }
+  .subtotal{ padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .subtotal .l{ font-size:17px; } .subtotal .v{ font-size:17px; color:#FF0000; }
+
+  /* 底部 BottomTab */
+  .bottom{ flex:0 0 auto; background:rgba(255,255,255,.95); }
+  .b-discount{ display:flex; justify-content:space-between; align-items:center; padding:12px 8px 12px 16px; border-bottom:1px solid #C6C6C8; }
+  .b-discount .l{ display:flex; align-items:center; }
+  .b-discount .t{ font-size:18px; } .b-discount .ph{ margin-left:12px; color:#909090; font-size:16px; }
+  .b-total{ display:flex; justify-content:space-between; align-items:center; padding:8px 16px; }
+  .b-total .t{ font-size:18px; } .b-total .note{ font-size:12px; } .b-total .amt{ font-size:16px; }
+  .b-checkout{ padding:12px 24px; border-radius:24px; background:#FF4040; color:#fff; font-size:17px; font-weight:600; border:0; cursor:pointer; font-family:inherit; }
+
+  /* ── 加購專區（產線加購品／超值加購・既有 ExtraProducts 機制）1:1：與上方單品加購為兩套獨立機制。
+     白卡 radius20 margin16；標題 18/600 綠 #4BA83B；圖 0.28w×0.25w(≈109×97)、名 16、規格框、
+     溫層＋產線＋滿額 tag（#FF6A00）、價格（左原價刪除線＋紅特價）＋紅 plus-circle #FF4444 加入。 ── */
+  .extra{ border-radius:20px; overflow:hidden; margin:16px; background:#fff; }
+  .extra-headline{ padding:16px 0 0 16px; font-size:18px; font-weight:600; color:#4BA83B; }
+  .extra-detail{ padding-left:16px; }
+  .extra-item{ padding:16px 16px 16px 0; display:flex; }
+  .extra-item + .extra-item{ border-top:.5px solid #C6C6C8; }
+  .extra-img{ width:109px; height:97px; border-radius:8px; object-fit:cover; background:#C6C6C6; margin-right:8px; flex:0 0 auto; }
+  .extra-right{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .extra-row{ display:flex; align-items:center; margin-bottom:4px; }
+  .extra-nm{ font-size:16px; line-height:1.35; }
+  .extra-desc{ border:1px solid #909090; color:#909090; border-radius:4px; padding:2px 4px; font-size:13px; }
+  .etag{ display:inline-block; color:#fff; font-size:12px; line-height:14px; border-radius:4px; padding:2px; margin-right:2px; }
+  .extra-bottom{ justify-content:space-between; margin-top:auto; margin-bottom:0; }
+  .extra-price .o{ text-decoration:line-through; color:#909090; font-size:18px; margin-right:4px; }
+  .extra-price .n{ color:#FF0000; font-size:18px; }
+  .extra-add{ color:#FF4444; font-size:23px; cursor:pointer; }
+  .extra-item.added .extra-add{ color:#C6C6C8; cursor:default; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="statusbar"><span>9:41</span><span class="icons"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+    <div class="appbar"><span style="width:40px"></span><span class="title">購物車</span><span style="width:40px"></span></div>
+
+    <div class="scroll">
+      <div class="group-wrap">
+        <div class="group">
+          <div class="group-title" style="background:#00D18B"><span>產地直送</span></div>
+
+          <!-- 主商品①：文旦（含已加購＋尚未加購） -->
+          <div class="item" data-price="829" data-line="origin">
+            <img class="thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="文旦禮盒">
+            <div class="body">
+              <div class="top"><span class="nm">早鳥預購 文旦季【老欉文旦禮盒】樂古農園</span><i class="fa fa-times-circle-o rm" title="移除"></i></div>
+              <div class="spec"><span>規格：1 盒（優選 5 斤裝）</span></div>
+              <div class="temp"><span class="tag normal">常溫</span></div>
+              <div class="pricerow"><span class="price">$829</span>
+                <span class="qty"><i class="fa fa-minus-circle" data-d="-1"></i><span class="n">1</span><i class="fa fa-plus-circle" data-d="1"></i></span>
+              </div>
+            </div>
+          </div>
+          <!-- ①的加購（單一商品加入・掛主商品下）：已加入置頂恆顯示；未加入收在下拉列內 -->
+          <div class="acoa" data-line="origin">
+            <div class="acoa-item" data-price="360" data-max="3" data-added="1">
+              <img class="acoa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+              <div class="acoa-info">
+                <div class="acoa-top"><span class="acoa-nm">【冷壓初榨苦茶油】小農直送</span><i class="fa fa-times-circle-o acoa-rm" title="移除"></i></div>
+                <div class="acoa-spec"><span>規格：250ml</span></div>
+                <div class="acoa-temp-row"><span class="acoa-temp normal">常溫</span></div>
+                <div class="acoa-pricerow">
+                  <span class="acoa-price"><span class="o">$420</span><span class="n">$360</span></span>
+                  <button class="acoa-addbtn" type="button">加入</button>
+                  <span class="acoa-qty"><i class="fa fa-minus-circle" data-d="-1"></i><span class="n">1</span><i class="fa fa-plus-circle" data-d="1"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="acoa-toggle"><span class="acoa-toggle-label">加價購商品</span><span class="acoa-count"></span><i class="fa fa-angle-down"></i></div>
+            <div class="acoa-item" data-price="240" data-max="3" data-added="0">
+              <img class="acoa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509181007201.jpg" alt="">
+              <div class="acoa-info">
+                <div class="acoa-top"><span class="acoa-nm">【有機黑芝麻粉】</span><i class="fa fa-times-circle-o acoa-rm" title="移除"></i></div>
+                <div class="acoa-spec"><span>規格：300g</span></div>
+                <div class="acoa-temp-row"><span class="acoa-temp normal">常溫</span></div>
+                <div class="acoa-pricerow">
+                  <span class="acoa-price"><span class="o">$280</span><span class="n">$240</span></span>
+                  <button class="acoa-addbtn" type="button">加入</button>
+                  <span class="acoa-qty"><i class="fa fa-minus-circle" data-d="-1"></i><span class="n">1</span><i class="fa fa-plus-circle" data-d="1"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="acoa-item" data-price="120" data-max="3" data-added="0">
+              <img class="acoa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
+              <div class="acoa-info">
+                <div class="acoa-top"><span class="acoa-nm">【放牧土雞蛋】農場晃晃</span><i class="fa fa-times-circle-o acoa-rm" title="移除"></i></div>
+                <div class="acoa-spec"><span>規格：10 入</span></div>
+                <div class="acoa-temp-row"><span class="acoa-temp refrigerated">冷藏</span></div>
+                <div class="acoa-pricerow">
+                  <span class="acoa-price"><span class="o">$150</span><span class="n">$120</span></span>
+                  <button class="acoa-addbtn" type="button">加入</button>
+                  <span class="acoa-qty"><i class="fa fa-minus-circle" data-d="-1"></i><span class="n">1</span><i class="fa fa-plus-circle" data-d="1"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 主商品②：蔬菜箱（只有尚未加購） -->
+          <div class="item" data-price="560" data-line="origin">
+            <img class="thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509190336361.jpg" alt="蔬菜箱">
+            <div class="body">
+              <div class="top"><span class="nm">【當季鮮採蔬菜箱】小農直送</span><i class="fa fa-times-circle-o rm" title="移除"></i></div>
+              <div class="spec"><span>規格：1 箱</span></div>
+              <div class="temp"><span class="tag normal">常溫</span></div>
+              <div class="pricerow"><span class="price">$560</span>
+                <span class="qty"><i class="fa fa-minus-circle" data-d="-1"></i><span class="n">1</span><i class="fa fa-plus-circle" data-d="1"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="acoa" data-line="origin">
+            <div class="acoa-toggle"><span class="acoa-toggle-label">加價購商品</span><span class="acoa-count"></span><i class="fa fa-angle-down"></i></div>
+            <div class="acoa-item" data-price="360" data-max="3" data-added="0">
+              <img class="acoa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+              <div class="acoa-info">
+                <div class="acoa-top"><span class="acoa-nm">【冷壓初榨苦茶油】小農直送</span><i class="fa fa-times-circle-o acoa-rm" title="移除"></i></div>
+                <div class="acoa-spec"><span>規格：250ml</span></div>
+                <div class="acoa-temp-row"><span class="acoa-temp normal">常溫</span></div>
+                <div class="acoa-pricerow">
+                  <span class="acoa-price"><span class="o">$420</span><span class="n">$360</span></span>
+                  <button class="acoa-addbtn" type="button">加入</button>
+                  <span class="acoa-qty"><i class="fa fa-minus-circle" data-d="-1"></i><span class="n">1</span><i class="fa fa-plus-circle" data-d="1"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="acoa-item" data-price="580" data-max="3" data-added="0">
+              <img class="acoa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="">
+              <div class="acoa-info">
+                <div class="acoa-top"><span class="acoa-nm">【台灣龍眼蜂蜜】</span><i class="fa fa-times-circle-o acoa-rm" title="移除"></i></div>
+                <div class="acoa-spec"><span>規格：700g</span></div>
+                <div class="acoa-temp-row"><span class="acoa-temp normal">常溫</span></div>
+                <div class="acoa-pricerow">
+                  <span class="acoa-price"><span class="o">$680</span><span class="n">$580</span></span>
+                  <button class="acoa-addbtn" type="button">加入</button>
+                  <span class="acoa-qty"><i class="fa fa-minus-circle" data-d="-1"></i><span class="n">1</span><i class="fa fa-plus-circle" data-d="1"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 運費 -->
+          <div class="ship"><div class="ship-btn"><span class="l">運費</span><span class="free">免運費</span></div></div>
+          <!-- 小計 -->
+          <div class="subtotal"><span class="l">商品小計</span><span class="v" id="lineTotal">1,749</span></div>
+        </div>
+      </div>
+      <!-- 加購專區（產線加購品／超值加購・既有 ExtraProducts 機制，1:1；與上方單品加購並存、兩套獨立機制） -->
+      <div class="extra">
+        <div class="extra-headline">加購專區</div>
+        <div class="extra-detail">
+          <div class="extra-item" data-price="360">
+            <img class="extra-img" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
+            <div class="extra-right">
+              <div class="extra-row"><span class="extra-nm">【冷壓初榨苦茶油】小農直送・250ml</span></div>
+              <div class="extra-row"><span class="extra-desc">規格：250ml</span></div>
+              <div class="extra-row">
+                <span class="etag" style="background:#FFA451">常溫</span>
+                <span class="etag" style="background:#00D18B">產地直送</span>
+                <span class="etag" style="background:#FF6A00">滿999元</span>
+              </div>
+              <div class="extra-row extra-bottom">
+                <span class="extra-price"><span class="o">$420</span><span class="n">$360</span></span>
+                <i class="fa fa-plus-circle extra-add" title="加入購物車"></i>
+              </div>
+            </div>
+          </div>
+          <div class="extra-item" data-price="580">
+            <img class="extra-img" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="">
+            <div class="extra-right">
+              <div class="extra-row"><span class="extra-nm">【台灣龍眼蜂蜜】純釀 700g</span></div>
+              <div class="extra-row"><span class="extra-desc">規格：700g</span></div>
+              <div class="extra-row">
+                <span class="etag" style="background:#FFA451">常溫</span>
+                <span class="etag" style="background:#FF473C">蔬果乾貨</span>
+                <span class="etag" style="background:#FF6A00">滿999元</span>
+              </div>
+              <div class="extra-row extra-bottom">
+                <span class="extra-price"><span class="o">$680</span><span class="n">$580</span></span>
+                <i class="fa fa-plus-circle extra-add" title="加入購物車"></i>
+              </div>
+            </div>
+          </div>
+          <div class="extra-item" data-price="120">
+            <img class="extra-img" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
+            <div class="extra-right">
+              <div class="extra-row"><span class="extra-nm">【放牧土雞蛋】農場晃晃 10 入</span></div>
+              <div class="extra-row"><span class="extra-desc">規格：10 入</span></div>
+              <div class="extra-row">
+                <span class="etag" style="background:#00D1FF">冷藏</span>
+                <span class="etag" style="background:#0094FF">生鮮肉舖</span>
+              </div>
+              <div class="extra-row extra-bottom">
+                <span class="extra-price"><span class="o">$150</span><span class="n">$120</span></span>
+                <i class="fa fa-plus-circle extra-add" title="加入購物車"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+
+    <!-- 底部 BottomTab -->
+    <div class="bottom">
+      <div class="b-discount"><span class="l"><span class="t">優惠方案</span><span class="ph">請輸入或選擇您的優惠方案</span></span><i class="fa fa-angle-right" style="color:#C6C6C8;font-size:20px"></i></div>
+      <div class="b-total">
+        <span><span class="t">商品總金額</span><span class="note">(不含運)：</span><span class="amt" id="grandTotal">$1,749</span></span>
+        <button class="b-checkout">結帳</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const money = n => n.toLocaleString('en-US');
+
+    function recalc(){
+      let total = 0;
+      document.querySelectorAll('.item').forEach(it=>{
+        total += Number(it.dataset.price) * (parseInt(it.querySelector('.qty .n').textContent)||1);
+      });
+      // 只計入「已加入」的單品加購（data-added=1）
+      document.querySelectorAll('.acoa-item[data-added="1"]').forEach(a=>{
+        total += Number(a.dataset.price) * (parseInt(a.querySelector('.acoa-qty .n').textContent)||1);
+      });
+      // 加購專區已加入者（各一件）
+      document.querySelectorAll('.extra-item.added').forEach(a=>{ total += Number(a.dataset.price); });
+      document.getElementById('lineTotal').textContent = money(total);
+      document.getElementById('grandTotal').textContent = '$'+money(total);
+    }
+
+    // 收合下拉列：更新「還有 N 項」文案；無未加入項則整列隱藏
+    function updateAcoaToggles(){
+      document.querySelectorAll('.acoa').forEach(acoa=>{
+        const toggle = acoa.querySelector('.acoa-toggle');
+        if(!toggle) return;
+        const n = acoa.querySelectorAll('.acoa-item[data-added="0"]').length;
+        toggle.querySelector('.acoa-count').textContent = n ? `還有 ${n} 項` : '';
+        toggle.hidden = n===0;
+        if(n===0) acoa.classList.remove('open');
+      });
+    }
+
+    // 數量上下限：到下限(1) 灰 −、到上限(data-max，加購=3) 灰 ＋
+    function refreshLimits(qtyEl, max){
+      if(!qtyEl) return;
+      const n = parseInt(qtyEl.querySelector('.n').textContent)||1;
+      qtyEl.querySelector('[data-d="-1"]').classList.toggle('dis', n<=1);
+      const plus = qtyEl.querySelector('[data-d="1"]');
+      if(plus) plus.classList.toggle('dis', !!max && n>=max);
+    }
+
+    document.addEventListener('click', e=>{
+      // 數量 −／＋（主商品 .qty 與加購 .acoa-qty 共用；有 data-max 者受上限）
+      const qi = e.target.closest('.qty i, .acoa-qty i');
+      if(qi){
+        if(qi.classList.contains('dis')) return;
+        const qtyEl = qi.parentElement;
+        const nEl = qtyEl.querySelector('.n');
+        const owner = qi.closest('[data-max]');
+        const max = owner ? Number(owner.dataset.max) : 0;
+        let n = Math.max(1, Number(nEl.textContent) + Number(qi.dataset.d));
+        if(max) n = Math.min(max, n);
+        nEl.textContent = n;
+        refreshLimits(qtyEl, max);
+        recalc(); return;
+      }
+      // 收合下拉列：展開／收合未加入的加購品
+      const toggle = e.target.closest('.acoa-toggle');
+      if(toggle){ toggle.closest('.acoa').classList.toggle('open'); return; }
+      // 加購「加入」→ 變數量控制器＋出現移除鈕（靠 CSS order 自動上移到下拉列之上）
+      const addbtn = e.target.closest('.acoa-addbtn');
+      if(addbtn){
+        const it = addbtn.closest('.acoa-item');
+        it.dataset.added = '1';
+        refreshLimits(it.querySelector('.acoa-qty'), Number(it.dataset.max));
+        updateAcoaToggles(); recalc(); return;
+      }
+      // 加購移除 → 回未加入（數量歸 1，收回下拉列）
+      const armr = e.target.closest('.acoa-rm');
+      if(armr){
+        const it = armr.closest('.acoa-item');
+        it.dataset.added = '0';
+        it.querySelector('.acoa-qty .n').textContent = '1';
+        updateAcoaToggles(); recalc(); return;
+      }
+      // 加購專區：紅色 plus-circle 加入購物車（加一次、之後變灰）
+      const ea = e.target.closest('.extra-add');
+      if(ea){ const it=ea.closest('.extra-item'); if(it.classList.contains('added')) return; it.classList.add('added'); recalc(); return; }
+      // 移除主商品（連同其加購區）
+      const rm = e.target.closest('.item .rm');
+      if(rm){ const it=rm.closest('.item'); const nx=it.nextElementSibling; if(nx&&nx.classList.contains('acoa'))nx.remove(); it.remove(); updateAcoaToggles(); recalc(); return; }
+    });
+
+    // 初始：套用數量上下限視覺 + 下拉列文案 + 金額
+    document.querySelectorAll('.acoa-item').forEach(it=>refreshLimits(it.querySelector('.acoa-qty'), Number(it.dataset.max)));
+    document.querySelectorAll('.item .qty').forEach(q=>refreshLimits(q, 0));
+    updateAcoaToggles();
+    recalc();
+  </script>
+</body>
+</html>
