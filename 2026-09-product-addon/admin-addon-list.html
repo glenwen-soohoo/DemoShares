@@ -702,6 +702,13 @@ a:hover { text-decoration: underline; }
   .al-id{ font-variant-numeric:tabular-nums; color:var(--gox-text-sub); }
   .gox-table td .gox-switch{ vertical-align:middle; }
   .al-tabs .gox-tab-btn.is-active{ background:var(--gox-green); }
+  .al-stock{ font-variant-numeric:tabular-nums; }
+  .al-stock.is-low{ color:var(--gox-danger); font-weight:600; }
+  /* 溫層小標籤 */
+  .tt{ display:inline-block; font-size:11px; font-weight:600; line-height:1.6; border-radius:4px; padding:0 6px; margin-left:6px; vertical-align:middle; }
+  .tt.normal{ background:#fff7e6; border:1px solid #ffd591; color:#c86e1a; }
+  .tt.cold{ background:#e6fffb; border:1px solid #87e8de; color:#229599; }
+  .tt.frozen{ background:#f0f5ff; border:1px solid #adc6ff; color:#5563c2; }
 
   /* ── 批次操作大彈窗（bx- 前綴，避免與列表樣式衝突）── */
   .gox-modal-box.bx-box{ width:940px; max-width:94vw; min-height:620px; max-height:90vh; display:flex; flex-direction:column; }
@@ -741,6 +748,7 @@ a:hover { text-decoration: underline; }
   .bx-chipbox.empty{ color:#aaa; font-size:13px; }
   .bx-div{ height:1px; background:#eee; margin:14px 0; }
   .bx-log{ margin-top:10px; font-size:13px; color:#2e6b26; min-height:18px; }
+  .bx-warn{ color:#c0554d; font-weight:600; margin-left:4px; }
   .bx-rtempty{ color:#999; font-size:13px; padding:10px 2px; }
 </style>
 
@@ -771,7 +779,7 @@ a:hover { text-decoration: underline; }
       <table class="gox-table">
         <thead><tr>
           <th>規格ID</th><th>加購品名稱</th><th>產線</th><th>折抵</th><th>折後價</th><th>生效期間</th>
-          <th class="cell-center">掛載主商品</th><th class="cell-center">啟用</th><th class="cell-ops">操作</th>
+          <th class="cell-center">掛載主商品</th><th class="cell-center">庫存</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
         </tr></thead>
         <tbody id="al-addon-body"></tbody>
       </table>
@@ -783,7 +791,7 @@ a:hover { text-decoration: underline; }
       <table class="gox-table">
         <thead><tr>
           <th>主商品ID</th><th>商品名稱</th><th>產線</th>
-          <th class="cell-center">加購品數</th><th class="cell-center">啟用</th><th class="cell-ops">操作</th>
+          <th class="cell-center">加購品數</th><th class="cell-center">庫存</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
         </tr></thead>
         <tbody id="al-main-body"></tbody>
       </table>
@@ -829,38 +837,42 @@ a:hover { text-decoration: underline; }
 (function(){
   var money = function(n){ return '$' + Math.round(n).toLocaleString('en-US'); };
   var ADDONS = [
-    { id:99753, name:'316 不鏽鋼保溫瓶 500ml', line:'產地直送', mode:'fixed', val:50, orig:399, start:'2026/09/01', end:'2026/09/30', mains:3, on:true },
-    { id:101509, name:'手沖濾掛咖啡 10入', line:'產地直送', mode:'percent', val:8, orig:299, start:'', end:'', mains:1, on:true },
-    { id:36007, name:'冷壓初榨苦茶油 250ml', line:'產地直送', mode:'fixed', val:60, orig:420, start:'2026/09/01', end:'2026/10/31', mains:5, on:true },
-    { id:24011, name:'有機黑芝麻粉 300g', line:'蔬果乾貨', mode:'fixed', val:40, orig:280, start:'2026/09/01', end:'2026/09/30', mains:2, on:false }
+    { id:99753, name:'316 不鏽鋼保溫瓶 500ml', line:'產地直送', temp:'常溫', mode:'fixed', val:50, orig:399, start:'2026/09/01', end:'2026/09/30', mains:3, stock:128, on:true },
+    { id:101509, name:'手沖濾掛咖啡 10入', line:'產地直送', temp:'常溫', mode:'percent', val:8, orig:299, start:'', end:'', mains:1, stock:64, on:true },
+    { id:36007, name:'冷壓初榨苦茶油 250ml', line:'產地直送', temp:'冷藏', mode:'fixed', val:60, orig:420, start:'2026/09/01', end:'2026/10/31', mains:5, stock:8, on:true },
+    { id:24011, name:'有機黑芝麻粉 300g', line:'蔬果乾貨', temp:'冷凍', mode:'fixed', val:40, orig:280, start:'2026/09/01', end:'2026/09/30', mains:2, stock:0, on:false }
   ];
   var MAINS = [
-    { id:40894, name:'台灣蜜棗禮盒 3斤裝', line:'產地直送', addons:3, on:true },
-    { id:55210, name:'日曬紅龍果原箱', line:'產地直送', addons:2, on:true },
-    { id:47788, name:'當季鮮採蔬菜箱', line:'蔬果乾貨', addons:2, on:true },
-    { id:61120, name:'冬季草莓禮盒（已下架）', line:'產地直送', addons:1, on:false }
+    { id:40894, name:'台灣蜜棗禮盒 3斤裝', line:'產地直送', temp:'常溫', addons:3, stock:56, on:true },
+    { id:55210, name:'日曬紅龍果原箱', line:'產地直送', temp:'冷藏', addons:2, stock:23, on:true },
+    { id:47788, name:'當季鮮採蔬菜箱', line:'蔬果乾貨', temp:'冷藏', addons:2, stock:41, on:true },
+    { id:61120, name:'冬季草莓禮盒（已下架）', line:'產地直送', temp:'冷凍', addons:1, stock:0, on:false }
   ];
   var line = 'all', kw = '';
   function finalOf(a){ return a.mode==='fixed' ? a.orig-a.val : Math.round(a.orig*a.val/10); }
   function discText(a){ return a.mode==='fixed' ? '固定 '+money(a.val) : a.val+' 折'; }
+  function tempTag(t){ var c = t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); return '<span class="tt '+c+'">'+t+'</span>'; }
+  function stockCell(n){ return '<td class="cell-center al-stock'+(n<=10?' is-low':'')+'">'+n+'</td>'; }
   function match(name, id){ return !kw || (name.indexOf(kw)>=0 || String(id).indexOf(kw)>=0); }
   function render(){
     var la = ADDONS.filter(function(a){ return (line==='all'||a.line===line) && match(a.name,a.id); });
     document.getElementById('al-addon-body').innerHTML = la.map(function(a){
       var fin = finalOf(a), period = a.start ? a.start+'～'+a.end : '不指定';
-      return '<tr><td class="al-id">'+a.id+'</td><td>'+a.name+'</td><td>'+a.line+'</td><td class="al-disc">'+discText(a)+'</td>'
+      return '<tr><td class="al-id">'+a.id+'</td><td>'+a.name+tempTag(a.temp)+'</td><td>'+a.line+'</td><td class="al-disc">'+discText(a)+'</td>'
         + '<td><span class="al-old">'+money(a.orig)+'</span><span class="al-final">'+money(fin)+'</span></td>'
         + '<td class="al-line">'+period+'</td><td class="cell-center">'+a.mains+'</td>'
+        + stockCell(a.stock)
         + '<td class="cell-center"><span class="gox-switch '+(a.on?'is-on':'')+'" data-on-addon="'+a.id+'"></span></td>'
-        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">編輯</a><a class="gox-btn-op" href="#" data-del="'+a.id+'">刪除</a></td></tr>';
-    }).join('') || '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的加購品</td></tr>';
+        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">編輯</a></td></tr>';
+    }).join('') || '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的加購品</td></tr>';
     var lm = MAINS.filter(function(m){ return (line==='all'||m.line===line) && match(m.name,m.id); });
     document.getElementById('al-main-body').innerHTML = lm.map(function(m){
-      return '<tr><td class="al-id">'+m.id+'</td><td>'+m.name+'</td><td>'+m.line+'</td>'
+      return '<tr><td class="al-id">'+m.id+'</td><td>'+m.name+tempTag(m.temp)+'</td><td>'+m.line+'</td>'
         + '<td class="cell-center">'+m.addons+'</td>'
+        + stockCell(m.stock)
         + '<td class="cell-center"><span class="gox-switch '+(m.on?'is-on':'')+'" data-on-main="'+m.id+'"></span></td>'
-        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">設定</a><a class="gox-btn-op" href="#" data-del="'+m.id+'">刪除</a></td></tr>';
-    }).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的主商品</td></tr>';
+        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">設定</a></td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的主商品</td></tr>';
     var active = document.querySelector('[data-tab-panel]:not([hidden])');
     var isAddon = active && active.getAttribute('data-tab-panel')==='byaddon';
     document.getElementById('al-count').textContent = isAddon ? la.length : lm.length;
@@ -869,18 +881,11 @@ a:hover { text-decoration: underline; }
   document.getElementById('al-kw').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('al-search').click(); });
   document.getElementById('al-line').addEventListener('change', function(){ line=this.value; render(); });
   document.addEventListener('gox:tab', function(){ setTimeout(render,0); });
-  document.addEventListener('click', function(e){
-    var del=e.target.closest('[data-del]');
-    if(del){ e.preventDefault(); var id=Number(del.getAttribute('data-del'));
-      var ia=ADDONS.findIndex(function(a){return a.id===id;}); if(ia>=0) ADDONS.splice(ia,1);
-      var im=MAINS.findIndex(function(m){return m.id===id;}); if(im>=0) MAINS.splice(im,1);
-      render(); window.gox&&window.gox.toast('已刪除'); return; }
-  });
   document.addEventListener('gox:switch', function(e){
     var sw=e.target, ida=sw.getAttribute('data-on-addon'), idm=sw.getAttribute('data-on-main');
     if(ida){ var a=ADDONS.find(function(x){return x.id===Number(ida);}); if(a)a.on=e.detail.on; }
     if(idm){ var m=MAINS.find(function(x){return x.id===Number(idm);}); if(m)m.on=e.detail.on; }
-    if(ida||idm) window.gox&&window.gox.toast(e.detail.on?'已啟用':'已停用');
+    if(ida||idm) window.gox&&window.gox.toast(e.detail.on?'已上架':'已下架');
   });
   render();
 })();
@@ -888,15 +893,17 @@ a:hover { text-decoration: underline; }
 /* ── 批次操作彈窗 ── */
 (function(){
   var ADDONS = [
-    { id:50001, name:'米餅・原味', disc:'固定 $10' },{ id:50002, name:'米餅・海苔', disc:'固定 $10' },
-    { id:50003, name:'米餅・黑糖', disc:'固定 $10' },{ id:50004, name:'米餅・起司', disc:'固定 $10' },
-    { id:50005, name:'米餅・南瓜', disc:'固定 $10' },{ id:36007, name:'冷壓初榨苦茶油 250ml', disc:'固定 $60' },
-    { id:101509, name:'手沖濾掛咖啡 10入', disc:'8 折' }
+    { id:50001, name:'米餅・原味', temp:'常溫', disc:'固定 $10' },{ id:50002, name:'米餅・海苔', temp:'常溫', disc:'固定 $10' },
+    { id:50003, name:'米餅・黑糖', temp:'常溫', disc:'固定 $10' },{ id:50004, name:'米餅・起司', temp:'常溫', disc:'固定 $10' },
+    { id:50005, name:'米餅・南瓜', temp:'常溫', disc:'固定 $10' },{ id:36007, name:'冷壓初榨苦茶油 250ml', temp:'冷藏', disc:'固定 $60' },
+    { id:101509, name:'手沖濾掛咖啡 10入', temp:'常溫', disc:'8 折' }
   ];
   var MAINS = [
-    { id:40894, name:'台灣蜜棗禮盒 3斤裝' },{ id:55210, name:'日曬紅龍果原箱' },{ id:47788, name:'當季鮮採蔬菜箱' },
-    { id:33012, name:'綜合水果箱' },{ id:60088, name:'米食禮盒' }
+    { id:40894, name:'台灣蜜棗禮盒 3斤裝', temp:'常溫' },{ id:55210, name:'日曬紅龍果原箱', temp:'冷藏' },{ id:47788, name:'當季鮮採蔬菜箱', temp:'冷藏' },
+    { id:33012, name:'綜合水果箱', temp:'冷藏' },{ id:60088, name:'米食禮盒', temp:'常溫' }
   ];
+  function tempTag(t){ if(!t) return ''; var c = t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); return '<span class="tt '+c+'">'+t+'</span>'; }
+  function tagOf(arr,id){ var x=arr.find(function(o){return o.id===id;}); return x?tempTag(x.temp):''; }
   var pairs = new Set();
   [50001,50002,50003,50004,50005].forEach(function(a){ pairs.add(a+'-33012'); pairs.add(a+'-60088'); });
   pairs.add('36007-40894'); pairs.add('101509-40894'); pairs.add('101509-55210');
@@ -920,7 +927,7 @@ a:hover { text-decoration: underline; }
       var q=inputEl.value.trim();
       var cs=getCands().filter(function(c){ return !q || c.name.indexOf(q)>=0 || String(c.id).indexOf(q)>=0; });
       var dd=document.createElement('div'); dd.className='bx-dd';
-      dd.innerHTML = cs.length ? cs.map(function(c){ return '<div class="opt" data-pick="'+c.id+'"><span>'+c.name+'</span><span class="id">'+c.id+'</span>'+(c.meta?'<span class="meta'+(c.part?' part':'')+'">'+c.meta+'</span>':'')+'</div>'; }).join('') : '<div class="none">找不到符合的'+(boxEl.id==='bx-left-box'?Ln():Rn())+'</div>';
+      dd.innerHTML = cs.length ? cs.map(function(c){ return '<div class="opt" data-pick="'+c.id+'"><span>'+c.name+(c.temp?tempTag(c.temp):'')+'</span><span class="id">'+c.id+'</span>'+(c.meta?'<span class="meta'+(c.part?' part':'')+'">'+c.meta+'</span>':'')+'</div>'; }).join('') : '<div class="none">找不到符合的'+(boxEl.id==='bx-left-box'?Ln():Rn())+'</div>';
       boxEl.appendChild(dd);
     }
     inputEl.addEventListener('focus', function(){ boxEl.classList.add('focus'); drop(); });
@@ -930,14 +937,14 @@ a:hover { text-decoration: underline; }
   }
 
   function renderLeftChips(){
-    $('bx-left-chips').innerHTML = [...selL].map(function(id){ return '<span class="bx-chip">'+nameOf(LEFT(),id)+'<button class="x" data-rml="'+id+'" title="移除">×</button></span>'; }).join('');
+    $('bx-left-chips').innerHTML = [...selL].map(function(id){ return '<span class="bx-chip">'+nameOf(LEFT(),id)+tagOf(LEFT(),id)+'<button class="x" data-rml="'+id+'" title="移除">×</button></span>'; }).join('');
   }
   function renderCommon(){
     var body=$('bx-right-body'), empty=$('bx-right-empty');
     if(!selL.size){ body.hidden=true; empty.hidden=false; return; }
     body.hidden=false; empty.hidden=true;
     var it=inter(), box=$('bx-common-box');
-    if(it.length){ box.className='bx-chipbox'; box.innerHTML = it.map(function(id){ return '<span class="bx-chip">'+nameOf(RIGHT(),id)+'<button class="x" data-rmc="'+id+'" title="從全部取下">×</button></span>'; }).join(''); }
+    if(it.length){ box.className='bx-chipbox'; box.innerHTML = it.map(function(id){ return '<span class="bx-chip">'+nameOf(RIGHT(),id)+tagOf(RIGHT(),id)+'<button class="x" data-rmc="'+id+'" title="從全部取下">×</button></span>'; }).join(''); }
     else { box.className='bx-chipbox empty'; box.textContent='這些'+Ln()+'目前沒有共同掛載的'+Rn()+'（用下方加入）'; }
   }
   function renderAll(){ renderLeftChips(); renderCommon(); }
@@ -961,11 +968,14 @@ a:hover { text-decoration: underline; }
     applyText(); renderAll();
   });
   attachSearch($('bx-left-input'), $('bx-left-box'),
-    function(){ return LEFT().filter(function(x){return !selL.has(x.id);}).map(function(x){ return {id:x.id,name:x.name,meta:(axis==='addon'?'掛 '+acount(x.id):acount(x.id)+' 個加購品')}; }); },
+    function(){ return LEFT().filter(function(x){return !selL.has(x.id);}).map(function(x){ return {id:x.id,name:x.name,temp:x.temp,meta:(axis==='addon'?'掛 '+acount(x.id):acount(x.id)+' 個加購品')}; }); },
     function(id){ selL.add(id); });
   attachSearch($('bx-add-input'), $('bx-add-box'),
-    function(){ var s=new Set(inter()); return RIGHT().filter(function(r){return !s.has(r.id);}).map(function(r){ var p=partial(r.id); return {id:r.id,name:r.name,meta:(p===0?'未掛':'部分已掛 '+p+'/'+selL.size),part:p>0}; }); },
-    function(id){ var n=0; [...selL].forEach(function(l){ if(!has(l,id)){ setPair(l,id,true); n++; } }); $('bx-log').textContent='已把「'+nameOf(RIGHT(),id)+'」加到 '+selL.size+' 個'+Ln()+'（新增 '+n+' 組配對）'; });
+    function(){ var s=new Set(inter()); return RIGHT().filter(function(r){return !s.has(r.id);}).map(function(r){ var p=partial(r.id); return {id:r.id,name:r.name,temp:r.temp,meta:(p===0?'未掛':'部分已掛 '+p+'/'+selL.size),part:p>0}; }); },
+    function(id){ var n=0; [...selL].forEach(function(l){ if(!has(l,id)){ setPair(l,id,true); n++; } });
+      var rt=(RIGHT().find(function(o){return o.id===id;})||{}).temp;
+      var cross=[...selL].some(function(l){ var lt=(LEFT().find(function(o){return o.id===l;})||{}).temp; return lt&&rt&&lt!==rt; });
+      $('bx-log').innerHTML='已把「'+nameOf(RIGHT(),id)+'」加到 '+selL.size+' 個'+Ln()+'（新增 '+n+' 組配對）'+(cross?' <span class="bx-warn">含異溫層，出貨會拆單</span>':''); });
 
   document.addEventListener('click', function(e){
     var rml=e.target.closest('[data-rml]');

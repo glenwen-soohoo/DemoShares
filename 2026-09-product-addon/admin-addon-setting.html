@@ -687,7 +687,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="admin-addon-list.html" class="gox-menu-child is-active">加購設定</a><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child is-active">加購設定</a><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
 </aside>
 
@@ -774,10 +774,22 @@ a:hover { text-decoration: underline; }
   .as-savebar{ position:sticky; bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
                background:#fff; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius-lg); box-shadow:0 -1px 3px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.08); padding:12px 18px; }
   .as-savebar a.gox-btn{ text-decoration:none; }
+  .as-right{ display:flex; align-items:center; gap:12px; }
+  .as-del-btn{ display:inline-flex; align-items:center; gap:6px; border:1px solid #f0c4c0; background:#fff; color:var(--gox-danger); border-radius:var(--gox-radius); padding:8px 14px; font-size:13px; cursor:pointer; font-family:inherit; }
+  .as-del-btn:hover{ background:#fbeae8; border-color:var(--gox-danger); }
+  .as-del-btn svg{ width:14px; height:14px; }
+  .as-del-btn[hidden]{ display:none; }
   .as-status{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--gox-text-sub); }
   .as-dot{ width:7px; height:7px; border-radius:50%; background:var(--gox-text-muted); flex:none; }
   .as-status.is-saved .as-dot{ background:var(--gox-success); }
   .as-status.is-invalid{ color:var(--gox-danger); } .as-status.is-invalid .as-dot{ background:var(--gox-danger); }
+  /* 溫層小標籤（放在品名後）；異溫層＝同底色、淺紅框線、加註 (異溫層) */
+  .tt{ display:inline-block; font-size:11px; font-weight:600; border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:middle; line-height:1.6; }
+  .tt.normal{ background:#fff7e6; border:1px solid #ffd591; color:#c86e1a; }
+  .tt.cold{ background:#e6fffb; border:1px solid #87e8de; color:#229599; }
+  .tt.frozen{ background:#f0f5ff; border:1px solid #adc6ff; color:#5563c2; }
+  .tt.is-mismatch{ border-color:#f0c4c0; cursor:help; }
+  .tt .tt-x{ color:#c0554d; margin-left:1px; }
 </style>
 
 <div class="gox-toolbox is-wide">
@@ -785,8 +797,12 @@ a:hover { text-decoration: underline; }
   <div class="as-head"><h2>加購設定</h2></div>
   <div id="editor"></div>
   <div class="as-savebar">
-    <span class="as-status" id="save-status"><span class="as-dot"></span>尚未儲存</span>
-    <div style="display:flex;gap:8px;"><a class="gox-btn gox-btn-default" href="admin-addon-list.html">取消</a><button class="gox-btn gox-btn-primary" id="btn-save">儲存設定</button></div>
+    <button class="as-del-btn" id="btn-del" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>刪除加購設定</button>
+    <div class="as-right">
+      <span class="as-status" id="save-status"><span class="as-dot"></span>尚未儲存</span>
+      <a class="gox-btn gox-btn-default" href="admin-addon-list.html">取消</a>
+      <button class="gox-btn gox-btn-primary" id="btn-save">儲存設定</button>
+    </div>
   </div>
  </div>
 </div>
@@ -797,12 +813,12 @@ a:hover { text-decoration: underline; }
   var money=function(n){ return '$'+Math.round(n).toLocaleString('en-US'); };
   var esc=function(s){ return String(s); };
   var ADDONS={
-    99753:{prod:'316 不鏽鋼保溫瓶', spec:'單瓶 500ml', orig:399, mode:'fixed', val:50, s:'2026-09-01', e:'2026-09-30', up:true},
-    101509:{prod:'手沖濾掛咖啡', spec:'10 入袋裝', orig:299, mode:'percent', val:0.8, s:'', e:'', up:true},
-    36007:{prod:'冷壓初榨苦茶油', spec:'250ml 玻璃瓶', orig:420, mode:'fixed', val:60, s:'2026-10-01', e:'2026-10-31', up:true},
-    24011:{prod:'有機黑芝麻粉', spec:'300g 罐裝', orig:280, mode:'fixed', val:40, s:'2026-08-01', e:'2026-08-31', up:false}
+    99753:{prod:'316 不鏽鋼保溫瓶', spec:'單瓶 500ml', temp:'常溫', orig:399, mode:'fixed', val:50, s:'2026-09-01', e:'2026-09-30', up:true},
+    101509:{prod:'手沖濾掛咖啡', spec:'10 入袋裝', temp:'常溫', orig:299, mode:'percent', val:0.8, s:'', e:'', up:true},
+    36007:{prod:'冷壓初榨苦茶油', spec:'250ml 玻璃瓶', temp:'冷藏', orig:420, mode:'fixed', val:60, s:'2026-10-01', e:'2026-10-31', up:true},
+    24011:{prod:'有機黑芝麻粉', spec:'300g 罐裝', temp:'冷凍', orig:280, mode:'fixed', val:40, s:'2026-08-01', e:'2026-08-31', up:false}
   };
-  var MAINS={ 40894:{name:'台灣蜜棗禮盒 3斤裝'}, 55210:{name:'日曬紅龍果原箱'}, 61120:{name:'冬季草莓禮盒（已下架）'}, 47788:{name:'當季鮮採蔬菜箱'} };
+  var MAINS={ 40894:{name:'台灣蜜棗禮盒 3斤裝', temp:'常溫'}, 55210:{name:'日曬紅龍果原箱', temp:'冷藏'}, 61120:{name:'冬季草莓禮盒（已下架）', temp:'冷藏'}, 47788:{name:'當季鮮採蔬菜箱', temp:'常溫'} };
   var pairs=[ {a:99753,m:40894,on:true},{a:99753,m:55210,on:true},{a:99753,m:61120,on:false},
               {a:101509,m:40894,on:true},{a:36007,m:40894,on:true} ];
   var view={type:'addon', id:99753};
@@ -816,6 +832,8 @@ a:hover { text-decoration: underline; }
     if(e && TODAY>e) return {t:'已失效', c:'expired'};
     return {t:'套用中', c:'active'};
   }
+  function tempCls(t){ return t==='常溫'?'normal':t==='冷藏'?'cold':'frozen'; }
+  function tempTag(t, mm){ if(!t) return ''; return '<span class="tt '+tempCls(t)+(mm?' is-mismatch':'')+'"'+(mm?' title="加購品與主商品溫層不同，出貨會拆成不同溫層的包裹"':'')+'>'+t+(mm?'<span class="tt-x">(異溫層)</span>':'')+'</span>'; }
   function switchBtn(kind,id,label){
     return '<button class="as-switch" data-to-'+kind+'="'+id+'" title="改為編輯此'+label+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16H3v4M17 8h4V4M4 20l6-6M20 4l-6 6"/></svg>改編此'+label+'</button>';
   }
@@ -826,11 +844,12 @@ a:hover { text-decoration: underline; }
     var acts = isSubject
       ? '<div class="tg"><button class="gox-switch '+(a.up?'is-on':'')+'" data-up="'+aid+'"></button><span class="as-swlabel">'+(a.up?'上架':'下架')+'</span></div>'
       : switchBtn('addon',aid,'加購品')
-        + '<div class="tg"><button class="gox-switch '+(pair.on?'is-on':'')+'" data-toggle="'+pair.a+'-'+pair.m+'"></button><span class="as-swlabel">'+(pair.on?'啟用':'停用')+'</span></div>'
+        + '<div class="tg"><button class="gox-switch '+(pair.on?'is-on':'')+'" data-toggle="'+pair.a+'-'+pair.m+'"></button><span class="as-swlabel">'+(pair.on?'上架':'下架')+'</span></div>'
         + '<button class="gox-icon-btn is-cancel" data-rm="'+pair.a+'-'+pair.m+'" title="移除">✕</button>';
     var off = !isSubject && !pair.on;
+    var mismatch = !isSubject && MAINS[pair.m].temp!==a.temp;
     return '<div class="as-ib'+(off?' is-off':'')+(isSubject?' is-bare':'')+'" data-addon="'+aid+'">'
-      + '<div class="as-ib-head"><div class="as-summary'+(bad?' is-invalid':'')+'"><span class="as-badge">規格ID '+aid+'</span><span class="nm">'+esc(a.prod)+'</span><span class="spec">'+esc(a.spec)+'</span>'
+      + '<div class="as-ib-head"><div class="as-summary'+(bad?' is-invalid':'')+'"><span class="as-badge">規格ID '+aid+'</span><span class="nm">'+esc(a.prod)+'</span>'+tempTag(a.temp, mismatch)+'<span class="spec">'+esc(a.spec)+'</span>'
       + '<span class="calc">原價 <s>'+money(a.orig)+'</s> → 折後 <b class="as-final">'+money(fin)+'</b><span class="as-save">'+(bad?'折後 ≤ $0':'省 '+money(a.orig-fin))+'</span></span></div>'
       + '<div class="as-acts">'+acts+'</div></div>'
       + '<div class="as-grid">'
@@ -852,16 +871,16 @@ a:hover { text-decoration: underline; }
       var rows=mainsOf(view.id);
       html+='<div class="gox-card"><div class="gox-card-title">掛載主商品<span class="as-titlesub">此加購品要出現在哪些主商品下</span></div><div class="gox-card-body"><div class="as-list">';
       html+= rows.map(function(p){
-        return '<div class="as-maprow'+(p.on?'':' is-off')+'"><div class="as-idblock"><span class="as-badge">主商品ID '+p.m+'</span><span class="as-sname">'+MAINS[p.m].name+'</span></div>'
+        return '<div class="as-maprow'+(p.on?'':' is-off')+'"><div class="as-idblock"><span class="as-badge">主商品ID '+p.m+'</span><span class="as-sname">'+MAINS[p.m].name+'</span>'+tempTag(MAINS[p.m].temp, MAINS[p.m].temp!==ADDONS[view.id].temp)+'</div>'
           + '<div class="as-rowacts">'+switchBtn('main',p.m,'主商品')
-          + '<button class="gox-switch '+(p.on?'is-on':'')+'" data-toggle="'+p.a+'-'+p.m+'"></button><span class="as-swlabel">'+(p.on?'啟用':'停用')+'</span>'
+          + '<button class="gox-switch '+(p.on?'is-on':'')+'" data-toggle="'+p.a+'-'+p.m+'"></button><span class="as-swlabel">'+(p.on?'上架':'下架')+'</span>'
           + '<button class="gox-icon-btn is-cancel" data-rm="'+p.a+'-'+p.m+'" title="移除">✕</button></div></div>';
       }).join('') || '<div style="color:var(--gox-text-muted);font-size:13px;padding:4px 0;">尚未掛載任何主商品</div>';
       html+=acRow('main')+'</div></div>';
     } else {
       var m=MAINS[view.id];
       html+='<div class="gox-card"><div class="gox-card-title">主商品</div><div class="gox-card-body">'
-        + '<div class="as-mainid"><span class="nm">'+m.name+'</span><span class="meta">主商品ID '+view.id+'</span></div></div></div>';
+        + '<div class="as-mainid"><span class="nm">'+m.name+'</span>'+tempTag(m.temp)+'<span class="meta">主商品ID '+view.id+'</span></div></div></div>';
       var rows=addonsOf(view.id);
       html+='<div class="gox-card"><div class="gox-card-title">此主商品的加購品<span class="as-titlesub">折扣為各加購品共用，改動會同步影響它掛的其它主商品</span></div><div class="gox-card-body"><div class="as-list">';
       html+= rows.map(function(p){ return addonBlock(p.a, p, false); }).join('')
@@ -869,6 +888,7 @@ a:hover { text-decoration: underline; }
       html+=acRow('addon')+'</div></div>';
     }
     document.getElementById('editor').innerHTML=html;
+    var db=document.getElementById('btn-del'); if(db) db.hidden = view.type!=='addon';  // 主商品視角無刪除
     refreshSave();
   }
 
@@ -892,16 +912,16 @@ a:hover { text-decoration: underline; }
     if(ac.dataset.add==='main'){
       var at=mainsOf(view.id).map(function(p){return p.m;});
       return Object.keys(MAINS).filter(function(m){ return at.indexOf(Number(m))<0 && (!q||MAINS[m].name.indexOf(q)>=0||m.indexOf(q)>=0); })
-        .map(function(m){ return {id:m, label:MAINS[m].name, code:'ID '+m}; });
+        .map(function(m){ return {id:m, label:MAINS[m].name, temp:MAINS[m].temp, code:'ID '+m}; });
     } else {
       var aa=addonsOf(view.id).map(function(p){return p.a;});
       return Object.keys(ADDONS).filter(function(x){ return aa.indexOf(Number(x))<0 && (!q||(ADDONS[x].prod+ADDONS[x].spec).indexOf(q)>=0||x.indexOf(q)>=0); })
-        .map(function(x){ return {id:x, label:ADDONS[x].prod+' '+ADDONS[x].spec, code:'規格ID '+x}; });
+        .map(function(x){ return {id:x, label:ADDONS[x].prod+' '+ADDONS[x].spec, temp:ADDONS[x].temp, code:'規格ID '+x}; });
     }
   }
   function openAc(ac){
     var list=ac.querySelector('.ac-list'), cs=acCands(ac);
-    list.innerHTML = cs.length ? cs.map(function(c){ return '<div class="ac-item" data-acpick="'+c.id+'"><b>'+c.label+'</b><span class="code">'+c.code+'</span></div>'; }).join('') : '<div class="ac-empty">找不到符合的項目</div>';
+    list.innerHTML = cs.length ? cs.map(function(c){ return '<div class="ac-item" data-acpick="'+c.id+'"><b>'+c.label+'</b>'+(c.temp?tempTag(c.temp):'')+'<span class="code">'+c.code+'</span></div>'; }).join('') : '<div class="ac-empty">找不到符合的項目</div>';
     list.classList.add('is-open');
   }
 
@@ -914,10 +934,12 @@ a:hover { text-decoration: underline; }
     var toA=e.target.closest('[data-to-addon]'); if(toA){ view={type:'addon', id:Number(toA.getAttribute('data-to-addon'))}; render(); return; }
     var rm=e.target.closest('[data-rm]'); if(rm){ var k=rm.getAttribute('data-rm').split('-'); pairs=pairs.filter(function(p){return !(p.a==k[0]&&p.m==k[1]);}); render(); return; }
     var pick=e.target.closest('[data-acpick]');
-    if(pick){ var ac=pick.closest('.ac'); var id=Number(pick.getAttribute('data-acpick'));
-      if(ac.dataset.add==='main') pairs.push({a:view.id, m:id, on:true}); else pairs.push({a:id, m:view.id, on:true});
-      window.gox&&window.gox.toast('已加入'); render(); return; }
+    if(pick){ var ac=pick.closest('.ac'); var id=Number(pick.getAttribute('data-acpick')); var mm;
+      if(ac.dataset.add==='main'){ pairs.push({a:view.id, m:id, on:true}); mm=MAINS[id].temp!==ADDONS[view.id].temp; }
+      else { pairs.push({a:id, m:view.id, on:true}); mm=ADDONS[id].temp!==MAINS[view.id].temp; }
+      window.gox&&window.gox.toast(mm?'已加入（異溫層，出貨會拆單）':'已加入'); render(); return; }
     if(e.target.closest('#btn-save')){ var s=document.getElementById('save-status'); s.className='as-status is-saved'; s.innerHTML='<span class="as-dot"></span>已儲存（'+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+'）'; window.gox&&window.gox.toast('已儲存加購設定'); return; }
+    if(e.target.closest('#btn-del')){ var a=ADDONS[view.id]; if(window.confirm('確定刪除「'+a.prod+'」的加購設定？\n刪除後，掛載的主商品將不再顯示此加購品。')){ window.gox&&window.gox.toast('已刪除加購設定'); setTimeout(function(){ location.href='admin-addon-list.html'; },600); } return; }
   });
   document.addEventListener('input', function(e){
     if(e.target.classList.contains('ac-input')){ openAc(e.target.closest('.ac')); return; }
@@ -932,7 +954,7 @@ a:hover { text-decoration: underline; }
     if(up){ ADDONS[up].up=e.detail.on; var lb=e.target.parentNode.querySelector('.as-swlabel'); if(lb) lb.textContent=e.detail.on?'上架':'下架'; return; }
     if(!t) return; var k=t.split('-');
     var p=pairs.find(function(x){return x.a==k[0]&&x.m==k[1];}); if(p) p.on=e.detail.on;
-    var label=e.target.parentNode.querySelector('.as-swlabel'); if(label) label.textContent=e.detail.on?'啟用':'停用';
+    var label=e.target.parentNode.querySelector('.as-swlabel'); if(label) label.textContent=e.detail.on?'上架':'下架';
     var mr=e.target.closest('.as-maprow'); if(mr) mr.classList.toggle('is-off', !e.detail.on);
     var ib=e.target.closest('.as-ib'); if(ib) ib.classList.toggle('is-off', !e.detail.on);
   });
