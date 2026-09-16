@@ -12,13 +12,10 @@
         font-size:16px; line-height:1.7; color:#1a1a1a; background:#fafbfb; }
   .wrap{ max-width:960px; margin:0 auto; }
   h1{ font-size:30px; margin:0 0 4px; color:#4ba83b; }
-  .sub{ color:#999; font-size:14px; margin:0 0 8px; }
-  .intro{ color:#595757; font-size:14px; margin:0 0 32px; padding:14px 16px; background:#fff; border:1px solid #e0e4e6; border-radius:4px; }
-  .intro b{ color:#1a1a1a; }
+  .sub{ color:#999; font-size:14px; margin:0 0 32px; }
 
   .side{ margin-bottom:40px; }
-  .side>h2{ font-size:20px; font-weight:700; color:#1a1a1a; margin:0 0 2px; padding-left:12px; border-left:4px solid #4ba83b; }
-  .side-note{ color:#8a8f8b; font-size:13px; margin:0 0 16px; padding-left:16px; }
+  .side>h2{ font-size:20px; font-weight:700; color:#1a1a1a; margin:0 0 16px; padding-left:12px; border-left:4px solid #4ba83b; }
 
   .entries{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
   @media (max-width:760px){ .entries{ grid-template-columns:1fr; } }
@@ -38,15 +35,10 @@
 <body>
 <div class="wrap">
   <h1>商品頁加購品・demo</h1>
-  <p class="sub">2026-09　產品部 Yumi｜前台選購入口與後台設定的 1:1 還原原型</p>
-
-  <div class="intro">
-    正式站頁面 1:1 還原，供工程照抄。一頁一檔，本頁為索引。
-  </div>
+  <p class="sub">2026-09</p>
 
   <div class="side">
-    <h2>前台（C 前台呈現）</h2>
-    <p class="side-note">客人看得到、能勾選加購的地方</p>
+    <h2>前台</h2>
     <div class="entries">
       <a class="entry ready" href="product-detail.html">
         <span class="tag">已完成</span>
@@ -82,18 +74,17 @@
   </div>
 
   <div class="side">
-    <h2>後台（B 後台設定 ／ E 限定分類）</h2>
-    <p class="side-note">營運設定加購品的地方</p>
+    <h2>後台</h2>
     <div class="entries">
       <a class="entry ready" href="admin-addon-list.html">
         <span class="tag">已完成</span>
         <span class="name">加購設定列表</span>
-        <span class="desc">入口：依加購品／依主商品兩檢視＋產線篩選；右上「批次操作」開大彈窗做群批次掛載／取下。</span>
+        <span class="desc">入口：依加購品／依主商品兩檢視＋產線篩選，列出溫層、庫存與上下架狀態；右上「批次操作」開大彈窗做群批次掛載／取下。</span>
       </a>
       <a class="entry ready" href="admin-addon-setting.html">
         <span class="tag">已完成</span>
         <span class="name">加購設定頁（編輯）</span>
-        <span class="desc">路徑一：從列表點入的編輯頁，兩視角就地設折扣與掛載、打字搜尋加入，可互相切換編輯對象。</span>
+        <span class="desc">路徑一：從列表點入的編輯頁，兩視角就地設折扣與掛載、打字搜尋加入，可互相切換編輯對象；溫層標籤＋異溫層提醒，底部可刪除加購設定。</span>
       </a>
       <a class="entry ready" href="admin-spec-addon.html">
         <span class="tag">已完成</span>

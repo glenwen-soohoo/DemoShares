@@ -800,16 +800,19 @@ a:hover { text-decoration: underline; }
   .ps-specid { font-size: 14px; color: rgba(0,0,0,.88); }
 
   /* ── 第三層 ── */
-  .tier3 { display: flex; gap: 24px; }
-  .tier3 > div:first-child { min-width: 0; }
+  .tier3 { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .tier3 > div:first-child { flex: 1 1 300px; min-width: 260px; }
   .tier3-h { padding-bottom: 8px; font-size: 14px; font-weight: 700; }
-  .cons-wrap { display: flex; flex-wrap: wrap; align-items: flex-start; }
-  .cons-wrap > .fi { margin-right: 16px; }
+  .cons-wrap { display: flex; flex-wrap: wrap; align-items: center; }
+  .cons-wrap > .fi, .cons-wrap > .cons-inline { margin-right: 16px; }
   .cons-wrap .fi > label { height: auto; padding-bottom: 0; }
-  .cons-inline { display: flex; align-items: center; }
-  .cons-inline .unit { white-space: nowrap; padding: 0 8px; font-weight: 700; }
+  .cons-inline { display: flex; align-items: center; gap: 6px; }
+  .cons-inline .fi { margin-bottom: 0 !important; }
+  .cons-wrap > .fi:last-child { margin-bottom: 0 !important; }
+  .cons-inline .unit { white-space: nowrap; padding: 0 4px; font-weight: 700; }
 
   .repl { display: flex; flex-wrap: nowrap; gap: 16px; }
+  .repl .ipt { max-width: 120px; }
   .repl-col { display: flex; flex-direction: column; }
   .repl-label {
     margin-bottom: 4px; display: flex; align-items: center; gap: 4px; white-space: nowrap;
@@ -823,7 +826,7 @@ a:hover { text-decoration: underline; }
   /* ── 第四層：直播設定 ── */
   .live {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    background: #e5e7eb; border-radius: 4px; padding: 12px 20px;
+    background: #e5e7eb; border-radius: 4px; padding: 12px 20px; margin-top: 16px;
   }
   .live .star { color: #ef4444; }
   .live .ms5 { margin-inline-start: 20px; }
@@ -859,7 +862,9 @@ a:hover { text-decoration: underline; }
   .ps-toast { background: #fff; color: rgba(0,0,0,.88); padding: 9px 12px; border-radius: 8px; font-size: 14px; box-shadow: 0 6px 16px rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12); }
 
   /* ── 加購品：規格限制尾端多一個「可作為加購品」（同既有 checkbox 樣式），勾選後展開折扣 ── */
-  .addon-tag { display: inline-block; background: #dcfce7; border: 1px solid #16a34a; color: #166534; border-radius: 4px; font-size: 12px; font-weight: 700; padding: 1px 8px; margin-left: 8px; }
+  .addon-tag { display: inline-flex; align-items: center; gap: 4px; background: #dcfce7; border: 1px solid #16a34a; color: #166534; border-radius: 4px; font-size: 12px; font-weight: 700; padding: 3px 10px; margin-top: 6px; text-decoration: none; cursor: pointer; transition: background .15s, color .15s; }
+  .addon-tag:hover { background: #16a34a; color: #fff; }
+  .addon-tag svg { width: 12px; height: 12px; }
   .addon-box { margin-top: 12px; border: 1px solid #86efac; background: #f0fdf4; border-radius: 8px; padding: 12px 16px; }
   .addon-box-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #166534; flex-wrap: wrap; margin-bottom: 12px; }
   .addon-dot { width: 7px; height: 7px; border-radius: 9999px; background: #16a34a; flex: none; }
@@ -880,10 +885,19 @@ a:hover { text-decoration: underline; }
   .mains-tb { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 4px; }
   .mains-tb th { text-align: left; color: #6b7280; font-weight: 600; font-size: 13px; padding: 6px 8px; border-bottom: 1px solid #eee; }
   .mains-tb td { padding: 8px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
-  .mains-tb .st-on { color: #16a34a; font-weight: 600; }
-  .mains-tb .st-off { color: #9ca3af; }
-  .mains-x { border: 0; background: none; color: #9ca3af; cursor: pointer; font-size: 14px; }
-  .mains-x:hover { color: #ff4d4f; }
+  /* 狀態：上下架切換開關 */
+  .mains-tb .sw { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
+  .mains-tb .sw input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+  .mains-tb .sw-track { width: 40px; height: 22px; border-radius: 11px; background: #bfbfbf; position: relative; transition: background .2s; cursor: pointer; }
+  .mains-tb .sw-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .mains-tb .sw input:checked + .sw-track { background: #16a34a; }
+  .mains-tb .sw input:checked + .sw-track::after { left: 20px; }
+  .mains-tb .sw input:focus-visible + .sw-track { box-shadow: 0 0 0 2px rgba(22,163,74,.2); }
+  .mains-tb .sw-txt { margin-left: 8px; font-size: 13px; color: #9ca3af; }
+  .mains-tb .sw-txt.is-on { color: #16a34a; font-weight: 600; }
+  /* 移除：按鈕樣式 */
+  .mains-x { border: 1px solid #d9d9d9; background: #fff; color: rgba(0,0,0,.65); border-radius: 6px; height: 28px; padding: 0 12px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .mains-x:hover { color: #ff4d4f; border-color: #ff4d4f; }
 </style>
 
 <div class="ps">
@@ -1049,7 +1063,7 @@ a:hover { text-decoration: underline; }
     /* 左：規格排序 + 規格ID */
     h += '<div>';
     h += item('規格排序', true, num(i, 'sort', s.sort), 'w28');
-    h += '<div class="ps-specid">規格ID: ' + s.id + (s.addon ? ' <span class="addon-tag">加購品</span>' : '') + '</div>';
+    h += '<div class="ps-specid">規格ID: ' + s.id + (s.addon ? ' <a class="addon-tag" href="admin-addon-setting.html" title="前往加購設定頁">加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '') + '</div>';
     h += '</div>';
 
     /* 中 */
@@ -1244,8 +1258,8 @@ a:hover { text-decoration: underline; }
     $('mains-id').textContent = '規格ID ' + s.id;
     $('mains-rows').innerHTML = s.aMains.map(function (m, x) {
       return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.name) + '</td>'
-        + '<td><span class="cbx"><input type="checkbox" data-mon="' + x + '"' + (m.on ? ' checked' : '') + '>'
-        + (m.on ? '<span class="st-on">啟用</span>' : '<span class="st-off">停用</span>') + '</span></td>'
+        + '<td><label class="sw"><input type="checkbox" data-mon="' + x + '"' + (m.on ? ' checked' : '') + '><span class="sw-track"></span></label>'
+        + '<span class="sw-txt' + (m.on ? ' is-on' : '') + '">' + (m.on ? '上架' : '下架') + '</span></td>'
         + '<td style="text-align:right;"><button type="button" class="mains-x" data-mdel="' + x + '">移除</button></td></tr>';
     }).join('') || '<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:16px;">尚未掛載主商品</td></tr>';
   }

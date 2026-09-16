@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<title>加購設定列表 — 後台 demo</title>
+<title>新增加購品 — 後台 demo</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -671,7 +671,9 @@ a:hover { text-decoration: underline; }
   <nav class="gox-breadcrumb">
     <span>產品管理</span>
     <span class="sep">&gt;</span>
-    <strong>加購設定</strong>
+    <a href="admin-addon-list.html">加購設定</a>
+    <span class="sep">&gt;</span>
+    <strong>新增加購品</strong>
   </nav>
   <div class="gox-header-right">
     <span class="gox-user">Glen Wen</span>
@@ -691,323 +693,266 @@ a:hover { text-decoration: underline; }
 
 <main class="gox-content">
 <style>
-  .al-toolbar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-  .al-toolbar .gox-select{ width:130px; }
-  .al-toolbar .gox-input{ width:220px; }
-  .al-spacer{ flex:1; }
-  .al-line{ font-size:12px; color:var(--gox-text-sub); }
-  .al-disc{ font-variant-numeric:tabular-nums; }
-  .al-final{ color:var(--gox-green-hover); font-weight:600; font-variant-numeric:tabular-nums; }
-  .al-old{ color:var(--gox-text-muted); text-decoration:line-through; font-size:12px; margin-right:4px; font-variant-numeric:tabular-nums; }
-  .al-id{ font-variant-numeric:tabular-nums; color:var(--gox-text-sub); }
-  /* 商品照縮圖 */
-  .al-thumb{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:4px; border:1px solid var(--gox-card-border,#e6e6e6); background:#f2f4f5; overflow:hidden; vertical-align:middle; }
-  .al-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .al-thumb.is-empty{ background:#f2f4f5; }
-  .al-thumb.is-empty::before{ content:''; width:20px; height:20px; background:no-repeat center/contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c2c8cc' stroke-width='1.6'><rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='8.5' cy='9.5' r='1.5'/><path d='M21 15l-5-5L5 20'/></svg>"); }
-  .gox-table td .gox-switch{ vertical-align:middle; }
-  .al-tabs .gox-tab-btn.is-active{ background:var(--gox-green); }
-  .al-stock{ font-variant-numeric:tabular-nums; }
-  .al-stock.is-zero{ color:var(--gox-danger); font-weight:600; }
-  /* 生效狀態小標籤（與設定頁一致） */
-  .as-eff{ display:inline-block; font-size:11px; font-weight:700; border-radius:4px; padding:1px 7px; white-space:nowrap; }
-  .as-eff.active{ background:#f6ffed; color:#389e0d; border:1px solid #b7eb8f; }
-  .as-eff.wait{ background:#fffbe6; color:#d4b106; border:1px solid #ffe58f; }
-  .as-eff.expired{ background:#f5f5f5; color:#999; border:1px solid #e0e0e0; }
-  /* 溫層小標籤 */
-  .tt{ display:inline-block; font-size:11px; font-weight:600; line-height:1.6; border-radius:4px; padding:0 6px; margin-left:6px; vertical-align:middle; }
-  .tt.normal{ background:#fff7e6; border:1px solid #ffd591; color:#c86e1a; }
-  .tt.cold{ background:#e6fffb; border:1px solid #87e8de; color:#229599; }
-  .tt.frozen{ background:#f0f5ff; border:1px solid #adc6ff; color:#5563c2; }
+  /* 新增加購品：綁定產品 → 規格設定 → 建立，比照禮物券新增流程 */
+  .ac-step-hint { font-size: 12px; color: var(--gox-text-muted); margin: 0 0 16px; }
 
-  /* ── 批次操作大彈窗（bx- 前綴，避免與列表樣式衝突）── */
-  .gox-modal-box.bx-box{ width:940px; max-width:94vw; min-height:620px; max-height:90vh; display:flex; flex-direction:column; }
-  .bx-box .bx-grid{ flex:1; }
-  .bx-head{ display:flex; align-items:center; justify-content:space-between; margin:-6px 0 6px; }
-  .bx-head h4{ margin:0; font-size:16px; }
-  .bx-close{ border:0; background:none; font-size:18px; color:#888; cursor:pointer; line-height:1; }
-  .bx-close:hover{ color:var(--gox-danger); }
-  .bx-lead{ color:#666; font-size:12.5px; margin:0 0 14px; line-height:1.5; }
-  .bx-axis{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-  .bx-axis .lbl{ font-size:13px; font-weight:700; color:#666; }
-  .bx-seg{ display:inline-flex; border:1px solid #ccc; border-radius:6px; overflow:hidden; }
-  .bx-seg button{ border:0; background:#fff; color:#333; font-size:14px; font-weight:500; padding:6px 16px; cursor:pointer; font-family:inherit; }
-  .bx-seg button + button{ border-left:1px solid #ccc; }
-  .bx-seg button.on{ background:var(--gox-green); color:#fff; font-weight:700; }
-  .bx-hint{ color:#888; font-size:12px; }
-  .bx-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
-  @media (max-width:720px){ .bx-grid{ grid-template-columns:1fr; } }
-  .bx-card{ border:1px solid #e6e6e6; border-radius:6px; padding:14px; }
-  .bx-card h5{ margin:0 0 4px; font-size:14px; }
-  .bx-card .sub{ color:#888; font-size:12px; margin:0 0 10px; line-height:1.5; }
-  .bx-tokenbox{ border:1px solid #ccc; border-radius:6px; padding:6px; min-height:46px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; position:relative; }
-  .bx-tokenbox.focus{ border-color:var(--gox-green); box-shadow:0 0 0 2px rgba(75,168,59,.12); }
-  .bx-tokenbox .chips{ display:contents; }
-  .bx-tokenbox input{ border:0; outline:0; flex:1; min-width:140px; font-size:13px; font-family:inherit; padding:5px 4px; background:transparent; }
-  .bx-chip{ display:inline-flex; align-items:center; gap:4px; background:#eaf7ea; border:1px solid #bfe6bf; color:#2e6b26; border-radius:999px; padding:4px 6px 4px 12px; font-size:13px; }
-  .bx-chip .x{ border:0; background:none; color:#4e9854; cursor:pointer; font-size:15px; line-height:1; padding:0 3px; border-radius:999px; }
-  .bx-chip .x:hover{ color:var(--gox-danger); background:#fbeae8; }
-  .bx-dd{ position:absolute; top:100%; left:0; right:0; z-index:10; background:#fff; border:1px solid #ccc; border-radius:6px; margin-top:4px; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,.1); }
-  .bx-dd .opt{ padding:8px 12px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:8px; }
-  .bx-dd .opt:hover{ background:#f4fbf4; }
-  .bx-dd .opt .id{ color:#999; font-size:12px; font-variant-numeric:tabular-nums; }
-  .bx-dd .opt .meta{ margin-left:auto; color:#999; font-size:12px; }
-  .bx-dd .opt .meta.part{ color:#b5851f; }
-  .bx-dd .none{ padding:10px 12px; color:#999; font-size:13px; }
-  .bx-chipbox{ border:1px solid #eee; border-radius:6px; padding:8px; min-height:46px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  .bx-chipbox.empty{ color:#aaa; font-size:13px; }
-  .bx-div{ height:1px; background:#eee; margin:14px 0; }
-  .bx-log{ margin-top:10px; font-size:13px; color:#2e6b26; min-height:18px; }
-  .bx-warn{ color:#c0554d; font-weight:600; margin-left:4px; }
-  .bx-rtempty{ color:#999; font-size:13px; padding:10px 2px; }
+  .ac-bind-row { display: flex; gap: 8px; align-items: flex-start; }
+  .ac-bind-row .gox-input { width: 200px; }
+  .ac-bind-err { color: var(--gox-danger); font-size: 13px; margin-top: 8px; }
+  .ac-bind-err.is-hidden { display: none; }
+
+  .ac-product { display: none; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
+  .ac-product.is-shown { display: flex; }
+  .ac-pic {
+    width: 116px; aspect-ratio: 4 / 3; height: auto; flex: none; align-self: flex-start; overflow: hidden; border-radius: var(--gox-radius);
+    border: 1px solid var(--gox-card-border); background: #f7f7f7;
+    display: flex; align-items: center; justify-content: center; color: var(--gox-text-muted); font-size: 12px;
+  }
+  .ac-pic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: var(--gox-radius); }
+  .ac-pinfo { flex: 1; }
+  .ac-pname { font-size: 15px; font-weight: 600; color: var(--gox-text); margin-bottom: 8px; }
+  .ac-pmeta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 13px; color: var(--gox-text-sub); }
+  .ac-pmeta div span { color: var(--gox-text-muted); margin-right: 4px; }
+  .ac-tt { display:inline-block; font-size:11px; font-weight:600; line-height:1.6; border-radius:4px; padding:0 6px; }
+  .ac-tt.normal{ background:#fff7e6; border:1px solid #ffd591; color:#c86e1a; }
+  .ac-tt.cold{ background:#e6fffb; border:1px solid #87e8de; color:#229599; }
+  .ac-tt.frozen{ background:#f0f5ff; border:1px solid #adc6ff; color:#5563c2; }
+
+  .ac-spec-body.is-locked { opacity: .45; pointer-events: none; }
+  .ac-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+  .ac-row:last-of-type { margin-bottom: 0; }
+  .ac-span-2 { grid-column: span 2; }
+  .ac-field label { display: block; font-size: 13px; color: var(--gox-text-sub); margin-bottom: 4px; }
+  .ac-field .gox-input, .ac-field .gox-select { width: 100%; }
+  .ac-req { color: var(--gox-danger); margin-left: 2px; }
+  .ac-field-hint { font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
+  .ac-checks { display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); flex-wrap: wrap; }
+  .ac-checks label { font-size: 13px; color: var(--gox-text-sub); display: flex; align-items: center; gap: 6px; }
+  .ac-checks label.is-fixed { color: var(--gox-green-hover); font-weight: 600; }
+  .ac-locked-msg { font-size: 13px; color: var(--gox-text-muted); margin-top: 16px; }
+  .ac-locked-msg.is-hidden { display: none; }
+  .ac-submit-bar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  /* 開發者面板（demo 用） */
+  #devbar { position: fixed; left: 16px; bottom: 16px; z-index: 10001; font-family: var(--gox-font-family); }
+  #devbar .toggle { background: #1a1a1a; color: #fff; border: 0; border-radius: 999px; font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); font-family: inherit; }
+  #devbar .box { display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 280px; margin-bottom: 8px; }
+  #devbar.is-open .box { display: block; }
+  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
+  #devbar .grp-t { font-size: 13px; font-weight: 600; color: #55606e; margin-bottom: 6px; }
+  #devbar .pid-list { display: flex; flex-direction: column; gap: 6px; }
+  #devbar .pid-list button { text-align: left; border: 1px solid #d5d9de; border-radius: 6px; background: #fff; padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 13px; color: #1a1a1a; }
+  #devbar .pid-list button:hover { border-color: #1a1a1a; }
+  #devbar .pid-list b { font-variant-numeric: tabular-nums; margin-right: 6px; }
+  #devbar .pid-list span { display: block; font-size: 12px; color: #8a939e; margin-top: 2px; }
 </style>
 
-<div class="gox-list-head">
-  <h2 style="margin:0;font-size:18px;">加購設定　<span style="font-size:13px;font-weight:400;color:var(--gox-text-muted);">共 <span id="al-count">0</span> 筆</span></h2>
-  <div style="display:flex;gap:8px;">
-    <button class="gox-btn gox-btn-default" data-gox-open="#batch-modal">批次操作</button>
-    <a class="gox-btn gox-btn-primary" href="admin-addon-create.html">＋ 新增加購設定</a>
-  </div>
-</div>
-
-<div data-tab-scope>
-  <div class="al-toolbar">
-    <div class="gox-tab-group al-tabs">
-      <button class="gox-tab-btn is-active" data-tab="byaddon">依加購品</button>
-      <button class="gox-tab-btn" data-tab="bymain">依主商品</button>
-    </div>
-    <select class="gox-select" id="al-line">
-      <option value="all">全部產線</option>
-      <option>產地直送</option><option>蔬果乾貨</option><option>生鮮肉舖</option><option>粥寶寶</option><option>益菓保</option>
-    </select>
-    <input class="gox-input" id="al-kw" placeholder="搜尋 名稱 / ID">
-    <button class="gox-btn gox-btn-default" id="al-search">查詢</button>
+<div class="gox-toolbox is-wide">
+  <div class="gox-list-head">
+    <h2 style="margin:0;font-size:18px;">新增加購品</h2>
+    <button type="button" class="gox-btn gox-btn-default" id="ac-back">回列表</button>
   </div>
 
-  <div class="gox-card" data-tab-panel="byaddon">
-    <div class="gox-card-body is-table-padding">
-      <table class="gox-table">
-        <thead><tr>
-          <th>商品照</th><th>規格ID</th><th>加購品名稱</th><th>產線</th><th>折抵</th><th>折後價</th><th>生效期間</th>
-          <th class="cell-center">掛載主商品</th><th class="cell-center">庫存</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
-        </tr></thead>
-        <tbody id="al-addon-body"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="gox-card" data-tab-panel="bymain" hidden>
-    <div class="gox-card-body is-table-padding">
-      <table class="gox-table">
-        <thead><tr>
-          <th>商品照</th><th>主商品ID</th><th>商品名稱</th><th>產線</th>
-          <th class="cell-center">加購品數</th><th class="cell-center">庫存</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
-        </tr></thead>
-        <tbody id="al-main-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ============ 批次操作 大彈窗 ============ -->
-<div class="gox-modal-overlay is-hidden" id="batch-modal">
-  <div class="gox-modal-box bx-box">
-    <div class="bx-head"><h4>加購配對・批次操作</h4><button class="bx-close" data-gox-close title="關閉">✕</button></div>
-    <p class="bx-lead">多選要一起調整的<span class="bx-wl">加購品</span>，系統自動算出共同掛載的<span class="bx-wr">主商品</span>可一次取下；也能搜尋加入。</p>
-    <div class="bx-axis">
-      <span class="lbl">依</span>
-      <div class="bx-seg" id="bx-axis"><button class="on" data-axis="addon">加購品</button><button data-axis="main">主商品</button></div>
-      <span class="bx-hint" id="bx-axis-hint">選加購品 → 調整它們掛在哪些主商品</span>
-    </div>
-    <div class="bx-grid">
-      <div class="bx-card">
-        <h5 id="bx-left-h">① 選擇加購品</h5>
-        <p class="sub" id="bx-left-sub">搜尋加入，加入的可 ✕ 移除</p>
-        <div class="bx-tokenbox" id="bx-left-box"><span class="chips" id="bx-left-chips"></span><input id="bx-left-input" placeholder="搜尋加購品加入…"></div>
+  <div class="gox-card">
+    <div class="gox-card-title">綁定產品</div>
+    <div class="gox-card-body">
+      <p class="ac-step-hint">加購品是掛在某個產品底下的一個專屬規格。先指定要建立在哪一個產品下，才能往下填規格。</p>
+      <div class="ac-bind-row">
+        <input type="text" class="gox-input" id="ac-pid" placeholder="輸入產品 ID">
+        <button type="button" class="gox-btn gox-btn-primary" id="ac-bind">綁定</button>
       </div>
-      <div class="bx-card">
-        <div id="bx-right-body">
-          <h5 id="bx-common-h">② 共同掛載的主商品</h5>
-          <p class="sub" id="bx-common-sub">選取的都有掛的，✕ 一次從全部取下</p>
-          <div class="bx-chipbox" id="bx-common-box"></div>
-          <div class="bx-div"></div>
-          <h5 id="bx-add-h">③ 加入主商品</h5>
-          <p class="sub" id="bx-add-sub">搜尋加入，一次加到所有選取的加購品</p>
-          <div class="bx-tokenbox" id="bx-add-box"><input id="bx-add-input" placeholder="搜尋主商品加入…"></div>
-          <div class="bx-log" id="bx-log"></div>
+      <div class="ac-bind-err is-hidden" id="ac-bind-err"></div>
+
+      <div class="ac-product" id="ac-product">
+        <div class="ac-pic" id="ac-pic-box">商品圖</div>
+        <div class="ac-pinfo">
+          <div class="ac-pname" id="ac-pname"></div>
+          <div class="ac-pmeta">
+            <div><span>產線</span><b id="ac-pline"></b></div>
+            <div><span>溫層</span><b id="ac-ptemp"></b></div>
+            <div><span>現有規格數</span><b id="ac-pspecs"></b></div>
+          </div>
         </div>
-        <div class="bx-rtempty" id="bx-right-empty">← 先在左邊加入一個以上的<span class="bx-word">加購品</span></div>
       </div>
     </div>
   </div>
+
+  <div class="gox-card">
+    <div class="gox-card-title">規格設定</div>
+    <div class="gox-card-body">
+      <div class="ac-locked-msg" id="ac-locked-msg">先綁定產品後才能填寫規格。</div>
+
+      <div class="ac-spec-body is-locked" id="ac-spec-body">
+        <div class="ac-row">
+          <div class="ac-field ac-span-2">
+            <label>規格描述<span class="ac-req">*</span></label>
+            <input type="text" class="gox-input" id="ac-desc" placeholder="例：加價購・單瓶 500ml">
+          </div>
+        </div>
+
+        <div class="ac-row">
+          <div class="ac-field">
+            <label>規格量<span class="ac-req">*</span></label>
+            <input type="number" class="gox-input" id="ac-qty" value="1" min="1">
+          </div>
+          <div class="ac-field">
+            <label>單位<span class="ac-req">*</span></label>
+            <select class="gox-select" id="ac-unit">
+              <option>個</option><option>瓶</option><option>包</option><option>盒</option><option>組</option><option>入</option>
+            </select>
+          </div>
+          <div class="ac-field">
+            <label>產品原價<span class="ac-req">*</span></label>
+            <input type="number" class="gox-input" id="ac-price" placeholder="399">
+          </div>
+          <div class="ac-field">
+            <label>成本</label>
+            <input type="number" class="gox-input" id="ac-cost" placeholder="選填">
+          </div>
+        </div>
+
+        <div class="ac-row">
+          <div class="ac-field">
+            <label>開始販售<span class="ac-req">*</span></label>
+            <input type="date" class="gox-input" id="ac-start">
+          </div>
+          <div class="ac-field">
+            <label>結束販售<span class="ac-req">*</span></label>
+            <input type="date" class="gox-input" id="ac-end">
+          </div>
+          <div class="ac-field">
+            <label>庫存<span class="ac-req">*</span></label>
+            <input type="number" class="gox-input" id="ac-stock" placeholder="100">
+          </div>
+        </div>
+
+        <div class="ac-checks">
+          <label><input type="checkbox" id="ac-listed" checked> 上架</label>
+          <label><input type="checkbox" id="ac-cod" checked> 可貨到付款</label>
+          <label class="is-fixed"><input type="checkbox" checked disabled> 可作為加購品（本流程固定建立）</label>
+        </div>
+      </div>
+
+      <div class="ac-submit-bar">
+        <button type="button" class="gox-btn gox-btn-primary" id="ac-create" disabled>建立加購品</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gox-modal-overlay is-hidden" id="ac-confirm">
+  <div class="gox-modal-box">
+    <div class="gox-card-title">確認建立</div>
+    <div class="gox-card-body">
+      <p style="font-size:14px;color:var(--gox-text);margin:0 0 12px;">將在下列產品底下建立一個加購品專屬規格，建立後即可到「加購設定」設定折扣與掛載主商品：</p>
+      <div style="font-size:14px;line-height:1.9;color:var(--gox-text-sub);">
+        <div>產品：<b id="ac-c-product" style="color:var(--gox-text);"></b></div>
+        <div>規格描述：<b id="ac-c-desc" style="color:var(--gox-text);"></b></div>
+        <div>原價：<b id="ac-c-price" style="color:var(--gox-text);"></b></div>
+        <div>庫存：<b id="ac-c-stock" style="color:var(--gox-text);"></b></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
+        <button type="button" class="gox-btn gox-btn-primary" id="ac-c-ok">確定建立</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="devbar">
+  <div class="box">
+    <h4>開發者面板</h4>
+    <p class="cap">demo 只認得這幾個產品 ID，點一下直接填入並綁定。</p>
+    <div class="grp-t">可綁定的產品</div>
+    <div class="pid-list" id="dev-pids"></div>
+  </div>
+  <button type="button" class="toggle">開發者面板</button>
 </div>
 
 <script>
-/* ── 列表 ── */
-(function(){
-  var money = function(n){ return '$' + Math.round(n).toLocaleString('en-US'); };
-  var IMG1 = 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp';
-  var IMG2 = 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp';
-  var IMG3 = 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg';
-  var ADDONS = [
-    { id:99753, name:'316 不鏽鋼保溫瓶 500ml', img:IMG1, line:'產地直送', temp:'常溫', mode:'fixed', val:50, orig:399, start:'2026/09/01', end:'2026/09/30', mains:3, stock:128, on:true },
-    { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', mode:'percent', val:8, orig:299, start:'', end:'', mains:1, stock:64, on:true },
-    { id:36007, name:'冷壓初榨苦茶油 250ml', img:IMG3, line:'產地直送', temp:'冷藏', mode:'fixed', val:60, orig:420, start:'2026/09/01', end:'2026/10/31', mains:5, stock:8, on:true },
-    { id:24011, name:'有機黑芝麻粉 300g', img:'', line:'蔬果乾貨', temp:'冷凍', mode:'fixed', val:40, orig:280, start:'2026/07/01', end:'2026/08/31', mains:2, stock:0, on:false }
-  ];
-  var MAINS = [
-    { id:40894, name:'台灣蜜棗禮盒 3斤裝', img:IMG2, line:'產地直送', temp:'常溫', addons:3, stock:56, on:true },
-    { id:55210, name:'日曬紅龍果原箱', img:IMG1, line:'產地直送', temp:'冷藏', addons:2, stock:23, on:true },
-    { id:47788, name:'當季鮮採蔬菜箱', img:IMG3, line:'蔬果乾貨', temp:'冷藏', addons:2, stock:41, on:true },
-    { id:61120, name:'冬季草莓禮盒（已下架）', img:'', line:'產地直送', temp:'冷凍', addons:1, stock:0, on:false }
-  ];
-  var line = 'all', kw = '', TODAY = '2026/09/16';
-  function finalOf(a){ return a.mode==='fixed' ? a.orig-a.val : Math.round(a.orig*a.val/10); }
-  function discText(a){ return a.mode==='fixed' ? '固定 '+money(a.val) : '折數 '+Math.round(a.val*10)+'%'; }
-  function effStatus(a){
-    var s=a.start||'', e=a.end||'';
-    if(s && TODAY<s) return {t:'尚未生效', c:'wait'};
-    if(e && TODAY>e) return {t:'已失效', c:'expired'};
-    return {t:'套用中', c:'active'};
-  }
-  function tempTag(t){ var c = t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); return '<span class="tt '+c+'">'+t+'</span>'; }
-  function stockCell(n){ return '<td class="cell-center al-stock'+(n<=0?' is-zero':'')+'">'+n+'</td>'; }
-  function thumbCell(img){
-    var inner = img ? '<img src="'+img+'" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'is-empty\');this.remove();">' : '';
-    return '<td><span class="al-thumb'+(img?'':' is-empty')+'">'+inner+'</span></td>';
-  }
-  function match(name, id){ return !kw || (name.indexOf(kw)>=0 || String(id).indexOf(kw)>=0); }
-  function render(){
-    var la = ADDONS.filter(function(a){ return (line==='all'||a.line===line) && match(a.name,a.id); });
-    document.getElementById('al-addon-body').innerHTML = la.map(function(a){
-      var fin = finalOf(a), period = a.start ? a.start+'～'+a.end : '不指定', st = effStatus(a);
-      return '<tr>'+thumbCell(a.img)+'<td class="al-id">'+a.id+'</td><td>'+a.name+tempTag(a.temp)+'</td><td>'+a.line+'</td><td class="al-disc">'+discText(a)+'</td>'
-        + '<td><span class="al-old">'+money(a.orig)+'</span><span class="al-final">'+money(fin)+'</span></td>'
-        + '<td class="al-line">'+period+' <span class="as-eff '+st.c+'">'+st.t+'</span></td><td class="cell-center">'+a.mains+'</td>'
-        + stockCell(a.stock)
-        + '<td class="cell-center"><span class="gox-switch '+(a.on?'is-on':'')+'" data-on-addon="'+a.id+'"></span></td>'
-        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">編輯</a></td></tr>';
-    }).join('') || '<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的加購品</td></tr>';
-    var lm = MAINS.filter(function(m){ return (line==='all'||m.line===line) && match(m.name,m.id); });
-    document.getElementById('al-main-body').innerHTML = lm.map(function(m){
-      return '<tr>'+thumbCell(m.img)+'<td class="al-id">'+m.id+'</td><td>'+m.name+tempTag(m.temp)+'</td><td>'+m.line+'</td>'
-        + '<td class="cell-center">'+m.addons+'</td>'
-        + stockCell(m.stock)
-        + '<td class="cell-center"><span class="gox-switch '+(m.on?'is-on':'')+'" data-on-main="'+m.id+'"></span></td>'
-        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">設定</a></td></tr>';
-    }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的主商品</td></tr>';
-    var active = document.querySelector('[data-tab-panel]:not([hidden])');
-    var isAddon = active && active.getAttribute('data-tab-panel')==='byaddon';
-    document.getElementById('al-count').textContent = isAddon ? la.length : lm.length;
-  }
-  document.getElementById('al-search').addEventListener('click', function(){ line=document.getElementById('al-line').value; kw=document.getElementById('al-kw').value.trim(); render(); });
-  document.getElementById('al-kw').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('al-search').click(); });
-  document.getElementById('al-line').addEventListener('change', function(){ line=this.value; render(); });
-  document.addEventListener('gox:tab', function(){ setTimeout(render,0); });
-  document.addEventListener('gox:switch', function(e){
-    var sw=e.target, ida=sw.getAttribute('data-on-addon'), idm=sw.getAttribute('data-on-main');
-    if(ida){ var a=ADDONS.find(function(x){return x.id===Number(ida);}); if(a)a.on=e.detail.on; }
-    if(idm){ var m=MAINS.find(function(x){return x.id===Number(idm);}); if(m)m.on=e.detail.on; }
-    if(ida||idm) window.gox&&window.gox.toast(e.detail.on?'已上架':'已下架');
-  });
-  render();
-})();
+(function () {
+  'use strict';
 
-/* ── 批次操作彈窗 ── */
-(function(){
-  var ADDONS = [
-    { id:50001, name:'米餅・原味', temp:'常溫', disc:'固定 $10' },{ id:50002, name:'米餅・海苔', temp:'常溫', disc:'固定 $10' },
-    { id:50003, name:'米餅・黑糖', temp:'常溫', disc:'固定 $10' },{ id:50004, name:'米餅・起司', temp:'常溫', disc:'固定 $10' },
-    { id:50005, name:'米餅・南瓜', temp:'常溫', disc:'固定 $10' },{ id:36007, name:'冷壓初榨苦茶油 250ml', temp:'冷藏', disc:'固定 $60' },
-    { id:101509, name:'手沖濾掛咖啡 10入', temp:'常溫', disc:'8 折' }
-  ];
-  var MAINS = [
-    { id:40894, name:'台灣蜜棗禮盒 3斤裝', temp:'常溫' },{ id:55210, name:'日曬紅龍果原箱', temp:'冷藏' },{ id:47788, name:'當季鮮採蔬菜箱', temp:'冷藏' },
-    { id:33012, name:'綜合水果箱', temp:'冷藏' },{ id:60088, name:'米食禮盒', temp:'常溫' }
-  ];
-  function tempTag(t){ if(!t) return ''; var c = t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); return '<span class="tt '+c+'">'+t+'</span>'; }
-  function tagOf(arr,id){ var x=arr.find(function(o){return o.id===id;}); return x?tempTag(x.temp):''; }
-  var pairs = new Set();
-  [50001,50002,50003,50004,50005].forEach(function(a){ pairs.add(a+'-33012'); pairs.add(a+'-60088'); });
-  pairs.add('36007-40894'); pairs.add('101509-40894'); pairs.add('101509-55210');
+  var PIC = {
+    '88021': 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp',
+    '88105': 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp'
+  };
+  var PRODUCTS = {
+    '88021': { name: '台灣龍眼蜂蜜 小罐', line: '產地直送', temp: '常溫', specs: 2 },
+    '88105': { name: '冷壓初榨橄欖油 250ml', line: '蔬果乾貨', temp: '常溫', specs: 1 },
+    '88230': { name: '手工原味餅乾 綜合', line: '蔬果乾貨', temp: '常溫', specs: 3 },
+    '88342': { name: '鮮乳坊 鮮奶 一瓶', line: '生鮮肉舖', temp: '冷藏', specs: 1 }
+  };
+  function tempCls(t){ return t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); }
 
-  var axis='addon', selL=new Set();
-  var $=function(id){ return document.getElementById(id); };
-  function LEFT(){ return axis==='addon'?ADDONS:MAINS; }
-  function RIGHT(){ return axis==='addon'?MAINS:ADDONS; }
-  function Ln(){ return axis==='addon'?'加購品':'主商品'; }
-  function Rn(){ return axis==='addon'?'主商品':'加購品'; }
-  function nameOf(arr,id){ var x=arr.find(function(o){return o.id===id;}); return x?x.name:id; }
-  function has(l,r){ return axis==='addon'?pairs.has(l+'-'+r):pairs.has(r+'-'+l); }
-  function setPair(l,r,on){ var k=axis==='addon'?(l+'-'+r):(r+'-'+l); if(on)pairs.add(k); else pairs.delete(k); }
-  function acount(l){ return RIGHT().filter(function(r){return has(l,r.id);}).length; }
-  function inter(){ if(!selL.size) return []; return RIGHT().filter(function(r){ return [...selL].every(function(l){return has(l,r.id);}); }).map(function(r){return r.id;}); }
-  function partial(rid){ return [...selL].filter(function(l){return has(l,rid);}).length; }
+  var bound = null;
 
-  function attachSearch(inputEl, boxEl, getCands, onPick){
-    function drop(){
-      var old=boxEl.querySelector('.bx-dd'); if(old) old.remove();
-      var q=inputEl.value.trim();
-      var cs=getCands().filter(function(c){ return !q || c.name.indexOf(q)>=0 || String(c.id).indexOf(q)>=0; });
-      var dd=document.createElement('div'); dd.className='bx-dd';
-      dd.innerHTML = cs.length ? cs.map(function(c){ return '<div class="opt" data-pick="'+c.id+'"><span>'+c.name+(c.temp?tempTag(c.temp):'')+'</span><span class="id">'+c.id+'</span>'+(c.meta?'<span class="meta'+(c.part?' part':'')+'">'+c.meta+'</span>':'')+'</div>'; }).join('') : '<div class="none">找不到符合的'+(boxEl.id==='bx-left-box'?Ln():Rn())+'</div>';
-      boxEl.appendChild(dd);
+  function setLocked(locked) {
+    document.getElementById('ac-spec-body').classList.toggle('is-locked', locked);
+    document.getElementById('ac-locked-msg').classList.toggle('is-hidden', !locked);
+    document.getElementById('ac-create').disabled = locked;
+  }
+
+  function bind() {
+    var pid = document.getElementById('ac-pid').value.trim();
+    var err = document.getElementById('ac-bind-err');
+    var box = document.getElementById('ac-product');
+    var p = PRODUCTS[pid];
+    if (!p) {
+      err.textContent = pid ? ('找不到產品編號 ' + pid) : '請輸入產品 ID';
+      err.classList.remove('is-hidden'); box.classList.remove('is-shown'); bound = null; setLocked(true); return;
     }
-    inputEl.addEventListener('focus', function(){ boxEl.classList.add('focus'); drop(); });
-    inputEl.addEventListener('input', drop);
-    inputEl.addEventListener('blur', function(){ setTimeout(function(){ var dd=boxEl.querySelector('.bx-dd'); if(dd)dd.remove(); boxEl.classList.remove('focus'); },150); });
-    boxEl.addEventListener('mousedown', function(e){ var o=e.target.closest('[data-pick]'); if(!o)return; e.preventDefault(); onPick(Number(o.getAttribute('data-pick'))); inputEl.value=''; renderAll(); drop(); inputEl.focus(); });
+    err.classList.add('is-hidden'); bound = { pid: pid, p: p };
+    document.getElementById('ac-pname').textContent = p.name + '（#' + pid + '）';
+    document.getElementById('ac-pic-box').innerHTML = PIC[pid] ? '<img src="' + PIC[pid] + '" alt="' + p.name + '">' : '商品圖';
+    document.getElementById('ac-pline').textContent = p.line;
+    document.getElementById('ac-ptemp').innerHTML = '<span class="ac-tt ' + tempCls(p.temp) + '">' + p.temp + '</span>';
+    document.getElementById('ac-pspecs').textContent = p.specs + ' 個';
+    box.classList.add('is-shown'); setLocked(false);
+    window.gox && window.gox.toast('已綁定「' + p.name + '」');
   }
+  document.getElementById('ac-bind').addEventListener('click', bind);
+  document.getElementById('ac-pid').addEventListener('keydown', function (e) { if (e.key === 'Enter') bind(); });
 
-  function renderLeftChips(){
-    $('bx-left-chips').innerHTML = [...selL].map(function(id){ return '<span class="bx-chip">'+nameOf(LEFT(),id)+tagOf(LEFT(),id)+'<button class="x" data-rml="'+id+'" title="移除">×</button></span>'; }).join('');
-  }
-  function renderCommon(){
-    var body=$('bx-right-body'), empty=$('bx-right-empty');
-    if(!selL.size){ body.hidden=true; empty.hidden=false; return; }
-    body.hidden=false; empty.hidden=true;
-    var it=inter(), box=$('bx-common-box');
-    if(it.length){ box.className='bx-chipbox'; box.innerHTML = it.map(function(id){ return '<span class="bx-chip">'+nameOf(RIGHT(),id)+tagOf(RIGHT(),id)+'<button class="x" data-rmc="'+id+'" title="從全部取下">×</button></span>'; }).join(''); }
-    else { box.className='bx-chipbox empty'; box.textContent='這些'+Ln()+'目前沒有共同掛載的'+Rn()+'（用下方加入）'; }
-  }
-  function renderAll(){ renderLeftChips(); renderCommon(); }
-
-  function applyText(){
-    var L=Ln(), R=Rn();
-    document.querySelectorAll('.bx-wl').forEach(function(e){e.textContent=L;});
-    document.querySelectorAll('.bx-wr').forEach(function(e){e.textContent=R;});
-    $('bx-axis-hint').textContent = axis==='addon'?'選加購品 → 調整它們掛在哪些主商品':'選主商品 → 調整它們底下有哪些加購品';
-    $('bx-left-h').textContent='① 選擇'+L; $('bx-left-input').placeholder='搜尋'+L+'加入…';
-    $('bx-common-h').textContent='② 共同掛載的'+R; $('bx-common-sub').textContent='選取的都有掛的，✕ 一次從全部取下';
-    $('bx-add-h').textContent='③ 加入'+R; $('bx-add-sub').textContent='搜尋加入，一次加到所有選取的'+L; $('bx-add-input').placeholder='搜尋'+R+'加入…';
-    document.querySelector('.bx-word').textContent=L;
-  }
-
-  $('bx-axis').addEventListener('click', function(e){
-    var b=e.target.closest('[data-axis]'); if(!b)return;
-    document.querySelectorAll('#bx-axis button').forEach(function(x){x.classList.remove('on');});
-    b.classList.add('on'); axis=b.getAttribute('data-axis'); selL.clear();
-    $('bx-left-input').value=''; $('bx-add-input').value=''; $('bx-log').textContent='';
-    applyText(); renderAll();
+  function money(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+  document.getElementById('ac-create').addEventListener('click', function () {
+    var desc = document.getElementById('ac-desc').value.trim();
+    var price = document.getElementById('ac-price').value.trim();
+    var stock = document.getElementById('ac-stock').value.trim();
+    if (!desc) { window.gox.toast('請填寫規格描述'); document.getElementById('ac-desc').focus(); return; }
+    if (!price) { window.gox.toast('請填寫產品原價'); document.getElementById('ac-price').focus(); return; }
+    if (!stock) { window.gox.toast('請填寫庫存'); document.getElementById('ac-stock').focus(); return; }
+    document.getElementById('ac-c-product').textContent = bound.p.name + '（#' + bound.pid + '）';
+    document.getElementById('ac-c-desc').textContent = desc;
+    document.getElementById('ac-c-price').textContent = money(Number(price));
+    document.getElementById('ac-c-stock').textContent = stock;
+    document.getElementById('ac-confirm').classList.remove('is-hidden');
   });
-  attachSearch($('bx-left-input'), $('bx-left-box'),
-    function(){ return LEFT().filter(function(x){return !selL.has(x.id);}).map(function(x){ return {id:x.id,name:x.name,temp:x.temp,meta:(axis==='addon'?'掛 '+acount(x.id):acount(x.id)+' 個加購品')}; }); },
-    function(id){ selL.add(id); });
-  attachSearch($('bx-add-input'), $('bx-add-box'),
-    function(){ var s=new Set(inter()); return RIGHT().filter(function(r){return !s.has(r.id);}).map(function(r){ var p=partial(r.id); return {id:r.id,name:r.name,temp:r.temp,meta:(p===0?'未掛':'部分已掛 '+p+'/'+selL.size),part:p>0}; }); },
-    function(id){ var n=0; [...selL].forEach(function(l){ if(!has(l,id)){ setPair(l,id,true); n++; } });
-      var rt=(RIGHT().find(function(o){return o.id===id;})||{}).temp;
-      var cross=[...selL].some(function(l){ var lt=(LEFT().find(function(o){return o.id===l;})||{}).temp; return lt&&rt&&lt!==rt; });
-      $('bx-log').innerHTML='已把「'+nameOf(RIGHT(),id)+'」加到 '+selL.size+' 個'+Ln()+'（新增 '+n+' 組配對）'+(cross?' <span class="bx-warn">含異溫層，出貨會拆單</span>':''); });
-
-  document.addEventListener('click', function(e){
-    var rml=e.target.closest('[data-rml]');
-    if(rml){ selL.delete(Number(rml.getAttribute('data-rml'))); $('bx-log').textContent=''; renderAll(); return; }
-    var rmc=e.target.closest('[data-rmc]');
-    if(rmc){ var rid=Number(rmc.getAttribute('data-rmc')); var n=0; [...selL].forEach(function(l){ if(has(l,rid)){ setPair(l,rid,false); n++; } }); $('bx-log').textContent='已把「'+nameOf(RIGHT(),rid)+'」從 '+selL.size+' 個'+Ln()+'取下（移除 '+n+' 組配對）'; renderAll(); return; }
+  document.getElementById('ac-c-ok').addEventListener('click', function () {
+    document.getElementById('ac-confirm').classList.add('is-hidden');
+    window.gox.toast('已建立加購品，接著設定折扣與掛載');
+    setTimeout(function () { location.href = 'admin-addon-setting.html'; }, 900);
   });
+  document.getElementById('ac-back').addEventListener('click', function () { location.href = 'admin-addon-list.html'; });
 
-  applyText(); renderAll();
+  setLocked(true);
+
+  // 開發者面板
+  document.addEventListener('DOMContentLoaded', function () {
+    var devBar = document.getElementById('devbar');
+    devBar.querySelector('.toggle').addEventListener('click', function () { devBar.classList.toggle('is-open'); });
+    var devList = document.getElementById('dev-pids');
+    devList.innerHTML = Object.keys(PRODUCTS).map(function (pid) {
+      var dp = PRODUCTS[pid];
+      return '<button type="button" data-pid="' + pid + '"><b>' + pid + '</b>' + dp.name + '<span>' + dp.line + '・' + dp.temp + '</span></button>';
+    }).join('');
+    devList.addEventListener('click', function (e) {
+      var pb = e.target.closest('[data-pid]'); if (!pb) return;
+      document.getElementById('ac-pid').value = pb.getAttribute('data-pid');
+      bind(); devBar.classList.remove('is-open');
+    });
+  });
 })();
 </script>
 
