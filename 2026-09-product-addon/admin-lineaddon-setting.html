@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<title>加購設定・編輯 — 後台 demo</title>
+<title>產線加購品設定 — 後台 demo</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -671,9 +671,7 @@ a:hover { text-decoration: underline; }
   <nav class="gox-breadcrumb">
     <span>產品管理</span>
     <span class="sep">&gt;</span>
-    <a href="admin-addon-list.html">加購設定</a>
-    <span class="sep">&gt;</span>
-    <strong>編輯</strong>
+    <strong>產線加購品</strong>
   </nav>
   <div class="gox-header-right">
     <span class="gox-user">Glen Wen</span>
@@ -685,7 +683,7 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child ">加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child is-active">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
@@ -693,288 +691,470 @@ a:hover { text-decoration: underline; }
 
 <main class="gox-content">
 <style>
-  .as-wrap{ display:flex; flex-direction:column; gap:16px; }
-  .as-head h2{ margin:0; font-size:18px; font-weight:700; color:var(--gox-text); }
-  .as-titlesub{ font-size:12px; font-weight:400; color:var(--gox-text-muted); margin-left:8px; }
-  /* 讓卡片內的搜尋下拉不被卡片 overflow 裁掉（此頁卡片內無表格，可安全 visible）*/
-  .as-wrap .gox-card{ overflow:visible; }
+  /* 產線加購品設定：既有機制（整條產線共用一份清單）＋ E 限定子分類。清爽版：去 emoji、核心欄位、少用欄位縮成小標籤 */
+  .la-sub{ font-size:13px; font-weight:400; color:var(--gox-text-muted); }
 
-  /* 主商品身分列 */
-  .as-mainid{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .as-mainid .nm{ font-size:15px; font-weight:700; }
-  .as-mainid .meta{ font-size:13px; color:var(--gox-text-sub); font-variant-numeric:tabular-nums; }
+  /* 產線頁籤（antd segmented 風） */
+  .la-tabs{ display:inline-flex; flex-wrap:wrap; border:1px solid #d9d9d9; border-radius:var(--gox-radius); overflow:hidden; margin:4px 0 14px; }
+  .la-tabs button{ border:0; background:#fff; color:var(--gox-text); font-size:14px; padding:7px 18px; cursor:pointer; font-family:inherit; }
+  .la-tabs button + button{ border-left:1px solid #d9d9d9; }
+  .la-tabs button.is-on{ background:var(--gox-green); color:#fff; font-weight:600; }
 
-  /* 加購品 item block（兩視角共用）：左＝內容(綠框資訊列＋欄位)、右＝動作(改編/上下架/移除) */
-  .as-ib{ display:flex; flex-direction:column; gap:14px; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius-lg); background:#fff; padding:14px; }
-  .as-ib.is-bare{ border:0; padding:0; background:transparent; }   /* 加購品視角：卡片內唯一區塊，不要外框 */
-  .as-ib.is-off{ opacity:.55; }
-  .as-ib-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }        /* 綠框＋按鈕同一排、垂直置中 */
-  .as-ib-head .as-summary{ flex:1; min-width:240px; margin-bottom:0; }
-  .as-acts{ display:flex; align-items:center; gap:12px; flex:none; }
-  .as-acts .tg{ display:flex; align-items:center; gap:6px; }
-  .as-swlabel{ font-size:12.5px; color:var(--gox-text-sub); min-width:2.2em; }
+  /* 分類篩選 chips（E-①） */
+  .la-filter{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .la-filter-lbl{ font-size:13px; color:var(--gox-text-sub); font-weight:600; margin-right:4px; }
+  #la-chips{ display:inline-flex; flex-wrap:wrap; gap:8px; }
+  .la-chip{ border:1px solid #d9d9d9; background:#fff; color:var(--gox-text-sub); border-radius:4px; padding:5px 14px; font-size:13px; cursor:pointer; font-family:inherit; }
+  .la-chip:hover{ border-color:var(--gox-green); color:var(--gox-green); }
+  .la-chip.is-on{ background:#eaf7ea; border-color:var(--gox-green); color:var(--gox-green-hover); font-weight:600; }
+  .la-clear{ border:0; background:none; color:var(--gox-info); font-size:12.5px; cursor:pointer; font-family:inherit; }
+  .la-clear[hidden]{ display:none; }
 
-  .as-summary{ display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap; background:#f2f8ee; border:1px solid #dcebd0; border-radius:var(--gox-radius); padding:9px 12px; margin-bottom:14px; }
-  .as-badge{ font-size:11.5px; font-weight:700; color:var(--gox-text-sub); background:#fff; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); padding:2px 7px; flex:none; font-variant-numeric:tabular-nums; }
-  .as-summary .nm{ font-size:14.5px; font-weight:700; color:var(--gox-text); }
-  .as-summary .spec{ font-size:12.5px; color:var(--gox-text-sub); }
-  .as-summary .calc{ margin-left:auto; font-size:13px; color:var(--gox-text-sub); font-variant-numeric:tabular-nums; }
-  .as-summary .calc s{ color:var(--gox-text-muted); }
-  .as-summary .calc .as-final{ color:var(--gox-text); font-weight:700; font-size:15px; }   /* 後台不強調折購感：折後用深色 */
-  .as-summary .calc .as-save{ color:var(--gox-text-muted); margin-left:4px; }               /* 省 X 用灰字 */
-  .as-summary.is-invalid{ background:#fff1f0; border-color:#ffccc7; }
-  .as-summary.is-invalid .as-final,.as-summary.is-invalid .as-save{ color:var(--gox-danger); }
+  /* 加入列（E-②：限定子分類複選） */
+  .la-addbar{ display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; background:#fafbfc; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); padding:12px; margin-bottom:14px; }
+  .la-ac{ position:relative; flex:1 1 280px; min-width:220px; }
+  .la-ac .gox-input{ width:100%; }
+  .la-ac textarea{ min-height:38px; resize:vertical; line-height:1.6; }
+  .la-ac-list{ position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:30; background:#fff; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); box-shadow:0 6px 18px rgba(0,0,0,.12); max-height:240px; overflow-y:auto; display:none; }
+  .la-ac.is-open .la-ac-list{ display:block; }
+  .la-ac-list button{ display:block; width:100%; text-align:left; border:0; background:#fff; padding:9px 12px; cursor:pointer; font-family:inherit; font-size:13.5px; color:var(--gox-text); }
+  .la-ac-list button + button{ border-top:1px solid #f0f0f0; }
+  .la-ac-list button:hover{ background:#f4fbf4; }
+  .la-ac-list .r2{ display:block; font-size:12px; color:var(--gox-text-muted); margin-top:2px; }
+  .la-ac-list .none{ padding:11px 12px; font-size:13px; color:var(--gox-text-muted); }
 
-  .as-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
-  @media (max-width:820px){ .as-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-  .as-field{ display:flex; flex-direction:column; gap:6px; min-width:0; }
-  .as-field > span{ font-size:12px; font-weight:600; color:var(--gox-text-sub); display:flex; align-items:center; gap:8px; }
-  .as-seg{ display:flex; border:1px solid #ccc; border-radius:var(--gox-radius); overflow:hidden; }
-  .as-seg button{ flex:1; border:0; background:#fff; color:var(--gox-text-sub); font-size:12.5px; font-weight:600; padding:7px 6px; cursor:pointer; font-family:inherit; }
-  .as-seg button + button{ border-left:1px solid #ccc; }
-  .as-seg button.is-active{ background:var(--gox-green); color:#fff; }
-  .as-valwrap{ display:flex; align-items:center; gap:6px; }
-  .as-valwrap .gox-input{ flex:1; min-width:0; font-variant-numeric:tabular-nums; }
-  .as-unit{ font-size:12.5px; color:var(--gox-text-sub); flex:none; white-space:nowrap; }
-  .as-daterange{ display:flex; align-items:center; gap:6px; }
-  .as-daterange .gox-input{ flex:1; min-width:0; font-variant-numeric:tabular-nums; }
-  .as-daterange .as-sep{ color:var(--gox-text-muted); flex:none; }
-  .as-eff{ display:inline-block; font-size:11px; font-weight:700; border-radius:4px; padding:1px 7px; }
-  .as-eff.active{ background:#f6ffed; color:#389e0d; border:1px solid #b7eb8f; }
-  .as-eff.wait{ background:#fffbe6; color:#d4b106; border:1px solid #ffe58f; }
-  .as-eff.expired{ background:#f5f5f5; color:#999; border:1px solid #e0e0e0; }
+  /* 限定子分類複選下拉 */
+  .la-multi{ position:relative; flex:0 0 auto; }
+  .la-multi-btn{ display:inline-flex; align-items:center; gap:6px; min-width:180px; justify-content:space-between; border:1px solid #ccc; background:#fff; color:var(--gox-text); border-radius:var(--gox-radius); padding:6px 12px; min-height:32px; font-size:13.5px; cursor:pointer; font-family:inherit; }
+  .la-multi-btn .cnt{ color:var(--gox-text-muted); }
+  .la-multi-pop{ position:absolute; top:calc(100% + 4px); left:0; z-index:30; background:#fff; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); box-shadow:0 6px 18px rgba(0,0,0,.12); padding:6px; min-width:180px; display:none; }
+  .la-multi.is-open .la-multi-pop{ display:block; }
+  .la-multi-pop label{ display:flex; align-items:center; gap:8px; padding:6px 8px; font-size:13.5px; border-radius:4px; cursor:pointer; }
+  .la-multi-pop label:hover{ background:#f4fbf4; }
+  .la-multi-pop input{ accent-color:var(--gox-green); width:15px; height:15px; }
 
-  /* 規格資訊：綠底框內、分隔線下的一列 */
-  .as-specrow{ flex-basis:100%; width:100%; margin-top:6px; padding-top:8px; border-top:1px solid #cfe1bf; display:flex; flex-wrap:wrap; gap:6px 20px; }
-  .as-specrow .i{ font-size:12.5px; }
-  .as-specrow .i>span{ color:var(--gox-text-muted); margin-right:5px; }
-  .as-specrow .i>b{ color:var(--gox-text); font-weight:600; font-variant-numeric:tabular-nums; }
+  /* 表格 */
+  .la-scroll{ overflow-x:auto; }
+  .la-table th, .la-table td{ vertical-align:middle; white-space:nowrap; }
+  .la-table tr.is-off td{ opacity:.55; }
+  .la-table tr.is-drag{ opacity:.4; }
+  .la-table tr.is-over td{ box-shadow:inset 0 2px 0 var(--gox-green); }
+  .la-table tbody tr{ cursor:default; }
+  .la-thumb{ width:46px; height:46px; flex:none; border-radius:4px; border:1px solid var(--gox-card-border); background:#f2f4f5; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; }
+  .la-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .la-thumb.is-empty::before{ content:''; width:20px; height:20px; background:no-repeat center/contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c2c8cc' stroke-width='1.6'><rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='8.5' cy='9.5' r='1.5'/><path d='M21 15l-5-5L5 20'/></svg>"); }
+  .la-pname{ font-size:14px; font-weight:600; color:var(--gox-text); }
+  .la-pspec{ font-size:13px; color:var(--gox-text-sub); }
+  .la-pid{ font-size:12px; color:var(--gox-text-muted); font-variant-numeric:tabular-nums; margin-top:2px; }
+  .la-mono{ font-variant-numeric:tabular-nums; }
+  .la-stock.is-zero{ color:var(--gox-danger); font-weight:600; }
+  .la-yes{ color:#389e0d; font-weight:700; font-size:13px; }
+  .la-dash{ color:#d0d3d6; }
 
-  /* 掛載主商品：簡單列 */
-  .as-list{ display:flex; flex-direction:column; gap:10px; }
-  .as-maprow{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-              border:1px solid var(--gox-card-border); border-radius:var(--gox-radius-lg); background:#fff; padding:12px 14px; }
-  .as-maprow.is-off{ opacity:.55; }
-  .as-idblock{ display:flex; align-items:center; gap:10px; min-width:0; }
-  .as-idblock .as-badge{ background:#f1f2f7; }
-  .as-sname{ font-size:14px; font-weight:700; color:var(--gox-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .as-rowacts{ display:flex; align-items:center; gap:10px; flex:none; }
-  .as-switch{ display:inline-flex; align-items:center; gap:5px; border:1px solid #ccc; background:#fff; color:var(--gox-info);
-              border-radius:var(--gox-radius); padding:4px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; white-space:nowrap; }
-  .as-switch:hover{ border-color:var(--gox-info); background:#f0f7ff; }
-  .as-switch svg{ width:13px; height:13px; }
-
-  /* 加入列：打字搜尋 autocomplete */
-  .as-addrow{ display:flex; align-items:center; gap:8px; margin-top:2px; }
-  .ac{ position:relative; flex:1; max-width:440px; }
-  .ac-input{ width:100%; }
-  .ac-list{ position:absolute; z-index:40; left:0; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #d3dad2; border-radius:6px;
-            box-shadow:0 6px 20px rgba(0,0,0,.14); max-height:240px; overflow-y:auto; display:none; }
-  .ac-list.is-open{ display:block; }
-  .ac-item{ padding:8px 12px; font-size:13px; cursor:pointer; line-height:1.5; display:flex; gap:8px; align-items:baseline; }
-  .ac-item:hover{ background:#f3faf1; }
-  .ac-item b{ color:var(--gox-text); }
-  .ac-item .code{ color:var(--gox-text-muted); font-size:12px; margin-left:auto; font-variant-numeric:tabular-nums; }
-  .ac-empty{ padding:10px 12px; font-size:13px; color:var(--gox-text-muted); }
-
-  .as-savebar{ position:sticky; bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
-               background:#fff; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius-lg); box-shadow:0 -1px 3px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.08); padding:12px 18px; }
-  .as-savebar a.gox-btn{ text-decoration:none; }
-  .as-right{ display:flex; align-items:center; gap:12px; }
-  .as-del-btn{ display:inline-flex; align-items:center; gap:6px; border:1px solid #f0c4c0; background:#fff; color:var(--gox-danger); border-radius:var(--gox-radius); padding:8px 14px; font-size:13px; cursor:pointer; font-family:inherit; }
-  .as-del-btn:hover{ background:#fbeae8; border-color:var(--gox-danger); }
-  .as-del-btn svg{ width:14px; height:14px; }
-  .as-del-btn[hidden]{ display:none; }
-  .as-status{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--gox-text-sub); }
-  .as-dot{ width:7px; height:7px; border-radius:50%; background:var(--gox-text-muted); flex:none; }
-  .as-status.is-saved .as-dot{ background:var(--gox-success); }
-  .as-status.is-invalid{ color:var(--gox-danger); } .as-status.is-invalid .as-dot{ background:var(--gox-danger); }
-  /* 溫層小標籤（放在品名後）；異溫層＝同底色、淺紅框線、加註 (異溫層) */
-  .tt{ display:inline-block; font-size:11px; font-weight:600; border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:middle; line-height:1.6; }
+  /* 溫層小標籤 */
+  .tt{ display:inline-block; font-size:11px; font-weight:600; line-height:1.6; border-radius:4px; padding:0 6px; }
   .tt.normal{ background:#fff7e6; border:1px solid #ffd591; color:#c86e1a; }
   .tt.cold{ background:#e6fffb; border:1px solid #87e8de; color:#229599; }
   .tt.frozen{ background:#f0f5ff; border:1px solid #adc6ff; color:#5563c2; }
-  .tt.is-mismatch{ border-color:#f0c4c0; cursor:help; }
-  .tt .tt-x{ color:#c0554d; margin-left:1px; }
+
+  /* 限定子分類標籤（唯讀） */
+  .la-subs{ display:flex; flex-wrap:wrap; gap:4px; min-width:120px; }
+  .la-subtag{ font-size:11.5px; line-height:1.7; padding:0 8px; border-radius:4px; background:#f1f2f7; border:1px solid #e0e0e0; color:var(--gox-text-sub); white-space:nowrap; }
+  .la-nolimit{ font-size:12.5px; color:var(--gox-text-muted); }
+
+  /* 排序 / 操作 小按鈕 */
+  .la-drag{ cursor:grab; color:var(--gox-text-muted); font-size:15px; user-select:none; }
+  .la-ord{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .la-ord .no{ font-variant-numeric:tabular-nums; color:var(--gox-text-sub); min-width:1.4em; text-align:right; }
+  .la-iconbtn{ border:1px solid #d9d9d9; background:#fff; color:var(--gox-text-sub); border-radius:4px; width:24px; height:24px; line-height:1; cursor:pointer; font-family:inherit; font-size:12px; padding:0; }
+  .la-iconbtn:hover:not(:disabled){ border-color:var(--gox-green); color:var(--gox-green); }
+  .la-iconbtn:disabled{ opacity:.35; cursor:default; }
+  .la-ops{ display:flex; gap:6px; white-space:nowrap; }
+  .la-linkbtn{ border:1px solid #d9d9d9; background:#fff; color:var(--gox-text); border-radius:4px; padding:3px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; }
+  .la-linkbtn:hover{ border-color:var(--gox-green); color:var(--gox-green); }
+  .la-linkbtn.is-danger{ color:var(--gox-danger); }
+  .la-linkbtn.is-danger:hover{ border-color:var(--gox-danger); background:#fff1f0; }
+
+  .la-bar{ display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .la-status{ font-size:13px; }
+  .la-status.is-clean{ color:var(--gox-text-muted); }
+  .la-status.is-dirty{ color:#d4820a; font-weight:600; }
+  .la-status.is-saving{ color:var(--gox-text-sub); }
+  .la-hideoff{ margin-left:auto; display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--gox-text-sub); cursor:pointer; }
+  .la-hideoff input{ width:15px; height:15px; accent-color:var(--gox-green); }
+  .la-empty{ text-align:center; padding:28px; color:var(--gox-text-muted); }
+
+  /* 限定子分類編輯 modal */
+  .la-modal-box{ min-width:360px; }
+  .la-modal-subs{ display:flex; flex-direction:column; gap:2px; margin:4px 0 8px; }
+  .la-modal-subs label{ display:flex; align-items:center; gap:9px; padding:8px 10px; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); font-size:14px; cursor:pointer; }
+  .la-modal-subs label:hover{ background:#f4fbf4; }
+  .la-modal-subs input{ accent-color:var(--gox-green); width:16px; height:16px; }
+  .la-modal-hint{ font-size:12.5px; color:var(--gox-text-muted); margin:0 0 6px; }
+  .la-rule-fields{ display:flex; flex-direction:column; gap:12px; margin:8px 0; }
+  .la-rule-f{ display:flex; flex-direction:column; gap:6px; }
+  .la-rule-f > span:first-child{ font-size:13px; color:var(--gox-text-sub); font-weight:600; }
+  .la-rule-inline{ display:flex; align-items:center; gap:8px; font-size:14px; color:var(--gox-text); flex-wrap:wrap; }
 </style>
 
-<div class="gox-toolbox is-wide">
- <div class="as-wrap">
-  <div class="as-head"><h2>加購設定</h2></div>
-  <div id="editor"></div>
-  <div class="as-savebar">
-    <button class="as-del-btn" id="btn-del" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>刪除加購設定</button>
-    <div class="as-right">
-      <span class="as-status" id="save-status"><span class="as-dot"></span>尚未儲存</span>
-      <a class="gox-btn gox-btn-default" href="admin-addon-list.html">取消</a>
-      <button class="gox-btn gox-btn-primary" id="btn-save">儲存設定</button>
+<div class="gox-list-head">
+  <h2 style="margin:0;font-size:18px;">產線加購品設定</h2>
+</div>
+
+<!-- 產線頁籤 -->
+<div class="la-tabs" id="la-tabs"></div>
+
+<!-- 分類篩選 chips（E-①） -->
+<div class="la-filter">
+  <span class="la-filter-lbl">篩選子分類</span>
+  <span id="la-chips"></span>
+  <button class="la-clear" id="la-clear" hidden>清除篩選</button>
+  <label class="la-hideoff"><input type="checkbox" id="la-hideoff"> 隱藏下架</label>
+</div>
+
+<!-- 加入加購品（限定子分類於加入後再用「編輯子分類」設定）-->
+<div class="la-addbar">
+  <div class="la-ac" id="la-ac">
+    <textarea class="gox-input" id="la-ac-input" rows="1" placeholder="輸入規格 ID 加入（請用空格、換行、逗號區分多個規格 ID）" autocomplete="off"></textarea>
+    <div class="la-ac-list" id="la-ac-list"></div>
+  </div>
+  <select class="gox-select" id="la-add-pos" title="加入順序" style="width:120px;">
+    <option value="end">加到最後</option>
+    <option value="start">加到最前</option>
+  </select>
+  <button class="gox-btn gox-btn-primary" id="la-add">加入</button>
+</div>
+
+<div class="gox-card">
+  <div class="gox-card-body is-table-padding">
+    <div class="la-scroll">
+    <table class="gox-table la-table">
+      <thead><tr>
+        <th class="cell-center"><input type="checkbox" id="la-all" style="width:16px;height:16px;accent-color:var(--gox-green);"></th>
+        <th class="cell-center">排序</th>
+        <th>封面</th>
+        <th>名稱</th>
+        <th>規格</th>
+        <th class="cell-right">原價</th>
+        <th class="cell-right">優惠價</th>
+        <th class="cell-right">剩餘數量</th>
+        <th class="cell-center">溫層</th>
+        <th class="cell-center">上架</th>
+        <th>限定子分類</th>
+        <th class="cell-right">滿額限購</th>
+        <th class="cell-center">限購數量</th>
+        <th class="cell-center">VIP限購</th>
+        <th class="cell-center">首購</th>
+        <th class="cell-center">含運</th>
+        <th class="cell-center">操作</th>
+      </tr></thead>
+      <tbody id="la-body"></tbody>
+    </table>
     </div>
   </div>
- </div>
+</div>
+
+<div class="la-bar">
+  <button class="gox-btn gox-btn-danger" id="la-del" disabled>移除選取（<span id="la-delcnt">0</span>）</button>
+  <button class="gox-btn gox-btn-primary" id="la-save">儲存</button>
+  <span class="la-status is-clean" id="la-status">無改動</span>
+</div>
+
+<!-- 限定子分類編輯 modal -->
+<div class="gox-modal-overlay is-hidden" id="la-sub-modal">
+  <div class="gox-modal-box la-modal-box">
+    <h4>限定子分類 — <span id="la-modal-name"></span></h4>
+    <p class="la-modal-hint">勾選後，此加購品只在購物車含所選子分類的商品時顯示；全部不勾＝不限、比照現況一律顯示。</p>
+    <div class="la-modal-subs" id="la-modal-subs"></div>
+    <div class="gox-modal-actions">
+      <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
+      <button class="gox-btn gox-btn-primary" id="la-modal-ok">確定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 編輯加購規則 modal（滿額限購＋限購數量） -->
+<div class="gox-modal-overlay is-hidden" id="la-rule-modal">
+  <div class="gox-modal-box la-modal-box">
+    <h4>編輯加購規則 — <span id="la-rule-name"></span></h4>
+    <p class="la-modal-hint">設定此加購品的購買條件，0＝不限。</p>
+    <div class="la-rule-fields">
+      <label class="la-rule-f"><span>滿額限購</span>
+        <span class="la-rule-inline">購物車同產線滿 <input type="number" class="gox-input" id="la-rule-min" min="0" style="width:110px;"> 元才可購買</span>
+      </label>
+      <label class="la-rule-f"><span>限購數量</span>
+        <span class="la-rule-inline">每筆訂單限購 <input type="number" class="gox-input" id="la-rule-limit" min="0" style="width:90px;"> 件</span>
+      </label>
+    </div>
+    <div class="gox-modal-actions">
+      <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
+      <button class="gox-btn gox-btn-primary" id="la-rule-ok">確定</button>
+    </div>
+  </div>
 </div>
 
 <script>
 (function(){
-  var TODAY='2026-09-16';
   var money=function(n){ return '$'+Math.round(n).toLocaleString('en-US'); };
-  var esc=function(s){ return String(s); };
-  var ADDONS={
-    99753:{prod:'316 不鏽鋼保溫瓶', spec:'單瓶 500ml', temp:'常溫', orig:399, mode:'fixed', val:50, s:'2026-09-01', e:'2026-09-30', up:true, qty:1, unit:'瓶', disc:379, stock:128, ship:'2026-08-12', sellStart:'2026-07-01', sellEnd:'2026-12-31'},
-    101509:{prod:'手沖濾掛咖啡', spec:'10 入袋裝', temp:'常溫', orig:299, mode:'percent', val:0.8, s:'', e:'', up:true, qty:10, unit:'入', disc:'', stock:64, ship:'2026-09-01', sellStart:'2026-09-01', sellEnd:'2026-12-31'},
-    36007:{prod:'冷壓初榨苦茶油', spec:'250ml 玻璃瓶', temp:'冷藏', orig:420, mode:'fixed', val:60, s:'2026-10-01', e:'2026-10-31', up:true, qty:1, unit:'瓶', disc:399, stock:8, ship:'2026-09-10', sellStart:'2026-09-01', sellEnd:'2026-12-31'},
-    24011:{prod:'有機黑芝麻粉', spec:'300g 罐裝', temp:'冷凍', orig:280, mode:'fixed', val:40, s:'2026-08-01', e:'2026-08-31', up:false, qty:1, unit:'罐', disc:'', stock:0, ship:'2026-07-15', sellStart:'2026-07-01', sellEnd:'2026-08-31'}
+  var IMG1='https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp';
+  var IMG2='https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp';
+  var IMG3='https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg';
+  // 不同產線的子分類不同（動態撈；demo 先寫死每條產線各自的子分類）
+  var SUBCATS_BY_LINE={
+    direct:['在地小農','安心時蔬','進口菁品','嚴選好物','水產直送'],
+    dried:['嚴選好物','堅果雜糧','果乾蜜餞'],
+    fresh:['水產直送','溫體肉品','鮮凍海鮮'],
+    baby:['在地小農','安心時蔬','寶寶副食'],
+    eagle:['進口菁品','機能保健']
   };
-  var MAINS={ 40894:{name:'台灣蜜棗禮盒 3斤裝', temp:'常溫'}, 55210:{name:'日曬紅龍果原箱', temp:'冷藏'}, 61120:{name:'冬季草莓禮盒（已下架）', temp:'冷藏'}, 47788:{name:'當季鮮採蔬菜箱', temp:'常溫'} };
-  var pairs=[ {a:99753,m:40894,on:true},{a:99753,m:55210,on:true},{a:99753,m:61120,on:false},
-              {a:101509,m:40894,on:true},{a:36007,m:40894,on:true} ];
-  var view={type:'addon', id:99753};
+  var LINES=[['direct','產地直送'],['dried','蔬果乾貨'],['fresh','生鮮肉舖'],['baby','粥寶寶'],['eagle','益菓保']];
 
-  function finalOf(a){ return a.mode==='fixed'?a.orig-a.val:Math.round(a.orig*a.val); }
-  function mainsOf(aid){ return pairs.filter(function(p){return p.a==aid;}); }
-  function addonsOf(mid){ return pairs.filter(function(p){return p.m==mid;}); }
-  function effStatus(a){
-    var s=(a.s&&a.s!=='不指定')?a.s:'', e=(a.e&&a.e!=='不指定')?a.e:'';
-    if(s && TODAY<s) return {t:'尚未生效', c:'wait'};
-    if(e && TODAY>e) return {t:'已失效', c:'expired'};
-    return {t:'套用中', c:'active'};
+  function it(o){ return Object.assign({disc:0,stock:100,temp:'常溫',display:true,subs:[],minPrice:0,limit:0,vip:false,firstBuy:false,shipping:false,img:''},o); }
+  // 產地直送：模擬 20 筆（售完＝剩餘數量 0 標紅；下架＝上架關閉，兩者獨立：有售完但仍上架、也有下架但有庫存）
+  function genDirect(){
+    var N=['316 不鏽鋼保溫瓶 500ml','手沖濾掛咖啡 10入','冷壓初榨苦茶油 250ml','有機黑芝麻粉 300g','台灣龍眼蜂蜜 380g','冷壓初榨橄欖油 250ml','手工原味餅乾 綜合','鮮乳坊 鮮奶 936ml','西螺有機醬油 500ml','澳洲天然海鹽 250g','台灣黑糖磚 400g','有機紅藜 300g','日曬乾香菇 150g','埔里手工筍乾 200g','金鑽鳳梨乾 100g','愛文芒果乾 120g','綜合堅果 隨手包','花蓮有機糙米 1kg','蜜香紅茶 30入','古法桂圓乾 250g'];
+    var S=['單瓶','10 入袋裝','玻璃瓶','罐裝','玻璃罐','玻璃瓶','一盒','一瓶','一瓶','袋裝','一塊','袋裝','袋裝','袋裝','袋裝','袋裝','50g','一包','30 入','袋裝'];
+    var STK=[128,64,8,0,53,40,120,31,0,90,12,22,60,0,44,7,38,0,26,15];  // 0＝售完（索引 3、8、13、17）
+    var DSP=[1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1];                    // 0＝下架（索引 5、10、12、17）
+    var IMGS=[IMG1,IMG2,IMG3], SC=SUBCATS_BY_LINE.direct;
+    return N.map(function(n,i){
+      var price=99+((i*47)%420);
+      var subs = i%5===0 ? [SC[0],SC[3]] : (i%4===0 ? [SC[0]] : (i%4===1 ? [SC[3]] : (i%4===3 ? [SC[1]] : [])));
+      return it({ id:90001+i, pid:30001+i, name:n, spec:S[i], img:(i%3===2?'':IMGS[i%3]),
+        price:price, disc:(i%3===0?price-30:0), stock:STK[i], temp:['常溫','冷藏','冷凍'][i%3],
+        display:DSP[i]===1, subs:subs,
+        minPrice:(i%6===1?500:0), limit:(i%7===2?2:0), vip:(i%8===3), firstBuy:(i%9===4), shipping:(i%5===2) });
+    });
   }
-  function tempCls(t){ return t==='常溫'?'normal':t==='冷藏'?'cold':'frozen'; }
-  function tempTag(t, mm){ if(!t) return ''; return '<span class="tt '+tempCls(t)+(mm?' is-mismatch':'')+'"'+(mm?' title="加購品與主商品溫層不同，出貨會拆成不同溫層的包裹"':'')+'>'+t+(mm?'<span class="tt-x">(異溫層)</span>':'')+'</span>'; }
-  function switchBtn(kind,id,label){
-    return '<button class="as-switch" data-to-'+kind+'="'+id+'" title="改為編輯此'+label+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16H3v4M17 8h4V4M4 20l6-6M20 4l-6 6"/></svg>改編此'+label+'</button>';
+  var DATA={
+    direct: genDirect(),
+    dried:[
+      it({id:50011,pid:16001,img:IMG3,name:'綜合堅果 隨手包',spec:'50g',price:99,stock:40,temp:'常溫',subs:['嚴選好物']}),
+      it({id:50022,pid:16008,name:'古法金鑽鳳梨乾',spec:'100g',price:150,disc:120,stock:22,temp:'常溫',subs:[]})
+    ],
+    fresh:[
+      it({id:60003,pid:17001,name:'鮮凍白蝦仁 250g',spec:'250g',price:220,disc:199,stock:15,temp:'冷凍',subs:['水產直送']})
+    ],
+    baby:[
+      it({id:77208,pid:15003,name:'寶寶粥 鮮蔬雞肉',spec:'150g',price:75,stock:260,temp:'冷凍',subs:['在地小農']}),
+      it({id:77385,pid:15010,img:IMG1,name:'寶寶果泥 隨手包',spec:'80g',price:45,disc:39,stock:84,temp:'常溫',subs:['安心時蔬']}),
+      it({id:77412,pid:15022,img:IMG2,name:'有機米餅 二入',spec:'2 入',price:60,stock:12,temp:'常溫',subs:[]})
+    ],
+    eagle:[
+      it({id:70001,pid:18001,name:'益生菌粉 30入',spec:'30 條',price:680,stock:53,temp:'常溫',subs:['進口菁品']})
+    ]
+  };
+  // 可加入的產品池（搜尋加入用）
+  var POOL=[
+    {id:88021,pid:19001,name:'台灣龍眼蜂蜜 小罐',spec:'250g',price:320,temp:'常溫',img:IMG1},
+    {id:88105,pid:19008,name:'冷壓初榨橄欖油 250ml',spec:'玻璃瓶',price:360,temp:'常溫',img:IMG2},
+    {id:88230,pid:19015,name:'手工原味餅乾 綜合',spec:'一盒',price:180,temp:'常溫',img:''},
+    {id:88342,pid:19022,name:'鮮乳坊 鮮奶 一瓶',spec:'936ml',price:95,temp:'冷藏',img:''}
+  ];
+
+  var line='direct', filter=new Set(), selected=new Set(), dragId=null, modalId=null, hideOff=false, dirty=false;
+  var $=function(id){ return document.getElementById(id); };
+  function rowsOfLine(){ return DATA[line]; }
+  function subcatsOfLine(){ return SUBCATS_BY_LINE[line]||[]; }
+  function visible(){ return rowsOfLine().filter(function(r){
+    if(hideOff && !r.display) return false;
+    if(filter.size && !r.subs.some(function(s){return filter.has(s);})) return false;
+    return true;
+  }); }
+  function setStatus(s){ var el=$('la-status'); if(!el)return; el.className='la-status is-'+s; el.textContent=(s==='saving'?'儲存中…':s==='dirty'?'改動尚未儲存':'無改動'); }
+  function markDirty(){ dirty=true; setStatus('dirty'); }
+  function tempCls(t){ return t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); }
+  function tempTag(t){ return '<span class="tt '+tempCls(t)+'">'+t+'</span>'; }
+  function thumb(img){ return '<span class="la-thumb'+(img?'':' is-empty')+'">'+(img?'<img src="'+img+'" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'is-empty\');this.remove();">':'')+'</span>'; }
+
+  function pills(r){
+    var p=[];
+    if(r.minPrice) p.push('滿額 '+money(r.minPrice));
+    if(r.vip) p.push('VIP限購');
+    if(r.firstBuy) p.push('首購限定');
+    if(r.shipping) p.push('含運');
+    return p.length? '<div class="la-pills">'+p.map(function(x){return '<span class="la-pill">'+x+'</span>';}).join('')+'</div>' : '';
+  }
+  function subsCell(r){
+    if(!r.subs.length) return '<span class="la-nolimit">不限</span>';
+    return '<div class="la-subs">'+r.subs.map(function(s){return '<span class="la-subtag">'+s+'</span>';}).join('')+'</div>';
   }
 
-  // 加購品 item block（兩視角共用）。isSubject＝加購品視角的主體（右側放上下架）；否則放改編/啟用/移除
-  function addonBlock(aid, pair, isSubject){
-    var a=ADDONS[aid], fin=finalOf(a), bad=fin<=0, st=effStatus(a), unit=a.mode==='fixed'?'元':'（0～1）';
-    var discTxt = (a.disc!=='' && a.disc!=null) ? money(a.disc) : '未設定';
-    // 規格資訊：只在加購品視角、放進綠底框、加分隔線（不重覆已顯示的規格描述與原價）
-    var specrow = isSubject ? '<div class="as-specrow">'
-      + '<span class="i"><span>規格量</span><b>'+a.qty+' '+a.unit+'</b></span>'
-      + '<span class="i"><span>產品優惠價</span><b>'+discTxt+'</b></span>'
-      + '<span class="i"><span>剩餘數量</span><b>'+a.stock+'</b></span>'
-      + '<span class="i"><span>預計出貨日</span><b>'+(a.ship||'—')+'</b></span>'
-      + '<span class="i"><span>販售期間</span><b>'+(a.sellStart||'—')+' ～ '+(a.sellEnd||'—')+'</b></span>'
-      + '</div>' : '';
-    var acts = isSubject
-      ? '<div class="tg"><button class="gox-switch '+(a.up?'is-on':'')+'" data-up="'+aid+'"></button><span class="as-swlabel">'+(a.up?'上架':'下架')+'</span></div>'
-      : switchBtn('addon',aid,'加購品')
-        + '<div class="tg"><button class="gox-switch '+(pair.on?'is-on':'')+'" data-toggle="'+pair.a+'-'+pair.m+'"></button><span class="as-swlabel">'+(pair.on?'上架':'下架')+'</span></div>'
-        + '<button class="gox-icon-btn is-cancel" data-rm="'+pair.a+'-'+pair.m+'" title="移除">✕</button>';
-    var off = !isSubject && !pair.on;
-    var mismatch = !isSubject && MAINS[pair.m].temp!==a.temp;
-    return '<div class="as-ib'+(off?' is-off':'')+(isSubject?' is-bare':'')+'" data-addon="'+aid+'">'
-      + '<div class="as-ib-head"><div class="as-summary'+(bad?' is-invalid':'')+'"><span class="as-badge">規格ID '+aid+'</span><span class="nm">'+esc(a.prod)+'</span>'+tempTag(a.temp, mismatch)+'<span class="spec">'+esc(a.spec)+'</span>'
-      + '<span class="calc">原價 <s>'+money(a.orig)+'</s> → 折後 <b class="as-final">'+money(fin)+'</b><span class="as-save">'+(bad?'折後 ≤ $0':'省 '+money(a.orig-fin))+'</span></span>'+specrow+'</div>'
-      + '<div class="as-acts">'+acts+'</div></div>'
-      + '<div class="as-grid">'
-        + '<div class="as-field"><span>折抵方式</span><div class="as-seg" data-seg><button class="'+(a.mode==='fixed'?'is-active':'')+'" data-mode="fixed">固定金額</button><button class="'+(a.mode==='percent'?'is-active':'')+'" data-mode="percent">百分比</button></div></div>'
-        + '<div class="as-field"><span>折扣數值</span><div class="as-valwrap"><input class="gox-input as-val" value="'+a.val+'"><span class="as-unit">'+unit+'</span></div></div>'
-        + '<div class="as-field" style="grid-column:span 2;"><span>生效期間 <span class="as-eff '+st.c+'">'+st.t+'</span></span><div class="as-daterange"><input type="date" class="gox-input as-s" value="'+(a.s||'')+'"><span class="as-sep">→</span><input type="date" class="gox-input as-e" value="'+(a.e||'')+'"></div></div>'
-      + '</div></div>';
-  }
-  function acRow(kind){
-    var ph = kind==='main'?'打字搜尋主商品名稱或 ID 加入…':'打字搜尋加購品名稱或規格 ID 加入…';
-    return '<div class="as-addrow"><div class="ac" data-add="'+kind+'"><input class="gox-input ac-input" placeholder="'+ph+'" autocomplete="off"><div class="ac-list"></div></div></div>';
-  }
+  // ── 產線頁籤 ──
+  $('la-tabs').innerHTML=LINES.map(function(l){ return '<button data-line="'+l[0]+'"'+(l[0]===line?' class="is-on"':'')+'>'+l[1]+'</button>'; }).join('');
+  $('la-tabs').addEventListener('click', function(e){ var b=e.target.closest('[data-line]'); if(!b)return;
+    line=b.getAttribute('data-line'); selected.clear();
+    $('la-tabs').querySelectorAll('button').forEach(function(x){x.classList.toggle('is-on', x.getAttribute('data-line')===line);});
+    renderChips(); render();
+  });
 
+  // ── 篩選 chips（依產線動態）──
+  function renderChips(){
+    filter.clear();
+    $('la-chips').innerHTML=subcatsOfLine().map(function(s){ return '<button class="la-chip" data-sub="'+s+'">'+s+'</button>'; }).join('');
+    $('la-clear').hidden=true;
+  }
+  $('la-chips').addEventListener('click', function(e){ var b=e.target.closest('[data-sub]'); if(!b)return;
+    var s=b.getAttribute('data-sub'); if(filter.has(s))filter.delete(s); else filter.add(s);
+    b.classList.toggle('is-on', filter.has(s)); $('la-clear').hidden=!filter.size; render();
+  });
+  $('la-clear').addEventListener('click', function(){ filter.clear(); this.hidden=true;
+    $('la-chips').querySelectorAll('.la-chip').forEach(function(x){x.classList.remove('is-on');}); render();
+  });
+  $('la-hideoff').addEventListener('change', function(){ hideOff=this.checked; render(); });
+
+  // ── 加入（可貼多筆規格ID，用空格／換行／逗號分隔；搜尋只是把 ID 帶進欄位，不直接加入）──
+  var ac=$('la-ac'), acIn=$('la-ac-input'), acList=$('la-ac-list');
+  var SEP=/[\s,，、]+/;
+  function tokens(){ return acIn.value.split(SEP).map(function(t){return t.trim();}).filter(Boolean); }
+  function lastToken(){ var v=acIn.value.replace(/[，、]/g,' '); var m=v.split(/[\s,]/); return (m[m.length-1]||'').trim(); }
+  function acDraw(){
+    var q=lastToken();
+    var existing=new Set(rowsOfLine().map(function(r){return r.id;}));
+    var inField=new Set(tokens());
+    var cs=POOL.filter(function(p){ return !existing.has(p.id) && !inField.has(String(p.id)) && (!q || (p.name+p.spec+p.id).indexOf(q)>=0); });
+    acList.innerHTML = cs.length? cs.map(function(p){ return '<button data-pick="'+p.id+'">'+p.name+tempTag(p.temp)+'<span class="r2">規格ID '+p.id+'・'+p.spec+'・'+money(p.price)+'</span></button>'; }).join('')
+      : '<div class="none">沒有可帶入的規格 ID</div>';
+  }
+  acIn.addEventListener('focus', function(){ acDraw(); ac.classList.add('is-open'); });
+  acIn.addEventListener('input', function(){ acDraw(); ac.classList.add('is-open'); });
+  // 點搜尋結果＝把該規格 ID 帶進欄位（取代最後一個未完成的 token），不直接加入
+  acList.addEventListener('mousedown', function(e){ var b=e.target.closest('[data-pick]'); if(!b)return; e.preventDefault();
+    var id=b.getAttribute('data-pick');
+    var toks=tokens();
+    var q=lastToken();
+    if(q && toks.length && toks[toks.length-1]===q) toks.pop();  // 移除未完成的最後 token
+    toks.push(id);
+    acIn.value=toks.join(' ')+' ';
+    acDraw(); acIn.focus();
+  });
+  document.addEventListener('click', function(e){ if(!ac.contains(e.target)) ac.classList.remove('is-open'); });
+
+  $('la-add').addEventListener('click', function(){
+    var toks=tokens(); if(!toks.length){ acIn.focus(); ac.classList.add('is-open'); acDraw(); return; }
+    var existing=new Set(rowsOfLine().map(function(r){return r.id;}));
+    var added=[], notfound=[], dup=[], seen=new Set();
+    toks.forEach(function(t){
+      if(seen.has(t)) return; seen.add(t);
+      var p=POOL.find(function(x){ return String(x.id)===t; });
+      if(!p){ notfound.push(t); return; }
+      if(existing.has(p.id)){ dup.push(t); return; }
+      added.push(it({id:p.id,pid:p.pid,img:p.img,name:p.name,spec:p.spec,price:p.price,temp:p.temp,subs:[]}));
+      existing.add(p.id);
+    });
+    if(added.length){ var pos=$('la-add-pos').value;
+      DATA[line] = pos==='start' ? added.concat(DATA[line]) : DATA[line].concat(added); markDirty(); }
+    acIn.value=''; ac.classList.remove('is-open'); render();
+    var msg = added.length? ('已加入 '+added.length+' 筆（'+($('la-add-pos').value==='start'?'加到最前':'加到最後')+'）') : '沒有加入任何規格';
+    if(notfound.length) msg += '；查無：'+notfound.join('、');
+    if(dup.length) msg += '；已存在：'+dup.join('、');
+    window.gox&&window.gox.toast(msg);
+  });
+
+  // ── 表格 render ──
   function render(){
-    var html='';
-    if(view.type==='addon'){
-      html+='<div class="gox-card"><div class="gox-card-title">加購品折扣設定<span class="as-titlesub">此加購品一套折扣，掛到哪些主商品都共用</span></div><div class="gox-card-body">'
-        + addonBlock(view.id, null, true) + '</div></div>';
-      var rows=mainsOf(view.id);
-      html+='<div class="gox-card"><div class="gox-card-title">掛載主商品<span class="as-titlesub">此加購品要出現在哪些主商品下</span></div><div class="gox-card-body"><div class="as-list">';
-      html+= rows.map(function(p){
-        return '<div class="as-maprow'+(p.on?'':' is-off')+'"><div class="as-idblock"><span class="as-badge">主商品ID '+p.m+'</span><span class="as-sname">'+MAINS[p.m].name+'</span>'+tempTag(MAINS[p.m].temp, MAINS[p.m].temp!==ADDONS[view.id].temp)+'</div>'
-          + '<div class="as-rowacts">'+switchBtn('main',p.m,'主商品')
-          + '<button class="gox-switch '+(p.on?'is-on':'')+'" data-toggle="'+p.a+'-'+p.m+'"></button><span class="as-swlabel">'+(p.on?'上架':'下架')+'</span>'
-          + '<button class="gox-icon-btn is-cancel" data-rm="'+p.a+'-'+p.m+'" title="移除">✕</button></div></div>';
-      }).join('') || '<div style="color:var(--gox-text-muted);font-size:13px;padding:4px 0;">尚未掛載任何主商品</div>';
-      html+=acRow('main')+'</div></div>';
-    } else {
-      var m=MAINS[view.id];
-      html+='<div class="gox-card"><div class="gox-card-title">主商品</div><div class="gox-card-body">'
-        + '<div class="as-mainid"><span class="nm">'+m.name+'</span>'+tempTag(m.temp)+'<span class="meta">主商品ID '+view.id+'</span></div></div></div>';
-      var rows=addonsOf(view.id);
-      html+='<div class="gox-card"><div class="gox-card-title">此主商品的加購品<span class="as-titlesub">折扣為各加購品共用，改動會同步影響它掛的其它主商品</span></div><div class="gox-card-body"><div class="as-list">';
-      html+= rows.map(function(p){ return addonBlock(p.a, p, false); }).join('')
-        || '<div style="color:var(--gox-text-muted);font-size:13px;padding:4px 0;">此主商品尚未有加購品</div>';
-      html+=acRow('addon')+'</div></div>';
-    }
-    document.getElementById('editor').innerHTML=html;
-    var db=document.getElementById('btn-del'); if(db) db.hidden = view.type!=='addon';  // 主商品視角無刪除
-    refreshSave();
+    var rows=visible();
+    var body=$('la-body');
+    if(!rows.length){ body.innerHTML='<tr><td colspan="17" class="la-empty">'+(filter.size?'此篩選下沒有加購品':'這條產線尚未設定加購品，用上方搜尋加入')+'</td></tr>'; syncBars(); return; }
+    var full=rowsOfLine();
+    body.innerHTML=rows.map(function(r){
+      var idx=full.indexOf(r);
+      return '<tr draggable="true" data-id="'+r.id+'"'+(r.display?'':' class="is-off"')+'>'
+        + '<td class="cell-center"><input type="checkbox" class="la-pick" data-id="'+r.id+'"'+(selected.has(r.id)?' checked':'')+' style="width:16px;height:16px;accent-color:var(--gox-green);"></td>'
+        + '<td class="cell-center"><div class="la-ord"><span class="la-drag" title="拖曳排序">⠿</span><span class="no">'+(idx+1)+'</span>'
+          + '<button class="la-iconbtn" data-top="'+r.id+'" title="移到最前"'+(idx===0?' disabled':'')+'>↑</button>'
+          + '<button class="la-iconbtn" data-bottom="'+r.id+'" title="移到最後"'+(idx===full.length-1?' disabled':'')+'>↓</button></div></td>'
+        + '<td>'+thumb(r.img)+'</td>'
+        + '<td><div class="la-pname">'+r.name+'</div><div class="la-pid">#'+r.pid+'</div></td>'
+        + '<td><div class="la-pspec">'+r.spec+'</div><div class="la-pid">#'+r.id+'</div></td>'
+        + '<td class="cell-right la-mono">'+money(r.price)+'</td>'
+        + '<td class="cell-right la-mono">'+(r.disc?money(r.disc):'<span class="la-dash">—</span>')+'</td>'
+        + '<td class="cell-right la-mono la-stock'+(r.stock<=0?' is-zero':'')+'">'+r.stock+'</td>'
+        + '<td class="cell-center">'+tempTag(r.temp)+'</td>'
+        + '<td class="cell-center"><span class="gox-tag '+(r.display?'is-success':'')+'">'+(r.display?'上架':'下架')+'</span></td>'
+        + '<td>'+subsCell(r)+'</td>'
+        + '<td class="cell-right la-mono">'+(r.minPrice?money(r.minPrice):'<span class="la-dash">—</span>')+'</td>'
+        + '<td class="cell-center la-mono">'+(r.limit?r.limit+' 件':'<span class="la-dash">—</span>')+'</td>'
+        + '<td class="cell-center">'+(r.vip?'<span class="la-yes">VIP</span>':'<span class="la-dash">—</span>')+'</td>'
+        + '<td class="cell-center">'+(r.firstBuy?'<span class="la-yes">✓</span>':'<span class="la-dash">—</span>')+'</td>'
+        + '<td class="cell-center">'+(r.shipping?'<span class="la-yes">✓</span>':'<span class="la-dash">—</span>')+'</td>'
+        + '<td class="cell-center"><div class="la-ops"><button class="la-linkbtn" data-editrule="'+r.id+'">編輯加購規則</button>'
+          + '<button class="la-linkbtn" data-editsub="'+r.id+'">編輯子分類</button>'
+          + '<button class="la-linkbtn is-danger" data-rm="'+r.id+'">移除</button></div></td></tr>';
+    }).join('');
+    syncBars();
+  }
+  function syncBars(){
+    var n=selected.size; $('la-delcnt').textContent=n; $('la-del').disabled=n===0;
+    var vis=visible();
+    $('la-all').checked = vis.length>0 && vis.every(function(r){return selected.has(r.id);});
+    $('la-all').indeterminate = n>0 && !$('la-all').checked;
   }
 
-  function updatePreview(block){
-    var aid=block.dataset.addon, a=ADDONS[aid], fin=finalOf(a), bad=fin<=0;
-    block.querySelector('.as-unit').textContent = a.mode==='fixed'?'元':'（0～1）';
-    var sm=block.querySelector('.as-summary'); sm.classList.toggle('is-invalid', bad);
-    sm.querySelector('.as-final').textContent=money(fin);
-    sm.querySelector('.as-save').textContent= bad?'折後 ≤ $0':'省 '+money(a.orig-fin);
-    var st=effStatus(a), tag=block.querySelector('.as-eff'); tag.className='as-eff '+st.c; tag.textContent=st.t;
-  }
-  function refreshSave(){
-    var bad=!!document.querySelector('.as-summary.is-invalid');
-    var s=document.getElementById('save-status'), b=document.getElementById('btn-save');
-    if(bad){ s.className='as-status is-invalid'; s.innerHTML='<span class="as-dot"></span>折後金額 ≤ $0，無法儲存'; b.disabled=true; }
-    else if(s.className.indexOf('is-saved')<0){ s.className='as-status'; s.innerHTML='<span class="as-dot"></span>尚未儲存'; b.disabled=false; }
-  }
-
-  function acCands(ac){
-    var q=ac.querySelector('.ac-input').value.trim();
-    if(ac.dataset.add==='main'){
-      var at=mainsOf(view.id).map(function(p){return p.m;});
-      return Object.keys(MAINS).filter(function(m){ return at.indexOf(Number(m))<0 && (!q||MAINS[m].name.indexOf(q)>=0||m.indexOf(q)>=0); })
-        .map(function(m){ return {id:m, label:MAINS[m].name, temp:MAINS[m].temp, code:'ID '+m}; });
-    } else {
-      var aa=addonsOf(view.id).map(function(p){return p.a;});
-      return Object.keys(ADDONS).filter(function(x){ return aa.indexOf(Number(x))<0 && (!q||(ADDONS[x].prod+ADDONS[x].spec).indexOf(q)>=0||x.indexOf(q)>=0); })
-        .map(function(x){ return {id:x, label:ADDONS[x].prod+' '+ADDONS[x].spec, temp:ADDONS[x].temp, code:'規格ID '+x}; });
-    }
-  }
-  function openAc(ac){
-    var list=ac.querySelector('.ac-list'), cs=acCands(ac);
-    list.innerHTML = cs.length ? cs.map(function(c){ return '<div class="ac-item" data-acpick="'+c.id+'"><b>'+c.label+'</b>'+(c.temp?tempTag(c.temp):'')+'<span class="code">'+c.code+'</span></div>'; }).join('') : '<div class="ac-empty">找不到符合的項目</div>';
-    list.classList.add('is-open');
-  }
-
-  document.addEventListener('click', function(e){
-    var seg=e.target.closest('[data-seg] button');
-    if(seg){ var block=seg.closest('.as-ib'); ADDONS[block.dataset.addon].mode=seg.getAttribute('data-mode');
-      block.querySelectorAll('[data-seg] button').forEach(function(b){b.classList.remove('is-active');}); seg.classList.add('is-active');
-      updatePreview(block); refreshSave(); return; }
-    var toM=e.target.closest('[data-to-main]'); if(toM){ view={type:'main', id:Number(toM.getAttribute('data-to-main'))}; render(); return; }
-    var toA=e.target.closest('[data-to-addon]'); if(toA){ view={type:'addon', id:Number(toA.getAttribute('data-to-addon'))}; render(); return; }
-    var rm=e.target.closest('[data-rm]'); if(rm){ var k=rm.getAttribute('data-rm').split('-'); pairs=pairs.filter(function(p){return !(p.a==k[0]&&p.m==k[1]);}); render(); return; }
-    var pick=e.target.closest('[data-acpick]');
-    if(pick){ var ac=pick.closest('.ac'); var id=Number(pick.getAttribute('data-acpick')); var mm;
-      if(ac.dataset.add==='main'){ pairs.push({a:view.id, m:id, on:true}); mm=MAINS[id].temp!==ADDONS[view.id].temp; }
-      else { pairs.push({a:id, m:view.id, on:true}); mm=ADDONS[id].temp!==MAINS[view.id].temp; }
-      window.gox&&window.gox.toast(mm?'已加入（異溫層，出貨會拆單）':'已加入'); render(); return; }
-    if(e.target.closest('#btn-save')){ var s=document.getElementById('save-status'); s.className='as-status is-saved'; s.innerHTML='<span class="as-dot"></span>已儲存（'+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+'）'; window.gox&&window.gox.toast('已儲存加購設定'); return; }
-    if(e.target.closest('#btn-del')){ var a=ADDONS[view.id]; if(window.confirm('確定刪除「'+a.prod+'」的加購設定？\n刪除後，掛載的主商品將不再顯示此加購品。')){ window.gox&&window.gox.toast('已刪除加購設定'); setTimeout(function(){ location.href='admin-addon-list.html'; },600); } return; }
+  // ── 表格互動 ──
+  $('la-body').addEventListener('click', function(e){
+    var pick=e.target.closest('.la-pick');
+    if(pick){ var id=Number(pick.getAttribute('data-id')); if(pick.checked)selected.add(id); else selected.delete(id); syncBars(); return; }
+    var top=e.target.closest('[data-top]'); if(top){ moveTo(Number(top.getAttribute('data-top')),'top'); return; }
+    var bot=e.target.closest('[data-bottom]'); if(bot){ moveTo(Number(bot.getAttribute('data-bottom')),'bottom'); return; }
+    var es=e.target.closest('[data-editsub]'); if(es){ openSubModal(Number(es.getAttribute('data-editsub'))); return; }
+    var er=e.target.closest('[data-editrule]'); if(er){ openRuleModal(Number(er.getAttribute('data-editrule'))); return; }
+    var rm=e.target.closest('[data-rm]'); if(rm){ var rid=Number(rm.getAttribute('data-rm')); DATA[line]=DATA[line].filter(function(r){return r.id!==rid;}); selected.delete(rid); markDirty(); render(); return; }
   });
-  document.addEventListener('input', function(e){
-    if(e.target.classList.contains('ac-input')){ openAc(e.target.closest('.ac')); return; }
-    if(e.target.classList.contains('as-val')){ var b=e.target.closest('.as-ib'); ADDONS[b.dataset.addon].val=parseFloat(e.target.value)||0; updatePreview(b); refreshSave(); }
-    if(e.target.classList.contains('as-s')){ var b2=e.target.closest('.as-ib'); ADDONS[b2.dataset.addon].s=e.target.value; updatePreview(b2); }
-    if(e.target.classList.contains('as-e')){ var b3=e.target.closest('.as-ib'); ADDONS[b3.dataset.addon].e=e.target.value; updatePreview(b3); }
+  $('la-all').addEventListener('change', function(){ var vis=visible();
+    if(this.checked) vis.forEach(function(r){selected.add(r.id);}); else vis.forEach(function(r){selected.delete(r.id);}); render();
   });
-  document.addEventListener('focusin', function(e){ if(e.target.classList.contains('ac-input')) openAc(e.target.closest('.ac')); });
-  document.addEventListener('focusout', function(e){ if(e.target.classList.contains('ac-input')){ var ac=e.target.closest('.ac'); setTimeout(function(){ var l=ac.querySelector('.ac-list'); if(l) l.classList.remove('is-open'); },150); } });
-  document.addEventListener('gox:switch', function(e){
-    var t=e.target.getAttribute('data-toggle'), up=e.target.getAttribute('data-up');
-    if(up){ ADDONS[up].up=e.detail.on; var lb=e.target.parentNode.querySelector('.as-swlabel'); if(lb) lb.textContent=e.detail.on?'上架':'下架'; return; }
-    if(!t) return; var k=t.split('-');
-    var p=pairs.find(function(x){return x.a==k[0]&&x.m==k[1];}); if(p) p.on=e.detail.on;
-    var label=e.target.parentNode.querySelector('.as-swlabel'); if(label) label.textContent=e.detail.on?'上架':'下架';
-    var mr=e.target.closest('.as-maprow'); if(mr) mr.classList.toggle('is-off', !e.detail.on);
-    var ib=e.target.closest('.as-ib'); if(ib) ib.classList.toggle('is-off', !e.detail.on);
+  $('la-del').addEventListener('click', function(){ DATA[line]=DATA[line].filter(function(r){return !selected.has(r.id);}); selected.clear(); markDirty(); render(); });
+  $('la-save').addEventListener('click', function(){
+    var btn=this;
+    if(!dirty){ window.gox&&window.gox.toast('目前沒有變更'); return; }
+    setStatus('saving'); btn.disabled=true;
+    setTimeout(function(){ dirty=false; setStatus('clean'); btn.disabled=false;
+      window.gox&&window.gox.toast('已儲存「'+LINES.find(function(l){return l[0]===line;})[1]+'」的加購清單'); }, 800);
   });
 
-  render();
+  function moveTo(id,where){ var arr=DATA[line]; var i=arr.findIndex(function(r){return r.id===id;}); if(i<0)return;
+    var item=arr.splice(i,1)[0]; if(where==='top')arr.unshift(item); else arr.push(item); markDirty(); render(); }
+
+  // ── 拖曳排序 ──
+  var body=$('la-body');
+  body.addEventListener('dragstart', function(e){ var tr=e.target.closest('tr[data-id]'); if(!tr)return; dragId=Number(tr.dataset.id); tr.classList.add('is-drag'); e.dataTransfer.effectAllowed='move'; });
+  body.addEventListener('dragover', function(e){ if(dragId==null)return; e.preventDefault(); var tr=e.target.closest('tr[data-id]');
+    body.querySelectorAll('.is-over').forEach(function(x){x.classList.remove('is-over');});
+    if(tr && Number(tr.dataset.id)!==dragId) tr.classList.add('is-over'); });
+  body.addEventListener('drop', function(e){ if(dragId==null)return; e.preventDefault(); var tr=e.target.closest('tr[data-id]');
+    if(tr){ var targetId=Number(tr.dataset.id); var arr=DATA[line];
+      var from=arr.findIndex(function(r){return r.id===dragId;}), to=arr.findIndex(function(r){return r.id===targetId;});
+      if(from>=0&&to>=0&&from!==to){ var item=arr.splice(from,1)[0]; arr.splice(to,0,item); markDirty(); } }
+    dragId=null; render(); });
+  body.addEventListener('dragend', function(){ dragId=null; render(); });
+
+  // ── 限定子分類 modal（依產線動態）──
+  function openSubModal(id){ modalId=id; var r=DATA[line].find(function(x){return x.id===id;}); if(!r)return;
+    $('la-modal-name').textContent=r.name;
+    $('la-modal-subs').innerHTML=subcatsOfLine().map(function(s){ return '<label><input type="checkbox" value="'+s+'"'+(r.subs.indexOf(s)>=0?' checked':'')+'>'+s+'</label>'; }).join('');
+    $('la-sub-modal').classList.remove('is-hidden');
+  }
+  $('la-modal-ok').addEventListener('click', function(){ var r=DATA[line].find(function(x){return x.id===modalId;}); if(r){
+    r.subs=[...$('la-modal-subs').querySelectorAll('input:checked')].map(function(cb){return cb.value;}); markDirty(); }
+    $('la-sub-modal').classList.add('is-hidden'); render();
+  });
+
+  // ── 編輯加購規則 modal（滿額限購＋限購數量）──
+  var ruleId=null;
+  function openRuleModal(id){ ruleId=id; var r=DATA[line].find(function(x){return x.id===id;}); if(!r)return;
+    $('la-rule-name').textContent=r.name;
+    $('la-rule-min').value=r.minPrice||'';
+    $('la-rule-limit').value=r.limit||'';
+    $('la-rule-modal').classList.remove('is-hidden');
+  }
+  $('la-rule-ok').addEventListener('click', function(){ var r=DATA[line].find(function(x){return x.id===ruleId;}); if(r){
+    r.minPrice=Math.max(0, parseInt($('la-rule-min').value,10)||0);
+    r.limit=Math.max(0, parseInt($('la-rule-limit').value,10)||0); markDirty(); }
+    $('la-rule-modal').classList.add('is-hidden'); render();
+  });
+
+  renderChips(); render();
 })();
 </script>
 

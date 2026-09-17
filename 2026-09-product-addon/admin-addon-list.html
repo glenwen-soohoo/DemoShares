@@ -683,7 +683,7 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="#" class="gox-menu-child is-active">加購設定</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
@@ -789,7 +789,7 @@ a:hover { text-decoration: underline; }
       <table class="gox-table">
         <thead><tr>
           <th>商品照</th><th>規格ID</th><th>加購品名稱</th><th>產線</th><th>折抵</th><th>折後價</th><th>生效期間</th>
-          <th class="cell-center">掛載主商品</th><th class="cell-center">庫存</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
+          <th class="cell-center">掛載主商品</th><th class="cell-center">剩餘數量</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
         </tr></thead>
         <tbody id="al-addon-body"></tbody>
       </table>
@@ -801,7 +801,7 @@ a:hover { text-decoration: underline; }
       <table class="gox-table">
         <thead><tr>
           <th>商品照</th><th>主商品ID</th><th>商品名稱</th><th>產線</th>
-          <th class="cell-center">加購品數</th><th class="cell-center">庫存</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
+          <th class="cell-center">加購品數</th><th class="cell-center">剩餘數量</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
         </tr></thead>
         <tbody id="al-main-body"></tbody>
       </table>

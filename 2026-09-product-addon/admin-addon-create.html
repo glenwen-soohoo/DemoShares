@@ -685,7 +685,7 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="#" class="gox-menu-child is-active">加購設定</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
@@ -822,7 +822,7 @@ a:hover { text-decoration: underline; }
             <input type="date" class="gox-input" id="ac-end">
           </div>
           <div class="ac-field">
-            <label>庫存<span class="ac-req">*</span></label>
+            <label>剩餘數量<span class="ac-req">*</span></label>
             <input type="number" class="gox-input" id="ac-stock" placeholder="100">
           </div>
         </div>
@@ -850,7 +850,7 @@ a:hover { text-decoration: underline; }
         <div>產品：<b id="ac-c-product" style="color:var(--gox-text);"></b></div>
         <div>規格描述：<b id="ac-c-desc" style="color:var(--gox-text);"></b></div>
         <div>原價：<b id="ac-c-price" style="color:var(--gox-text);"></b></div>
-        <div>庫存：<b id="ac-c-stock" style="color:var(--gox-text);"></b></div>
+        <div>剩餘數量：<b id="ac-c-stock" style="color:var(--gox-text);"></b></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
         <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
@@ -922,7 +922,7 @@ a:hover { text-decoration: underline; }
     var stock = document.getElementById('ac-stock').value.trim();
     if (!desc) { window.gox.toast('請填寫規格描述'); document.getElementById('ac-desc').focus(); return; }
     if (!price) { window.gox.toast('請填寫產品原價'); document.getElementById('ac-price').focus(); return; }
-    if (!stock) { window.gox.toast('請填寫庫存'); document.getElementById('ac-stock').focus(); return; }
+    if (!stock) { window.gox.toast('請填寫剩餘數量'); document.getElementById('ac-stock').focus(); return; }
     document.getElementById('ac-c-product').textContent = bound.p.name + '（#' + bound.pid + '）';
     document.getElementById('ac-c-desc').textContent = desc;
     document.getElementById('ac-c-price').textContent = money(Number(price));
