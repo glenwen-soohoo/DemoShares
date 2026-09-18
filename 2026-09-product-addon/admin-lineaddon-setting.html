@@ -690,6 +690,15 @@ a:hover { text-decoration: underline; }
 </aside>
 
 <main class="gox-content">
+<!-- ═══ 交接對照（工程請對回真名，勿照 demo JS 鍵／假 ID）詳見同資料夾 _交接對照.md ═══
+  現有真名：id=productDetailId, pid=productId, name, spec=detail(+amt 規格量,module 單位),
+  price=原價, disc=discountPrice(優惠價,實體DiscPrice), stock=剩餘數量(＝OriginAmt庫存量−SoldAmt銷售量,非原始庫存), temp=temperatureType(溫層),
+  display=上架, minPrice=minimumPrice(滿額限購), limit=limit(限購數量,另有 totalLimit),
+  vip=vipLevelId, firstBuy, shipping=isShipping(含運), img=coverImg；產線=ProductCategoryEnum/categoryType。
+  真實欄位皆在 react-component-export extraProductsSetting/Setting.tsx IProductDetail。
+  新功能(待新建)：subs=限定子分類→新表 ExtraProductSubCategory.SubCategoryType(=Product.Type2)；
+  清單本體→新表 ExtraProduct(ProductCategory,ProductDetailId,Sort)；儲存契約/CartSubCategoryTypes 見工程規格 §3/§5。
+  Demo 假資料：每產線子分類、規格ID 90001+/產品ID 30001+、20 筆商品名皆為示意；真實子分類只有 5 個且動態撈 ProductSubCategory。 -->
 <style>
   /* 產線加購品設定：既有機制（整條產線共用一份清單）＋ E 限定子分類。清爽版：去 emoji、核心欄位、少用欄位縮成小標籤 */
   .la-sub{ font-size:13px; font-weight:400; color:var(--gox-text-muted); }
