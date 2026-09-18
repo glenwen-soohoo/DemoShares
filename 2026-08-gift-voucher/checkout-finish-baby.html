@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 結帳完成頁 填寫寶寶生日入口
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    partial    : Views/Shared/_PartialOrderFinish.cshtml
+                 六個完成頁（OrderFinish / CreditCardFinish / ATMFinish ＋全家三版）
+                 都 PartialAsync 同一支，改這支的兩處就六個頁面生效
+    view       : Views/Orders/FGOrderFinish.cshtml、FGCreditCardFinish.cshtml、
+                 FGATMFinish.cshtml
+    model      : Models/Order/OrderFinishModel.cs
+    css        : Content/SCSS/Order/OrderFinish.scss
+  這一頁的真實欄位名：
+    出現條件  訂單含 Product.Type = 9（粥寶寶專區）且該會員尚無 MemberBaby 資料
+  連結要帶錨點：/Volunteers/Change#baby
+  ⚠ OrderFinish.cshtml 裡的 <section id="payment-result"> 是死碼，不要照它施工
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>禮物券 結帳完成頁（填寫寶寶生日） — demo</title>
 <link rel="icon" href="data:,">

@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 禮物明細
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    view       : Areas/GoX/Views/PresentVoucher/Edit.cshtml
+    controller : Areas/GoX/Controllers/PresentVoucherController.Edit（:62）
+    route      : /GoX/PresentVoucher/Edit
+                 ＋ GetEditData / GetTypes / GetStats / GetBirthdayRuleInfo /
+                   CreateType / UpdateType / DeleteType / IssueToAccounts /
+                   SetActive / SetCandidates / UpdateStock
+  這一頁的真實資料表：
+    PresentItem            本頁主體
+    PresentItemCandidate   兌換順序（本頁的 candidates）
+    PresentVoucherType     TypeCode / Name / ValidType / ValidDays /
+                           FixedExpireTime / IssueCap / AllowRepeat / Memo
+    PresentVoucher         單張券
+  常數：生日禮券種代碼 BD-BABY，券號格式 BD-BABY-0052（券代碼 ＋ 該券種第幾張）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>禮物明細 — 後台 demo</title>
 <link rel="icon" href="data:,">

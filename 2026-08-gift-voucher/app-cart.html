@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | App 購物車 禮物列
+  真相來源：D:\GreenBox\fruit_app（App）／fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應 App：
+    screen     : src/screens/CartScreen/CartScreen.tsx
+                 品項列 src/screens/CartScreen/ProductItem.tsx（禮物列**待新建**）
+  這一頁的真實欄位名：
+    禮物列標籤  對齊前台的 gift-tag「禮物券兌換 ×N」
+    數量        cartItem.Quantity，由後端 Cart.MarkAsPresentItem 寫入，客人不能改
+  ⚠ App 購物車存在 client 端，每次算車都把整車傳上來由 server 重建，
+    所以不能靠 server 把禮物塞進車裡，要 App 自己加進本地購物車。
+  ⚠ 驗證失敗要優雅降級（移除該列並回報），不能 throw，否則結帳流程會連續失敗。
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>App 購物車（含禮物列） — demo</title>
 <link rel="icon" href="data:,">

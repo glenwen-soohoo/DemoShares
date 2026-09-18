@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 禮物券管理 列表
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    view       : Areas/GoX/Views/PresentVoucher/Index.cshtml
+    controller : Areas/GoX/Controllers/PresentVoucherController.Index（:48）
+    route      : /GoX/PresentVoucher/Index（查詢 /GoX/PresentVoucher/Query）
+  這一頁的真實資料表：
+    PresentItem            PresentName / PresentImage / PresentDescription /
+                           ActivityNote / CartLimitType / DisplayPrice / IsActive
+    PresentItemCandidate   PresentItemId / CandidatePresentItemId / SortOrder
+    ProductDetail.IsPresentItem   禮物規格旗標
+                           ⚠ 不在 ProductDetailMainView 的欄位清單裡，走 view 看不到
+  這一頁欄位的算法：
+    有效未使用  PresentVoucher.Status = 0 且 ExpireTime > 現在
+    備援 ×N     有 N 份禮物把它列進 candidates（反向查詢）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>禮物券管理 (demo)</title>
 <link rel="icon" href="data:,">

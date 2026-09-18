@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | App 我的禮物券
+  真相來源：D:\GreenBox\fruit_app（App）／fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應 App：
+    screen     : src/screens/MemberScreen/（會員頁入口，禮物券頁**待新建**）
+                 可照抄 src/screens/MemberCouponScreen.tsx（我的優惠券）的結構
+    api        : GET  /api/PresentVoucherApi/GetMyVouchers?skip=&take=
+                 POST /api/PresentVoucherApi/AddToCart
+  這一頁的真實欄位名：
+    券      PresentVoucher.VoucherNo / VolunteersId / Status / ExpireTime
+    禮物    PresentItem.PresentName / PresentImage / ActivityNote
+  ⚠ App 這一期不做（01 的 Phase 8）。購物車守門在 server 端一樣生效，
+    所以是「不做」不是「做一半」。
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>App 我的禮物券 — demo</title>
 <link rel="icon" href="data:,">

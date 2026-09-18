@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 禮物券 會員中心（C 版）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    view       : Views/Volunteers/Index.cshtml
+    js         : member-present-vouchers bundle（券卡片與彈窗，不在 fruit_web repo）
+    controller : Controllers/VolunteersController.Index（:94）
+    route      : /Volunteers/Index
+    css        : Content/SCSS/Volunteers/Index.scss、MemberAreaShell.scss、
+                 MemberCenterContent.scss
+  這一頁的真實欄位名：
+    券      PresentVoucher.VoucherNo / VolunteersId / Status / ExpireTime
+    禮物    PresentItem.PresentName / PresentImage / ActivityNote
+            ⚠ 彈窗顯示的是 ActivityNote（活動說明），不是 PresentDescription
+  這一頁打的真實 API：
+    列券        GET  /api/PresentVoucherApi/GetMyVouchers?skip=&take=
+    加入購物車  POST /api/PresentVoucherApi/AddToCart
+  卡片主按鈕叫「使用」，「加入菜籃」是彈窗裡的確認鈕，兩個是兩個步驟
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>禮物券 會員中心（C 版） — demo</title>
 <link rel="icon" href="data:,">

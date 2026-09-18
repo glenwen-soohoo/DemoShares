@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 產品編輯 規格設定
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    component  : ProductDetailSettings.tsx（repo：react-component-export）
+  這一頁的真實欄位名：
+    ProductDetail.IsPresentItem   禮物規格旗標
+                                  ⚠ 與 IsGift（既有贈品系統）是兩套機制，不可混用
+    PresentItem.ProductDetailId   一對一 unique
+  禮物規格不給複製（⊕）：複出來的規格會帶著 IsPresentItem = true 卻沒有對應的
+  PresentItem，變成前台被排除清單藏起來、後台也管不到的孤兒規格
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>產品編輯 規格設定 — 後台 demo</title>
 <link rel="icon" href="data:,">

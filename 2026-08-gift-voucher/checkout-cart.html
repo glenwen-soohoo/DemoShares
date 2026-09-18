@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 確認訂單 購物車
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    partial    : Views/Shared/_ConfirmProduct.cshtml
+    js         : Scripts/Web/Orders/ConfirmOrder.js
+    controller : Controllers/OrdersController.ConfirmOrder（:2120 GET／:2549 POST）
+    route      : /Orders/ConfirmOrder
+    css        : Content/SCSS/Order/ConfirmOrder.scss
+  這一頁的真實欄位名：
+    禮物列標籤  <span class="gift-tag">禮物券兌換 ×N</span>（N > 1 才顯示 ×N）
+    數量        cartItem.Quantity，由 Cart.MarkAsPresentItem 寫入
+                ＝這份禮物在本單佔用的券數，客人不能改，所以不給下拉
+                ⚠ demo 每張券各一列、寫死「1 固定」，正式站是合併成一列
+    下架標籤    PresentItem.IsActive = false 時多「已停止贈送」並擋結帳
+    原價        劃掉的數字取 PresentItem.DisplayPrice，留空沿用產品原價
+  禮物的 $0 不計入免運門檻
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>加入購物車 — 禮物券 demo</title>
 <link rel="icon" href="data:,">

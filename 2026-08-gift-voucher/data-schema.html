@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 禮物券 資料結構
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  這一份不是畫面，是給營運與客服用 AI 撈資料時對欄位用。欄位名已對齊實際程式碼。
+  對應正式站：
+    migration  : GreenBox.DbMigrations/Scripts/20260909_DEV-3963_1_productdetail-ispresentitem.sql
+                 20260909_DEV-3963_2_presentvoucher-tables.sql
+                 20260909_DEV-3963_3_memberbaby.sql
+    entity     : GreenBox.Persistence/Data/PresentVouchers/PresentVoucherEntities.cs
+                 GreenBox.Persistence/Data/Entities/MemberBaby.cs
+    service    : GreenBox.Service/Implementation/PresentVouchers/PresentVoucherService.cs
+  真實資料表：
+    PresentItem / PresentItemCandidate / PresentVoucherType /
+    PresentVoucher / PresentVoucherOption / PresentVoucherLog / MemberBaby
+    ＋ ProductDetail.IsPresentItem
+  最常撈錯的三個：
+    持有會員    PresentVoucher.VolunteersId（對 dbo.Volunteers.Id），不是 MemberId
+    券接訂單    UsedOrderNumber 對 Orders.OrderNumber，不是 Orders.Id
+    「還能用」  Status = 0 且 ExpireTime > 現在。資料庫沒有「已過期」這個狀態
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>禮物券 資料結構 — demo</title>
 <link rel="icon" href="data:,">

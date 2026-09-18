@@ -1,6 +1,33 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 會員頁 禮物券區塊（b 版）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    view       : Areas/GoX/Views/Volunteers/Edit.cshtml
+    js         : Scripts/Admin/Web/VolunteerEdit.js
+    controller : Areas/GoX/Controllers/VolunteersController.Edit（:753 GET／:834 POST）
+    route      : /GoX/Volunteers/Edit
+    css        : Content/SCSS/Gox/VolunteerEdit.scss、VolunteerEditFields.scss、
+                 VolunteerEditPresentVoucher.scss
+  這一頁的真實欄位名：
+    收件時間      name="ReciveTime"    Volunteers.ReciveTime
+                                       ⚠ 是 Recive 不是 Receive
+                                       4 不指定 / 1 13 時前 / 2 14~18 時
+                                       既有值 3 與 5 顯示成「不指定」，儲存時才寫成 4
+    預設出貨備註  name="OrderRemarks"  Volunteers.OrderRemarks
+    預設倉庫備註  name="Remarks"       Volunteers.Remarks
+                                       ⚠ 現行畫面叫「會員備註」，寫進的是倉庫備註
+    會員等級      Volunteers.VIPLevelId  1 一般 / 11 白銀 / 12 鑽石 / 13 星鑽
+    年度消費金額  Model.TotalPrice
+    禮物券區塊    PresentVoucher.VoucherNo、VolunteersId
+  已移除的功能（不要照現行程式加回來）：
+    「覆蓋今日以後的訂單」勾選 — 原走 UpdateAndCoverAllRemark，coverRemark 保留不傳
+    「禁止現金自取」整列 — DB 欄位保留，後端是否移除待工程評估
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>會員頁 禮物券區塊（b 版）— 後台 demo</title>
 <link rel="icon" href="data:,">

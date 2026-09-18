@@ -1,6 +1,35 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 後台建單 使用禮物券（c 版）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    view       : Areas/GoX/Views/Orders/CreatePayment.cshtml
+    partial    : Areas/GoX/Views/Orders/_CartItems.cshtml、_OrderCoupon.cshtml、
+                 _OrderAmountSection.cshtml
+    js         : Scripts/Admin/Web/Orders/order-create-payment.js
+    controller : Areas/GoX/Controllers/OrdersController.CreatePayment（:5240 GET／:5636 POST）
+    route      : /GoX/Orders/CreatePayment
+    css        : Content/SCSS/Gox/OrderCreatePayment.scss
+  這一頁的真實欄位名：
+    是否為會員  name="MemberMode"    0 會員 / 1 非會員 / 2 同步建新會員
+                                     ⚠ demo 舊版叫 IsMember 而且 0/1 相反
+    會員手機    model.VolMobile      查詢／建立鈕 #vol-action-btn
+    多帳號提示  #vol-multi           建新會員提示 #vol-create-hint
+    新會員 Id   model.NewVolunteerId （hidden）
+    配達時段    name="ReceiveTime"   Html.RadioButtonFor，4 不指定 / 1 上午 / 2 下午
+    商品列      item2[0].ProductName、item2[0].amount   固定一列，有 model binding
+    優惠券      name="RadCoupon"     單選，一單一張
+  這一頁打的真實 API：
+    配送區判定  GET /GoX/Orders/DeliveryZoneByAddress?address=
+                ⚠ 不是前台那支 /Orders/CheckSameDay?county=&district=
+    複製訂單    GET /GoX/Orders/CopyOrderItems?orderNumber=&volunteersId=
+    匯入文字檔  GET /GoX/Orders/ImportTextProducts?text=
+    會員禮物券  照既有 GetUserCouponsList 那條路接第三支
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>後台建單 使用禮物券（c 版）— 後台 demo</title>
 <link rel="icon" href="data:,">

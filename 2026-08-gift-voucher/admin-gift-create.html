@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 禮物券管理 新增禮物
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應正式站：
+    view       : Areas/GoX/Views/PresentVoucher/Index.cshtml（新增是列表頁上的流程）
+    controller : Areas/GoX/Controllers/PresentVoucherController.Create（:137）
+    route      : /GoX/PresentVoucher/Create、/GoX/PresentVoucher/GetProductBindingInfo
+  這一頁的真實資料表：
+    PresentItem            ProductDetailId 一對一 unique
+  建立禮物規格時強制寫入：Sort = 9999、Limit = 0、售價 0
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>新增禮物 — 後台 demo</title>
 <link rel="icon" href="data:,">
