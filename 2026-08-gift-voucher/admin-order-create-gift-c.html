@@ -1112,9 +1112,9 @@ a:hover { text-decoration: underline; }
           <div class="fld fld--half">
             <span class="fld-label"><span class="req">*</span>是否為會員</span>
             <div class="rad-grp">
-              <label><input type="radio" name="IsMember" value="1" checked><span>會員</span></label>
-              <label><input type="radio" name="IsMember" value="0"><span>非會員</span></label>
-              <label><input type="radio" name="IsMember" value="2"><span>同步建新會員</span></label>
+              <label><input type="radio" name="MemberMode" value="0" checked><span>會員</span></label>
+              <label><input type="radio" name="MemberMode" value="1"><span>非會員</span></label>
+              <label><input type="radio" name="MemberMode" value="2"><span>同步建新會員</span></label>
             </div>
           </div>
           <!-- 三種身分共用這一欄，不要為了「同步建新會員」另開一個手機欄。
@@ -1208,6 +1208,7 @@ a:hover { text-decoration: underline; }
                  判定會隨兩個開關（EnableSameday、EnableNewRegionDelivery）與該區的星期限制變動，
                  而且 ShippingService.cs:196-198 在 14 點後是用「隔天」的星期算，
                  所以 title 帶「依目前設定」，標籤本身只寫結果。 -->
+            <!-- E-03b 配送判定標籤：實際走 GET /GoX/Orders/DeliveryZoneByAddress（OrdersController.DeliveryZoneByAddress，從單一自由文字的地址反推縣市區）。demo 這裡是前端假判定，工程端不要照抄 isIsland()/renderZone() 的判定邏輯。 -->
             <span class="fld-label"><span class="req">*</span>配達時段<span class="zone-tag" id="zone-tag" hidden></span></span>
             <div class="rad-grp is-stack">
               <label><input type="radio" name="ReceiveTime" value="4" checked><span>不指定</span></label>
@@ -1731,27 +1732,55 @@ a:hover { text-decoration: underline; }
 
   // limit：0 不限制 / 1 整台購物車僅限一張 / 2 同產線僅限一張 / 3 本產品限用一張
   // 這裡的券要跟後台對得上：vtype 是券種名、no 是「券代碼-流水」、
-  // limit 用 CartLimitType（0 不限 / 1 本產品 / 2 同產線 / 3 整車，數字越大越嚴）、
-  // line 用真實產線名。對照表見 admin-gift-detail.html 的 DATA。
-  var SCENES = {
-    normal: [
-      { no: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
-        exp: '2026/09/20', limit: 3, line: '粥寶寶專區', state: 'ok' },
-      { no: 'MF-260801-0108', vtype: '中秋限定禮', name: '有機米餅 二入', spec: '2 入（中秋禮專用）',
-        exp: '2026/09/15', limit: 2, line: '粥寶寶專區', state: 'ok' },
-      { no: 'OR-260701-0021', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入（替代品專用）',
-        exp: '2026/10/31', limit: 0, line: '粥寶寶專區', state: 'sub', origin: '季節果乾 隨手包' },
-      { no: 'OR-260701-0022', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
-        exp: '2026/10/31', limit: 0, line: '產地直送', state: 'oos' }
-    ],
-    empty: [],
-    alloos: [
-      { no: 'BD-BABY-0052', vtype: '寶寶生日禮', name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',
-        exp: '2026/09/20', limit: 3, line: '粥寶寶專區', state: 'oos' },
-      { no: 'OR-260701-0022', vtype: '訂單回饋禮', name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',
-        exp: '2026/10/31', limit: 0, line: '產地直送', state: 'oos' }
-    ]
+  // ── 禮物正典：與 admin-gift-detail.html 的 DATA 同一份 ──
+  // limit 用 CartLimitType（0 不限 / 1 本產品 / 2 同產線 / 3 整車，數字越大越嚴）。
+  //
+  // ⚠ 卡片狀態（正常／替換品項／補貨中）不要寫死在券上：那是**禮物的庫存狀態**，
+  //   不是單張券的屬性。寫死會出現兩種錯：庫存改了狀態不跟著動，以及同一個券種
+  //   一張顯示「替換品項」另一張顯示「補貨中」這種不可能的組合。規則見 05 第五節的
+  //   不變式第 6、7 條。
+  var PRESENT = {
+    1: { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',   line: '粥寶寶專區', stock: 84,  cand: [5] },
+    2: { name: '有機米餅 二入',   spec: '2 入（中秋禮專用）',   line: '粥寶寶專區', stock: 12,  cand: [5, 3] },
+    3: { name: '寶寶粥 鮮蔬雞肉', spec: '1 包（客服補償專用）', line: '粥寶寶專區', stock: 0,   cand: [] },
+    5: { name: '有機米餅 二入',   spec: '2 入（替代品專用）',   line: '粥寶寶專區', stock: 180, cand: [] },
+    6: { name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',   line: '產地直送',   stock: 0,   cand: [5] }
   };
+
+  // 有貨就送自己；自己缺貨就照備選順序找第一個有貨的；都沒有才是補貨中。
+  // allOutOfStock 是開發者面板「券都在補貨中」那個情境，把所有庫存當成 0。
+  var allOutOfStock = false;
+  function stockOf(gid) { return allOutOfStock ? 0 : PRESENT[gid].stock; }
+
+  function presentState(gid) {
+    if (stockOf(gid) > 0) return { state: 'ok', actual: gid };
+    var cand = PRESENT[gid].cand;
+    for (var i = 0; i < cand.length; i++) {
+      if (stockOf(cand[i]) > 0) return { state: 'sub', actual: cand[i] };
+    }
+    return { state: 'oos', actual: gid };
+  }
+
+  // 券只記「是哪個券種的第幾張、綁哪一份禮物」，其餘由 presentState 推。
+  var VOUCHERS = [
+    { no: 'BD-BABY-0052',   vtype: '寶寶生日禮', gid: 1, exp: '2026/09/09', limit: 3 },
+    { no: 'MF-260801-0108', vtype: '中秋限定禮', gid: 2, exp: '2026/09/15', limit: 2 },
+    { no: 'CS-260715-0049', vtype: '客服補償券', gid: 3, exp: '2026/10/05', limit: 0 },
+    { no: 'OR-260701-0021', vtype: '訂單回饋禮', gid: 6, exp: '2026/10/31', limit: 0 },
+    { no: 'OR-260701-0022', vtype: '訂單回饋禮', gid: 6, exp: '2026/10/31', limit: 0 }
+  ];
+
+  // 把券攤平成畫面要的欄位：實際送出的品項、產線、狀態、被換掉的原品名
+  function resolve(v) {
+    var r = presentState(v.gid);
+    var shown = PRESENT[r.actual];
+    return {
+      no: v.no, vtype: v.vtype, exp: v.exp, limit: v.limit,
+      name: shown.name, spec: shown.spec, line: shown.line,
+      state: r.state,
+      origin: r.state === 'sub' ? PRESENT[v.gid].name : ''
+    };
+  }
 
   // 剩餘天數從到期日算，不要另外寫一個數字（兩邊會對不上）
   var TODAY = new Date('2026-09-07T00:00:00');
@@ -1761,8 +1790,9 @@ a:hover { text-decoration: underline; }
 
   var scene = 'normal', found = false, isMember = true, added = [], useCoupon = false;
   var couponId = 0;   // 0 = 不使用；其餘是選中的那張券的 Id
-  // memberMode：1 會員 / 0 非會員 / 2 同步建立會員
-  var memberMode = 1, newMemberId = null;
+  // memberMode：對齊正式站 CreatePayment.cshtml 的 name="MemberMode"
+  // 0 會員（預設）/ 1 非會員 / 2 同步建新會員
+  var memberMode = 0, newMemberId = null;
 
   // ══════════════════════════════════════════════════════
   // 配送區域判定的假資料
@@ -1808,7 +1838,11 @@ a:hover { text-decoration: underline; }
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
   function fmt(n) { return n.toLocaleString('en-US'); }
-  function vouchers() { return SCENES[scene]; }
+  function vouchers() {
+    if (scene === 'empty') return [];
+    allOutOfStock = (scene === 'alloos');
+    return VOUCHERS.map(resolve);
+  }
   function byNo(no) { return vouchers().filter(function (v) { return v.no === no; })[0]; }
   function payType() {
     var r = document.querySelector('input[name="PaymentType"]:checked');
@@ -1979,6 +2013,17 @@ a:hover { text-decoration: underline; }
 
   // 優惠券：一張一列，帶名稱與效期；未達最低消費就不給選，並寫明原因
   // （現行只寫「最低消費」不擋，而且沒有名稱、同面額的券還會被併成一列）
+  // 產線限制：車裡至少要有一項符合的產線才給用（2026-09-15 定案要真的生效）。
+  // 判準與後端 OrdersModel.GetCoupons 一致，那邊又對齊前台 OrderModel.IsPassCouponCheck：
+  // 面額型券是一個整數、沒辦法只折符合的那部分，所以是「有沒有命中」而不是按比例折抵。
+  // 禮物列雖然 0 元不進小計，但它在購物車裡就是一項商品，產線一樣算命中。
+  function couponLineHit(c) {
+    if (!c.lines.length) return true;
+    var inCart = cart.map(function (p) { return p.line; })
+      .concat(added.map(byNo).map(function (v) { return v.line; }));
+    return c.lines.some(function (ln) { return inCart.indexOf(ln) >= 0; });
+  }
+
   function renderCoupon() {
     var el = $('coupon-area');
     if (!found) { el.innerHTML = '<span class="ro">先查詢會員，才會列出他的優惠券。</span>'; return; }
@@ -1986,12 +2031,17 @@ a:hover { text-decoration: underline; }
 
     // 選中的那張若因為小計變動而失去資格，自動退回「不使用」，不要留一個選不到的選項被選著
     var cur = couponId ? COUPONS.filter(function (c) { return c.id === couponId; })[0] : null;
-    if (cur && sub < cur.minSpend) couponId = 0;
+    if (cur && (sub < cur.minSpend || !couponLineHit(cur))) couponId = 0;
 
     var h = '<div class="rad-grp is-stack">' +
       '<label><input type="radio" name="RadCoupon" value="0"' + (couponId ? '' : ' checked') + '><span>不使用優惠券</span></label>';
     COUPONS.forEach(function (c) {
-      var ok = sub >= c.minSpend;
+      var lineOk = couponLineHit(c);
+      var spendOk = sub >= c.minSpend;
+      var ok = lineOk && spendOk;
+      // 產線不符的文案與後端一致（OrdersModel.GetCoupons 的 blockReason）
+      var why = !lineOk ? '此優惠券僅適用於' + c.lines.join('、')
+              : (!spendOk ? '小計 ' + fmt(sub) + '，未達最低消費' : '');
       h += '<label class="' + (ok ? '' : 'is-off') + '">' +
         '<input type="radio" name="RadCoupon" value="' + c.id + '"' +
           (couponId === c.id ? ' checked' : '') + (ok ? '' : ' disabled') + '>' +
@@ -2003,7 +2053,7 @@ a:hover { text-decoration: underline; }
             '・最低消費 ' + (c.minSpend ? fmt(c.minSpend) : '無') +
             '・有效至 ' + c.endTime +
           '</span>' +
-          (ok ? '' : '<span class="why">小計 ' + fmt(sub) + '，未達最低消費</span>') +
+          (why ? '<span class="why">' + why + '</span>' : '') +
         '</span>' +
       '</label>';
     });
@@ -2227,7 +2277,7 @@ a:hover { text-decoration: underline; }
         '<span class="lnk" id="nm-switch">改用會員身分</span>';
       btn.disabled = true;
       $('nm-switch').addEventListener('click', function () {
-        document.querySelector('input[name="IsMember"][value="1"]').checked = true;
+        document.querySelector('input[name="MemberMode"][value="0"]').checked = true;
         applyMemberMode(1);
         $('vol-mobile').value = m;
         search();
@@ -2258,12 +2308,12 @@ a:hover { text-decoration: underline; }
 
   function applyMemberMode(mode) {
     memberMode = mode;
-    isMember = (mode === 1) || (mode === 2 && newMemberId !== null);
+    isMember = (mode === 0) || (mode === 2 && newMemberId !== null);
 
     // 三種身分共用同一個手機欄，差別在按鈕與鎖不鎖。
     var blk = $('blk-mobile'), btn = $('vol-search'), inp = $('vol-mobile');
-    blk.classList.toggle('is-locked', mode === 0);
-    inp.disabled = (mode === 0);
+    blk.classList.toggle('is-locked', mode === 1);
+    inp.disabled = (mode === 1);
 
     // 切換身分時把上一個模式的殘留清乾淨
     newMemberId = null;
@@ -2294,10 +2344,10 @@ a:hover { text-decoration: underline; }
       btn.hidden = true;
       btn.textContent = '查詢';
       btn.className = 'oc-btn';
-      btn.disabled = (mode === 0);
+      btn.disabled = (mode === 1);
     }
 
-    if (mode === 0) { found = false; added = []; useCoupon = false; couponId = 0; }
+    if (mode === 1) { found = false; added = []; useCoupon = false; couponId = 0; }
     render();
   }
 
@@ -2532,7 +2582,7 @@ a:hover { text-decoration: underline; }
   // 同步建新會員：失焦判斷這支號碼是不是已經有人，沒有才開放「建立會員」。
   function onMobileBlur() {
     if (memberMode === 2) { checkNewMobile(); }
-    else if (memberMode === 1 && $('vol-mobile').value.trim() !== '') { search(); }
+    else if (memberMode === 0 && $('vol-mobile').value.trim() !== '') { search(); }
   }
   $('vol-mobile').addEventListener('blur', onMobileBlur);
   $('vol-mobile').addEventListener('input', function () {
@@ -2555,7 +2605,7 @@ a:hover { text-decoration: underline; }
 
   $('cart-clear').addEventListener('click', function () { cart = []; render(); toast('已清空購物車'); });
 
-  Array.prototype.forEach.call(document.querySelectorAll('input[name="IsMember"]'), function (r) {
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="MemberMode"]'), function (r) {
     r.addEventListener('change', function () { applyMemberMode(+this.value); });
   });
   Array.prototype.forEach.call(document.querySelectorAll('input[name="PaymentType"]'), function (r) {

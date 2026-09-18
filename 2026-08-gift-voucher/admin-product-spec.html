@@ -1087,8 +1087,8 @@ a:hover { text-decoration: underline; }
     h += '</div>'; /* /ps-mid */
 
     /* 右：⊕ 複製 / ⊖ 刪除（有銷量不給刪）
-       禮物規格不給複製：GiftItem.ProductDetailId 是 1:1 unique，
-       複出來的規格會帶著 IsGiftItem = true 卻沒有對應的禮物，
+       禮物規格不給複製：PresentItem.ProductDetailId 是 1:1 unique，
+       複出來的規格會帶著 IsPresentItem = true 卻沒有對應的禮物，
        變成前台買不到、後台也沒人管的孤兒規格。 */
     h += '<div class="ps-side">';
     if (!s.gift) h += '<button type="button" class="circ" data-dup="' + i + '" title="複製規格">&#43;</button>';

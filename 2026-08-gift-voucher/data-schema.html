@@ -126,7 +126,7 @@
 
   <div class="warn">
     <b>這一頁講的是欄位的規劃邏輯</b>，也就是「每一欄打算拿來記什麼、之後要靠哪幾欄回答問題」。
-    禮物券還在開發前的階段，這些資料表都還沒建，現在查不到東西是正常的。
+    這些資料表已經由 DEV-3963 建好（migration 在 <code>GreenBox.DbMigrations/Scripts/20260909_DEV-3963_*.sql</code>），正式庫要等該分支上線後才有資料。欄位名以本頁為準，已對齊實際程式碼。
     <br><br>
     先把邏輯講清楚，是因為欄位一旦定了就很難改，而且之後你問 AI 的時候，
     <b>講得出「我要的答案要看哪一欄」，AI 才不會給你一個看起來合理但其實錯的數字。</b>
@@ -139,21 +139,21 @@
     <div class="layer">
       <div class="lv">第 1 層</div>
       <div class="nm">禮物</div>
-      <div class="tb">GiftItem</div>
+      <div class="tb">PresentItem</div>
       <div class="ds">要送什麼東西。例如「寶寶果泥 隨手包（生日禮專用）」。</div>
     </div>
     <div class="layer-arrow">→</div>
     <div class="layer">
       <div class="lv">第 2 層</div>
       <div class="nm">券種</div>
-      <div class="tb">GiftVoucherType</div>
+      <div class="tb">PresentVoucherType</div>
       <div class="ds">一個發放設定：券名、效期規則、總發送上限。後台列表上一列就是一個券種。</div>
     </div>
     <div class="layer-arrow">→</div>
     <div class="layer is-key">
       <div class="lv">第 3 層</div>
       <div class="nm">券　←　你要看的是這層</div>
-      <div class="tb">GiftVoucher</div>
+      <div class="tb">PresentVoucher</div>
       <div class="ds">發給某一個會員的<b>單張</b>券。營運最常問的「發了幾張、用了幾張、誰還沒用、客人到底拿到什麼」全部在這一層。</div>
     </div>
   </div>
@@ -164,7 +164,7 @@
   </div>
 
   <h2>二、個別的券：每一欄在記什麼</h2>
-  <p class="h2-note">表名 <code>GiftVoucher</code>。一張券一筆，這一節是重點。中文名是給大家開會講的，英文名是給 AI 用的。</p>
+  <p class="h2-note">表名 <code>PresentVoucher</code>。一張券一筆，這一節是重點。中文名是給大家開會講的，英文名是給 AI 用的。</p>
 
   <div class="tbl-wrap">
   <table class="key-table">
@@ -177,7 +177,7 @@
         <td>每張券唯一。客人打來報這組號碼，就是靠它找到那一筆。（旁邊還有一個 <code>Id</code> 流水號，那是系統自己用的，對外一律講券號）</td>
       </tr>
       <tr>
-        <td class="col">MemberId<span class="cn">持有會員</span></td>
+        <td class="col">VolunteersId<span class="cn">持有會員</span></td>
         <td><b>這張券是誰的。</b>要問「某個客人手上有哪些券」就是用它篩</td>
       </tr>
       <tr>
@@ -309,11 +309,11 @@
     <tbody>
       <tr>
         <td>某個客人手上有哪些券、還能不能用</td>
-        <td>持有會員 <code>MemberId</code> 篩人，再看使用狀態 <code>Status</code> 與到期時間 <code>ExpireTime</code></td>
+        <td>持有會員 <code>VolunteersId</code> 篩人，再看使用狀態 <code>Status</code> 與到期時間 <code>ExpireTime</code></td>
       </tr>
       <tr>
         <td>客人報一組券號，想知道來龍去脈</td>
-        <td>券號 <code>VoucherNo</code> 找到那一筆，看發券時間 <code>IssuedTime</code>、兌換時間 <code>UsedTime</code>、兌換的訂單編號 <code>UsedOrderNumber</code>；更完整的歷程在券的異動紀錄 <code>GiftVoucherLog</code></td>
+        <td>券號 <code>VoucherNo</code> 找到那一筆，看發券時間 <code>IssuedTime</code>、兌換時間 <code>UsedTime</code>、兌換的訂單編號 <code>UsedOrderNumber</code>；更完整的歷程在券的異動紀錄 <code>PresentVoucherLog</code></td>
       </tr>
       <tr>
         <td>這檔活動發了幾張、用了幾張、過期沒用到幾張</td>
@@ -390,7 +390,7 @@
       <span class="lbl">AI 的查詢邏輯</span>
       <p>簡訊結果記在券自己的系統備註欄，不是另外一張表。</p>
       <span class="lbl">會用到</span>
-      <p>發券時間 <code>IssuedTime</code> 篩月份、系統備註 <code>Remark</code> 看結果、持有會員 <code>MemberId</code> 撈人</p>
+      <p>發券時間 <code>IssuedTime</code> 篩月份、系統備註 <code>Remark</code> 看結果、持有會員 <code>VolunteersId</code> 撈人</p>
     </div>
   </div>
 
@@ -400,7 +400,7 @@
       <span class="lbl">AI 的查詢邏輯</span>
       <p>券號對到 <code>VoucherNo</code>。如果兌換的訂單編號是空的，不代表沒用過：訂單被取消時券會被退回來、欄位會被清空，完整歷程要看券的異動紀錄。</p>
       <span class="lbl">會用到</span>
-      <p>券號 <code>VoucherNo</code>、使用狀態 <code>Status</code>、兌換時間 <code>UsedTime</code>、兌換的訂單編號 <code>UsedOrderNumber</code>、系統備註 <code>Remark</code>、券的異動紀錄 <code>GiftVoucherLog</code></p>
+      <p>券號 <code>VoucherNo</code>、使用狀態 <code>Status</code>、兌換時間 <code>UsedTime</code>、兌換的訂單編號 <code>UsedOrderNumber</code>、系統備註 <code>Remark</code>、券的異動紀錄 <code>PresentVoucherLog</code></p>
     </div>
   </div>
 
@@ -431,8 +431,8 @@
       </tr>
       <tr>
         <td>券 → 會員</td>
-        <td>券的持有會員 <code>MemberId</code> 對到會員主檔<br>
-        <span style="color:var(--ds-muted);font-size:13px;">（會員表的實際名稱還沒跟工程對過）</span></td>
+        <td>券的持有會員 <code>VolunteersId</code> 對到會員主檔<br>
+        <span style="color:var(--ds-muted);font-size:13px;">（會員主檔是 <code>dbo.Volunteers</code>，對它的 <code>Id</code>）</span></td>
       </tr>
       <tr>
         <td>券 → 庫存</td>
@@ -463,8 +463,8 @@
   <div class="note">
     <b>你只需要記兩件事：</b>
     <ul>
-      <li><b>券種</b>（<code>GiftVoucherType</code>）：要指定某一檔活動，用它的<b>券代碼</b> <code>TypeCode</code>（例 <code>BD-BABY</code>），不要用流水號 Id。券名在 <code>Name</code></li>
-      <li><b>禮物</b>（<code>GiftItem</code>）：禮物名稱在 <code>GiftName</code>，它綁的商品規格在 <code>ProductDetailId</code>，庫存要去那個規格上看</li>
+      <li><b>券種</b>（<code>PresentVoucherType</code>）：要指定某一檔活動，用它的<b>券代碼</b> <code>TypeCode</code>（例 <code>BD-BABY</code>），不要用流水號 Id。券名在 <code>Name</code></li>
+      <li><b>禮物</b>（<code>PresentItem</code>）：禮物名稱在 <code>PresentName</code>，它綁的商品規格在 <code>ProductDetailId</code>，庫存要去那個規格上看</li>
     </ul>
     其餘欄位（效期規則、發送上限、購物車限購、活動說明⋯）是後台設定用的，查資料時很少會碰到。
   </div>
@@ -473,9 +473,9 @@
   <table>
     <thead><tr><th style="width:30%;">還有這幾張</th><th>是什麼</th></tr></thead>
     <tbody>
-      <tr><td class="col">GiftVoucherLog<span class="cn">券的異動紀錄</span></td><td>從什麼狀態變成什麼、原因、誰操作、什麼時候。查「這張券發生過什麼事」看這張</td></tr>
-      <tr><td class="col">GiftItemCandidate<span class="cn">備選清單</span></td><td>每份禮物缺貨時往下找誰。禮物自己永遠是第一順位、不會在這張表裡</td></tr>
-      <tr><td class="col">GiftVoucherItem<span class="cn">券的候選禮物</span></td><td>第一版每張券固定一筆，未來要做「三選一讓客人挑」才會多筆</td></tr>
+      <tr><td class="col">PresentVoucherLog<span class="cn">券的異動紀錄</span></td><td>從什麼狀態變成什麼、原因、誰操作、什麼時候。查「這張券發生過什麼事」看這張</td></tr>
+      <tr><td class="col">PresentItemCandidate<span class="cn">備選清單</span></td><td>每份禮物缺貨時往下找誰。禮物自己永遠是第一順位、不會在這張表裡</td></tr>
+      <tr><td class="col">PresentVoucherOption<span class="cn">券的候選禮物</span></td><td>第一版每張券固定一筆，未來要做「三選一讓客人挑」才會多筆</td></tr>
     </tbody>
   </table>
   </div>

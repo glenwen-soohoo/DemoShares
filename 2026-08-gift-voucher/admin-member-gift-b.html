@@ -1005,14 +1005,14 @@ a:hover { text-decoration: underline; }
                客服按儲存時才順手寫成 4，不做批次清資料。 -->
           <div class="mrow"><div class="mlabel">收件時間</div><div class="mval">
             <div class="mchecks" id="recv-grp">
-              <label><input type="radio" name="recv" value="4" checked> 不指定</label>
-              <label><input type="radio" name="recv" value="1"> 13 時前</label>
-              <label><input type="radio" name="recv" value="2"> 14 時~18 時</label>
+              <label><input type="radio" name="ReciveTime" value="4" checked> 不指定</label>
+              <label><input type="radio" name="ReciveTime" value="1"> 13 時前</label>
+              <label><input type="radio" name="ReciveTime" value="2"> 14 時~18 時</label>
             </div>
           </div></div>
 
           <div class="mrow"><div class="mlabel">預設出貨備註</div><div class="mval">
-            <textarea class="mtextarea" rows="4" placeholder="會帶進新訂單的出貨備註，印在出貨單上，例：管理員可代收，假日不在家"></textarea>
+            <textarea class="mtextarea" rows="4" name="OrderRemarks" placeholder="會帶進新訂單的出貨備註，印在出貨單上，例：管理員可代收，假日不在家"></textarea>
           </div></div>
 
           <!-- 「會員備註」正名為「倉庫備註」，並搬到出貨備註下方。
@@ -1024,7 +1024,7 @@ a:hover { text-decoration: underline; }
                   把今日以後所有訂單的倉庫備註一起改掉）。後端的 coverRemark 參數
                   與那支方法是否一併移除，同「禁止現金自取」，請工程師評估。 -->
           <div class="mrow"><div class="mlabel">預設倉庫備註</div><div class="mval">
-            <textarea class="mtextarea" rows="4" placeholder="會帶進新訂單的倉庫備註，只有倉庫看得到，例：不吃木瓜、蔬菜箱避開苦瓜"></textarea>
+            <textarea class="mtextarea" rows="4" name="Remarks" placeholder="會帶進新訂單的倉庫備註，只有倉庫看得到，例：不吃木瓜、蔬菜箱避開苦瓜"></textarea>
           </div></div>
 
           </div>
@@ -1365,7 +1365,7 @@ a:hover { text-decoration: underline; }
     var grp = $('recv-grp');
     if (!grp) return;
     var shown = (value === 1 || value === 2 || value === 4) ? value : 4;
-    Array.prototype.forEach.call(grp.querySelectorAll('input[name="recv"]'), function (r) {
+    Array.prototype.forEach.call(grp.querySelectorAll('input[name="ReciveTime"]'), function (r) {
       r.checked = (+r.value === shown);
     });
   }

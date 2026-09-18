@@ -245,10 +245,10 @@ body {
       spec: '2 入（中秋禮專用）', exp: '09/15 到期，剩 8 天',
       img: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
       note: '中秋檔期限定，活動期間消費滿額即贈。券於 2026/09/15 前有效，逾期自動失效。每筆訂單可同時使用多張禮物券。' },
-    { id: '3', code: 'OR-260701-0011', vtype: '訂單回饋禮', name: '季節果乾 隨手包',
-      spec: '1 包（回饋禮專用）', exp: '10/31 到期，剩 54 天', oos: true,
-      img: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg',
-      note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' },
+    { id: '3', code: 'CS-260715-0049', vtype: '客服補償券', name: '寶寶粥 鮮蔬雞肉',
+      spec: '1 包（客服補償專用）', exp: '10/05 到期，剩 28 天', oos: true,
+      img: null,
+      note: '客服補償券，由客服人員針對個別狀況發放。券自發放日起 30 天內有效。若禮物缺貨且沒有可替換的品項，請聯繫客服協助。' },
     { id: '4', code: 'OR-260701-0012', vtype: '訂單回饋禮', name: '有機米餅 二入',
       spec: '2 入（替代品專用）', exp: '10/31 到期，剩 54 天', sub: true,
       img: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
@@ -283,7 +283,9 @@ body {
     GIFTS.forEach(function (g) {
       h += '<div class="gv-card">'
         +   '<div class="gv-main">'
-        +     '<div class="gv-thumb"><img src="' + g.img + '" alt="' + esc(g.name) + '"></div>'
+        +     (g.img
+                   ? '<div class="gv-thumb"><img src="' + g.img + '" alt="' + esc(g.name) + '"></div>'
+                   : '<div class="gv-thumb">禮物圖</div>')
         +     '<div class="gv-info">'
         +       '<div class="gv-vtype">' + esc(g.vtype) + '</div>'
         +       '<div class="gv-name">' + esc(g.name) + flagHtml(g) + '</div>'
@@ -313,7 +315,9 @@ body {
     if (!g) return;
     current = g;
     var h = '<div class="sh-vtype">' + esc(g.vtype) + '</div>'
-      + '<div class="sh-pic"><img src="' + g.img + '" alt="' + esc(g.name) + '"></div>'
+      + (g.img
+           ? '<div class="sh-pic"><img src="' + g.img + '" alt="' + esc(g.name) + '"></div>'
+           : '<div class="sh-pic">禮物圖</div>')
       + '<div class="sh-name">' + esc(g.name) + '</div>'
       + '<div class="sh-spec">規格：' + esc(g.spec) + '</div>'
       + '<div class="sh-code">券號 ' + esc(g.code) + '</div>';

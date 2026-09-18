@@ -1260,7 +1260,7 @@ a:hover { text-decoration: underline; }
     '3': {
       product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988,
       qty: 1, unit: '包', cost: 55, line: '粥寶寶專區', temp: '冷凍', price: 89, start: '2026-01-01', end: '2026-12-31',
-      listed: true, stock: 260, hasAutoRule: false, candidates: [], cartLimit: 0,
+      listed: true, stock: 0, hasAutoRule: false, candidates: [], cartLimit: 0,
       types: [
         { code: 'CS-260715', name: '客服補償券', issuedAt: '2026-07-15', expire: null, expireRule: '發券日起 30 天', used: 47, issued: 52, unused: 5, active: true, ended: false, sms: null }
       ]
@@ -1276,11 +1276,11 @@ a:hover { text-decoration: underline; }
     '6': {
       product: '季節果乾 隨手包', productId: 77530, spec: '回饋禮專用', specId: 176140,
       qty: 1, unit: '包', cost: 70, line: '產地直送', temp: '常溫', price: 129, start: '2026-07-01', end: '2026-12-31',
-      listed: true, stock: 6, hasAutoRule: false, candidates: ['5'], cartLimit: 0,
+      listed: true, stock: 0, hasAutoRule: false, candidates: ['5'], cartLimit: 0,
       note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。',
       types: [
         { code: 'OR-260701', name: '訂單回饋禮', issuedAt: '2026-07-01', expire: '2026-10-31', used: 63, issued: 90, unused: 27, active: true, ended: false, sms: null,
-          memo: '滿額回饋常設券，庫存偏低時靠備選頂著' }
+          memo: '滿額回饋常設券，目前缺貨由備選頂著' }
       ]
     },
     '5': {
@@ -1541,7 +1541,7 @@ a:hover { text-decoration: underline; }
   });
 
   // ---- 兌換順序：本禮物 ＋ 有序備援清單 ----
-  var candidates = [];          // GiftItem id 陣列，不含自己
+  var candidates = [];          // PresentItem.Id 陣列，不含自己（真實表 dbo.PresentItemCandidate）
   var subPicker = document.getElementById('gv-e-sub-picker');
   var subSearch = document.getElementById('gv-e-sub-search');
   var subList = document.getElementById('gv-e-sub-list');
