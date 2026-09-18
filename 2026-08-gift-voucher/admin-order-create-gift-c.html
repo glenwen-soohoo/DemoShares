@@ -20,6 +20,8 @@
     多帳號提示  #vol-multi           建新會員提示 #vol-create-hint
     新會員 Id   model.NewVolunteerId （hidden）
     配達時段    name="ReceiveTime"   Html.RadioButtonFor，4 不指定 / 1 上午 / 2 下午
+    收件地址    model.Address        單一自由文字欄
+                                     ⚠ twzipcode 早被註解掉，沒有縣市／鄉鎮下拉
     商品列      item2[0].ProductName、item2[0].amount   固定一列，有 model binding
     優惠券      name="RadCoupon"     單選，一單一張
   這一頁打的真實 API：
@@ -1214,30 +1216,29 @@ a:hover { text-decoration: underline; }
             <label class="fld-label" for="rcv-mobile"><span class="req">*</span>收件人手機</label>
             <input type="text" id="rcv-mobile">
           </div>
-          <!-- 現行 CreatePayment.cshtml 的地址是「縣市下拉 ＋ 鄉鎮下拉 ＋ 詳細地址」三段
-               （JS 裡的 #cityname / #areaname / #addr）。前一版 demo 併成一欄，這一版拆回來，
-               因為配送判定那一支 API 收的就是 county + district。 -->
-          <div class="fld fld--half">
-            <span class="fld-label"><span class="req">*</span>收件縣市／鄉鎮</span>
-            <div class="inline-row">
-              <select id="rcv-city"><option value="">請選擇</option></select>
-              <select id="rcv-area"><option value="">請選擇</option></select>
-            </div>
-          </div>
-          <div class="fld fld--half">
+          <!-- 收件地址是**單一自由文字欄**，跟正式站一樣。
+               現行 CreatePayment.cshtml 的 twzipcode 早就被註解掉了
+               （origin/dev 的 :315 是 @*<div id="twzipcode"></div>*@，:316 只有
+               Html.TextBoxFor(model => model.Address) 一個欄位），所以沒有縣市／鄉鎮下拉。
+               這也是為什麼配送判定走 GET /GoX/Orders/DeliveryZoneByAddress?address=
+               而不是收 county + district 的那一支：縣市區得由後端從字串反推。 -->
+          <div class="fld">
             <label class="fld-label" for="rcv-addr"><span class="req">*</span>收件地址</label>
-            <input type="text" id="rcv-addr">
+            <input type="text" id="rcv-addr" placeholder="例：臺北市大安區和平東路二段 88 號 5 樓">
           </div>
           <div class="fld fld--half">
-            <!-- ⚠️ 標籤後面那顆是唯讀判定，不是選項。走雙北宅配還是宅急便由「收件地區」決定，
-                 客服只需要看到答案。接現成的 GET /Orders/CheckSameDay?county=&district=
-                 （Controllers/OrdersController.cs:6181），回傳 IsSameDay / ZoneType
-                 （SameDay 親送區 or NewRegion 非親送區）/ LastArrivalTime；
+            <!-- ⚠️ 標籤後面那顆是唯讀判定，不是選項。走雙北宅配還是宅急便由收件地址決定，
+                 客服只需要看到答案。實際走 GET /GoX/Orders/DeliveryZoneByAddress?address=
+                 （Areas/GoX/Controllers/OrdersController.cs:7378），把整串地址丟給後端反推。
+                 ⚠ 不是前台那支收 county + district 的 /Orders/CheckSameDay，這一頁沒有縣市區欄位；
                  離島另外走 OutlyingIslandHelper.IsAddressInOutlyingIsland（整縣：連江/金門/澎湖）。
                  判定會隨兩個開關（EnableSameday、EnableNewRegionDelivery）與該區的星期限制變動，
                  而且 ShippingService.cs:196-198 在 14 點後是用「隔天」的星期算，
                  所以 title 帶「依目前設定」，標籤本身只寫結果。 -->
-            <!-- E-03b 配送判定標籤：實際走 GET /GoX/Orders/DeliveryZoneByAddress（OrdersController.DeliveryZoneByAddress，從單一自由文字的地址反推縣市區）。demo 這裡是前端假判定，工程端不要照抄 isIsland()/renderZone() 的判定邏輯。 -->
+            <!-- E-03b 配送判定標籤：實際走 GET /GoX/Orders/DeliveryZoneByAddress
+                 （OrdersController.cs:7378，從單一自由文字的地址反推縣市區）。
+                 demo 這裡是前端假判定（parseAddress + ZONE 查表），只為了讓標籤會動；
+                 工程端要打後端那一支，不要照抄 parseAddress()/isIsland() 的判定邏輯。 -->
             <span class="fld-label"><span class="req">*</span>配達時段<span class="zone-tag" id="zone-tag" hidden></span></span>
             <div class="rad-grp is-stack">
               <label><input type="radio" name="ReceiveTime" value="4" checked><span>不指定</span></label>
@@ -2202,11 +2203,8 @@ a:hover { text-decoration: underline; }
       $('buyer-mobile').value = MEMBER.mobile;
       $('buyer-email').value = MEMBER.email;
       $('buyer-line').value = MEMBER.line;
-      // 會員的地址是三段存的，帶入之後配送判定要立刻跑一次
-      $('rcv-city').value = MEMBER.city;
-      fillAreas();
-      $('rcv-area').value = MEMBER.area;
-      $('rcv-addr').value = MEMBER.addr;
+      // Volunteers.Address 就是一整串，帶入之後配送判定要立刻跑一次
+      $('rcv-addr').value = MEMBER.city + MEMBER.area + MEMBER.addr;
       renderZone();
       $('ro-rcv').textContent = MEMBER.rcv;
       $('ro-warehouse').textContent = MEMBER.warehouse;
@@ -2225,7 +2223,7 @@ a:hover { text-decoration: underline; }
       $('rp-max').textContent = MEMBER.rp;
     } else {
       ['buyer-name', 'buyer-mobile', 'buyer-email', 'buyer-line', 'rcv-addr'].forEach(function (id) { $(id).value = ''; });
-      $('rcv-city').value = ''; fillAreas(); renderZone();
+      renderZone();
       ['ro-rcv', 'ro-warehouse', 'ro-shipremark', 'ro-internal'].forEach(function (id) { $(id).textContent = '—'; });
       $('inv-type').value = '二聯式';
       $('carrier-type').value = '無載具';
@@ -2242,23 +2240,34 @@ a:hover { text-decoration: underline; }
   // ══════════════════════════════════════════
   // 收件地區 ⇒ 配送方式判定
   // ══════════════════════════════════════════
-  function fillCities() {
-    var s = $('rcv-city');
-    Object.keys(CITY_AREA).forEach(function (c) {
-      var o = document.createElement('option'); o.value = c; o.textContent = c; s.appendChild(o);
-    });
-  }
-  function fillAreas() {
-    var c = $('rcv-city').value, s = $('rcv-area');
-    s.innerHTML = '<option value="">請選擇</option>';
-    (CITY_AREA[c] || []).forEach(function (a) {
-      var o = document.createElement('option'); o.value = a; o.textContent = a; s.appendChild(o);
-    });
+  // 從一整串地址反推縣市與鄉鎮，比對清單就是 CITY_AREA 本身。
+  // 這是鏡射後端 DeliveryZoneByAddress 的做法：畫面上只有一個自由文字欄，
+  // 判定要用的縣市區只能從字串裡找出來。真實那一支比對的是
+  // SameDayDeliveryConfig 與 FreightConfig 的設定，不是這份假清單。
+  function parseAddress(addr) {
+    var text = String(addr || '').replace(/\s/g, '');
+    if (!text) return null;
+    // 臺／台 兩種寫法都要認，客服打字時兩種都會出現
+    var norm = text.replace(/台/g, '臺');
+    var cities = Object.keys(CITY_AREA).concat(ISLAND_COUNTY);
+    for (var i = 0; i < cities.length; i++) {
+      var c = cities[i];
+      var at = norm.indexOf(c);
+      if (at < 0) continue;
+      var rest = norm.slice(at + c.length);
+      var areas = (CITY_AREA[c] || []).concat(ISLAND_AREA[c] || []);
+      for (var j = 0; j < areas.length; j++) {
+        if (rest.indexOf(areas[j]) === 0) return { city: c, area: areas[j] };
+      }
+      return { city: c, area: '' };   // 認得縣市但認不出鄉鎮
+    }
+    return null;
   }
   function renderZone() {
-    var c = $('rcv-city').value, a = $('rcv-area').value;
     var tag = $('zone-tag'), locked = $('rcv-locked');
-    if (!c || !a) { tag.hidden = true; locked.hidden = true; return; }
+    var hit = parseAddress($('rcv-addr').value);
+    if (!hit || !hit.area) { tag.hidden = true; locked.hidden = true; return; }
+    var c = hit.city, a = hit.area;
 
     var z = ZONE[c + a];
     var text, cls, why;
@@ -2603,9 +2612,9 @@ a:hover { text-decoration: underline; }
   // ══════════════════════════════════════════
   // 事件
   // ══════════════════════════════════════════
-  fillCities();
-  $('rcv-city').addEventListener('change', function () { fillAreas(); renderZone(); });
-  $('rcv-area').addEventListener('change', renderZone);
+  // 正式站是失焦才打後端判定；demo 沒有後端，邊打邊判即可，行為等價
+  $('rcv-addr').addEventListener('input', renderZone);
+  $('rcv-addr').addEventListener('blur', renderZone);
   // 手機欄與按鈕三種身分共用，實際行為看 memberMode。
   // 會員：失焦自動查（同現行的 $("#VolMobile").change），按鈕是重查。
   // 同步建新會員：失焦判斷這支號碼是不是已經有人，沒有才開放「建立會員」。
@@ -2864,8 +2873,8 @@ a:hover { text-decoration: underline; }
   $('dev-zones').addEventListener('click', function (e) {
     var b = e.target.closest('[data-zone]'); if (!b) return;
     var pair = b.getAttribute('data-zone').split('|');
-    $('rcv-city').value = pair[0]; fillAreas();
-    $('rcv-area').value = pair[1]; renderZone();
+    $('rcv-addr').value = pair[0] + pair[1] + '中山路一段 1 號';
+    renderZone();
   });
   // 三段 fallback 是這次改動的重點，但光看畫面看不出來，所以做成可切換的
   $('dev-pick').addEventListener('click', function (e) {
