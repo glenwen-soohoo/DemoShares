@@ -810,6 +810,25 @@ a:hover { text-decoration: underline; }
   .amt2026-btn-danger:hover { background: #fdf2f1; }
   .amt2026-btn-ghost { border-color: rgba(255,255,255,.6); color: #fff; background: transparent; }
   .amt2026-btn-ghost:hover { background: rgba(255,255,255,.14); }
+  .amt2026-btn:disabled { opacity: 1; background: #c9cec9; border-color: #c9cec9; color: #fff; cursor: default; }
+  .amt2026-btn-default:disabled { background: #f5f7fa; border-color: #dcdfe6; color: #a8abb2; }
+
+  /* 送出中：按鈕自己就是進度指示，不另外蓋一層全頁遮罩 */
+  .cf-spin {
+    display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px;
+    border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 9999px;
+    animation: cf-turn .6s linear infinite;
+  }
+  @keyframes cf-turn { to { transform: rotate(360deg); } }
+  /* 送出中不給關閉：叉叉與遮罩點擊都停用 */
+  .mmask.is-busy .mbox-close { opacity: .4; pointer-events: none; }
+
+  .cf-list { border: 1px solid #e6e6e6; border-radius: 4px; }
+  .cf-row { display: flex; gap: 12px; padding: 8px 12px; font-size: 13px; }
+  .cf-row + .cf-row { border-top: 1px solid #f0f0f0; }
+  .cf-k { flex: 0 0 88px; color: #777; }
+  .cf-v { flex: 1; color: #333; word-break: break-all; }
+  .cf-v.is-minus { color: #dc4e43; }
   .btn-save { padding: 8px 30px; border: 0; border-radius: 5px; font-size: 16px; color: #fff; background: #008000; cursor: pointer; font-family: inherit; }
   .btn-save:hover { background: #006a00; }
 
@@ -1148,17 +1167,9 @@ a:hover { text-decoration: underline; }
             </div></div>
             <div class="mrow" data-field="rp-reason"><div class="mlabel">發放原因<span class="req">*</span></div><div class="mval">
               <input type="text" class="minput" id="rp-reason" placeholder="必填">
-              <!-- 常用原因：點一下「接在後面」，不取代。
-                   接在後面才打得出「延長補償金 竹青亭」這種組合，也允許一次點兩個。
-                   四個字面由客服指定（2026-09-10）。取自 BonusRecord 近 18 個月的實際用字，
-                   那裡同一件事有六種寫法（訂單取消退回就有 6 種、共約 590 筆），
-                   所以這排不只省打字，是讓事後能按原因分類算金額。 -->
-              <div class="rsn-chips" data-target="rp-reason">
-                <button type="button" class="rsn-chip">取消退還購物金</button>
-                <button type="button" class="rsn-chip">延長補償金</button>
-                <button type="button" class="rsn-chip">取消補償金</button>
-                <button type="button" class="rsn-chip">轉品補償金</button>
-              </div>
+              <!-- 這裡不放常用原因膠囊（2026-09-21 定案）：那四個字面都是購物金的事由
+                   （取消退還購物金／延長補償金／取消補償金／轉品補償金），紅利點數用不到，
+                   放上去只會讓客服點到不適用的詞。常用原因只留在購物金那一區。 -->
               <div class="mfe" data-fe="rp-reason"></div>
             </div></div>
             <div style="margin-top:12px;text-align:right;"><button type="button" class="amt2026-btn amt2026-btn-primary" id="rp-send">發送紅利點數</button></div>
@@ -1328,6 +1339,20 @@ a:hover { text-decoration: underline; }
 </div>
 
 <!-- 重設密碼 -->
+<!-- 送出前的確認：三個發放動作共用一個彈窗，內容由 openConfirm() 帶進來 -->
+<div class="mmask" id="cf-mask">
+  <div class="mbox is-narrow">
+    <div class="mbox-head"><span id="cf-title">確認送出</span><button type="button" class="mbox-close" data-cf-close>&times;</button></div>
+    <div class="mbox-body">
+      <div class="cf-list" id="cf-list"></div>
+    </div>
+    <div class="mbox-foot">
+      <button type="button" class="amt2026-btn amt2026-btn-default" id="cf-cancel" data-cf-close>取消</button>
+      <button type="button" class="amt2026-btn amt2026-btn-primary" id="cf-ok">確認送出</button>
+    </div>
+  </div>
+</div>
+
 <div class="mmask" id="pw-mask">
   <div class="mbox is-narrow">
     <div class="mbox-head"><span>重設密碼</span><button type="button" class="mbox-close" data-pw-close>&times;</button></div>
@@ -1670,6 +1695,63 @@ a:hover { text-decoration: underline; }
     return !!f;
   }
 
+  /* ══════════════════════════════════════════
+     送出前確認 ＋ 執行中狀態
+
+     三個發放動作（購物金／紅利／優惠券）都是寫進資料庫、而且客服自己收不回來的操作，
+     所以一律先跳確認、把這次要送什麼原樣列一次。
+
+     ⚠ demo 用 setTimeout 模擬送出的往返；正式站接 AJAX 時，
+       setCfBusy(true) 放 beforeSend、setCfBusy(false) 放 complete，
+       成功才跑 done()，失敗要把按鈕解開讓客服能重送
+       （現行 Volunteers/Edit.cshtml 的 #send-coupon 在 .fail() 沒有解開，按鈕會卡死）。
+     ══════════════════════════════════════════ */
+  var cfRun = null, cfBusy = false;
+
+  function setCfBusy(on) {
+    cfBusy = on;
+    $('cf-ok').disabled = on;
+    $('cf-cancel').disabled = on;
+    $('cf-mask').classList.toggle('is-busy', on);
+    $('cf-ok').innerHTML = on ? '<span class="cf-spin"></span>送出中' : '確認送出';
+  }
+
+  function closeConfirm() {
+    if (cfBusy) return;
+    $('cf-mask').classList.remove('is-open');
+    cfRun = null;
+  }
+
+  // rows：[[標籤, 值, 是否標紅]]；run：真的送出，會在「送出中」結束後執行
+  function openConfirm(title, rows, run) {
+    $('cf-title').textContent = title;
+    $('cf-list').innerHTML = rows.map(function (r) {
+      return '<div class="cf-row"><span class="cf-k">' + esc(r[0]) +
+             '</span><span class="cf-v' + (r[2] ? ' is-minus' : '') + '">' + esc(r[1]) + '</span></div>';
+    }).join('');
+    cfRun = run;
+    setCfBusy(false);
+    $('cf-mask').classList.add('is-open');
+  }
+
+  $('cf-ok').addEventListener('click', function () {
+    if (cfBusy || !cfRun) return;
+    var run = cfRun;
+    setCfBusy(true);
+    setTimeout(function () {
+      run();
+      cfRun = null;
+      setCfBusy(false);
+      $('cf-mask').classList.remove('is-open');
+    }, 700);
+  });
+
+  var cfCloses = document.querySelectorAll('[data-cf-close]');
+  for (var cc = 0; cc < cfCloses.length; cc++) {
+    cfCloses[cc].addEventListener('click', closeConfirm);
+  }
+  $('cf-mask').addEventListener('click', function (e) { if (e.target === this) closeConfirm(); });
+
   $('rp-send').addEventListener('click', function () {
     var amt = Number($('rp-amt').value);
     var s = $('rp-start').value, e2 = $('rp-end').value;
@@ -1680,12 +1762,20 @@ a:hover { text-decoration: underline; }
       ['rp-reason', reason ? '' : '請填寫發放原因']
     ]);
     if (bad) return;
-    $('rp-bal').textContent = Number($('rp-bal').textContent) + amt;
-    RECORDS.point.rows.unshift(['—', amt, reason + '（效期 ' + s.replace(/-/g, '/') + ' ～ ' + e2.replace(/-/g, '/') + '）', NOW, true, false]);
-    $('rp-amt').value = ''; $('rp-reason').value = '';
-    applyErrs([['rp-amt', ''], ['rp-range', ''], ['rp-reason', '']]);
-    openRec('point');
-    toast('已發放 ' + amt + ' 點');
+
+    openConfirm('確認發送紅利點數', [
+      ['點數', amt + ' 點'],
+      ['使用期限', s.replace(/-/g, '/') + ' ～ ' + e2.replace(/-/g, '/')],
+      ['發放原因', reason]
+    ], function () {
+      $('rp-bal').textContent = Number($('rp-bal').textContent) + amt;
+      RECORDS.point.rows.unshift(['—', amt, reason + '（效期 ' + s.replace(/-/g, '/') + ' ～ ' + e2.replace(/-/g, '/') + '）', NOW, true, false]);
+      $('rp-amt').value = ''; $('rp-reason').value = '';
+      applyErrs([['rp-amt', ''], ['rp-range', ''], ['rp-reason', '']]);
+      toast('已發放 ' + amt + ' 點');
+      // 發完直接開歷史紀錄：那裡才是這筆異動的去處，客服可以當場確認有沒有寫進去
+      openRec('point');
+    });
   });
 
   /* ── 購物金異動 ── */
@@ -1697,13 +1787,21 @@ a:hover { text-decoration: underline; }
       ['bonus-reason', reason ? '' : '請填寫原因']
     ]);
     if (bad) return;
-    $('bonus-bal').textContent = Number($('bonus-bal').textContent) + amt;
     var order = $('bonus-order').value.trim();
-    RECORDS.bonus.rows.unshift([order || '—', amt, reason, NOW, true, false]);
-    $('bonus-amt').value = ''; $('bonus-reason').value = ''; $('bonus-order').value = '';
-    applyErrs([['bonus-amt', ''], ['bonus-reason', '']]);
-    openRec('bonus');
-    toast((amt > 0 ? '已贈送 ' : '已扣除 ') + Math.abs(amt) + ' 元');
+
+    openConfirm(amt > 0 ? '確認贈送購物金' : '確認扣除購物金', [
+      ['異動', (amt > 0 ? '＋' : '－') + Math.abs(amt) + ' 元', amt < 0],
+      ['異動後餘額', (Number($('bonus-bal').textContent) + amt) + ' 元'],
+      ['對應訂單', order || '無'],
+      ['原因', reason]
+    ], function () {
+      $('bonus-bal').textContent = Number($('bonus-bal').textContent) + amt;
+      RECORDS.bonus.rows.unshift([order || '—', amt, reason, NOW, true, false]);
+      $('bonus-amt').value = ''; $('bonus-reason').value = ''; $('bonus-order').value = '';
+      applyErrs([['bonus-amt', ''], ['bonus-reason', '']]);
+      toast((amt > 0 ? '已贈送 ' : '已扣除 ') + Math.abs(amt) + ' 元');
+      openRec('bonus');
+    });
   });
 
   /* ── 發送優惠券：直接進持有清單 ── */
@@ -1729,9 +1827,17 @@ a:hover { text-decoration: underline; }
   $('cp-send').addEventListener('click', function () {
     var price = Number($('cp-price').value);
     var name = $('cp-name').value.trim();
-    var bad = !(price > 0) || !name;
+    var cs = $('cp-start').value, ce = $('cp-end').value;
+    // 使用期限標了必填就要真的驗。留空送出去的話，後端的 DateTime 綁定會落在
+    // 0001-01-01，發出一張一開始就過期的券，而過期券連客服自己都刪不掉。
+    var bad = !(price > 0) || !name || !cs || !ce || cs > ce;
+    $('cp-err').textContent = !(price > 0) ? '請填寫券值，且要大於 0'
+      : !name ? '請填寫券名'
+      : (!cs || !ce) ? '請填寫完整的使用期限'
+      : (cs > ce) ? '結束日不能早於開始日' : '';
     $('cp-err').classList.toggle('is-on', bad);
     if (bad) return;
+
     var pct = (cpType === 'rate'), lines = [];
     if ($('cp-all').checked) { lines = ['全部產線']; }
     else {
@@ -1739,16 +1845,35 @@ a:hover { text-decoration: underline; }
       for (var i = 0; i < ls.length; i++) if (ls[i].checked) lines.push(ls[i].value);
       if (!lines.length) lines = ['全部產線'];
     }
-    COUPONS.unshift({
-      name: name, face: pct ? (price / 10) + ' 折' : price + ' 元', left: 1,
-      min: $('cp-min').value, s: $('cp-start').value.replace(/-/g, '/'), e: $('cp-end').value.replace(/-/g, '/'),
-      lines: lines.join('、'), st: 'unused', isNew: true
+    var faceText = pct ? (price / 10) + ' 折' : price + ' 元';
+    var minText = $('cp-min').value ? $('cp-min').value + ' 元' : '無';
+
+    openConfirm('確認發送優惠券', [
+      ['券名', name],
+      ['券值', faceText],
+      ['使用門檻', minText],
+      ['使用期限', cs.replace(/-/g, '/') + ' ～ ' + ce.replace(/-/g, '/')],
+      ['限定產線', lines.join('、')]
+    ], function () {
+      COUPONS.unshift({
+        name: name, face: faceText, left: 1,
+        min: $('cp-min').value, s: cs.replace(/-/g, '/'), e: ce.replace(/-/g, '/'),
+        lines: lines.join('、'), st: 'unused', isNew: true
+      });
+      renderCoupon();
+      $('cp-price').value = ''; $('cp-name').value = ''; $('cp-min').value = '';
+      $('cp-err').classList.remove('is-on');
+      $('cp-form').classList.remove('is-open');
+      document.querySelector('[data-fold="cp-form"]').textContent = '發送優惠券';
+      toast('已發送優惠券「' + name + '」');
+      // 優惠券沒有歷史紀錄彈窗，剛發的那張就在上面的持有清單裡，
+      // 所以收合表單之後捲回優惠券卡片，讓客服當場看到它進清單了。
+      var card = document.getElementById('cp-body');
+      if (card) {
+        var top = card.closest('.mcard');
+        if (top && top.scrollIntoView) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
-    renderCoupon();
-    $('cp-price').value = ''; $('cp-name').value = ''; $('cp-min').value = '';
-    $('cp-form').classList.remove('is-open');
-    document.querySelector('[data-fold="cp-form"]').textContent = '發送優惠券';
-    toast('已發送優惠券「' + name + '」');
   });
 
   /* ── 重設密碼 ── */

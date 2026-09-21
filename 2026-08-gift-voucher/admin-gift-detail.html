@@ -1068,7 +1068,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-card-body">
     <div class="gv-toolbar">
       <div class="gv-filter-part">
-        <label>發放日期</label>
+        <label>啟用區間</label>
         <input type="date" class="gox-input" id="gv-f-start">
         <span class="gv-sep">～</span>
         <input type="date" class="gox-input" id="gv-f-end">
@@ -1090,7 +1090,7 @@ a:hover { text-decoration: underline; }
         <tr>
           <th style="width:110px;">券代碼</th>
           <th style="min-width:120px;">券名</th>
-          <th style="width:110px;">發放時間</th>
+          <th style="width:150px;">啟用區間</th>
           <th style="width:130px;">有效期限</th>
           <th class="cell-right" style="width:150px;">使用／發放（使用率）</th>
           <th class="cell-right" style="width:100px;">發券總量</th>
@@ -1226,10 +1226,10 @@ a:hover { text-decoration: underline; }
   var AMOUNTS = [1580, 150, 2340, 1650, 150, 1890, 1520, 3200, 150, 1740, 2100, 1620, 980, 2450, 150];
 
   // 生日禮不會每週建新券，而是「同一個券」持續發放，每張券依發券日各自算到期日。
-  // 所以列表上永遠只佔一列。recurring=true 時，發放時間與有效期限改顯示規則而非固定日期。
+  // 所以列表上永遠只佔一列。recurring=true 時有效期限顯示規則而非固定日期。
   function bdRecurring(issued, used, unused, smsSent, smsFail) {
     return { code: 'BD-BABY', name: '寶寶生日禮', recurring: true,
-      issuedAt: '2026-04-20', expire: null, expireRule: '發券日起 14 天',
+      start: '2026-04-20', end: null, expire: null, expireRule: '發券日起 14 天',
       used: used, issued: issued, unused: unused,
       active: true, ended: false, sms: { sent: smsSent, failed: smsFail } };
   }
@@ -1271,9 +1271,9 @@ a:hover { text-decoration: underline; }
       qty: 2, unit: '入', cost: 90, line: '粥寶寶專區', temp: '常溫', price: 149, start: '2026-08-01', end: '2026-09-30',
       listed: true, stock: 12, hasAutoRule: false, candidates: ['5', '3'], cartLimit: 2,
       types: [
-        { code: 'MF-260801', name: '中秋限定禮', issuedAt: '2026-08-01', expire: '2026-09-15', used: 128, issued: 200, unused: 72, active: true, ended: false, sms: null,
+        { code: 'MF-260801', name: '中秋限定禮', start: '2026-08-01', end: '2026-09-15', expire: '2026-09-15', used: 128, issued: 200, unused: 72, active: true, ended: false, sms: null,
           cap: 200, allowRepeat: false, memo: '行銷 A 檔主推，200 張已全數發完' },
-        { code: 'MF-260820', name: '中秋加碼場', issuedAt: '2026-08-20', expire: '2026-09-03', used: 12,  issued: 60,  unused: 0,  active: true, ended: true, sms: null,
+        { code: 'MF-260820', name: '中秋加碼場', start: '2026-08-20', end: '2026-09-03', expire: '2026-09-03', used: 12,  issued: 60,  unused: 0,  active: true, ended: true, sms: null,
           memo: '' }
       ]
     },
@@ -1282,7 +1282,7 @@ a:hover { text-decoration: underline; }
       qty: 1, unit: '包', cost: 55, line: '粥寶寶專區', temp: '冷凍', price: 89, start: '2026-01-01', end: '2026-12-31',
       listed: true, stock: 0, hasAutoRule: false, candidates: [], cartLimit: 0,
       types: [
-        { code: 'CS-260715', name: '客服補償券', issuedAt: '2026-07-15', expire: null, expireRule: '發券日起 30 天', used: 47, issued: 52, unused: 5, active: true, ended: false, sms: null }
+        { code: 'CS-260715', name: '客服補償券', start: '2026-07-15', end: null, expire: null, expireRule: '發券日起 30 天', used: 47, issued: 52, unused: 5, active: true, ended: false, sms: null }
       ]
     },
     '4': {
@@ -1290,7 +1290,7 @@ a:hover { text-decoration: underline; }
       qty: 1, unit: '盒', cost: 240, line: '產地直送', temp: '常溫', price: 380, start: '2025-10-01', end: '2025-11-30',
       listed: false, stock: 0, hasAutoRule: false, candidates: ['3'], cartLimit: 0,
       types: [
-        { code: 'AN-251001', name: '週年慶禮', issuedAt: '2025-10-01', expire: '2025-11-30', used: 310, issued: 400, unused: 0, active: false, ended: true, sms: null }
+        { code: 'AN-251001', name: '週年慶禮', start: '2025-10-01', end: '2025-11-30', expire: '2025-11-30', used: 310, issued: 400, unused: 0, active: false, ended: true, sms: null }
       ]
     },
     '6': {
@@ -1299,7 +1299,7 @@ a:hover { text-decoration: underline; }
       listed: true, stock: 0, hasAutoRule: false, candidates: ['5'], cartLimit: 0,
       note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。',
       types: [
-        { code: 'OR-260701', name: '訂單回饋禮', issuedAt: '2026-07-01', expire: '2026-10-31', used: 63, issued: 90, unused: 27, active: true, ended: false, sms: null,
+        { code: 'OR-260701', name: '訂單回饋禮', start: '2026-07-01', end: null, expire: '2026-10-31', used: 63, issued: 90, unused: 27, active: true, ended: false, sms: null,
           memo: '滿額回饋常設券，目前缺貨由備選頂著' }
       ]
     },
@@ -1321,7 +1321,8 @@ a:hover { text-decoration: underline; }
   var TODAY = '2026-09-07';
   Object.keys(DATA).forEach(function (k) {
     DATA[k].types.forEach(function (x) {
-      if (x.expire && x.expire < TODAY) x.ended = true;
+      // 「已結束」＝ 不能再發新券。兩種來源：啟用區間結束、或所有券的最晚到期日已過。
+      if ((x.expire && x.expire < TODAY) || (x.end && x.end < TODAY)) x.ended = true;
       if (x.ended) x.unused = 0;
       else if (!x.recurring) x.unused = x.issued - x.used;
       if (x.used > x.issued || x.unused < 0) {
@@ -1370,10 +1371,10 @@ a:hover { text-decoration: underline; }
     var s = document.getElementById('gv-f-start').value;
     var e = document.getElementById('gv-f-end').value;
     return g.types.filter(function (t) {
-      // 持續發放的券（生日禮）不受期間篩選排除：它一直在發，任何查詢期間都該看得到
-      if (t.recurring) return true;
-      if (s && t.issuedAt < s) return false;
-      if (e && t.issuedAt > e) return false;
+      // 改成「啟用區間與查詢區間有沒有重疊」，不是拿單一日期去比。
+      // 沒有結束日的常設券（生日禮、客服補償券）只要開始日在查詢結束之前就算重疊。
+      if (s && t.end && t.end < s) return false;
+      if (e && t.start && t.start > e) return false;
       return true;
     });
   }
@@ -1430,9 +1431,20 @@ a:hover { text-decoration: underline; }
 
   // 券的狀態（已結束）掛在券名旁邊，不要塞進日期欄或操作欄。
   // 排程券不掛「自動發放」標籤，那件事由「查看生日券發放規則」按鈕負責。
-  // 原本「每週三自動」放在發放時間欄、「已結束」放在有效期限欄、「自動」放在操作欄，
+  // 原本「每週三自動」放在啟用區間欄、「已結束」放在有效期限欄、「自動」放在操作欄，
   // 三個欄位都因此變成「有時是值、有時是狀態」，篩選與排序都會壞掉。
   // 排程細節（週期、補發、簡訊）一律只在「查看生日券發放規則」彈窗裡講。
+  // 啟用區間 ＝ 券種的 StartTime / EndTime，語意是「這段期間可以發新券」。
+  // ⚠ 這一欄不是「發放日期」。券種層沒有發放日期這種東西，正式站的
+  //   PresentVoucherType 也沒有這個欄位；每一張券實際發出去的時間記在
+  //   PresentVoucher.IssuedTime，要查發放紀錄請點「查看名單」看單張券。
+  //   （2026-09-18 定案：原本這一欄叫「發放時間」，值是憑空的 issuedAt。）
+  // 沒有結束日的常設券顯示「YYYY-MM-DD 起」，不要填一個假的結束日。
+  function periodCell(t) {
+    if (!t.start) return '—';
+    return t.end ? (t.start + ' ~ ' + t.end) : (t.start + ' 起');
+  }
+
   function nameCell(t) {
     var s = t.name;
     if (t.ended) s += '<span class="gv-vtag">已結束</span>';
@@ -1478,7 +1490,7 @@ a:hover { text-decoration: underline; }
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="12" class="gv-empty">這段期間沒有建立任何券</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="gv-empty">這段期間沒有啟用中的券種</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (t) {
@@ -1493,7 +1505,7 @@ a:hover { text-decoration: underline; }
       return '<tr' + (t.ended ? ' class="gv-row-ended"' : '') + '>' +
         '<td><span class="gv-code">' + t.code + '</span></td>' +
         '<td>' + nameCell(t) + '</td>' +
-        '<td>' + (t.recurring ? t.issuedAt + ' 起' : t.issuedAt) + '</td>' +
+        '<td>' + periodCell(t) + '</td>' +
         '<td>' + (t.expireRule || t.expire) + '</td>' +
         '<td class="cell-right gv-rate">' + (t.issued
             ? '<b>' + t.used + '</b><span> / ' + t.issued + '（' + rate + '%）</span>'
@@ -1516,7 +1528,9 @@ a:hover { text-decoration: underline; }
       var smsFail = t.sms && i >= (t.issued - t.sms.failed);
       // 到期日已過的券，名單裡沒用掉的一律是過期，不能顯示成還能用
       // 生日禮持續發放，名單裡每張券的發放日要分散在各週（每週約 10 張）
-      var issuedOn = t.recurring ? addDays(t.issuedAt, Math.floor(i / 10) * 7) : t.issuedAt;
+      // ⚠ 這裡的 issuedAt 是**單張券**的發放時間（PresentVoucher.IssuedTime），
+      //   券種層沒有這個欄位，所以拿啟用區間的開始日當假資料的基準
+      var issuedOn = t.recurring ? addDays(t.start, Math.floor(i / 10) * 7) : t.start;
       list.push({
         member: 'demo_user_' + String(i + 1).padStart(3, '0'),
         issuedAt: issuedOn, used: isUsed,
@@ -1899,8 +1913,10 @@ a:hover { text-decoration: underline; }
     var expire = isDays ? addDays(start, days)
                         : (document.getElementById('gv-i-date').value || addDays(start, 14));
 
+    // 啟用區間預設「今天起、沒有結束日」：建立新券的表單沒有這個輸入，
+    // 要限定檔期就到券種列表的「編輯」改。
     g.types.unshift({
-      code: code, name: name, issuedAt: start, expire: expire,
+      code: code, name: name, start: start, end: null, expire: expire,
       used: 0, issued: 0, unused: 0, active: true, ended: false, sms: null,
       cap: cap, allowRepeat: allowRepeat, memo: memo
     });
