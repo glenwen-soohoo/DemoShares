@@ -1100,10 +1100,10 @@ a:hover { text-decoration: underline; }
 </div>
 
 <div class="gox-list-head" id="gv-voucher-head">
-  <h2 style="font-size:16px;">禮物券種<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
+  <h2 style="font-size:16px;">禮物券模板<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
   <div class="gv-head-actions">
     <button type="button" class="gox-btn gox-btn-default" id="gv-btn-rule" style="display:none;">查看生日券發放規則</button>
-    <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">建立新券</button>
+    <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">建立新券模板</button>
   </div>
 </div>
 
@@ -1152,7 +1152,7 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-modal-overlay is-hidden" id="gv-issue-modal">
   <div class="gox-modal-box">
-    <div class="gox-card-title" id="gv-i-title">建立新券</div>
+    <div class="gox-card-title" id="gv-i-title">建立新券模板</div>
     <div class="gox-card-body">
       <div class="gv-modal-row">
         <div class="gv-modal-field"><label>券名</label><input type="text" class="gox-input" id="gv-i-name" placeholder="例：中秋加碼場"></div>
@@ -1226,7 +1226,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-modal-box">
     <div class="gox-card-title">發券</div>
     <div class="gox-card-body">
-      <p class="gv-modal-lead">將發送券種「<b id="gv-s-name"></b>」。</p>
+      <p class="gv-modal-lead">將發送券模板「<b id="gv-s-name"></b>」。</p>
       <div class="gv-modal-field">
         <label>發放對象</label>
         <textarea class="gox-textarea" id="gv-s-members" rows="4" placeholder="一行一個會員帳號（手機）"></textarea>
@@ -1369,7 +1369,7 @@ a:hover { text-decoration: underline; }
       product: '有機米餅 二入', productId: 77412, spec: '替代品專用', specId: 176099,
       qty: 2, unit: '入', cost: 90, line: '粥寶寶專區', temp: '常溫', price: 149, start: '2026-01-01', end: '2026-12-31',
       listed: true, stock: 180, hasAutoRule: false, candidates: [], cartLimit: 0,
-      note: '此規格專供其他禮物缺貨時自動替換，不單獨發券，所以沒有自己的券種。',
+      note: '此規格專供其他禮物缺貨時自動替換，不單獨發券，所以沒有自己的券模板。',
       types: []
     }
   };
@@ -1554,12 +1554,12 @@ a:hover { text-decoration: underline; }
 
   function renderTypes() {
     var rows = filtered();
-    document.getElementById('gv-tcount').textContent = '共 ' + rows.length + ' 個券種';
+    document.getElementById('gv-tcount').textContent = '共 ' + rows.length + ' 個模板';
     renderStats(rows);
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="12" class="gv-empty">這段期間沒有開放兌換的券種</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="gv-empty">這段期間沒有開放兌換的券模板</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (t) {
@@ -1837,7 +1837,11 @@ a:hover { text-decoration: underline; }
     return s;
   }
 
-  // -1 ＝ 建立新券，其他數字 ＝ 正在編輯第幾個券種
+  // ⚠ 畫面上叫「券模板」，資料層還是 PresentVoucherType（券種）。
+  //   2026-09-22 Glen 改的是**顯示用詞**：營運說的「一個券」其實是一組發放設定，
+  //   叫「模板」比「券種」更像它的用途（先建模板、再發給人，對齊優惠券的模型）。
+  //   程式裡的變數、API、資料表名一律不動，不要跟著改成 template。
+  // -1 ＝ 建立新券模板，其他數字 ＝ 正在編輯第幾個券模板
   var editTypeIdx = -1;
 
   function setExpireMode(isDays) {
@@ -1851,7 +1855,7 @@ a:hover { text-decoration: underline; }
     var isEdit = idx >= 0;
     var tt = isEdit ? g.types[idx] : null;
 
-    document.getElementById('gv-i-title').textContent = isEdit ? '編輯券' : '建立新券';
+    document.getElementById('gv-i-title').textContent = isEdit ? '編輯券模板' : '建立新券模板';
     document.getElementById('gv-i-ok').textContent = isEdit ? '儲存' : '建立';
     // 券代碼建立後不可改，編輯時鎖住
     var codeInput = document.getElementById('gv-i-code');

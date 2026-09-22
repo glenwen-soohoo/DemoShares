@@ -686,6 +686,9 @@ a:hover { text-decoration: underline; }
 .is-hidden { display: none; }
 
   /* 「這份禮物是誰的替換品項」標籤 */
+  /* 顯示原價：劃掉的灰字，跟購物車那一列的呈現一致 */
+  .gv-origprice { color: var(--gox-text-sub); font-variant-numeric: tabular-nums; }
+  .gv-origprice-none { color: var(--gox-text-muted); font-size: 12px; }
   /* 券種欄：張數當主，名稱當副 */
   .gv-vt-n {
     display: inline-block; font-size: 13px; font-weight: 600; color: var(--gox-text);
@@ -774,6 +777,7 @@ a:hover { text-decoration: underline; }
           <th>禮物產品名</th>
           <th>禮物規格</th>
           <th style="width:190px;">券種</th>
+          <th class="cell-right" style="width:110px;">顯示原價</th>
           <th class="cell-center" style="width:80px;">上架</th>
           <th class="cell-right" style="width:100px;">庫存</th>
           <th class="cell-right" style="width:140px;">未使用券數</th>
@@ -827,17 +831,17 @@ a:hover { text-decoration: underline; }
 
   // types 要跟明細頁（admin-gift-detail.html 的 DATA）對得上
   var gifts = [
-    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  stock: 84,  unused: 13, candidates: [5],
+    { id: 1, product: '寶寶果泥 隨手包', productId: 77385, spec: '生日禮專用', specId: 176021, listed: true,  displayPrice: 1000, stock: 84,  unused: 13, candidates: [5],
       types: ['寶寶生日禮'] },
-    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  stock: 12,  unused: 72, candidates: [5, 3],
+    { id: 2, product: '有機米餅 二入',   productId: 77412, spec: '中秋禮專用', specId: 176035, listed: true,  displayPrice: 130,  stock: 12,  unused: 72, candidates: [5, 3],
       types: ['中秋限定禮', '中秋加碼場'] },
-    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  stock: 0,   unused: 5,  candidates: [],
+    { id: 3, product: '寶寶粥 鮮蔬雞肉', productId: 77208, spec: '客服補償專用', specId: 175988, listed: true,  displayPrice: null, stock: 0,   unused: 5,  candidates: [],
       types: ['客服補償券'] },
-    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, stock: 0,   unused: 0,  candidates: [3],
+    { id: 4, product: '果乾禮盒 綜合',   productId: 76950, spec: '週年慶禮專用', specId: 175640, listed: false, displayPrice: 880,  stock: 0,   unused: 0,  candidates: [3],
       types: ['週年慶禮'] },
-    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用', specId: 176099, listed: true,  stock: 180, unused: 0,  candidates: [],
+    { id: 5, product: '有機米餅 二入',   productId: 77412, spec: '替代品專用', specId: 176099, listed: true,  displayPrice: null, stock: 180, unused: 0,  candidates: [],
       types: [] },
-    { id: 6, product: '季節果乾 隨手包', productId: 77530, spec: '回饋禮專用', specId: 176140, listed: true,  stock: 0,   unused: 27, candidates: [5],
+    { id: 6, product: '季節果乾 隨手包', productId: 77530, spec: '回饋禮專用', specId: 176140, listed: true,  displayPrice: 260,  stock: 0,   unused: 27, candidates: [5],
       types: ['訂單回饋禮'] }
   ];
 
@@ -848,6 +852,16 @@ a:hover { text-decoration: underline; }
       .map(function (g) {
         return { g: g, order: g.candidates.indexOf(gid) + 2 };  // 第 1 順位是禮物自己
       });
+  }
+
+  // 顯示原價 ＝ PresentItem.DisplayPrice。購物車那一列劃掉的就是這個數字，
+  // 所以這裡也劃掉，營運一眼看出客人會看到什麼。
+  // 留空（null）代表沿用產品原價，寫「沿用原價」不要留白——留白看起來像沒設定好。
+  // ⚠ 這一欄只影響顯示，實際成交價永遠是 0，不進任何金額計算（01 的 3-2）。
+  function priceCell(g) {
+    return g.displayPrice
+      ? '<s class="gv-origprice">$' + g.displayPrice.toLocaleString('en-US') + '</s>'
+      : '<span class="gv-origprice-none">沿用原價</span>';
   }
 
   // 券種欄：先給張數（快速辨識），再列名稱
@@ -893,7 +907,7 @@ a:hover { text-decoration: underline; }
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="gv-empty">沒有符合條件的禮物</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="gv-empty">沒有符合條件的禮物</td></tr>';
       return;
     }
 
@@ -904,6 +918,7 @@ a:hover { text-decoration: underline; }
         '<td><span class="gv-name">' + g.product + '</span><span class="gv-id">#' + g.productId + '</span></td>' +
         '<td><span class="gv-spec">' + g.spec + '</span><span class="gv-id">#' + g.specId + '</span>' + subTag(g) + '</td>' +
         '<td>' + typeCell(g) + '</td>' +
+        '<td class="cell-right">' + priceCell(g) + '</td>' +
         '<td class="cell-center"><span class="gox-switch' + (g.listed ? ' is-on' : '') + '" data-gv-toggle="' + g.id + '"></span></td>' +
         '<td class="cell-right gv-num' + (shortage ? ' gv-warn-num' : '') + '">' + g.stock + '</td>' +
         '<td class="cell-right gv-num">' + g.unused +
