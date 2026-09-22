@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | App 我的禮物券
-  真相來源：D:\GreenBox\fruit_app（App）／fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_app（App）／fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應 App：
     screen     : src/screens/MemberScreen/（會員頁入口，禮物券頁**待新建**）
@@ -13,6 +13,10 @@
   這一頁的真實欄位名：
     券      PresentVoucher.VoucherNo / VolunteersId / Status / ExpireTime
     禮物    PresentItem.PresentName / PresentImage / ActivityNote
+  ⚠ GetMyVouchers 要多回「現在能不能兌換」與券種的可兌換起日：
+    券種的 PresentVoucherType.StartTime 還沒到、或「開放兌換」是關的時候，
+    這張券**照樣要回**，只是按鈕停用寫「尚未到達兌換時間」。不要在 API 就濾掉，
+    客人要看得到自己有這張券。分支目前沒有這段，見 _交接對照.md G 區。
   ⚠ App 這一期不做（01 的 Phase 8）。購物車守門在 server 端一樣生效，
     所以是「不做」不是「做一半」。
   完整名稱對照見同資料夾 _交接對照.md
@@ -269,7 +273,13 @@ body {
       spec: '2 入（替代品專用）', exp: '10/31 到期，剩 54 天', sub: true,
       img: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
       subText: '原禮物「季節果乾 隨手包」目前缺貨，<br>已為你換成同等價值的禮物，可直接兌換。',
-      note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' }
+      note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' },
+    // 券種的「可兌換起日」還沒到。券已經發到客人手上、照常顯示在這張清單裡，
+    // 只是按不下去。⚠ 不要因為還沒到起日就把券從清單濾掉，客人要看得到自己有這張券。
+    { id: '5', code: 'MF-260901-0003', vtype: '中秋加碼場', name: '有機米餅 二入',
+      spec: '2 入（中秋加碼專用）', exp: '10/31 到期，剩 40 天', notyet: true, start: '10/01',
+      img: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp',
+      note: '中秋加碼場的禮物券，10/01 起開放兌換。券於 2026/10/31 前有效，逾期自動失效。' }
   ];
 
   var added = {};
@@ -279,6 +289,10 @@ body {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
 
   function btnHtml(g) {
+    // 起日沒到排在缺貨前面：時間還沒到，導去客服也問不出結果
+    if (g.notyet) {
+      return '<button type="button" class="btn btn-done" disabled>尚未到達兌換時間</button>';
+    }
     if (g.oos) {
       return '<a class="btn btn-line" href="https://lin.ee/djMfdxH" target="_blank" rel="noopener">請聯繫客服</a>';
     }
@@ -289,6 +303,8 @@ body {
   }
 
   function flagHtml(g) {
+    // 光有停用的按鈕，客人不知道要等到哪天，所以標籤直接寫起日
+    if (g.notyet) return '<span class="tag tag-oos">' + esc(g.start) + ' 起可兌換</span>';
     if (g.oos) return '<span class="tag tag-oos">補貨中</span>';
     if (g.sub) return '<span class="tag tag-sub">替換品項</span>';
     return '';
@@ -314,14 +330,16 @@ body {
     });
     $('list').innerHTML = h;
 
-    // 計數與網頁版同一套算法：可用 ＝ 總數 − 補貨中 − 已加入
+    // 計數與網頁版同一套算法：可用 ＝ 總數 − 補貨中 − 尚未開放 − 已加入
     var total = GIFTS.length;
     var oos = GIFTS.filter(function (g) { return g.oos; }).length;
+    var notyet = GIFTS.filter(function (g) { return g.notyet; }).length;
     var n = 0, k;
     for (k in added) { if (added[k]) n++; }
-    var parts = ['可用 ' + (total - oos - n) + ' 張'];
+    var parts = ['可用 ' + (total - oos - notyet - n) + ' 張'];
     if (n) parts.push('已加入 ' + n + ' 張');
     if (oos) parts.push('補貨中 ' + oos + ' 張');
+    if (notyet) parts.push('尚未開放 ' + notyet + ' 張');
     $('meta').textContent = parts.join('・');
     $('cart-badge').textContent = String(2 + n);
   }

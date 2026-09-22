@@ -3,10 +3,12 @@
 <head>
 <!--
   DemoShares 交接對照 | 產品編輯 規格設定
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     component  : ProductDetailSettings.tsx（repo：react-component-export）
+    儲存       規格連同 IsPresentItem 一起走產品編輯的存檔（GoX ProductModel／
+               Areas/GoX/Models/Products/ProductsDetail.cs），沒有獨立的 API
   這一頁的真實欄位名：
     ProductDetail.IsPresentItem   禮物規格旗標
                                   ⚠ 與 IsGift（既有贈品系統）是兩套機制，不可混用

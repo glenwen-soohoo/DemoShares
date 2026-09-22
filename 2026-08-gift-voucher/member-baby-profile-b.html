@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 個人資料修改（含寶寶資料）
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     view       : Views/Volunteers/Change.cshtml
@@ -17,6 +17,12 @@
               BirthdayPresentSentTime / BirthdaySmsSent / IsDeleted
               ⚠ CreateTime 是資格判定用的填寫時間，不可因後台修改而變動
     收件時間  Volunteers.ReciveTime（4 不指定 / 1 13 時前 / 2 14~18 時）
+  這一頁打的真實 API：
+    讀寶寶清單  GET  /Volunteers/GetBabies（VolunteersController:317）
+    新增寶寶    POST /Volunteers/AddBaby?nickname=&birthday=（:347）
+    常用收件人  GET  /Volunteers/GetReceivers
+    ⚠ 前台目前只有「讀」與「新增」，**沒有修改與刪除**——那兩個只在後台
+      （/GoX/Volunteers/BabySave、BabyDelete）。demo 若畫了編輯或刪除，那是待新建。
   錨點 #baby 要配 scroll-margin-top，讓開 sticky 的站台 header
   完整名稱對照見同資料夾 _交接對照.md
 -->

@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 確認訂單 購物車
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     partial    : Views/Shared/_ConfirmProduct.cshtml
@@ -18,6 +18,15 @@
                 ⚠ demo 每張券各一列、寫死「1 固定」，正式站是合併成一列
     下架標籤    PresentItem.IsActive = false 時多「已停止贈送」並擋結帳
     原價        劃掉的數字取 PresentItem.DisplayPrice，留空沿用產品原價
+  這一頁打的真實 API（ConfirmOrder.js）：
+    加入購物車  POST /Cart/AddToShoppingCartByModule（:1005）
+    移除品項    POST /Cart/RemoveProductFromCartNew（:1146）
+    換付款方式  POST /Cart/UpdataPaymentTypeAndReturnTotal（:2321）
+                     ⚠ 拼字就是 Updata，不是 Update
+    當日配判定  GET  /Orders/CheckSameDay（:628）
+    送出訂單    POST /Orders/ConfirmOrder（:3685）
+  ⚠ 禮物券的兌換不走這幾支，走 POST /api/PresentVoucherApi/AddToCart（會員中心按
+    「使用」時就已經進車了），這一頁只負責顯示與移除。
   禮物的 $0 不計入免運門檻
   完整名稱對照見同資料夾 _交接對照.md
 -->

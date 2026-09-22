@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 禮物券 會員中心（C 版）
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     view       : Views/Volunteers/Index.cshtml
@@ -19,6 +19,10 @@
   這一頁打的真實 API：
     列券        GET  /api/PresentVoucherApi/GetMyVouchers?skip=&take=
     加入購物車  POST /api/PresentVoucherApi/AddToCart
+  ⚠ GetMyVouchers 要多回「現在能不能兌換」與券種的可兌換起日：
+    券種的 PresentVoucherType.StartTime 還沒到、或「開放兌換」是關的時候，
+    這張券**照樣要回**，只是按鈕停用寫「尚未到達兌換時間」。不要在 API 就濾掉，
+    客人要看得到自己有這張券。分支目前沒有這段，見 _交接對照.md G 區。
   卡片主按鈕叫「使用」，「加入菜籃」是彈窗裡的確認鈕，兩個是兩個步驟
   完整名稱對照見同資料夾 _交接對照.md
 -->
@@ -718,6 +722,11 @@ img { vertical-align: middle; }
     width: 100%; background: #f4faf3; color: var(--green); border: 1px solid #cfe4c9; border-radius: 6px;
     font-size: 18px; font-weight: 600; padding: 12px; cursor: default;
   }
+  /* 券種的可兌換起日還沒到：券照常顯示，只是按不下去。卡片同樣不降階 */
+  .mc3 .btn-notyet {
+    width: 100%; background: #E4E7E5; color: #8A8A8E; border: 0; border-radius: 6px;
+    font-size: 18px; font-weight: 600; padding: 12px; cursor: default;
+  }
   /* 禮物與替換品項都缺貨：卡片不降階（券是客人的，不該看起來像失效），只把按鈕換成導客服 */
   .mc3 .btn-oos {
     display: block; width: 100%; background: #fff; color: var(--green);
@@ -1032,6 +1041,21 @@ img { vertical-align: middle; }
             <button type="button" class="btn-use" data-gv-use="4">使用</button>
           </div>
         </div>
+        <!--
+          券種的「可兌換起日」還沒到（PresentVoucherType.StartTime）。
+          券已經發到客人手上，照常顯示在清單裡，只是按鈕按不下去。
+          ⚠ 不要因為還沒到起日就把券從清單濾掉，客人要看得到自己有這張券。
+          標籤寫出起日，否則客人只看到一顆按不下去的按鈕，不知道要等多久。
+        -->
+        <div class="gv-card is-notyet" data-gv="5">
+          <div class="gv-thumb"><img src="https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp" alt="有機米餅 二入"></div>
+          <div class="gv-vtype">中秋加碼場</div>
+          <div class="gv-name">有機米餅 二入<span class="gv-flag">10/01 起可兌換</span></div>
+          <div class="gv-exp">10/31 到期，剩 40 天</div>
+          <div class="gv-actions">
+            <button type="button" class="btn-notyet" disabled>尚未到達兌換時間</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1192,7 +1216,9 @@ img { vertical-align: middle; }
            note: '客服補償券，由客服人員針對個別狀況發放。券自發放日起 30 天內有效。若禮物缺貨且沒有可替換的品項，請聯繫客服協助。' },
     '4': { code: 'OR-260701-0012', vtype: '訂單回饋禮', name: '有機米餅 二入', spec: '2 入（替代品專用）',
            sub: '原禮物「季節果乾 隨手包」目前缺貨，<br>已為你換成同等價值的禮物，可直接兌換。',
-           note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' }
+           note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。券於有效期限內可兌換。' },
+    '5': { code: 'MF-260901-0003', vtype: '中秋加碼場', name: '有機米餅 二入', spec: '2 入（中秋加碼專用）',
+           note: '中秋加碼場的禮物券，10/01 起開放兌換。券於 2026/10/31 前有效，逾期自動失效。' }
   };
 
   var ALL_LINES = ['產地直送', '快速到貨', '冷凍專區', '粥寶寶專區', '綠時光專區', '益菓保'];
@@ -1388,11 +1414,13 @@ img { vertical-align: middle; }
     var total = document.querySelectorAll('#gv-list .gv-card').length;
     if (!total) { document.getElementById('gv-meta').textContent = '沒有可用的券'; return; }
     var oos = document.querySelectorAll('#gv-list .gv-card.is-oos').length;
+    var notyet = document.querySelectorAll('#gv-list .gv-card.is-notyet').length;
     var n = 0, k;
     for (k in added) { if (added[k]) n++; }
-    var parts = ['可用 ' + (total - oos - n) + ' 張'];
+    var parts = ['可用 ' + (total - oos - notyet - n) + ' 張'];
     if (n) parts.push('已加入 ' + n + ' 張');
     if (oos) parts.push('補貨中 ' + oos + ' 張');
+    if (notyet) parts.push('尚未開放 ' + notyet + ' 張');
     document.getElementById('gv-meta').textContent = parts.join('・');
   }
 

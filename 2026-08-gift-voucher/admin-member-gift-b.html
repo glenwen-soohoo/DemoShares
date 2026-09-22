@@ -3,12 +3,12 @@
 <head>
 <!--
   DemoShares 交接對照 | 會員頁 禮物券區塊（b 版）
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     view       : Areas/GoX/Views/Volunteers/Edit.cshtml
     js         : Scripts/Admin/Web/VolunteerEdit.js
-    controller : Areas/GoX/Controllers/VolunteersController.Edit（:753 GET／:834 POST）
+    controller : Areas/GoX/Controllers/VolunteersController.Edit（:754 GET／:835 POST）
     route      : /GoX/Volunteers/Edit
     css        : Content/SCSS/Gox/VolunteerEdit.scss、VolunteerEditFields.scss、
                  VolunteerEditPresentVoucher.scss
@@ -23,6 +23,22 @@
     會員等級      Volunteers.VIPLevelId  1 一般 / 11 白銀 / 12 鑽石 / 13 星鑽
     年度消費金額  Model.TotalPrice
     禮物券區塊    PresentVoucher.VoucherNo、VolunteersId
+  這一頁打的真實 API：
+    購物金紀錄  GET  /GoX/Volunteers/GetBonusRecords?volunteersId=&page=&pageSize=
+                     （VolunteersController:52，分頁，預設 pageSize 20）
+    紅利紀錄    GET  /GoX/Volunteers/RedPointFlow（VolunteersController:1225）
+                     ⚠ **不要用 /api/RedPoint/***，那支 controller 沒有權限檢查。
+                       RedPointFlow 吃「會員管理」讀取權，而且回的是流水帳
+                       （怎麼來怎麼去），不是剩餘點數批次。
+    發紅利      POST /api/RedPoint/SednRedPointByAdmin
+                     ⚠ 拼字就是 Sedn，不是 Send，照抄不要「順手修正」
+    發優惠券    POST /GoX/Volunteers/GiveCoupon（VolunteersController:931）
+                     ⚠ 這支**沒有 [MyAuthorize]**，是 VolunteersController 裡唯一
+                       沒有權限檢查的寫入 action，也沒檢查 adminId 與 ModelState
+    刪優惠券    POST /GoX/Volunteers/DeleteCoupon（VolunteersController:892）
+    寶寶資料    /GoX/Volunteers/BabyList、BabySave、BabyDelete
+    黑名單      POST /GoX/Volunteers/BlockUser
+
   已移除的功能（不要照現行程式加回來）：
     「覆蓋今日以後的訂單」勾選 — 原走 UpdateAndCoverAllRemark，coverRemark 保留不傳
     「禁止現金自取」整列 — DB 欄位保留，後端是否移除待工程評估

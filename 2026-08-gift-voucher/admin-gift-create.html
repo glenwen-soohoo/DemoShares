@@ -3,12 +3,18 @@
 <head>
 <!--
   DemoShares 交接對照 | 禮物券管理 新增禮物
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     view       : Areas/GoX/Views/PresentVoucher/Index.cshtml（新增是列表頁上的流程）
     controller : Areas/GoX/Controllers/PresentVoucherController.Create（:137）
     route      : /GoX/PresentVoucher/Create、/GoX/PresentVoucher/GetProductBindingInfo
+    js         : admin-present-list.js（React bundle，新增流程掛在列表頁上）
+    ⚠ 這一頁是 React，Razor view 只有一個空容器 #admin-present-list ＋ bundle。
+      React 元件在 react-component-export 還找不到，是待新建的；這個 demo 是給
+      React 元件照著做的，不要拿去改 Razor view。
+    ⚠⚠ 不要跟 exports/admin-gift-list.tsx（既有的**贈品設定** GiftRule，容器
+      #admin-gift-list）搞混，那是另一套系統。禮物券的容器是 #admin-present-list。
   這一頁的真實資料表：
     PresentItem            ProductDetailId 一對一 unique
   建立禮物規格時強制寫入：Sort = 9999、Limit = 0、售價 0

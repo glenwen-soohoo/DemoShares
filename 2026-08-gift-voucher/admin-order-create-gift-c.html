@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 後台建單 使用禮物券（c 版）
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     view       : Areas/GoX/Views/Orders/CreatePayment.cshtml
@@ -24,6 +24,85 @@
                                      ⚠ twzipcode 早被註解掉，沒有縣市／鄉鎮下拉
     商品列      item2[0].ProductName、item2[0].amount   固定一列，有 model binding
     優惠券      name="RadCoupon"     單選，一單一張
+  購物車表格的八個欄位 ↔ 正式站（_CartItems.cshtml，一列一個 cartItem）：
+    溫層      cartItem.TemperatureTypeName（分組鍵是 cartItem.TemperatureType，int）
+              ⚠ demo 存的是中文字串 it.temp，正式站是 int：1 常溫 / 2 冷藏 / 3 冷凍
+                （dbo.ProductTemperatureTypes.Type）。demo 的 SHIPPING_RULES 也是用
+                中文組 key（'快速到貨|常溫'），接真實資料時要換成 Productionline +
+                TemperatureType 兩個 int 去查 dbo.ShippingRules。
+              同一溫層的列用 rowspan 併成一格，對應 _CartItems.cshtml 的
+              GroupBy(g => g.TemperatureTypeName)。
+    圖片      cartItem.Pic，前面要接 Constant.AzureCdnDomain
+              正式站是固定 100px；demo 鋪滿整格（欄寬 100），沒設圖給灰底佔位
+    品名      cartItem.ProductName + cartItem.Detail
+              規格小字 = "(規格:" + cartItem.ProductUnit + cartItem.ProductModule + ")"
+              禮物列前面多一個標籤，判斷是 cartItem.IsPresentItem
+              ⚠ 箱類走另一條：只印 ProductName + ProductUnit + ProductModule，不印 Detail
+    出貨時間  cartItem.ProductExportTime ~ cartItem.ProductFinalExportTime
+              ⚠ 箱類／週期性商品這一欄是「配送週期」：週配／隔週配兩顆按鈕
+                （setweekly('{ProductId}-1' / '-2')）＋「預計出貨日」。demo 沒做，
+                因為現役產線裡箱類與週期性商品都已 deprecate。
+    單價      cartItem.Price
+    數量      cartItem.Quantity，下拉 onchange =>
+              updateProductQuantity(cartItem.ProductId, this.value, cartItem.Id)
+              上限與底下那行提示看 cartItem.ProductStock（分支見 qtyCell 的註解）
+              禮物列不給改（一張券一份），售完顯示「售完」沒有下拉
+    小計      cartItem.SubTotal
+              ⚠ 有活動特價時正式站印三段：原價劃掉 SubTotal、特價
+                SubTotalWithSpecialRules、紅字 SpecialRulesOfActivityTitle。
+                demo 只印單一小計（見 _交接對照.md H-4）。
+    刪除      delpaymentitem(cartItem.ProductId, cartItem.Id)
+              禮物也能刪，刪掉券回到會員帳上可以再加入
+              ⚠ demo 的禮物列用 data-del=券號、一般商品用 data-rm=商品 id，那是因為
+                demo 把禮物存在另一個陣列（added）。正式站沒有這個分別：禮物在購物車
+                裡就是一般商品列，刪除一樣走 delpaymentitem(ProductId, Id)，核銷哪一張
+                券是後端依 PresentVoucher 的取券順序決定的，不是前端傳券號。
+
+  產線區塊 ↔ 正式站：
+    區塊標題  cartOrder.getTypeName()（CartOrder.Type，Constant.ProductCategoryEnum）
+              ⚠ demo 的 it.line 存中文產線名，正式站是 int
+    免運狀態  接在標題右邊。門檻是整條產線的金額去比的，見下方「運費」
+    底部三行  總計 cartOrder.GetCartOrderTotal()["OrderTotalAmount"]
+              運費 cartOrder.GetCartOrderTotal()["Freight"]
+              合計 GetCartOrderTotal()["OrderTotalWithFreight"]（＝上面兩個相加）
+              ⚠ 正式站的產地直送那一區是特例：它的金額是逐 cartItem 自己加總、
+                運費是 singleCartItems.Sum(s => s.FreightPrice)，不走 CartOrder。
+
+  購物車的分組與運費（2026-09-21 重做，之前 demo 是整車一個門檻，錯的）：
+    拆單      Cart.UpdateOrdersData（Cart.cs:2076）GroupBy(g => g.Type)
+              一條產線一個 CartOrder。_CartItems.cshtml 再把產地直送的品項整批
+              抽出來放到最後一區，所以畫面上產地直送永遠在最下面。
+    溫層分組  _CartItems.cshtml 區塊內 GroupBy(g => g.TemperatureTypeName)
+    運費      ⚠ 免運門檻按**產線總額**算，各溫層的金額合併；整條產線只收一次運費。
+              2026-09-22 查正式庫實測（粥寶寶是唯一實際會跨溫層的產線）：
+                冷凍 840 ＋ 常溫 837 ＝ 1,677 ⇒ 免運（1909747 / 1909748）
+                冷凍 399 ＋ 常溫 1,332 ＝ 1,731 ⇒ 免運（1909470 / 1909471）
+                冷凍 939 ＋ 常溫 954 ＝ 1,893 ⇒ 免運（1909586 / 1909587）
+                冷凍 708 ＋ 常溫 720 ＝ 1,428 ⇒ 收 150（1910471 / 1910472）
+                冷凍 679 ＋ 常溫 300 ＝ 979   ⇒ 收 100（1910465 / 1910466）
+              單看任一溫層都不到 1,500，合併之後超過就免運；合併還是不到才收。
+              溫層只決定兩件事：費率不同（粥寶寶／益菓保的常溫 100、其餘 150）、
+              含運商品（IsShipping）讓所在的那一個溫層費率變 0。未達門檻時收各溫層
+              費率裡**最大**的那一筆，不是加總（1910465 收 100 就是這樣：冷凍那組有
+              【限時免運】商品所以是 0，只剩常溫的 100）。
+              ⚠ 不要照 Program.cs:137 的 OrderFreight += item.Freight 字面理解成逐溫層
+                累加。建單時 OrderModel.SplitCartOrderByTemperatureLayer（:9771）把跨
+                溫層的購物車再拆成多張訂單，運費落在第一張、其餘 0，所以正式庫查不到
+                跨溫層的單（抽查最近 20,000 張，零筆），要比對同一次結帳拆出來的那幾張。
+              單一一組的費率怎麼決定，GetFreight（:206-247）的分支由上而下：
+                產地直送／箱類／週期性商品        → 0（恆免運）
+                查不到 ShippingRules              → 150
+                該組有任一含運商品 IsShipping     → 0
+                其餘                              → rule.Shipping
+              ⚠ 門檻基數不含禮物：禮物 0 元不會幫忙墊，所以只兌換禮物的那一組
+                小計是 0、照樣未達門檻、照樣收運費（01_禮物券機制.md 第 442 行）。
+    費率      dbo.ShippingRules，欄位 Productionline / TemperatureType /
+              Shipping / FreeShippingThreshold / IsOuterLand / StartTime / EndTime
+              demo 的 SHIPPING_RULES 照正式庫現行生效那組抄（IsOuterLand=false）
+    產線代碼  Constant.ProductCategoryEnum
+              0 產地直送 / 1 加購品 / 2 快速到貨 / 7 冷凍專區 / 9 粥寶寶專區 / 11 益菓保
+              （3 企業合作、4 Vip會員卡、5 箱類、6 週期性商品、8 宅魚 都已 deprecate）
+    溫層代碼  dbo.ProductTemperatureTypes：1 常溫 / 2 冷藏 / 3 冷凍
   這一頁打的真實 API：
     配送區判定  GET /GoX/Orders/DeliveryZoneByAddress?address=
                 ⚠ 不是前台那支 /Orders/CheckSameDay?county=&district=
@@ -952,11 +1031,54 @@ a:hover { text-decoration: underline; }
 
   /* 表格 */
   .oc-tb { width: 100%; border-collapse: collapse; font-size: 13px; }
+  /* 購物車有八欄，窄螢幕要橫向捲，不要把品名擠成一個字一行
+     （外層 .oc-tb-wrap 已經是 overflow-x:auto） */
+  .cart-tb { min-width: 880px; }
   .oc-tb th, .oc-tb td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
   .oc-tb th { background: var(--gox-header-bg); font-weight: 600; color: #33553a; }
   .oc-tb td.num, .oc-tb th.num { text-align: right; }
+  /* 溫層與圖片兩欄的內容是置中的（溫層文字置中、圖片鋪滿整格），
+     表頭要跟著置中才對得起來，不然標題偏左、內容偏中，看起來像沒對齊 */
+  .oc-tb td.mid, .oc-tb th.mid { text-align: center; }
   .oc-tb .spec { color: var(--gox-text-muted); font-size: 12px; margin-top: 2px; }
   .oc-tb tr.is-gift td { background: #f7fbf4; }
+  /* 產線標題列：一條產線一段，對應 Cart.UpdateOrdersData 的 GroupBy(Type) 拆單 */
+  .oc-tb tr.ln-head td { border-top: 2px solid var(--gox-green); font-weight: 600; color: #33553a; padding-top: 12px; }
+  /* 溫層格：同一溫層的品項共用這一格（rowspan）。
+     ⚠ 這一格只放溫層名。運費與免運差額都是**產線**的事——門檻拿整條產線的金額去比，
+       各溫層合併，掛在單一溫層上會讓人以為那一組要自己湊到 1,500。 */
+  .oc-tb td.tp-cell {
+    background: var(--gox-content-bg); vertical-align: middle; text-align: center;
+    border-right: 1px solid #e6e6e6;
+  }
+  .tp-name { font-weight: 600; color: var(--gox-text); }
+  /* 免運狀態緊跟在產線名後面。表格有 860 的 min-width，推到右端客服要橫向捲才看得到 */
+  .grp-row { display: flex; align-items: baseline; justify-content: flex-start; gap: 12px; }
+  .ln-why { font-size: 12px; font-weight: 400; color: var(--gox-text-muted); }
+  /* 「還差 N 免運」用既有的 danger token，不另外調一個橘色 */
+  .ln-why.is-warn { color: var(--gox-danger); }
+  /* 商品圖鋪滿整格，四邊不留白、不加框也不圓角。
+     正式站 _CartItems.cshtml 是固定 100px 一張，這裡讓它跟著欄寬走。 */
+  .oc-tb td.pic-cell { padding: 0; }
+  .cart-pic {
+    width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
+  }
+  .cart-pic-none {
+    width: 100%; aspect-ratio: 4 / 3;
+    background: #f7f7f7; color: var(--gox-text-muted); font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cart-qty { width: 64px; padding: 4px 6px; border: 1px solid #c2c2c2; border-radius: var(--gox-radius); font-size: 13px; color: var(--gox-text); background: #fff; }
+  .cart-stock { display: block; font-size: 11px; color: var(--gox-text-muted); margin-top: 2px; }
+  .cart-stock.is-low { color: var(--gox-danger); }
+  /* 產線合計三行：總計／運費／合計，數字對齊小計欄 */
+  .oc-tb tr.ln-sum td { border-bottom: 0; padding-top: 4px; padding-bottom: 4px; color: var(--gox-text-sub); }
+  .oc-tb tr.ln-sum .lbl { color: var(--gox-text-sub); }
+  .oc-tb tr.ln-sum.is-total td { border-bottom: 1px solid #eee; padding-bottom: 10px; font-weight: 600; color: var(--gox-text); }
+  .oc-tb tr.ln-sum.is-total .v { font-size: 14px; }
+  /* 金額欄的運費明細：右欄只給一個總數，客服要看得出這 300 是兩組各 150 */
+  .frt-detail { margin: 2px 0 6px; padding-left: 8px; border-left: 2px solid var(--gox-card-border); }
+  .frt-line { display: flex; justify-content: space-between; font-size: 12px; color: var(--gox-text-muted); padding: 1px 0; }
   .cart-gift-tag {
     display: inline-block; font-size: 11px; font-weight: 600;
     color: #2f6b26; background: #e5f1da; border-radius: 3px; padding: 1px 7px; margin-right: 6px;
@@ -1315,14 +1437,17 @@ a:hover { text-decoration: underline; }
           </div>
           <div class="fld">
             <div class="oc-tb-wrap">
-            <table class="oc-tb">
+            <table class="oc-tb cart-tb">
               <thead>
                 <tr>
-                  <th>品名</th><th style="width:14%">產線</th>
-                  <th class="num" style="width:10%">單價</th>
-                  <th class="num" style="width:10%">數量</th>
-                  <th class="num" style="width:12%">小計</th>
-                  <th class="num" style="width:10%">操作</th>
+                  <th class="mid" style="width:76px;">溫層</th>
+                  <th class="mid" style="width:100px;">圖片</th>
+                  <th>品名</th>
+                  <th style="width:104px;">出貨時間</th>
+                  <th class="num" style="width:72px;">單價</th>
+                  <th class="num" style="width:104px;">數量</th>
+                  <th class="num" style="width:88px;">小計</th>
+                  <th class="num" style="width:72px;">刪除</th>
                 </tr>
               </thead>
               <tbody id="cart-body"></tbody>
@@ -1485,6 +1610,7 @@ a:hover { text-decoration: underline; }
         <span>運費<span class="sub" id="freight-note"></span></span>
         <span class="v is-plus" id="amt-freight">0</span>
       </div>
+      <div class="frt-detail" id="frt-detail"></div>
       <div class="amt-row is-off" id="row-cod"><span>貨到付款手續費</span><span class="v is-plus" id="amt-cod">0</span></div>
       <hr class="amt-hr">
       <div class="amt-total"><span class="lbl">應付總額</span><span class="v"><span id="amt-total">0</span> 元</span></div>
@@ -1516,7 +1642,7 @@ a:hover { text-decoration: underline; }
     <div class="mk-body">
       <div class="fld">
         <label class="fld-label" for="im-text">貼上文字（每行一筆，商品名與數量之間用空白分隔，數量用阿拉伯數字）</label>
-        <textarea id="im-text" rows="5" placeholder="白蘿蔔 2&#10;有機蔬菜箱 1&#10;鮮乳坊豐樂鮮乳 3"></textarea>
+        <textarea id="im-text" rows="5" placeholder="白蘿蔔 2&#10;有機高麗菜 1&#10;鮮乳坊豐樂鮮乳 3"></textarea>
       </div>
       <!-- 原生的 <input type="file"> 在每個瀏覽器長得都不一樣，也吃不到這一頁的按鈕樣式。
            作法是把它藏起來、用 label 當觸發器，這樣按鈕就能沿用 .oc-btn。 -->
@@ -1647,8 +1773,56 @@ a:hover { text-decoration: underline; }
 (function () {
   'use strict';
 
-  // 免運門檻與運費沿用購物車 demo 的同一組（checkout-cart.html: THRESHOLD/FREIGHT）
-  var THRESHOLD = 1500, FREIGHT = 150;
+  // ══════════════════════════════════════════════════════
+  // 運費規則
+  //
+  // **免運門檻按產線總額算，各溫層的金額合併。整條產線只收一次運費。**
+  //
+  // 2026-09-22 查正式庫實測（粥寶寶是唯一實際會跨溫層的產線）：
+  //   冷凍 840 ＋ 常溫 837 ＝ 1,677 ⇒ 免運（1909747 / 1909748）
+  //   冷凍 399 ＋ 常溫 1,332 ＝ 1,731 ⇒ 免運（1909470 / 1909471）
+  //   冷凍 939 ＋ 常溫 954 ＝ 1,893 ⇒ 免運（1909586 / 1909587）
+  //   冷凍 708 ＋ 常溫 720 ＝ 1,428 ⇒ 收 150（1910471 / 1910472）
+  //   冷凍 679 ＋ 常溫 300 ＝ 979   ⇒ 收 100（1910465 / 1910466）
+  // 單看任一溫層都不到 1,500，合併之後超過就免運；合併還是不到才收。
+  //
+  // ⚠ 所以畫面上「還差多少免運」是**產線**的事，不是溫層的事。溫層只決定兩件事：
+  //     1. 費率不同（粥寶寶／益菓保的常溫 100、其餘 150）
+  //     2. 含運商品（IsShipping）讓「所在的那一個溫層」的費率變 0
+  //   未達門檻時收的是各溫層費率裡最大的那一筆，不是加總。
+  //   1910465 收 100 就是這樣來的：冷凍那組有「【限時免運】小寶寶 八口味米糊」
+  //   （IsShipping = true）所以那組是 0，只剩常溫的 100。
+  //
+  // ⚠ 不要照 Program.cs:137 的 `OrderFreight += item.Freight` 字面理解成逐溫層累加。
+  //   建單時 OrderModel.SplitCartOrderByTemperatureLayer 會把跨溫層的購物車再拆成
+  //   多張訂單，運費落在第一張、其餘 0，所以正式庫查不到跨溫層的單，要比對同一次
+  //   結帳拆出來的那幾張才看得到全貌。
+  //
+  // 下面這張表照 dbo.ShippingRules 現行生效的規則抄（2026-09-21 查正式庫，
+  // IsOuterLand = false 那組；離島另有一套，門檻 1888／2500，demo 不做）。
+  // ══════════════════════════════════════════════════════
+  var SHIPPING_RULES = {
+    '快速到貨|常溫':   { fee: 150, threshold: 1500 },
+    '快速到貨|冷藏':   { fee: 150, threshold: 1500 },
+    '快速到貨|冷凍':   { fee: 150, threshold: 1500 },
+    '冷凍專區|常溫':   { fee: 150, threshold: 1500 },
+    '冷凍專區|冷藏':   { fee: 150, threshold: 1500 },
+    '冷凍專區|冷凍':   { fee: 150, threshold: 1500 },
+    '粥寶寶專區|常溫': { fee: 100, threshold: 1500 },
+    '粥寶寶專區|冷藏': { fee: 150, threshold: 1500 },
+    '粥寶寶專區|冷凍': { fee: 150, threshold: 1500 },
+    '益菓保|常溫':     { fee: 100, threshold: 1500 },
+    '益菓保|冷藏':     { fee: 150, threshold: 1500 },
+    '益菓保|冷凍':     { fee: 150, threshold: 1500 }
+  };
+  // 這三條產線運費恆為 0（GetFreight 的第二個分支，01_禮物券機制.md 第 455 行也記了這條）。
+  // 箱類與週期性商品已 deprecate，現役只剩產地直送。
+  var FREE_FREIGHT_LINES = ['產地直送', '箱類', '週期性商品'];
+  var NO_RULE_FREIGHT = 150;   // 查不到規則時的預設，照 GetFreight 的 rule == null 分支
+  var TEMP_ORDER = ['常溫', '冷藏', '冷凍'];
+  // 產線顯示順序：產地直送排最後，照 _CartItems.cshtml 的做法
+  // （它把產地直送的品項整批抽出來放在其他產線之後）
+  var LINE_ORDER = ['快速到貨', '冷凍專區', '粥寶寶專區', '益菓保', '加購品', '產地直送'];
   var COD_FEE = 30;          // 貨到付款手續費，照 CreatePayment.cshtml 的 #fee
   // 優惠券。現行畫面只印面額＋張數＋最低消費＋效期，看不出「這是哪一種券」。
   // 名稱在 dbo.Coupon 沒有欄位，但 Origin 這一欄本來就存著人看得懂的發放來源
@@ -1660,12 +1834,12 @@ a:hover { text-decoration: underline; }
   //   ⚠️ 現行只有折扣型會真的吃這個限制（OrderModel.GetCouponAmount 的 Amount < 1 分支）。
   //      面額型直接 return coupon.Amount，產線完全不看。而且後台建單整條路都沒有呼叫
   //      IsPassCouponCheck（那支只有前台 Controllers/OrdersController 在用），
-  //      所以客服把一張限蔬菜箱的券用在一車水果上，系統不會擋。
+  //      所以客服把一張限冷凍專區的券用在一車快速到貨上，系統不會擋。
   //      畫面照實顯示限制，是為了讓客服自己看得到；系統要不要擋是另一個決定。
   var COUPONS = [
     { id: 5001, origin: '生日禮金',       isPercent: false, amount: 100,  minSpend: 1000, lines: [],                endTime: '2026/09/30' },
-    { id: 5002, origin: '週年慶轉盤抽抽樂', isPercent: false, amount: 100,  minSpend: 0,    lines: ['蔬菜箱'],         endTime: '2026/12/31' },
-    { id: 5003, origin: 'VIP折扣券',      isPercent: true,  amount: 0.88, minSpend: 0,    lines: ['蔬菜箱'],         endTime: '2026/10/15' },
+    { id: 5002, origin: '週年慶轉盤抽抽樂', isPercent: false, amount: 100,  minSpend: 0,    lines: ['冷凍專區'],       endTime: '2026/12/31' },
+    { id: 5003, origin: 'VIP折扣券',      isPercent: true,  amount: 0.88, minSpend: 0,    lines: ['快速到貨'],       endTime: '2026/10/15' },
     { id: 5004, origin: '滿千折88',       isPercent: false, amount: 88,   minSpend: 1000, lines: [],                endTime: '2026/11/30' }
   ];
   function couponLabel(c) { return c.isPercent ? Math.round(c.amount * 100) + ' 折' : c.amount + ' 元'; }
@@ -1754,9 +1928,17 @@ a:hover { text-decoration: underline; }
   var MEMBER = MEMBER_POOL[0];
 
   // 一般商品（可移除、可清空，用來驗證金額真的會重算）
+  // 刻意跨三組（快速到貨/常溫、快速到貨/冷藏、產地直送/常溫），才看得出運費是分組算的：
+  // 前兩組各未達 1500 各收 150，產地直送那組恆 0。
+  // stock 決定數量下拉的上限與底下那行庫存提示：≥12 是「剩餘 N 組」，<12 是紅字「最後 N 組」。
+  // 高麗菜刻意給 8，用來示範「最後 N 組」；沒有設圖的那幾筆示範灰底佔位。
   var PRODUCTS = [
-    { id: 'p1', name: '有機蔬菜箱', spec: '中箱／每週配送', line: '蔬菜箱', price: 680, qty: 1 },
-    { id: 'p2', name: '當季水果禮盒', spec: '綜合 6 入', line: '水果', price: 520, qty: 1 }
+    { id: 'p1', name: '有機高麗菜', spec: '約 900g／顆', line: '快速到貨', temp: '常溫',
+      ship: '09/23 ~ 09/25', price: 60, qty: 2, stock: 8, pic: null },
+    { id: 'p2', name: '鮮乳坊豐樂鮮乳', spec: '936ml', line: '快速到貨', temp: '冷藏',
+      ship: '09/23 ~ 09/25', price: 150, qty: 2, stock: 46, pic: null },
+    { id: 'p3', name: '當季水果禮盒', spec: '綜合 6 入', line: '產地直送', temp: '常溫',
+      ship: '09/24 ~ 09/28', price: 520, qty: 1, stock: 30, pic: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg' }
   ];
   var cart = PRODUCTS.slice();
 
@@ -1770,11 +1952,12 @@ a:hover { text-decoration: underline; }
   //   一張顯示「替換品項」另一張顯示「補貨中」這種不可能的組合。規則見 05 第五節的
   //   不變式第 6、7 條。
   var PRESENT = {
-    1: { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',   line: '粥寶寶專區', stock: 84,  cand: [5] },
-    2: { name: '有機米餅 二入',   spec: '2 入（中秋禮專用）',   line: '粥寶寶專區', stock: 12,  cand: [5, 3] },
-    3: { name: '寶寶粥 鮮蔬雞肉', spec: '1 包（客服補償專用）', line: '粥寶寶專區', stock: 0,   cand: [] },
-    5: { name: '有機米餅 二入',   spec: '2 入（替代品專用）',   line: '粥寶寶專區', stock: 180, cand: [] },
-    6: { name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',   line: '產地直送',   stock: 0,   cand: [5] }
+    1: { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）',   line: '粥寶寶專區', temp: '常溫', ship: '09/23 ~ 09/25', stock: 84,  cand: [5],    pic: 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp' },
+    2: { name: '有機米餅 二入',   spec: '2 入（中秋禮專用）',   line: '粥寶寶專區', temp: '常溫', ship: '09/23 ~ 09/25', stock: 12,  cand: [5, 3], pic: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp' },
+    // 禮物 3 刻意沒有設圖，是「禮物沒有圖」的示範（假資料正典，見 05 第五節）
+    3: { name: '寶寶粥 鮮蔬雞肉', spec: '1 包（客服補償專用）', line: '粥寶寶專區', temp: '冷凍', ship: '09/25 ~ 09/29', stock: 0,   cand: [],     pic: null },
+    5: { name: '有機米餅 二入',   spec: '2 入（替代品專用）',   line: '粥寶寶專區', temp: '常溫', ship: '09/23 ~ 09/25', stock: 180, cand: [],     pic: 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp' },
+    6: { name: '季節果乾 隨手包', spec: '1 包（回饋禮專用）',   line: '產地直送',   temp: '常溫', ship: '09/24 ~ 09/28', stock: 0,   cand: [5],    pic: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg' }
   };
 
   // 有貨就送自己；自己缺貨就照備選順序找第一個有貨的；都沒有才是補貨中。
@@ -1806,7 +1989,10 @@ a:hover { text-decoration: underline; }
     var shown = PRESENT[r.actual];
     return {
       no: v.no, vtype: v.vtype, exp: v.exp, limit: v.limit,
+      // 產線／溫層／出貨時間跟著「實際會送出的那一份」走：備援品可能在別的溫層，
+      // 運費是照溫層分組算的，取原禮物的會算錯。
       name: shown.name, spec: shown.spec, line: shown.line,
+      temp: shown.temp, ship: shown.ship, pic: shown.pic,
       state: r.state,
       origin: r.state === 'sub' ? PRESENT[v.gid].name : ''
     };
@@ -1917,7 +2103,8 @@ a:hover { text-decoration: underline; }
     bonus = Math.min(bonus, Math.max(0, payable));
     rp = Math.min(rp, Math.max(0, payable - bonus));
 
-    var freight = sub >= THRESHOLD ? 0 : (sub > 0 ? FREIGHT : 0);
+    // 運費不是拿整車小計去比一個門檻：門檻按「產線 × 溫層」各自比，一條產線收一次
+    var freight = freightTotal();
     var cod = payType() === '貨到付款' ? COD_FEE : 0;
 
     var total = Math.max(0, payable - bonus - rp + freight + cod);
@@ -1943,8 +2130,18 @@ a:hover { text-decoration: underline; }
     $('amt-cod').textContent = r.cod ? '+' + fmt(r.cod) : '0';
     $('amt-total').textContent = fmt(r.total);
 
-    $('freight-note').textContent = r.sub === 0 ? ''
-      : (r.freight ? '還差 ' + fmt(THRESHOLD - r.sub) + ' 免運' : '已達免運門檻');
+    // 右欄只給一個總數會讓客服看不懂「為什麼是 250」，所以把每條產線列出來。
+    // 一條產線一筆，因為運費就是一條產線收一次。
+    var groups = freightGroups();
+    var paid = cartLineNames(groups)
+      .map(function (line) { return { line: line, info: lineInfo(groups, line) }; })
+      .filter(function (x) { return x.info.freight > 0; });
+    $('freight-note').textContent = paid.length > 1 ? paid.length + ' 條產線' : '';
+    $('frt-detail').innerHTML = paid.map(function (x) {
+      return '<div class="frt-line"><span>' + esc(x.line) +
+        (x.info.gap ? '（還差 ' + fmt(x.info.gap) + '）' : '') +
+        '</span><span>+' + fmt(x.info.freight) + '</span></div>';
+    }).join('');
 
     // 沒作用的列淡掉，客服才不會以為漏算
     [['row-act', r.act], ['row-coupon', r.coupon], ['row-bonus', r.bonus],
@@ -1966,23 +2163,183 @@ a:hover { text-decoration: underline; }
   // ══════════════════════════════════════════
   // 購物車
   // ══════════════════════════════════════════
-  function renderCart() {
-    var rows = cart.map(function (p) {
-      return '<tr><td>' + esc(p.name) + '<div class="spec">' + esc(p.spec) + '</div></td>' +
-        '<td>' + esc(p.line) + '</td>' +
-        '<td class="num">' + fmt(p.price) + '</td><td class="num">' + p.qty + '</td>' +
-        '<td class="num">' + fmt(p.price * p.qty) + '</td>' +
-        '<td class="num"><button type="button" class="oc-btn" data-rm="' + p.id + '">移除</button></td></tr>';
+  // 車上所有列（一般商品 ＋ 禮物），禮物一律 0 元、數量 1。
+  // 禮物在這裡跟一般商品同一種形狀，因為運費分組不分它是不是禮物。
+  function cartLines() {
+    var a = cart.map(function (p) {
+      return { key: p.id, kind: 'p', name: p.name, spec: p.spec, line: p.line, temp: p.temp,
+               ship: p.ship, pic: p.pic, stock: p.stock, price: p.price, qty: p.qty };
     });
-    rows = rows.concat(added.map(byNo).map(function (v) {
-      return '<tr class="is-gift"><td><span class="cart-gift-tag">禮物</span>' + esc(v.name) +
-        '<div class="spec">' + esc(v.spec) + '　券號 ' + esc(v.no) + '</div></td>' +
-        '<td>' + esc(v.line) + '</td><td class="num">0</td>' +
-        '<td class="num">1 <span class="cart-lock">固定</span></td><td class="num">0</td>' +
-        '<td class="num"><button type="button" class="oc-btn" data-del="' + v.no + '">移除</button></td></tr>';
+    return a.concat(added.map(byNo).map(function (v) {
+      return { key: v.no, kind: 'g', name: v.name, spec: v.spec + '　券號 ' + v.no,
+               line: v.line, temp: v.temp, ship: v.ship, pic: v.pic, price: 0, qty: 1 };
     }));
-    if (!rows.length) rows = ['<tr><td colspan="6" class="ro" style="padding:16px">購物車是空的。</td></tr>'];
-    $('cart-body').innerHTML = rows.join('');
+  }
+
+  // 一組 ＝ 一個「產線 × 溫層」，這就是 GetFreight 的計算單位。
+  // ⚠ 門檻基數是 Σ(單價 × 數量)，禮物 0 元不會幫忙墊，所以只兌換禮物的那一組
+  //    小計是 0、照樣未達門檻、照樣收運費（01_禮物券機制.md 第 442 行）。
+  // 溫層分組。只決定「這幾列是同一組」與該組的費率，門檻不在這一層算。
+  function freightGroups() {
+    var map = {}, order = [];
+    cartLines().forEach(function (it) {
+      var k = it.line + '|' + it.temp;
+      if (!map[k]) { map[k] = { line: it.line, temp: it.temp, items: [], sum: 0 }; order.push(k); }
+      map[k].items.push(it);
+      map[k].sum += it.price * it.qty;
+      // 含運商品讓所在那一個溫層的費率變 0（GetFreight 的 IsShipping 分支）。
+      // demo 的假資料沒有含運商品，這一行是留給工程看語意的。
+      if (it.isShipping) map[k].hasFreeItem = true;
+    });
+    order.sort(function (a, b) {
+      var la = LINE_ORDER.indexOf(map[a].line), lb = LINE_ORDER.indexOf(map[b].line);
+      if (la < 0) la = LINE_ORDER.length;
+      if (lb < 0) lb = LINE_ORDER.length;
+      if (la !== lb) return la - lb;
+      return TEMP_ORDER.indexOf(map[a].temp) - TEMP_ORDER.indexOf(map[b].temp);
+    });
+    return order.map(function (k) {
+      var g = map[k];
+      var rule = SHIPPING_RULES[k];
+      g.threshold = rule ? rule.threshold : 0;
+      g.fee = g.hasFreeItem ? 0 : (rule ? rule.fee : NO_RULE_FREIGHT);
+      return g;
+    });
+  }
+
+  // 一條產線的運費與免運狀態。門檻拿**整條產線的金額**去比，各溫層合併。
+  function lineInfo(groups, line) {
+    var ls = groups.filter(function (g) { return g.line === line; });
+    var sum = ls.reduce(function (n, g) { return n + g.sum; }, 0);
+    if (FREE_FREIGHT_LINES.indexOf(line) >= 0) {
+      return { sum: sum, freight: 0, gap: 0, why: 'free-line' };
+    }
+    var threshold = ls.reduce(function (n, g) { return Math.max(n, g.threshold); }, 0);
+    if (!threshold) {
+      return { sum: sum, freight: NO_RULE_FREIGHT, gap: 0, why: 'no-rule' };
+    }
+    if (sum >= threshold) {
+      return { sum: sum, freight: 0, gap: 0, why: 'reach' };
+    }
+    // 沒達標：收各溫層費率裡最大的那一筆，不是加總
+    var fee = ls.reduce(function (n, g) { return Math.max(n, g.fee); }, 0);
+    return { sum: sum, freight: fee, gap: threshold - sum, why: 'under' };
+  }
+
+  function cartLineNames(groups) {
+    var lines = [];
+    groups.forEach(function (g) { if (lines.indexOf(g.line) < 0) lines.push(g.line); });
+    return lines;
+  }
+
+  // 整車運費 ＝ 每條產線各收一次再加總
+  function freightTotal() {
+    var groups = freightGroups();
+    return cartLineNames(groups).reduce(function (n, line) {
+      return n + lineInfo(groups, line).freight;
+    }, 0);
+  }
+
+  // 免運狀態掛在**產線**那一層，不是溫層——門檻是整條產線的金額去比的。
+  function freightWhy(info) {
+    if (info.why === 'free-line') return { t: '不收運費', warn: false };
+    if (info.why === 'no-rule') return { t: '查不到運費規則', warn: true };
+    if (info.why === 'reach') return { t: '已達免運門檻', warn: false };
+    return { t: '還差 ' + fmt(info.gap) + ' 免運', warn: true };
+  }
+
+  var CART_COLS = 8;
+
+  // 圖片格。沒設圖就給灰底佔位，不要留一個空格
+  // （禮物 3「寶寶粥 鮮蔬雞肉」刻意沒有圖，是「禮物沒有圖」的示範）
+  function picCell(it) {
+    return '<td class="pic-cell">' + (it.pic
+      ? '<img class="cart-pic" src="' + it.pic + '" alt="' + esc(it.name) + '">'
+      : '<div class="cart-pic-none">無圖</div>') + '</td>';
+  }
+
+  // 數量格。照 _CartItems.cshtml 的分支：
+  //   禮物      → 數字＋「固定」，不給改（一張券一份）
+  //   售完      → 「售完」
+  //   庫存 ≥ 12 → 下拉 1~min(庫存,100)，小字「剩餘 N 組」
+  //   否則      → 下拉 1~庫存，紅字「最後 N 組」
+  // ⚠ 正式站在產地直送那一區的上限是寫死 12（不是 100），這裡照它做。
+  function qtyCell(it) {
+    if (it.kind === 'g') {
+      return '<td class="num">' + it.qty + ' <span class="cart-lock">固定</span></td>';
+    }
+    var stock = typeof it.stock === 'number' ? it.stock : 99;
+    if (stock === 0) return '<td class="num">售完</td>';
+    var cap = stock >= 12
+      ? (it.line === '產地直送' ? 12 : Math.min(stock, 100))
+      : stock;
+    var opts = '';
+    for (var k = 1; k <= cap; k++) {
+      opts += '<option value="' + k + '"' + (k === it.qty ? ' selected' : '') + '>' + k + '</option>';
+    }
+    return '<td class="num"><select class="cart-qty" data-q="' + it.key + '">' + opts + '</select>' +
+      (stock >= 12
+        ? '<span class="cart-stock">剩餘 ' + stock + ' 組</span>'
+        : '<span class="cart-stock is-low">最後 ' + stock + ' 組</span>') +
+      '</td>';
+  }
+
+  function renderCart() {
+    var groups = freightGroups();
+    if (!groups.length) {
+      $('cart-body').innerHTML = '<tr><td colspan="' + CART_COLS +
+        '" class="ro" style="padding:16px">購物車是空的。</td></tr>';
+      return;
+    }
+
+    // 產線合計三行：總計（該產線商品金額）／運費（該產線各溫層運費加總）／合計。
+    // 標籤放在數量欄、數字放在小計欄，跟上面的品項對齊。
+    function sumRows(info) {
+      var sum = info.sum, frt = info.freight;
+      function row(label, val, cls) {
+        return '<tr class="ln-sum' + (cls || '') + '">' +
+          '<td colspan="5"></td>' +
+          '<td class="num lbl">' + label + '</td>' +
+          '<td class="num v">' + fmt(val) + '</td>' +
+          '<td></td></tr>';
+      }
+      return row('總計', sum) + row('運費', frt) + row('合計', sum + frt, ' is-total');
+    }
+
+    var html = '';
+    cartLineNames(groups).forEach(function (line) {
+      var ls = groups.filter(function (x) { return x.line === line; });
+      var info = lineInfo(groups, line);
+      var why = freightWhy(info);
+      // 免運狀態放在產線標題列：門檻是整條產線的金額去比的，各溫層合併，
+      // 掛在單一溫層上會讓人以為那一組要自己湊到 1,500。
+      html += '<tr class="ln-head"><td colspan="' + CART_COLS + '"><div class="grp-row">' +
+        '<span>' + esc(line) + '</span>' +
+        '<span class="ln-why' + (why.warn ? ' is-warn' : '') + '">' + why.t + '</span>' +
+        '</div></td></tr>';
+      ls.forEach(function (g) {
+        g.items.forEach(function (it, i) {
+          var isG = it.kind === 'g';
+          html += '<tr' + (isG ? ' class="is-gift"' : '') + '>';
+          // 溫層格只在該溫層的第一列印出來，用 rowspan 蓋住同溫層的其他列
+          if (i === 0) {
+            html += '<td class="tp-cell" rowspan="' + g.items.length + '">' +
+              '<div class="tp-name">' + esc(g.temp) + '</div></td>';
+          }
+          html += picCell(it) +
+            '<td>' + (isG ? '<span class="cart-gift-tag">禮物</span>' : '') + esc(it.name) +
+              '<div class="spec">' + esc(it.spec) + '</div></td>' +
+            '<td>' + esc(it.ship || '—') + '</td>' +
+            '<td class="num">' + fmt(it.price) + '</td>' +
+            qtyCell(it) +
+            '<td class="num">' + fmt(it.price * it.qty) + '</td>' +
+            '<td class="num"><button type="button" class="oc-btn" data-' +
+              (isG ? 'del="' + it.key : 'rm="' + it.key) + '">刪除</button></td></tr>';
+        });
+      });
+      html += sumRows(info);
+    });
+    $('cart-body').innerHTML = html;
   }
 
   // ══════════════════════════════════════════
@@ -2455,7 +2812,8 @@ a:hover { text-decoration: underline; }
     var q = $('im-body').querySelector('input[data-imq="' + i + '"]');
     cart.push({
       id: 'im' + Date.now() + '-' + i, name: p.name, spec: p.spec,
-      line: p.line, price: p.price, qty: q ? Math.max(1, +q.value || 1) : r.qty
+      line: p.line, temp: p.temp, ship: p.ship, pic: p.pic, stock: p.stock,
+      price: p.price, qty: q ? Math.max(1, +q.value || 1) : r.qty
     });
     return true;
   }
@@ -2517,12 +2875,12 @@ a:hover { text-decoration: underline; }
     no: 'A26090301',
     meta: '2026/09/03 下單・訂購人 示範會員・訂單金額 1,850 元',
     items: [
-      { name: '有機蔬菜箱', spec: '中箱／每週配送', line: '蔬菜箱', price: 680, qty: 1, state: 'ok' },
-      { name: '當季水果禮盒', spec: '綜合 6 入', line: '水果', price: 520, qty: 2, state: 'ok' },
-      { name: '鮮乳坊豐樂鮮乳', spec: '936ml', line: '鮮乳', price: 150, qty: 1, state: 'oos' },
-      { name: '春季限定 桶柑', spec: '5 台斤', line: '水果', price: 480, qty: 1, state: 'off' },
-      { name: '【小寶寶】含運-十倍粥體驗組', spec: '首購限定', line: '粥寶寶專區', price: 0, qty: 1, state: 'firstbuy' },
-      { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）', line: '粥寶寶專區', price: 0, qty: 1, state: 'gift' }
+      { name: '有機高麗菜', spec: '約 900g／顆', line: '快速到貨', temp: '常溫', ship: '09/23 ~ 09/25', price: 60, qty: 2, stock: 8, pic: null, state: 'ok' },
+      { name: '當季水果禮盒', spec: '綜合 6 入', line: '產地直送', temp: '常溫', ship: '09/24 ~ 09/28', price: 520, qty: 2, stock: 30, pic: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg', state: 'ok' },
+      { name: '鮮乳坊豐樂鮮乳', spec: '936ml', line: '快速到貨', temp: '冷藏', ship: '09/23 ~ 09/25', price: 150, qty: 1, stock: 0, pic: null, state: 'oos' },
+      { name: '春季限定 桶柑', spec: '5 台斤', line: '產地直送', temp: '常溫', ship: '09/24 ~ 09/28', price: 480, qty: 1, stock: 0, pic: null, state: 'off' },
+      { name: '【小寶寶】含運-十倍粥體驗組', spec: '首購限定', line: '粥寶寶專區', temp: '常溫', ship: '09/23 ~ 09/25', price: 0, qty: 1, stock: 99, pic: null, state: 'firstbuy' },
+      { name: '寶寶果泥 隨手包', spec: '1 包（生日禮專用）', line: '粥寶寶專區', temp: '常溫', ship: '09/23 ~ 09/25', price: 0, qty: 1, stock: 84, pic: 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp', state: 'gift' }
     ]
   };
 
@@ -2600,7 +2958,8 @@ a:hover { text-decoration: underline; }
       var q = $('co-body').querySelector('input[data-coq="' + i + '"]');
       cart.push({
         id: 'co' + Date.now() + '-' + i, name: it.name, spec: it.spec,
-        line: it.line, price: it.price, qty: q ? Math.max(1, +q.value || 1) : it.qty
+        line: it.line, temp: it.temp, ship: it.ship, pic: it.pic, stock: it.stock,
+        price: it.price, qty: q ? Math.max(1, +q.value || 1) : it.qty
       });
       n++;
     });
@@ -2676,6 +3035,13 @@ a:hover { text-decoration: underline; }
 
   document.addEventListener('change', function (e) {
     if (e.target.name === 'RadCoupon') { couponId = +e.target.value; useCoupon = (couponId > 0); renderAmount(); }
+    // 改數量要整車重算：它會改變該組的免運門檻達標與否，連運費一起變
+    var q = e.target.closest ? e.target.closest('[data-q]') : null;
+    if (q) {
+      var id = q.getAttribute('data-q');
+      cart.forEach(function (p) { if (p.id === id) p.qty = Math.max(1, +q.value || 1); });
+      render();
+    }
   });
 
   function toast(msg) {
@@ -2704,13 +3070,14 @@ a:hover { text-decoration: underline; }
   // demo 只放四筆，重點是把「這是搜尋不是純輸入」這件事留在畫面上。
   // ══════════════════════════════════════════════════════
   var PRODUCTS_SRC = [
-    { pid: 55201, pdid: 74310, name: '有機蔬菜箱', spec: '中箱／每週配送', line: '蔬菜箱', price: 680 },
+    { pid: 55201, pdid: 74310, name: '有機高麗菜', spec: '約 900g／顆', line: '快速到貨', temp: '常溫', ship: '09/23 ~ 09/25', price: 60, stock: 8, pic: null },
     // 同一個產品兩個規格：匯入文字檔只比對得到商品名，比到多個規格時要讓客服自己選
-    { pid: 55201, pdid: 74311, name: '有機蔬菜箱', spec: '小箱／每週配送', line: '蔬菜箱', price: 480 },
-    { pid: 55202, pdid: 74320, name: '當季水果禮盒', spec: '綜合 6 入', line: '水果', price: 520 },
-    { pid: 57202, pdid: 80325, name: '鮮乳坊豐樂鮮乳', spec: '936ml', line: '鮮乳', price: 150 },
+    { pid: 55201, pdid: 74311, name: '有機高麗菜', spec: '約 1.5kg／顆', line: '快速到貨', temp: '常溫', ship: '09/23 ~ 09/25', price: 95, stock: 24, pic: null },
+    { pid: 55202, pdid: 74320, name: '當季水果禮盒', spec: '綜合 6 入', line: '產地直送', temp: '常溫', ship: '09/24 ~ 09/28', price: 520, stock: 30, pic: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg' },
+    { pid: 57202, pdid: 80325, name: '鮮乳坊豐樂鮮乳', spec: '936ml', line: '快速到貨', temp: '冷藏', ship: '09/23 ~ 09/25', price: 150, stock: 46, pic: null },
+    { pid: 57310, pdid: 80412, name: '舒肥雞胸 綜合', spec: '5 片入', line: '冷凍專區', temp: '冷凍', ship: '09/25 ~ 09/29', price: 380, stock: 15, pic: null },
     // 現行有一條特殊規則：品名含「送一份水果」時自動取消簡訊、付款方式改「無」
-    { pid: 55999, pdid: 79001, name: '產地直送 送一份水果', spec: '活動贈品', line: '水果', price: 0 }
+    { pid: 55999, pdid: 79001, name: '產地直送 送一份水果', spec: '活動贈品', line: '產地直送', temp: '常溫', ship: '09/24 ~ 09/28', price: 0, stock: 99, pic: null }
   ];
   var rowSeq = 0;
 
@@ -2799,7 +3166,9 @@ a:hover { text-decoration: underline; }
     var exist = cart.filter(function (c) { return c.id === 'p' + pr.pdid; })[0];
     if (exist) { exist.qty += qty; }
     else {
-      cart.push({ id: 'p' + pr.pdid, name: pr.name, spec: pr.spec, line: pr.line, price: pr.price, qty: qty });
+      cart.push({ id: 'p' + pr.pdid, name: pr.name, spec: pr.spec, line: pr.line,
+                  temp: pr.temp, ship: pr.ship, pic: pr.pic, stock: pr.stock,
+                  price: pr.price, qty: qty });
     }
     $('prod-rows').innerHTML = '';
     rowSeq = 0;

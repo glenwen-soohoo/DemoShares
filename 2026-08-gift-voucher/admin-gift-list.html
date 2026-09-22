@@ -3,12 +3,26 @@
 <head>
 <!--
   DemoShares 交接對照 | 禮物券管理 列表
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     view       : Areas/GoX/Views/PresentVoucher/Index.cshtml
     controller : Areas/GoX/Controllers/PresentVoucherController.Index（:48）
     route      : /GoX/PresentVoucher/Index（查詢 /GoX/PresentVoucher/Query）
+    js         : admin-present-list.js（React bundle，容器 #admin-present-list）
+    ⚠ **這兩頁是 React，不是 Razor 手刻。** Razor view 只有一個空容器 ＋ 一支 bundle：
+      列表 <div id="admin-present-list"></div> ＋ admin-present-list.js
+      明細 <div id="admin-present-edit"></div>  ＋ admin-present-edit.js
+      bundle 路徑由 ProjectConstants.EnvironmentConstants.WebJsBundleRootPath 控制
+      （prod = greenboxcdn / dev = /web/dev），版本號借 LandingPage 的 JsVersion。
+      Razor 只傳兩個 hidden：#funId（權限檢查用）、#presentItemId（明細頁，0 = 新增）。
+      ⚠ **React 元件目前在 react-component-export 找不到，是待新建的**。所以這個 demo
+        的 HTML/CSS 是給 React 元件照著做的，不要拿去改 Razor view——那裡沒有畫面。
+      ⚠⚠ **不要跟 `exports/admin-gift-list.tsx` / `admin-gift-edit.tsx` 搞混**：那兩支
+        已經存在，是**既有的贈品設定**（`GiftRule`，容器 `#admin-gift-list`），跟禮物券
+        是兩套系統（2026-09-09 定案「不動既有贈品系統」）。名字只差一個字、連自製
+        Switch 的寫法都像，走錯會改到另一個功能。禮物券的容器是 `#admin-present-*`。
+
   這一頁的真實資料表：
     PresentItem            PresentName / PresentImage / PresentDescription /
                            ActivityNote / CartLimitType / DisplayPrice / IsActive

@@ -3,11 +3,12 @@
 <head>
 <!--
   DemoShares 交接對照 | 訂單頁 返還禮物券
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
-    view       : Areas/GoX/Views/Orders/（掛在既有的「返還訂單優惠」裡）
-    controller : Areas/GoX/Controllers/OrdersController.RefundPresentVoucher（:10218）
+    view       : Areas/GoX/Views/Orders/_OrderAmountSection.cshtml
+                 （禮物券的返還掛在既有的「返還訂單優惠」區塊裡，同一支 partial）
+    controller : Areas/GoX/Controllers/OrdersController.RefundPresentVoucher（:10228）
     route      : POST /GoX/Orders/RefundPresentVoucher
   這一頁的真實欄位名：
     券        PresentVoucher.VoucherNo / Status / ExpireTime / UsedOrderNumber

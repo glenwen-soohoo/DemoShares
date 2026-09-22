@@ -3,21 +3,57 @@
 <head>
 <!--
   DemoShares 交接對照 | 禮物明細
-  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（0d3e56406）
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3963-gift-voucher-module（1836cb2e7）
   ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
   對應正式站：
     view       : Areas/GoX/Views/PresentVoucher/Edit.cshtml
     controller : Areas/GoX/Controllers/PresentVoucherController.Edit（:62）
     route      : /GoX/PresentVoucher/Edit
+    js         : admin-present-edit.js（React bundle，容器 #admin-present-edit）
+                 Razor 另傳 hidden #presentItemId（0 = 新增）
                  ＋ GetEditData / GetTypes / GetStats / GetBirthdayRuleInfo /
                    CreateType / UpdateType / DeleteType / IssueToAccounts /
                    SetActive / SetCandidates / UpdateStock
+    ⚠ **這兩頁是 React，不是 Razor 手刻。** Razor view 只有一個空容器 ＋ 一支 bundle：
+      列表 <div id="admin-present-list"></div> ＋ admin-present-list.js
+      明細 <div id="admin-present-edit"></div>  ＋ admin-present-edit.js
+      bundle 路徑由 ProjectConstants.EnvironmentConstants.WebJsBundleRootPath 控制
+      （prod = greenboxcdn / dev = /web/dev），版本號借 LandingPage 的 JsVersion。
+      Razor 只傳兩個 hidden：#funId（權限檢查用）、#presentItemId（明細頁，0 = 新增）。
+      ⚠ **React 元件目前在 react-component-export 找不到，是待新建的**。所以這個 demo
+        的 HTML/CSS 是給 React 元件照著做的，不要拿去改 Razor view——那裡沒有畫面。
+      ⚠⚠ **不要跟 `exports/admin-gift-list.tsx` / `admin-gift-edit.tsx` 搞混**：那兩支
+        已經存在，是**既有的贈品設定**（`GiftRule`，容器 `#admin-gift-list`），跟禮物券
+        是兩套系統（2026-09-09 定案「不動既有贈品系統」）。名字只差一個字、連自製
+        Switch 的寫法都像，走錯會改到另一個功能。禮物券的容器是 `#admin-present-*`。
   這一頁的真實資料表：
     PresentItem            本頁主體
     PresentItemCandidate   兌換順序（本頁的 candidates）
     PresentVoucherType     TypeCode / Name / ValidType / ValidDays /
                            FixedExpireTime / IssueCap / AllowRepeat / Memo
+                           StartTime  ⇒ 畫面上的「可兌換起日」
+                                        ⚠ 建議改名 RedeemStartTime，本檔到處
+                                          的 StartTime 都是「上架／贈送期間」
+                           Display    ⇒ 畫面上的「開放兌換」開關
+                                        ⚠ 這個名字是錯的，見下方警告
+                           EndTime    ⇒ 本規格不使用，見下方警告
     PresentVoucher         單張券
+  ⚠ 券種的兩個閘門欄位語意跟目前分支的實作相反，照分支寫會做錯：
+      分支現況（PresentVoucherService.Issue 第 164~166 行）把 Display / StartTime /
+      EndTime 三個都拿來擋「發券」：關掉 Display ＝「不再發新券」、還沒到 StartTime ＝
+      「尚未開始發放」。兌換端（PresentVoucherApiController.AddToCart）完全不讀這三個。
+      本規格要的是相反的：這兩個欄位管的是「客人換不換得到」，跟能不能發券無關。
+        StartTime 到之前 → 券發得出去，前台**照常看得到這張券**，只是兌換按鈕
+                           變成「尚未到達兌換時間」按不下去
+        Display 關掉    → 同樣是前台照常看得到、按鈕按不下去，含手上已經發出
+                           去的券
+        EndTime         → 不用。券什麼時候失效看單張券自己的到期日
+      ⚠ 所以這個開關的語意**不是 Display**：券沒有被隱藏，是「能不能兌換」。
+        欄位名建議改 IsRedeemable，不要留 Display——照字面實作的人會去改前台
+        的顯示與否，那是錯的。分支還沒併 dev，migration 一起改成本最低。
+      發券要不要停：靠「發券總量」發滿，或單純不再操作發券，不另設開關。
+      連帶要改：BabyBirthdayPresentBatch.cs:102 目前拿 type.Display 決定生日禮排程要不要
+      發券，語意換掉之後那條要改判斷依據，否則關掉「開放兌換」會連排程一起停掉。
   常數：生日禮券種代碼 BD-BABY，券號格式 BD-BABY-0052（券代碼 ＋ 該券種第幾張）
   完整名稱對照見同資料夾 _交接對照.md
 -->
@@ -884,11 +920,18 @@ a:hover { text-decoration: underline; }
   .gv-head-actions { display: flex; gap: 8px; }
 
   .gv-modal-field { margin-bottom: 16px; }
+  /* 兩個欄位並排。窄畫面自動掉回一欄，不另外設斷點 */
+  .gv-modal-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .gv-modal-row > .gv-modal-field { flex: 1 1 200px; min-width: 0; }
+  /* 開關那一格要跟左邊的日期輸入框對齊底線，不是對齊 label */
+  .gv-switch-field { display: flex; align-items: center; height: 32px; }
   .gv-modal-field label { display: block; font-size: 13px; color: var(--gox-text-sub); margin-bottom: 4px; }
   .gv-modal-field .gox-input, .gv-modal-field .gox-select, .gv-modal-field .gox-textarea { width: 100%; }
   .gv-radio-line { display: flex; gap: 20px; margin-bottom: 8px; }
   .gv-radio-line label { font-size: 13px; color: var(--gox-text-sub); display: flex; align-items: center; gap: 6px; }
   .gv-expire-input.is-hidden { display: none; }
+  /* 有效期限這一欄是整排寬，日期輸入框不需要跟著撐滿，給一半就夠 */
+  .gv-modal-field .gv-expire-input .gox-input { width: 50%; }
   .gv-modal-wide { width: 880px; max-width: calc(100vw - 48px); }
   .gv-sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
   .gv-sum-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 2px; }
@@ -1057,7 +1100,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <div class="gox-list-head" id="gv-voucher-head">
-  <h2 style="font-size:16px;">禮物券<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
+  <h2 style="font-size:16px;">禮物券種<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
   <div class="gv-head-actions">
     <button type="button" class="gox-btn gox-btn-default" id="gv-btn-rule" style="display:none;">查看生日券發放規則</button>
     <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">建立新券</button>
@@ -1068,7 +1111,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-card-body">
     <div class="gv-toolbar">
       <div class="gv-filter-part">
-        <label>啟用區間</label>
+        <label>可兌換起日</label>
         <input type="date" class="gox-input" id="gv-f-start">
         <span class="gv-sep">～</span>
         <input type="date" class="gox-input" id="gv-f-end">
@@ -1090,7 +1133,6 @@ a:hover { text-decoration: underline; }
         <tr>
           <th style="width:110px;">券代碼</th>
           <th style="min-width:120px;">券名</th>
-          <th style="width:150px;">啟用區間</th>
           <th style="width:130px;">有效期限</th>
           <th class="cell-right" style="width:150px;">使用／發放（使用率）</th>
           <th class="cell-right" style="width:100px;">發券總量</th>
@@ -1098,7 +1140,8 @@ a:hover { text-decoration: underline; }
           <th class="cell-right" style="width:100px;">訂單總金額</th>
           <th class="cell-right" style="width:100px;">平均客單價</th>
           <th style="width:180px;">備註</th>
-          <th class="cell-center" style="width:56px;">啟用</th>
+          <th style="width:120px;">可兌換起日</th>
+          <th class="cell-center" style="width:88px;">開放兌換</th>
           <th class="cell-center" style="width:132px;">操作</th>
         </tr>
       </thead>
@@ -1111,10 +1154,12 @@ a:hover { text-decoration: underline; }
   <div class="gox-modal-box">
     <div class="gox-card-title" id="gv-i-title">建立新券</div>
     <div class="gox-card-body">
-      <div class="gv-modal-field"><label>券名</label><input type="text" class="gox-input" id="gv-i-name" placeholder="例：中秋加碼場"></div>
-      <div class="gv-modal-field">
-        <label>券代碼</label>
-        <input type="text" class="gox-input" id="gv-i-code" placeholder="例：MF-260901（建立後不可改）">
+      <div class="gv-modal-row">
+        <div class="gv-modal-field"><label>券名</label><input type="text" class="gox-input" id="gv-i-name" placeholder="例：中秋加碼場"></div>
+        <div class="gv-modal-field">
+          <label>券代碼</label>
+          <input type="text" class="gox-input" id="gv-i-code" placeholder="例：MF-260901（建立後不可改）">
+        </div>
       </div>
       <div class="gv-modal-field">
         <label>有效期限</label>
@@ -1124,24 +1169,41 @@ a:hover { text-decoration: underline; }
         </div>
         <div id="gv-expire-days" class="gv-inline-row"><input type="number" class="gox-input gv-num" id="gv-i-days" value="14" min="1"><span class="gv-unit">天內有效</span></div>
         <div id="gv-expire-fixed" class="gv-expire-input is-hidden"><input type="date" class="gox-input" id="gv-i-date"></div>
-        <div class="gv-field-sub is-hidden" id="gv-i-expire-note">改效期只影響之後發出去的券，已經發出去的券保留原本的到期日。</div>
+        <div class="gv-field-sub is-hidden" id="gv-i-expire-note">改效期只影響未來發券，已發券將保留原到期日</div>
       </div>
-      <div class="gv-modal-field">
-        <label>總發送上限</label>
-        <div class="gv-inline-row">
-          <label class="gv-radio"><input type="radio" name="gv-cap" value="none" checked> 不限量</label>
-          <label class="gv-radio"><input type="radio" name="gv-cap" value="num"> 最多</label>
-          <input type="number" class="gox-input gv-num" id="gv-i-cap" min="1" disabled>
-          <span class="gv-unit">張</span>
+      <div class="gv-modal-row">
+        <div class="gv-modal-field">
+          <label>發券總量</label>
+          <div class="gv-inline-row">
+            <label class="gv-radio"><input type="radio" name="gv-cap" value="none" checked> 不限量</label>
+            <label class="gv-radio"><input type="radio" name="gv-cap" value="num"> 最多</label>
+            <input type="number" class="gox-input gv-num" id="gv-i-cap" min="1" disabled>
+            <span class="gv-unit">張</span>
+          </div>
+          <div class="gv-field-sub" id="gv-i-cap-ref"></div>
+          <div class="gv-send-warn" id="gv-i-cap-warn"></div>
         </div>
-        <div class="gv-field-sub" id="gv-i-cap-ref"></div>
-        <div class="gv-send-warn" id="gv-i-cap-warn"></div>
+        <div class="gv-modal-field">
+          <label>同一會員可領</label>
+          <div class="gv-radio-line">
+            <label><input type="radio" name="gv-repeat" value="0" checked> 只能領一張</label>
+            <label><input type="radio" name="gv-repeat" value="1"> 可重複領取</label>
+          </div>
+        </div>
       </div>
-      <div class="gv-modal-field">
-        <label>同一會員可領</label>
-        <div class="gv-radio-line">
-          <label><input type="radio" name="gv-repeat" value="0" checked> 只能領一張</label>
-          <label><input type="radio" name="gv-repeat" value="1"> 可重複領取</label>
+      <div class="gv-modal-row">
+        <div class="gv-modal-field">
+          <label>可兌換起日</label>
+          <input type="date" class="gox-input" id="gv-i-start">
+        </div>
+        <div class="gv-modal-field">
+          <label>開放兌換</label>
+          <!-- 跟列表上那顆是同一個開關。關掉＝客人兌換不到，含手上已經發出去的券；
+               不是「停止發新券」，也不是把券從前台藏起來——券照常顯示，按鈕按不下去。
+               ⚠ 分支目前對到 PresentVoucherType.Display，那個名字是錯的，
+                  建議改 IsRedeemable，理由見本檔開頭。
+               放在可兌換起日旁邊：日期決定從哪天開始，開關是隨時能關的閘門 -->
+          <div class="gv-switch-field"><span class="gox-switch is-on" id="gv-i-active"></span></div>
         </div>
       </div>
       <div class="gv-modal-field">
@@ -1229,7 +1291,7 @@ a:hover { text-decoration: underline; }
   // 所以列表上永遠只佔一列。recurring=true 時有效期限顯示規則而非固定日期。
   function bdRecurring(issued, used, unused, smsSent, smsFail) {
     return { code: 'BD-BABY', name: '寶寶生日禮', recurring: true,
-      start: '2026-04-20', end: null, expire: null, expireRule: '發券日起 14 天',
+      start: '2026-04-20', expire: null, expireRule: '發券日起 14 天',
       used: used, issued: issued, unused: unused,
       active: true, ended: false, sms: { sent: smsSent, failed: smsFail } };
   }
@@ -1271,9 +1333,9 @@ a:hover { text-decoration: underline; }
       qty: 2, unit: '入', cost: 90, line: '粥寶寶專區', temp: '常溫', price: 149, start: '2026-08-01', end: '2026-09-30',
       listed: true, stock: 12, hasAutoRule: false, candidates: ['5', '3'], cartLimit: 2,
       types: [
-        { code: 'MF-260801', name: '中秋限定禮', start: '2026-08-01', end: '2026-09-15', expire: '2026-09-15', used: 128, issued: 200, unused: 72, active: true, ended: false, sms: null,
+        { code: 'MF-260801', name: '中秋限定禮', start: '2026-08-01', expire: '2026-09-15', used: 128, issued: 200, unused: 72, active: true, ended: false, sms: null,
           cap: 200, allowRepeat: false, memo: '行銷 A 檔主推，200 張已全數發完' },
-        { code: 'MF-260820', name: '中秋加碼場', start: '2026-08-20', end: '2026-09-03', expire: '2026-09-03', used: 12,  issued: 60,  unused: 0,  active: true, ended: true, sms: null,
+        { code: 'MF-260820', name: '中秋加碼場', start: '2026-08-20', expire: '2026-09-03', used: 12,  issued: 60,  unused: 0,  active: true, ended: true, sms: null,
           memo: '' }
       ]
     },
@@ -1282,7 +1344,7 @@ a:hover { text-decoration: underline; }
       qty: 1, unit: '包', cost: 55, line: '粥寶寶專區', temp: '冷凍', price: 89, start: '2026-01-01', end: '2026-12-31',
       listed: true, stock: 0, hasAutoRule: false, candidates: [], cartLimit: 0,
       types: [
-        { code: 'CS-260715', name: '客服補償券', start: '2026-07-15', end: null, expire: null, expireRule: '發券日起 30 天', used: 47, issued: 52, unused: 5, active: true, ended: false, sms: null }
+        { code: 'CS-260715', name: '客服補償券', start: '2026-07-15', expire: null, expireRule: '發券日起 30 天', used: 47, issued: 52, unused: 5, active: true, ended: false, sms: null }
       ]
     },
     '4': {
@@ -1290,7 +1352,7 @@ a:hover { text-decoration: underline; }
       qty: 1, unit: '盒', cost: 240, line: '產地直送', temp: '常溫', price: 380, start: '2025-10-01', end: '2025-11-30',
       listed: false, stock: 0, hasAutoRule: false, candidates: ['3'], cartLimit: 0,
       types: [
-        { code: 'AN-251001', name: '週年慶禮', start: '2025-10-01', end: '2025-11-30', expire: '2025-11-30', used: 310, issued: 400, unused: 0, active: false, ended: true, sms: null }
+        { code: 'AN-251001', name: '週年慶禮', start: '2025-10-01', expire: '2025-11-30', used: 310, issued: 400, unused: 0, active: false, ended: true, sms: null }
       ]
     },
     '6': {
@@ -1299,7 +1361,7 @@ a:hover { text-decoration: underline; }
       listed: true, stock: 0, hasAutoRule: false, candidates: ['5'], cartLimit: 0,
       note: '訂單回饋禮，依當季供貨情況出貨。如遇缺貨，將以同等價值品項替換；若替換品項亦無庫存，請聯繫客服協助。',
       types: [
-        { code: 'OR-260701', name: '訂單回饋禮', start: '2026-07-01', end: null, expire: '2026-10-31', used: 63, issued: 90, unused: 27, active: true, ended: false, sms: null,
+        { code: 'OR-260701', name: '訂單回饋禮', start: '2026-07-01', expire: '2026-10-31', used: 63, issued: 90, unused: 27, active: true, ended: false, sms: null,
           memo: '滿額回饋常設券，目前缺貨由備選頂著' }
       ]
     },
@@ -1321,8 +1383,9 @@ a:hover { text-decoration: underline; }
   var TODAY = '2026-09-07';
   Object.keys(DATA).forEach(function (k) {
     DATA[k].types.forEach(function (x) {
-      // 「已結束」＝ 不能再發新券。兩種來源：啟用區間結束、或所有券的最晚到期日已過。
-      if ((x.expire && x.expire < TODAY) || (x.end && x.end < TODAY)) x.ended = true;
+      // 「已結束」＝ 這個券種所有券的最晚到期日已過，不能再發新券。
+      // 可兌換起日只管「從哪天開始」，不決定結束。
+      if (x.expire && x.expire < TODAY) x.ended = true;
       if (x.ended) x.unused = 0;
       else if (!x.recurring) x.unused = x.issued - x.used;
       if (x.used > x.issued || x.unused < 0) {
@@ -1371,9 +1434,10 @@ a:hover { text-decoration: underline; }
     var s = document.getElementById('gv-f-start').value;
     var e = document.getElementById('gv-f-end').value;
     return g.types.filter(function (t) {
-      // 改成「啟用區間與查詢區間有沒有重疊」，不是拿單一日期去比。
-      // 沒有結束日的常設券（生日禮、客服補償券）只要開始日在查詢結束之前就算重疊。
-      if (s && t.end && t.end < s) return false;
+      // 比的是「這個券種的存續期間與查詢區間有沒有重疊」：
+      // 存續期間 ＝ 可兌換起日 ~ 有效期限。效期是規則型（發券日起 N 天）的
+      // 常設券沒有固定終點，只要起點在查詢結束之前就算重疊。
+      if (s && t.expire && t.expire < s) return false;
       if (e && t.start && t.start > e) return false;
       return true;
     });
@@ -1431,18 +1495,23 @@ a:hover { text-decoration: underline; }
 
   // 券的狀態（已結束）掛在券名旁邊，不要塞進日期欄或操作欄。
   // 排程券不掛「自動發放」標籤，那件事由「查看生日券發放規則」按鈕負責。
-  // 原本「每週三自動」放在啟用區間欄、「已結束」放在有效期限欄、「自動」放在操作欄，
+  // 原本「每週三自動」放在日期欄、「已結束」放在有效期限欄、「自動」放在操作欄，
   // 三個欄位都因此變成「有時是值、有時是狀態」，篩選與排序都會壞掉。
   // 排程細節（週期、補發、簡訊）一律只在「查看生日券發放規則」彈窗裡講。
-  // 啟用區間 ＝ 券種的 StartTime / EndTime，語意是「這段期間可以發新券」。
+  // 可兌換起日 ＝ 券種的 StartTime。語意是「這一天之前客人兌換不到」，
+  // 管的是兌換端，不是發券端：日期還沒到的券照樣發得出去，前台也照常看得到，
+  // 只是兌換按鈕變成「尚未到達兌換時間」按不下去。不是把券藏起來。
+  // ⚠ 目前分支把 StartTime 拿來擋發券（Issue 第 165 行「尚未開始發放」），跟這裡相反，
+  //   照分支實作會做錯。完整說明見本檔開頭的警告。
+  // 跟右邊的「開放兌換」開關是一組：日期是排定的，開關是隨時能關的手動閘門。
+  //
   // ⚠ 這一欄不是「發放日期」。券種層沒有發放日期這種東西，正式站的
   //   PresentVoucherType 也沒有這個欄位；每一張券實際發出去的時間記在
   //   PresentVoucher.IssuedTime，要查發放紀錄請點「查看名單」看單張券。
   //   （2026-09-18 定案：原本這一欄叫「發放時間」，值是憑空的 issuedAt。）
-  // 沒有結束日的常設券顯示「YYYY-MM-DD 起」，不要填一個假的結束日。
+  // 券什麼時候失效看右邊的「有效期限」欄，這裡只講起點。
   function periodCell(t) {
-    if (!t.start) return '—';
-    return t.end ? (t.start + ' ~ ' + t.end) : (t.start + ' 起');
+    return t.start || '—';
   }
 
   function nameCell(t) {
@@ -1485,12 +1554,12 @@ a:hover { text-decoration: underline; }
 
   function renderTypes() {
     var rows = filtered();
-    document.getElementById('gv-tcount').textContent = '共 ' + rows.length + ' 個券';
+    document.getElementById('gv-tcount').textContent = '共 ' + rows.length + ' 個券種';
     renderStats(rows);
 
     var tbody = document.getElementById('gv-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="12" class="gv-empty">這段期間沒有啟用中的券種</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="gv-empty">這段期間沒有開放兌換的券種</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (t) {
@@ -1505,7 +1574,6 @@ a:hover { text-decoration: underline; }
       return '<tr' + (t.ended ? ' class="gv-row-ended"' : '') + '>' +
         '<td><span class="gv-code">' + t.code + '</span></td>' +
         '<td>' + nameCell(t) + '</td>' +
-        '<td>' + periodCell(t) + '</td>' +
         '<td>' + (t.expireRule || t.expire) + '</td>' +
         '<td class="cell-right gv-rate">' + (t.issued
             ? '<b>' + t.used + '</b><span> / ' + t.issued + '（' + rate + '%）</span>'
@@ -1515,6 +1583,7 @@ a:hover { text-decoration: underline; }
         '<td class="cell-right gv-num">$' + fmt(amt) + '</td>' +
         '<td class="cell-right gv-num">' + (cnt ? '$' + fmt(Math.round(amt / cnt)) : '—') + '</td>' +
         '<td>' + memoCell(t) + '</td>' +
+        '<td>' + periodCell(t) + '</td>' +
         '<td class="cell-center">' + sw + '</td>' +
         '<td class="cell-center">' + issueBtn(t, i) + '</td>' +
       '</tr>';
@@ -1529,7 +1598,7 @@ a:hover { text-decoration: underline; }
       // 到期日已過的券，名單裡沒用掉的一律是過期，不能顯示成還能用
       // 生日禮持續發放，名單裡每張券的發放日要分散在各週（每週約 10 張）
       // ⚠ 這裡的 issuedAt 是**單張券**的發放時間（PresentVoucher.IssuedTime），
-      //   券種層沒有這個欄位，所以拿啟用區間的開始日當假資料的基準
+      //   券種層沒有這個欄位，所以拿可兌換起日當假資料的基準
       var issuedOn = t.recurring ? addDays(t.start, Math.floor(i / 10) * 7) : t.start;
       list.push({
         member: 'demo_user_' + String(i + 1).padStart(3, '0'),
@@ -1741,7 +1810,7 @@ a:hover { text-decoration: underline; }
     if (!sw) return;
     var t = g.types[Number(sw.getAttribute('data-gv-vtoggle'))];
     t.active = e.detail.on;
-    window.gox.toast(t.active ? ('已啟用 ' + t.code) : ('已關閉 ' + t.code + '，客人無法再兌換'));
+    window.gox.toast(t.active ? (t.code + ' 已開放兌換') : (t.code + ' 已停止兌換，客人換不到'));
   });
 
 
@@ -1761,9 +1830,10 @@ a:hover { text-decoration: underline; }
   function suggestCap() { return Math.max(0, g.stock - totalUnused()); }
   function capRefText(tt) {
     var s = '目前庫存 <b>' + g.stock + '</b> ' + g.unit +
-            '，有效未使用券 <b>' + totalUnused() + '</b> 張，建議上限 <b>' + suggestCap() + '</b> 張';
-    // 編輯既有券時多給一個下限：上限不能設得比已經發出去的張數還低
-    if (tt && tt.issued) s += '。這個券已發出 <b>' + tt.issued + '</b> 張，上限不能低於這個數';
+            '，可兌換券 <b>' + totalUnused() + '</b> 張，建議上限 <b>' + suggestCap() + '</b> 張。';
+    // 編輯既有券時多給一個下限：上限不能設得比已經發出去的張數還低。
+    // 另起一行，因為這一句的主詞是「這個券種」，上一句的主詞是「這份禮物」。
+    if (tt && tt.issued) s += '<br>此券已發 <b>' + tt.issued + '</b> 張，上限不得低於此數。';
     return s;
   }
 
@@ -1791,6 +1861,12 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-i-name').value = isEdit ? tt.name : '';
     codeInput.value = isEdit ? tt.code : '';
     document.getElementById('gv-i-memo').value = isEdit ? (tt.memo || '') : '';
+    // 建立時預設今天：新開的券種多半是馬上要用的
+    document.getElementById('gv-i-start').value = isEdit ? (tt.start || '') : today();
+    // 開放兌換開關：建立時預設開著；已結束的券種不給改，關掉也沒意義
+    var actSw = document.getElementById('gv-i-active');
+    actSw.classList.toggle('is-on', isEdit ? !!tt.active : true);
+    actSw.classList.toggle('is-disabled', isEdit && !!tt.ended);
 
     if (isEdit && tt.expireRule) {
       // 「發券日起 N 天」這種相對效期，把天數挖出來
@@ -1877,8 +1953,11 @@ a:hover { text-decoration: underline; }
     var isEdit = editTypeIdx >= 0;
     var name = document.getElementById('gv-i-name').value.trim();
     var code = document.getElementById('gv-i-code').value.trim();
+    var startVal = document.getElementById('gv-i-start').value;
+
     if (!name) { window.gox.toast('請填寫券名'); return; }
     if (!isEdit && !code) { window.gox.toast('請填寫券代碼'); return; }
+    if (!startVal) { window.gox.toast('請填寫可兌換起日'); return; }
     if (!isEdit && g.types.some(function (x) { return x.code === code; })) {
       window.gox.toast('券代碼「' + code + '」已存在'); return;
     }
@@ -1897,6 +1976,8 @@ a:hover { text-decoration: underline; }
         return;
       }
       tt.name = name;
+      tt.start = startVal;
+      if (!tt.ended) tt.active = document.getElementById('gv-i-active').classList.contains('is-on');
       tt.cap = cap;
       tt.allowRepeat = allowRepeat;
       tt.memo = memo;
@@ -1909,27 +1990,35 @@ a:hover { text-decoration: underline; }
       return;
     }
 
-    var start = today();
-    var expire = isDays ? addDays(start, days)
-                        : (document.getElementById('gv-i-date').value || addDays(start, 14));
+    // 效期是「發券日起算 N 天」時，用可兌換起日當基準算出這一批最晚會到期的那一天
+    var expire = isDays ? addDays(startVal, days)
+                        : (document.getElementById('gv-i-date').value || addDays(startVal, 14));
 
-    // 啟用區間預設「今天起、沒有結束日」：建立新券的表單沒有這個輸入，
-    // 要限定檔期就到券種列表的「編輯」改。
     g.types.unshift({
-      code: code, name: name, start: start, end: null, expire: expire,
-      used: 0, issued: 0, unused: 0, active: true, ended: false, sms: null,
+      code: code, name: name, start: startVal, expire: expire,
+      used: 0, issued: 0, unused: 0,
+      active: document.getElementById('gv-i-active').classList.contains('is-on'),
+      ended: false, sms: null,
       cap: cap, allowRepeat: allowRepeat, memo: memo
     });
 
     closeTypeModal();
+    // 預設只看最近三個月，所以起點排在未來的券種建完會被篩掉、看起來像沒建成功。
+    // 只要新建的這個落在篩選外，就把篩選清掉讓它出現。
+    if (filtered().indexOf(g.types[0]) < 0) {
+      document.getElementById('gv-f-start').value = '';
+      document.getElementById('gv-f-end').value = '';
+    }
     renderView(); renderTypes();
     window.gox.toast('已建立「' + name + '」，接著在列表按「發券」發給客人');
   });
 
   function closeTypeModal() {
     document.getElementById('gv-issue-modal').classList.add('is-hidden');
-    ['gv-i-name', 'gv-i-code', 'gv-i-memo', 'gv-i-cap'].forEach(function (id) { document.getElementById(id).value = ''; });
+    ['gv-i-name', 'gv-i-code', 'gv-i-memo', 'gv-i-cap', 'gv-i-start'].forEach(function (id) { document.getElementById(id).value = ''; });
     document.getElementById('gv-i-code').disabled = false;
+    var sw0 = document.getElementById('gv-i-active');
+    sw0.classList.add('is-on'); sw0.classList.remove('is-disabled');
     document.querySelector('input[name="gv-repeat"][value="0"]').checked = true;
     document.querySelector('input[name="gv-cap"][value="none"]').checked = true;
     setCapMode();
