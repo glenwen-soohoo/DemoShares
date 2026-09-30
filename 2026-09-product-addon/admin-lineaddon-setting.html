@@ -683,7 +683,7 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child ">加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child is-active">產線加購品</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child ">產品頁加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child is-active">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
@@ -789,8 +789,8 @@ a:hover { text-decoration: underline; }
   .la-status.is-clean{ color:var(--gox-text-muted); }
   .la-status.is-dirty{ color:#d4820a; font-weight:600; }
   .la-status.is-saving{ color:var(--gox-text-sub); }
-  .la-hideoff{ margin-left:auto; display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--gox-text-sub); cursor:pointer; }
-  .la-hideoff input{ width:15px; height:15px; accent-color:var(--gox-green); }
+  .la-hideoff{ display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--gox-text-sub); cursor:pointer; user-select:none; }
+  .la-filter-sep{ width:1px; height:18px; background:var(--gox-card-border); }
   .la-empty{ text-align:center; padding:28px; color:var(--gox-text-muted); }
 
   /* 限定子分類編輯 modal */
@@ -815,10 +815,11 @@ a:hover { text-decoration: underline; }
 
 <!-- 分類篩選 chips（E-①） -->
 <div class="la-filter">
+  <span class="la-hideoff"><button type="button" class="gox-switch" id="la-hideoff-sw" role="switch"></button>隱藏下架</span>
+  <span class="la-filter-sep"></span>
   <span class="la-filter-lbl">篩選子分類</span>
   <span id="la-chips"></span>
   <button class="la-clear" id="la-clear" hidden>清除篩選</button>
-  <label class="la-hideoff"><input type="checkbox" id="la-hideoff"> 隱藏下架</label>
 </div>
 
 <!-- 加入加購品（限定子分類於加入後再用「編輯子分類」設定）-->
@@ -870,34 +871,25 @@ a:hover { text-decoration: underline; }
 </div>
 
 <!-- 限定子分類編輯 modal -->
-<div class="gox-modal-overlay is-hidden" id="la-sub-modal">
+<!-- 編輯加購設定 modal（加購規則＋限定子分類，一次設定） -->
+<div class="gox-modal-overlay is-hidden" id="la-edit-modal">
   <div class="gox-modal-box la-modal-box">
-    <h4>限定子分類 — <span id="la-modal-name"></span></h4>
-    <p class="la-modal-hint">勾選後，此加購品只在購物車含所選子分類的商品時顯示；全部不勾＝不限、比照現況一律顯示。</p>
-    <div class="la-modal-subs" id="la-modal-subs"></div>
-    <div class="gox-modal-actions">
-      <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
-      <button class="gox-btn gox-btn-primary" id="la-modal-ok">確定</button>
-    </div>
-  </div>
-</div>
-
-<!-- 編輯加購規則 modal（滿額限購＋限購數量） -->
-<div class="gox-modal-overlay is-hidden" id="la-rule-modal">
-  <div class="gox-modal-box la-modal-box">
-    <h4>編輯加購規則 — <span id="la-rule-name"></span></h4>
-    <p class="la-modal-hint">設定此加購品的購買條件，0＝不限。</p>
+    <h4>編輯限購條件 — <span id="la-edit-name"></span></h4>
     <div class="la-rule-fields">
       <label class="la-rule-f"><span>滿額限購</span>
-        <span class="la-rule-inline">購物車同產線滿 <input type="number" class="gox-input" id="la-rule-min" min="0" style="width:110px;"> 元才可購買</span>
+        <span class="la-rule-inline">購物車同產線滿 <input type="number" class="gox-input" id="la-edit-min" min="0" style="width:110px;"> 元才可購買（0＝不限）</span>
       </label>
       <label class="la-rule-f"><span>限購數量</span>
-        <span class="la-rule-inline">每筆訂單限購 <input type="number" class="gox-input" id="la-rule-limit" min="0" style="width:90px;"> 件</span>
+        <span class="la-rule-inline">每筆訂單限購 <input type="number" class="gox-input" id="la-edit-limit" min="0" style="width:90px;"> 件（0＝不限）</span>
       </label>
+      <div class="la-rule-f"><span>限定子分類</span>
+        <p class="la-modal-hint" style="margin:2px 0 4px;">勾選後只在購物車含所選子分類的商品時顯示；全部不勾＝不限。</p>
+        <div class="la-modal-subs" id="la-edit-subs"></div>
+      </div>
     </div>
     <div class="gox-modal-actions">
       <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
-      <button class="gox-btn gox-btn-primary" id="la-rule-ok">確定</button>
+      <button class="gox-btn gox-btn-primary" id="la-edit-ok">確定</button>
     </div>
   </div>
 </div>
@@ -1010,7 +1002,8 @@ a:hover { text-decoration: underline; }
   $('la-clear').addEventListener('click', function(){ filter.clear(); this.hidden=true;
     $('la-chips').querySelectorAll('.la-chip').forEach(function(x){x.classList.remove('is-on');}); render();
   });
-  $('la-hideoff').addEventListener('change', function(){ hideOff=this.checked; render(); });
+  document.addEventListener('gox:switch', function(e){ if(e.target && e.target.id==='la-hideoff-sw'){ hideOff=e.target.classList.contains('is-on'); render(); } });
+  document.querySelector('.la-hideoff').addEventListener('click', function(e){ if(e.target.id!=='la-hideoff-sw') $('la-hideoff-sw').click(); });
 
   // ── 加入（可貼多筆規格ID，用空格／換行／逗號分隔；搜尋只是把 ID 帶進欄位，不直接加入）──
   var ac=$('la-ac'), acIn=$('la-ac-input'), acList=$('la-ac-list');
@@ -1087,8 +1080,7 @@ a:hover { text-decoration: underline; }
         + '<td class="cell-center">'+(r.vip?'<span class="la-yes">VIP</span>':'<span class="la-dash">—</span>')+'</td>'
         + '<td class="cell-center">'+(r.firstBuy?'<span class="la-yes">✓</span>':'<span class="la-dash">—</span>')+'</td>'
         + '<td class="cell-center">'+(r.shipping?'<span class="la-yes">✓</span>':'<span class="la-dash">—</span>')+'</td>'
-        + '<td class="cell-center"><div class="la-ops"><button class="la-linkbtn" data-editrule="'+r.id+'">編輯加購規則</button>'
-          + '<button class="la-linkbtn" data-editsub="'+r.id+'">編輯子分類</button>'
+        + '<td class="cell-center"><div class="la-ops"><button class="la-linkbtn" data-edit="'+r.id+'">編輯限購條件</button>'
           + '<button class="la-linkbtn is-danger" data-rm="'+r.id+'">移除</button></div></td></tr>';
     }).join('');
     syncBars();
@@ -1106,8 +1098,7 @@ a:hover { text-decoration: underline; }
     if(pick){ var id=Number(pick.getAttribute('data-id')); if(pick.checked)selected.add(id); else selected.delete(id); syncBars(); return; }
     var top=e.target.closest('[data-top]'); if(top){ moveTo(Number(top.getAttribute('data-top')),'top'); return; }
     var bot=e.target.closest('[data-bottom]'); if(bot){ moveTo(Number(bot.getAttribute('data-bottom')),'bottom'); return; }
-    var es=e.target.closest('[data-editsub]'); if(es){ openSubModal(Number(es.getAttribute('data-editsub'))); return; }
-    var er=e.target.closest('[data-editrule]'); if(er){ openRuleModal(Number(er.getAttribute('data-editrule'))); return; }
+    var ed=e.target.closest('[data-edit]'); if(ed){ openEditModal(Number(ed.getAttribute('data-edit'))); return; }
     var rm=e.target.closest('[data-rm]'); if(rm){ var rid=Number(rm.getAttribute('data-rm')); DATA[line]=DATA[line].filter(function(r){return r.id!==rid;}); selected.delete(rid); markDirty(); render(); return; }
   });
   $('la-all').addEventListener('change', function(){ var vis=visible();
@@ -1138,29 +1129,20 @@ a:hover { text-decoration: underline; }
     dragId=null; render(); });
   body.addEventListener('dragend', function(){ dragId=null; render(); });
 
-  // ── 限定子分類 modal（依產線動態）──
-  function openSubModal(id){ modalId=id; var r=DATA[line].find(function(x){return x.id===id;}); if(!r)return;
-    $('la-modal-name').textContent=r.name;
-    $('la-modal-subs').innerHTML=subcatsOfLine().map(function(s){ return '<label><input type="checkbox" value="'+s+'"'+(r.subs.indexOf(s)>=0?' checked':'')+'>'+s+'</label>'; }).join('');
-    $('la-sub-modal').classList.remove('is-hidden');
+  // ── 編輯加購設定 modal（加購規則＋限定子分類，一次設定；依產線動態）──
+  var editId=null;
+  function openEditModal(id){ editId=id; var r=DATA[line].find(function(x){return x.id===id;}); if(!r)return;
+    $('la-edit-name').textContent=r.name;
+    $('la-edit-min').value=r.minPrice||'';
+    $('la-edit-limit').value=r.limit||'';
+    $('la-edit-subs').innerHTML=subcatsOfLine().map(function(s){ return '<label><input type="checkbox" value="'+s+'"'+(r.subs.indexOf(s)>=0?' checked':'')+'>'+s+'</label>'; }).join('');
+    $('la-edit-modal').classList.remove('is-hidden');
   }
-  $('la-modal-ok').addEventListener('click', function(){ var r=DATA[line].find(function(x){return x.id===modalId;}); if(r){
-    r.subs=[...$('la-modal-subs').querySelectorAll('input:checked')].map(function(cb){return cb.value;}); markDirty(); }
-    $('la-sub-modal').classList.add('is-hidden'); render();
-  });
-
-  // ── 編輯加購規則 modal（滿額限購＋限購數量）──
-  var ruleId=null;
-  function openRuleModal(id){ ruleId=id; var r=DATA[line].find(function(x){return x.id===id;}); if(!r)return;
-    $('la-rule-name').textContent=r.name;
-    $('la-rule-min').value=r.minPrice||'';
-    $('la-rule-limit').value=r.limit||'';
-    $('la-rule-modal').classList.remove('is-hidden');
-  }
-  $('la-rule-ok').addEventListener('click', function(){ var r=DATA[line].find(function(x){return x.id===ruleId;}); if(r){
-    r.minPrice=Math.max(0, parseInt($('la-rule-min').value,10)||0);
-    r.limit=Math.max(0, parseInt($('la-rule-limit').value,10)||0); markDirty(); }
-    $('la-rule-modal').classList.add('is-hidden'); render();
+  $('la-edit-ok').addEventListener('click', function(){ var r=DATA[line].find(function(x){return x.id===editId;}); if(r){
+    r.minPrice=Math.max(0, parseInt($('la-edit-min').value,10)||0);
+    r.limit=Math.max(0, parseInt($('la-edit-limit').value,10)||0);
+    r.subs=[...$('la-edit-subs').querySelectorAll('input:checked')].map(function(cb){return cb.value;}); markDirty(); }
+    $('la-edit-modal').classList.add('is-hidden'); render();
   });
 
   renderChips(); render();

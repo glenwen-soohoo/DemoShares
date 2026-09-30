@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<title>加購設定・編輯 — 後台 demo</title>
+<title>產品頁加購設定・編輯 — 後台 demo</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -671,7 +671,7 @@ a:hover { text-decoration: underline; }
   <nav class="gox-breadcrumb">
     <span>產品管理</span>
     <span class="sep">&gt;</span>
-    <a href="admin-addon-list.html">加購設定</a>
+    <a href="admin-addon-list.html">產品頁加購設定</a>
     <span class="sep">&gt;</span>
     <strong>編輯</strong>
   </nav>
@@ -685,7 +685,7 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">產品頁加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
@@ -749,6 +749,8 @@ a:hover { text-decoration: underline; }
   .as-specrow .i{ font-size:12.5px; }
   .as-specrow .i>span{ color:var(--gox-text-muted); margin-right:5px; }
   .as-specrow .i>b{ color:var(--gox-text); font-weight:600; font-variant-numeric:tabular-nums; }
+  .as-spec-edit{ margin-left:auto; align-self:center; border:1px solid #bfe6bf; background:#fff; color:var(--gox-green-hover); border-radius:var(--gox-radius); padding:2px 12px; font-size:12.5px; text-decoration:none; white-space:nowrap; }
+  .as-spec-edit:hover{ background:var(--gox-green); color:#fff; border-color:var(--gox-green); }
 
   /* 掛載主商品：簡單列 */
   .as-list{ display:flex; flex-direction:column; gap:10px; }
@@ -800,7 +802,7 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-toolbox is-wide">
  <div class="as-wrap">
-  <div class="as-head"><h2>加購設定</h2></div>
+  <div class="as-head"><h2>產品頁加購設定</h2></div>
   <div id="editor"></div>
   <div class="as-savebar">
     <button class="as-del-btn" id="btn-del" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>刪除加購設定</button>
@@ -855,6 +857,7 @@ a:hover { text-decoration: underline; }
       + '<span class="i"><span>剩餘數量</span><b>'+a.stock+'</b></span>'
       + '<span class="i"><span>預計出貨日</span><b>'+(a.ship||'—')+'</b></span>'
       + '<span class="i"><span>販售期間</span><b>'+(a.sellStart||'—')+' ～ '+(a.sellEnd||'—')+'</b></span>'
+      + '<a class="as-spec-edit" href="admin-spec-addon.html">修改規格</a>'
       + '</div>' : '';
     var acts = isSubject
       ? '<div class="tg"><button class="gox-switch '+(a.up?'is-on':'')+'" data-up="'+aid+'"></button><span class="as-swlabel">'+(a.up?'上架':'下架')+'</span></div>'
