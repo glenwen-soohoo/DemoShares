@@ -917,7 +917,10 @@ a:hover { text-decoration: underline; }
   .gv-note-fail { color: var(--gox-danger); }
   .gv-note-none { color: var(--gox-text-muted); }
   .gv-empty { padding: 32px 16px; text-align: center; color: var(--gox-text-muted); }
-  .gv-head-actions { display: flex; gap: 8px; }
+  .gv-head-actions { display: flex; gap: 8px; align-items: center; }
+  /* 不能刪的原因寫在按鈕左邊。停用的按鈕留在原位，不要藏起來——
+     藏起來的話營運只會看到「這份禮物沒有刪除鈕」，不知道為什麼 */
+  .gv-del-why { font-size: 12px; color: var(--gox-text-muted); }
 
   .gv-modal-field { margin-bottom: 16px; }
   /* 兩個欄位並排。窄畫面自動掉回一欄，不另外設斷點 */
@@ -947,8 +950,10 @@ a:hover { text-decoration: underline; }
 <div class="gox-list-head">
   <h2>禮物明細</h2>
   <div class="gv-head-actions">
+    <span class="gv-del-why" id="gv-del-why"></span>
     <button type="button" class="gox-btn gox-btn-default" id="gv-back">回列表</button>
     <button type="button" class="gox-btn gox-btn-primary" id="gv-edit">編輯</button>
+    <button type="button" class="gox-btn gox-btn-danger" id="gv-del">刪除禮物</button>
   </div>
 </div>
 
@@ -1222,6 +1227,25 @@ a:hover { text-decoration: underline; }
 </div>
 
 
+<div class="gox-modal-overlay is-hidden" id="gv-del-modal">
+  <div class="gox-modal-box">
+    <div class="gox-card-title">刪除禮物</div>
+    <div class="gox-card-body">
+      <p class="gv-modal-lead">確定刪除「<b id="gv-del-name"></b>」？</p>
+      <div class="gv-modal-note">
+        <ul>
+          <li><b>無法復原</b>：這份禮物、它的兌換順序設定，以及底下的券模板都會一起刪掉。</li>
+          <li>綁定的商品規格（<span id="gv-del-spec"></span>）也會一併移除。</li>
+        </ul>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
+        <button type="button" class="gox-btn gox-btn-danger" id="gv-del-yes">確定刪除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="gox-modal-overlay is-hidden" id="gv-send-modal">
   <div class="gox-modal-box">
     <div class="gox-card-title">發券</div>
@@ -1400,6 +1424,14 @@ a:hover { text-decoration: underline; }
   });
 
   var id = (location.search.match(/[?&]id=(\d+)/) || [])[1] || '1';
+
+  // 這份禮物總共發過幾張券 ＝ 底下所有券模板的已發張數加總。
+  // 刪除的判準是這個數字，不是庫存也不是銷量：
+  // 券掛在 PresentVoucher 上、往上掛到券模板、再掛到 PresentItem、最後掛到規格。
+  // 發過券之後刪掉，那些券會變成查不到的孤兒（禮物的查詢是 INNER JOIN 規格）。
+  function totalIssued(x) {
+    return (x.types || []).reduce(function (n, t) { return n + (t.issued || 0); }, 0);
+  }
   var g = DATA[id] || DATA['1'];
 
   // 頂部資訊的兌換順序摘要：本禮物自己是第 1 順位，之後才是備選
@@ -1896,6 +1928,30 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-i-cap-warn').classList.remove('is-on');
     document.getElementById('gv-issue-modal').classList.remove('is-hidden');
   }
+
+  /* 刪除禮物：發過券就鎖住。停用時按鈕留著，左邊寫出原因。
+     ⚠ 對到後端 ProductModel.RemoveProductDetail —— 它目前是「只要綁著 PresentItem
+       就一律不給刪」，要放寬成先數發券數，見 _交接對照.md K-1。 */
+  (function () {
+    var issued = totalIssued(g);
+    var btn = document.getElementById('gv-del');
+    if (issued > 0) {
+      btn.disabled = true;
+      document.getElementById('gv-del-why').textContent = '已發出 ' + issued + ' 張券，不能刪';
+    }
+    btn.addEventListener('click', function () {
+      if (btn.disabled) return;
+      document.getElementById('gv-del-name').textContent = g.product + ' ' + g.spec;
+      document.getElementById('gv-del-spec').textContent = g.spec + ' #' + g.specId;
+      document.getElementById('gv-del-modal').classList.remove('is-hidden');
+    });
+    document.getElementById('gv-del-yes').addEventListener('click', function () {
+      document.getElementById('gv-del-modal').classList.add('is-hidden');
+      window.gox.toast('已刪除「' + g.product + ' ' + g.spec + '」');
+      // 禮物沒了，這一頁就沒有東西可看，回列表
+      setTimeout(function () { location.href = 'admin-gift-list.html'; }, 900);
+    });
+  })();
 
   document.getElementById('gv-btn-issue').addEventListener('click', function () { openTypeModal(-1); });
   // 取消要走自己的關閉，才會把編輯模式與鎖住的券代碼一起重設；
