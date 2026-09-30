@@ -855,9 +855,16 @@ a:hover { text-decoration: underline; }
   }
   .circ:hover { transform: scale(1.05); background: #404040; }
   .circ:active { transform: scale(.95); background: #000; }
-  .circ-minus { background: #a3a3a3; margin-top: 16px; }
-  .circ-minus:hover { background: #d4d4d4; }
-  .circ-minus:active { background: #a3a3a3; }
+  /* 可刪的 ⊖ 用 danger 色：原本跟停用態一樣是灰的，兩顆擺在一起看不出哪顆能按 */
+  .circ-minus { background: var(--gox-danger); margin-top: 16px; }
+  .circ-minus:hover { background: #c23c32; }
+  .circ-minus:active { background: var(--gox-danger); }
+  /* 不能刪的時候按鈕停用但留在原位，旁邊寫出原因。
+     藏起來的話客服只會看到「別人有我沒有」，不知道為什麼 */
+  .circ.is-off { background: #e5e5e5; color: #a3a3a3; cursor: default; }
+  .circ.is-off:hover, .circ.is-off:active { background: #e5e5e5; transform: none; }
+  .ps-side-note { font-size: 11px; color: #a3a3a3; line-height: 1.5; margin-top: 6px; max-width: 96px; text-align: center; }
+  .ps-side-note.is-ok { color: var(--gox-danger); }
 
   .ps-empty { margin-top: 16px; padding: 40px; text-align: center; color: #71717a; background: #fafafa; border-radius: 8px; }
 
@@ -880,7 +887,7 @@ a:hover { text-decoration: underline; }
   <div class="ps-head">
     <div class="ps-title">
       <div class="t">規格設定</div>
-      <div class="s">如規格有銷量則無法刪除</div>
+      <div class="s">禮物與贈品規格在「贈品與禮物」分頁；不能刪的規格會停用 ⊖ 並寫出原因</div>
     </div>
     <div class="ps-tabs" id="ps-tabs">
       <button type="button" class="ps-tab is-on" data-tab="onshelf">隱藏下架與贈禮品</button>
@@ -939,7 +946,7 @@ a:hover { text-decoration: underline; }
       stock: 84, sold: 61, cost: 120, freight: 0,
       ship: '2026-08-12', shipEnd: '2026-08-20', start: '2026-06-01T00:00', end: '2026-12-31T23:59',
       delay: 0, shipSpec: '常溫',
-      display: true, bonus: false, gift: true, store: false, special: false, cod: true, sub: false,
+      display: true, bonus: false, gift: true, issued: 170, store: false, special: false, cod: true, sub: false,
       isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: 100, live: 0, code: '' },
 
     { id: 176024, sort: 5, detail: '加價購 附贈提袋', amount: 1, unit: '個', price: 0, disc: 0,
@@ -960,7 +967,16 @@ a:hover { text-decoration: underline; }
       stock: 0, sold: 220, cost: 90, freight: 0,
       ship: '2026-09-05', shipEnd: '2026-09-20', start: '2026-08-01T00:00', end: '2026-09-30T23:59',
       delay: 0, shipSpec: '常溫',
-      display: false, bonus: false, gift: true, store: false, special: false, cod: true, sub: false,
+      display: false, bonus: false, gift: true, issued: 100, store: false, special: false, cod: true, sub: false,
+      isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '' },
+
+    // 剛從禮物券管理建好、還沒發過任何一張券的禮物規格。
+    // 這一筆是為了演「還沒發券就可以刪」那個狀態，其他禮物規格都已經發過券。
+    { id: 176025, sort: 8, detail: '中秋加碼場專用', amount: 2, unit: '入', price: 149, disc: 0,
+      stock: 50, sold: 0, cost: 90, freight: 0,
+      ship: '2026-10-01', shipEnd: '2026-10-15', start: '2026-10-01T00:00', end: '2026-10-31T23:59',
+      delay: 0, shipSpec: '常溫',
+      display: true, bonus: false, gift: true, issued: 0, store: false, special: false, cod: true, sub: false,
       isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '' }
   ];
 
@@ -977,6 +993,18 @@ a:hover { text-decoration: underline; }
     setTimeout(function () { el.remove(); }, 3000);
   }
   function isSpecial(s) { return s.bonus || s.gift; }
+
+  // 這一列能不能刪，以及不能刪的原因。原因要寫在畫面上，不要只把按鈕藏起來。
+  function deletable(s) {
+    if (s.gift) {
+      return (s.issued || 0) > 0
+        ? { ok: false, why: '已發出 ' + s.issued + ' 張券，不能刪' }
+        : { ok: true, why: '尚未發券，可刪除' };
+    }
+    return s.sold > 0
+      ? { ok: false, why: '已有 ' + s.sold + ' 筆銷售，不能刪' }
+      : { ok: true, why: '尚無銷量，可刪除' };
+  }
   function visible(s) {
     // 勾了贈品或禮物 → 只出現在「贈品與禮物」，另兩頁一律不列
     if (tab === 'special') return isSpecial(s);
@@ -1102,13 +1130,28 @@ a:hover { text-decoration: underline; }
 
     h += '</div>'; /* /ps-mid */
 
-    /* 右：⊕ 複製 / ⊖ 刪除（有銷量不給刪）
+    /* 右：⊕ 複製 / ⊖ 刪除
        禮物規格不給複製：PresentItem.ProductDetailId 是 1:1 unique，
        複出來的規格會帶著 IsPresentItem = true 卻沒有對應的禮物，
-       變成前台買不到、後台也沒人管的孤兒規格。 */
+       變成前台買不到、後台也沒人管的孤兒規格。
+
+       刪除的判準兩種規格不一樣（2026-09-30 Glen 定）：
+         一般規格：有銷量就不給刪（既有規則）
+         禮物規格：看**發過幾張券**，不看銷量。還沒發券就可以刪掉重建，
+                   發過券之後鎖住——券掛在 PresentItem 上、PresentItem 掛在這一列上，
+                   刪了規格券會變成查不到的孤兒（禮物的查詢是 INNER JOIN 規格）。
+       ⚠ 後端目前是「只要綁著 PresentItem 就一律不給刪」
+         （ProductModel.RemoveProductDetail，訊息「此規格綁著一份禮物，請先到禮物券管理
+         停止贈送」）。要照這個 demo 做，那一段要放寬成先數發券數：
+         db.PresentVoucher.Any(v => v.VoucherType.PresentItemId == item.Id) 才擋。 */
+    var delInfo = deletable(s);
     h += '<div class="ps-side">';
     if (!s.gift) h += '<button type="button" class="circ" data-dup="' + i + '" title="複製規格">&#43;</button>';
-    if (s.sold <= 0) h += '<button type="button" class="circ circ-minus" data-del="' + i + '" title="刪除規格">&#8722;</button>';
+    h += '<button type="button" class="circ circ-minus' + (delInfo.ok ? '' : ' is-off') + '"'
+       + (delInfo.ok ? ' data-del="' + i + '"' : ' disabled')
+       + ' title="' + (delInfo.ok ? '刪除規格' : delInfo.why) + '">&#8722;</button>';
+    h += '<div class="ps-side-note' + (delInfo.ok ? ' is-ok' : '') + '">'
+       + (delInfo.ok ? delInfo.why : delInfo.why) + '</div>';
     h += '</div>';
 
     h += '</div></div>';

@@ -817,7 +817,9 @@ a:hover { text-decoration: underline; }
   .mdivider { border: 0; border-top: 1px dashed #e6e6e6; margin: 14px 0; }
   .msection-label { font-weight: 600; color: #333; margin: 0 0 10px; }
 
-  .amt2026-btn { padding: 4px 12px; font-size: 13px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; font-family: inherit; line-height: 1.5; background: #fff; }
+  /* white-space 是必要的：放進窄欄位（例如優惠券的「刪除」欄）時，
+     兩個字的按鈕會被折成上下兩行 */
+  .amt2026-btn { padding: 4px 12px; font-size: 13px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; font-family: inherit; line-height: 1.5; background: #fff; white-space: nowrap; }
   .amt2026-btn-default { border-color: #dcdfe6; color: #333; }
   .amt2026-btn-default:hover { background: #f5f7fa; }
   .amt2026-btn-primary { background: #4ba83b; color: #fff; border-color: #4ba83b; }
@@ -1212,13 +1214,14 @@ a:hover { text-decoration: underline; }
         <table class="mtable">
           <thead>
             <tr>
-              <th style="width:26%;">券名</th>
-              <th style="width:10%;" class="is-r">面額</th>
-              <th style="width:8%;" class="is-c">剩餘</th>
-              <th style="width:12%;" class="is-r">使用門檻</th>
-              <th style="width:20%;" class="is-c">使用期限</th>
-              <th style="width:18%;">限定產線</th>
-              <th style="width:8%;" class="is-c">狀態</th>
+              <th style="width:24%;">券名</th>
+              <th style="width:9%;" class="is-r">面額</th>
+              <th style="width:7%;" class="is-c">剩餘</th>
+              <th style="width:10%;" class="is-r">使用門檻</th>
+              <th style="width:19%;" class="is-c">使用期限</th>
+              <th style="width:15%;">限定產線</th>
+              <th style="width:7%;" class="is-c">狀態</th>
+              <th style="width:9%;" class="is-c">刪除</th>
             </tr>
           </thead>
           <tbody id="cp-body"></tbody>
@@ -1516,15 +1519,23 @@ a:hover { text-decoration: underline; }
   }
 
   /* ── 優惠券持有清單 ── */
+  // delId ＝「這一種券底下，下一張可以刪的那張券的 Coupon.Id」。
+  // 這一列是 N 張條件相同的券併起來的（後端 GetCouponHoldings 用六個欄位 GroupBy），
+  // 所以列上沒有單張 Id，而 DeleteCoupon 只吃單張 CouponId。
+  // ⚠ 工程要做的一行：CouponHoldingRow 多回一個 DeletableCouponId，
+  //   值取該群組裡「未使用且未過期」的第一張券的 Id。刪完重撈列表，
+  //   下一張的 Id 自然補上來，前端不必自己管是哪一張。
+  //   已用完（used）與已過期（expired）的列不給這個值，後端 DeleteCouponById
+  //   本來就會擋（「該優惠券已使用，無法刪除」「該優惠券已過期，無法刪除」）。
   var COUPONS = [
-    { name: '誠摯期待相見券', face: '150 元', left: 1, min: '', s: '2026/07/27', e: '2026/08/31', lines: '產地直送、冷凍專區', st: 'unused' },
-    { name: '中秋轉盤-$100 折價券', face: '100 元', left: 1, min: '', s: '2026/08/01', e: '2026/09/30', lines: '產地直送、冷凍專區', st: 'unused' },
-    { name: '自動測試用-面額', face: '20 元', left: 50, min: '100', s: '2026/06/25', e: '2030/12/31', lines: '全部產線', st: 'unused' },
-    { name: '自動測試用-折數', face: '9 折', left: 41, min: '100', s: '2026/06/25', e: '2030/12/31', lines: '全部產線', st: 'unused' },
-    { name: '產品回饋輪盤', face: '5～50 元', left: 6, min: '', s: '2026/07/08', e: '2026/11/05', lines: '全部產線', st: 'unused' },
-    { name: '中秋轉盤-$20 折價券', face: '20 元', left: 0, min: '', s: '2026/08/01', e: '2026/09/30', lines: '產地直送、冷凍專區', st: 'used' },
-    { name: '端午限定折價券', face: '80 元', left: 0, min: '600', s: '2026/05/20', e: '2026/06/20', lines: '產地直送', st: 'expired' },
-    { name: '新客首購券', face: '50 元', left: 0, min: '300', s: '2024/11/02', e: '2024/12/02', lines: '全部產線', st: 'expired' }
+    { name: '誠摯期待相見券', face: '150 元', left: 1, min: '', s: '2026/07/27', e: '2026/08/31', lines: '產地直送、冷凍專區', st: 'unused', delId: 88101 },
+    { name: '中秋轉盤-$100 折價券', face: '100 元', left: 1, min: '', s: '2026/08/01', e: '2026/09/30', lines: '產地直送、冷凍專區', st: 'unused', delId: 88102 },
+    { name: '自動測試用-面額', face: '20 元', left: 50, min: '100', s: '2026/06/25', e: '2030/12/31', lines: '全部產線', st: 'unused', delId: 88103 },
+    { name: '自動測試用-折數', face: '9 折', left: 41, min: '100', s: '2026/06/25', e: '2030/12/31', lines: '全部產線', st: 'unused', delId: 88104 },
+    { name: '產品回饋輪盤', face: '5～50 元', left: 6, min: '', s: '2026/07/08', e: '2026/11/05', lines: '全部產線', st: 'unused', delId: 88105 },
+    { name: '中秋轉盤-$20 折價券', face: '20 元', left: 0, min: '', s: '2026/08/01', e: '2026/09/30', lines: '產地直送、冷凍專區', st: 'used', delId: null },
+    { name: '端午限定折價券', face: '80 元', left: 0, min: '600', s: '2026/05/20', e: '2026/06/20', lines: '產地直送', st: 'expired', delId: null },
+    { name: '新客首購券', face: '50 元', left: 0, min: '300', s: '2024/11/02', e: '2024/12/02', lines: '全部產線', st: 'expired', delId: null }
   ];
   var ST = { unused: ['可用', 'mst-unused'], used: ['已用完', 'mst-used'], expired: ['已過期', 'mst-expired'], "void": ['已作廢', 'mst-void'] };
 
@@ -1542,9 +1553,16 @@ a:hover { text-decoration: underline; }
         + '<td class="is-c">' + esc(c.s) + ' ～ ' + esc(c.e) + '</td>'
         + '<td>' + esc(c.lines) + '</td>'
         + '<td class="is-c"><span class="mst ' + s[1] + '">' + s[0] + '</span></td>'
+        // 只有還能用的券給刪除鈕。已用完與已過期後端本來就擋，
+        // 給了按鈕只是讓客服白按一次再看到錯誤訊息
+        + '<td class="is-c">'
+        + (c.st === 'unused' && c.delId
+            ? '<button type="button" class="amt2026-btn amt2026-btn-danger" data-cp-del="' + i + '">刪除</button>'
+            : '')
+        + '</td>'
         + '</tr>';
     }
-    $('cp-body').innerHTML = html || '<tr><td colspan="7" style="color:#888;text-align:center;">沒有可顯示的優惠券。</td></tr>';
+    $('cp-body').innerHTML = html || '<tr><td colspan="8" style="color:#888;text-align:center;">沒有可顯示的優惠券。</td></tr>';
     var n = { unused: 0, used: 0, expired: 0 }, total = 0;
     for (var j = 0; j < COUPONS.length; j++) { n[COUPONS[j].st]++; total += COUPONS[j].left; }
     $('cp-summary').textContent = '可用 ' + n.unused + ' 種（共 ' + total + ' 張）';
@@ -1552,6 +1570,45 @@ a:hover { text-decoration: underline; }
     $('cp-note').textContent = hidden ? '另有 ' + hidden + ' 種已用完或已過期的沒有顯示。' : '';
   }
   $('cp-showall').addEventListener('change', renderCoupon);
+
+  /* 刪除優惠券：照紅利那套就地展開一行確認，不另外開彈窗。
+     ⚠ 用詞是「刪除」不是「收回」，兩者不一樣：
+       紅利的收回會再記一筆負的流水，看得到誰在什麼時候收的；
+       優惠券的 DeleteCoupon 是 db.Coupon.DeleteOnSubmit —— 那張券直接從資料表消失，
+       不留任何紀錄。畫面上寫「收回」會讓客服以為事後查得到。
+     ⚠ 後端限「客服人員」（VolunteersController:945 檢查 userFarm），
+       其他角色按下去會拿到「無權限：僅限客服人員可刪除優惠券」。 */
+  $('cp-body').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-cp-del]');
+    if (btn) {
+      var tr = btn.closest('tr');
+      if (tr.nextElementSibling && tr.nextElementSibling.classList.contains('rec-form')) return;
+      var i = Number(btn.getAttribute('data-cp-del'));
+      var form = document.createElement('tr');
+      form.className = 'rec-form';
+      form.innerHTML = '<td colspan="8">'
+        + '<div class="minline"><span style="font-size:13px;">刪除這張券之後不會留下紀錄，也無法復原。</span>'
+        + '<button type="button" class="amt2026-btn amt2026-btn-danger" data-cp-ok="' + i + '">確認刪除</button>'
+        + '<button type="button" class="amt2026-btn amt2026-btn-default" data-cp-cancel>取消</button></div></td>';
+      tr.after(form);
+      return;
+    }
+    if (e.target.closest('[data-cp-cancel]')) { e.target.closest('tr').remove(); return; }
+    var ok = e.target.closest('[data-cp-ok]');
+    if (ok) {
+      var idx = Number(ok.getAttribute('data-cp-ok'));
+      var showAll = $('cp-showall').checked;
+      var list = showAll ? COUPONS : COUPONS.filter(function (c) { return c.st === 'unused'; });
+      var target = list[idx];
+      // 一列是 N 張條件相同的券，刪一張就是剩餘 −1；歸零之後這一列變「已用完」
+      target.left -= 1;
+      if (target.left <= 0) { target.st = 'used'; target.delId = null; }
+      else { target.delId += 1; }   // demo 用遞增假裝後端回了下一張的 Id
+      renderCoupon();
+      toast('已刪除一張「' + target.name + '」');
+    }
+  });
+
   renderCoupon();
 
   /* ── 禮物券 ── */
@@ -1788,9 +1845,10 @@ a:hover { text-decoration: underline; }
       RECORDS.point.rows.unshift(['—', amt, reason + '（效期 ' + s.replace(/-/g, '/') + ' ～ ' + e2.replace(/-/g, '/') + '）', NOW, true, false]);
       $('rp-amt').value = ''; $('rp-reason').value = '';
       applyErrs([['rp-amt', ''], ['rp-range', ''], ['rp-reason', '']]);
-      toast('已發放 ' + amt + ' 點');
-      // 發完直接開歷史紀錄：那裡才是這筆異動的去處，客服可以當場確認有沒有寫進去
-      openRec('point');
+      // 發完只跳 toast，不自動開歷史紀錄（2026-09-30 Glen 改）。
+      // 原本發完會直接把歷史紀錄彈窗打開，但客服多半接著還要改別的欄位，
+      // 彈開一個要自己關掉的東西反而卡住流程；要對帳的人自己按「歷史紀錄」。
+      toast('已成功發送 ' + amt + ' 點紅利點數');
     });
   });
 
@@ -1815,8 +1873,8 @@ a:hover { text-decoration: underline; }
       RECORDS.bonus.rows.unshift([order || '—', amt, reason, NOW, true, false]);
       $('bonus-amt').value = ''; $('bonus-reason').value = ''; $('bonus-order').value = '';
       applyErrs([['bonus-amt', ''], ['bonus-reason', '']]);
-      toast((amt > 0 ? '已贈送 ' : '已扣除 ') + Math.abs(amt) + ' 元');
-      openRec('bonus');
+      // 同上：發完只跳 toast，不自動開歷史紀錄
+      toast((amt > 0 ? '已成功發送 ' : '已扣除 ') + Math.abs(amt) + ' 元購物金');
     });
   });
 
