@@ -15,12 +15,12 @@
     報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1618
     樣品照片    dbo.Picture（相簿管理 fun_id 3035），關聯表 InspectionRecordPhoto 待新建
     檢驗紀錄    表 InspectionRecord 待新建，欄位提案見 _交接對照.md B 區  ⚠ 不要叫 Batch
-    狀態        Status 只存 待檢驗/檢驗中/上架/取消（驗完就上架，沒有「已完成」）（C 版：檢驗狀態與處理狀態合一，只剩這一欄）
-                ⚠ 下架、過期是算出來的，不要存（規則見 _交接對照.md〈算出來的狀態〉）
+    狀態        Status 只存 待檢驗/檢驗中/上架/下架/取消（驗完就上架，沒有「已完成」；下架是手動的）（C 版：檢驗狀態與處理狀態合一，只剩這一欄）
+                ⚠ 被取代、過期是算出來的，不要存（規則見 _交接對照.md〈算出來的狀態〉）
     上架時間    PublishTime（demo 叫 publishedAt）
     重新送驗    開一筆新紀錄，ResendOfId 指回原紀錄（demo 叫 resendOf）
   這一頁打的真實 API：
-    demo 沒打 API（資料在瀏覽器）。要新建的 /GoX/InspectionRecord/LookupBarcode、Create、Update、SetProcessStatus、UploadPhotos、DeletePhoto
+    demo 沒打 API（資料在瀏覽器）。要新建的 /GoX/InspectionRecord/LookupBarcode、Create、Update、SetStatus、Resend、UploadPhotos、DeletePhoto
     不合格信收件人  ScheduleController.cs:5580-5591（寫死，要抽成共用）
   完整名稱對照見同資料夾 _交接對照.md
 -->
@@ -719,7 +719,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
 <script>
 /* 檢驗紀錄 demo 共用資料層：後台頁與前台頁共用同一份 localStorage，後台改了前台會跟著變 */
 window.INSP = (function () {
-  var KEY = 'gb-inspection-demo-v6';  // C 版（狀態合一）；A 版（-a.html）用 v2，兩版資料互不干擾
+  var KEY = 'gb-inspection-demo-v8';  // C 版（狀態合一）；A 版（-a.html）用 v2，兩版資料互不干擾
 
   var ITEMS = ['大腸桿菌群', '沙門氏菌', '李斯特菌', '腸桿菌科', '金黃色葡萄球菌'];
   var RESULTS = ['陰性', '不合格'];
@@ -731,9 +731,9 @@ window.INSP = (function () {
     '金黃色葡萄球菌': ['100.0 CFU/g (mL)', '10.0 CFU/g (mL)']
   };
   var STORAGES = ['冷凍', '冷藏', '常溫'];
-  // 狀態只有一個（2026-10-05 C 版：檢驗狀態與處理狀態合併）。下架、過期不存，從「上架」算出來
-  // 驗完就上架，沒有另外的「已完成」（2026-10-05 Glen：已完成其實就是上架中）
-  var STATUS = ['待檢驗', '檢驗中', '上架', '取消'];
+  // 狀態只有一個（2026-10-05 C 版：檢驗狀態與處理狀態合併）。驗完就上架，沒有另外的「已完成」
+  // 下架＝手動下架（上架到一半提早撤下，或驗完直接不上架），會存；被取代、過期不存，從「上架」算出來
+  var STATUS = ['待檢驗', '檢驗中', '上架', '下架', '取消'];
 
   var PRODUCTS = [
     { id: 28417, name: '阿婆手工肉圓 6 顆裝', spec: '6 顆／包', type: '冷凍專區', price: 360 },
@@ -807,7 +807,7 @@ window.INSP = (function () {
     var r = {
       no: no, barcode: barcode, name: name, storage: o.storage || '冷凍', qty: o.qty || '1包',
       mfgDate: o.mfg || '', expDate: o.exp || '', receivedDate: o.recv, inspectDate: o.insp,
-      items: o.items, status: o.st, publishedAt: o.done || ''
+      items: o.items, status: o.st, publishedAt: o.done || '', withdrawnAt: o.off || '', withdrawKind: o.off ? (o.done ? '手動下架' : '直接下架') : ''
     };
     return r;
   }
@@ -856,6 +856,10 @@ window.INSP = (function () {
       // ── 下架／過期分頁 ──
       mk(C(-40, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-42), insp: D(-40), st: '上架', done: D(-38), // 被新報告取代、還沒過期
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-50), exp: D(130) }),
+      mk(C(-20, 1), '有機板豆腐400g', '非基改有機板豆腐', { storage: '冷藏', qty: '1盒', recv: D(-21), insp: D(-20), st: '下架', done: D(-19), off: D(-10), // 上架後手動下架
+        items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-22), exp: D(40) }),
+      mk(C(-12, 1), '鳳梨釋迦6顆', '台東鳳梨釋迦', { storage: '常溫', qty: '1箱', recv: D(-13), insp: D(-12), st: '下架', off: D(-11), // 驗完沒上架、直接下架
+        items: items(A('陰性'), B('陰性'), null, null), mfg: D(-14), exp: D(25) }),
       mk(C(-95, 1), '鱸魚片300g', '澎湖鱸魚片', { storage: '冷凍', qty: '1片', recv: D(-97), insp: D(-95), st: '上架', done: D(-93), // 過期
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-110), exp: D(-20) }),
       mk(C(-60, 1), '豬肉貢丸600g', '新竹豬肉貢丸', { storage: '冷凍', qty: '1包', recv: D(-61), insp: D(-60), st: '檢驗中', // 檢驗中但有效日期已過（一直沒做完，不算過期）
@@ -863,7 +867,7 @@ window.INSP = (function () {
     ];
   }
 
-  // 大量：三個分頁都超過一頁（每頁 20 筆），用來看分頁與捲動
+  // 大量：檢驗中、下架/過期分頁超過一頁（每頁 20 筆），用來看分頁與捲動
   function scenarioMany() {
     var list = scenarioNormal(), D = dayOffset;
     var codes = Object.keys(BARCODES).filter(function (c) { return BARCODES[c].productIds.length; });
@@ -915,6 +919,8 @@ window.INSP = (function () {
   }
 
   // 手機拍的照片動輒 3～5MB，先縮到長邊 1280px 的 JPEG 再存（正式版是上傳到圖庫）
+  // 壓縮後的照片 → 原始檔。條碼辨識用原檔：手機照片縮到 1280px 後，小條碼的線條會糊掉認不出來
+  var ORIGINAL = new Map();
   function compressImage(file) {
     return new Promise(function (resolve, reject) {
       var fr = new FileReader();
@@ -925,8 +931,11 @@ window.INSP = (function () {
         img.onload = function () {
           var max = 1280, w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
           var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
-          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL('image/jpeg', 0.8));
+          var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);   // 透明 PNG 轉 JPEG 會變黑底
+          cx.drawImage(img, 0, 0, c.width, c.height);
+          var out = c.toDataURL('image/jpeg', 0.8);
+          ORIGINAL.set(out, file);
+          resolve(out);
         };
         img.src = fr.result;
       };
@@ -967,7 +976,8 @@ window.INSP = (function () {
     var q = new lib.Html5Qrcode('insp-barcode-scan', { formatsToSupport: [lib.Html5QrcodeSupportedFormats.EAN_13], verbose: false });
     return q.scanFile(dataUrlToFile(src), false).then(function (t) { return t; }).catch(function () { return ''; });
   }
-  function detectBarcode(src) {
+  // 辨識「一張小圖」：內建 BarcodeDetector 優先，沒有或讀不到就用 html5-qrcode
+  function detectOne(src) {
     return nativeDetector().then(function (det) {
       if (!det) return libDetect(src);
       return new Promise(function (res) {
@@ -978,6 +988,160 @@ window.INSP = (function () {
       }).then(function (v) { return v || libDetect(src); });
     }).then(function (v) { return /^\d{13}$/.test(v) ? v : ''; });
   }
+
+  // 實拍照片裡條碼通常只佔一小塊，整張丟進去認不出來（2026-10-05 實測：條碼寬不到照片三成就失敗）。
+  // 所以切成重疊的格子逐格放大辨識：整張 → 2×2 → 3×3 → 4×4，再把照片轉 90 度重來一次（直放的條碼），找到就停
+  function loadCanvas(fileOrSrc) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image(), url = typeof fileOrSrc === 'string' ? fileOrSrc : URL.createObjectURL(fileOrSrc);
+      img.onload = function () {
+        var k = Math.min(1, 4096 / Math.max(img.width, img.height));   // 太大的照片先降到 4096，省記憶體
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);   // 透明 PNG 轉 JPEG 會變黑底
+        cx.drawImage(img, 0, 0, c.width, c.height);
+        if (typeof fileOrSrc !== 'string') URL.revokeObjectURL(url);
+        resolve(c);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+  function rotate90(c) {
+    var r = document.createElement('canvas'); r.width = c.height; r.height = c.width;
+    var x = r.getContext('2d'); x.translate(r.width, 0); x.rotate(Math.PI / 2); x.drawImage(c, 0, 0);
+    return r;
+  }
+  function regionsOf(W, H, grids) {
+    var list = [];
+    grids.forEach(function (n) {
+      if (n === 1) { list.push([0, 0, W, H]); return; }
+      var tw = Math.min(W, W / n * 1.5), th = Math.min(H, H / n * 1.5);   // 每格多留一半，條碼壓在格線上也切得到
+      for (var j = 0; j < n; j++) for (var i = 0; i < n; i++)
+        list.push([Math.round((W - tw) * i / (n - 1)), Math.round((H - th) * j / (n - 1)), Math.round(tw), Math.round(th)]);
+    });
+    return list;
+  }
+  function detectTiled(canvas) {
+    var passes = regionsOf(canvas.width, canvas.height, [1, 2, 3, 4]).map(function (r) { return [canvas, r]; });
+    var rot = null;
+    regionsOf(canvas.height, canvas.width, [1, 2, 3]).forEach(function (r) { passes.push(['rot', r]); });
+    var i = 0;
+    var next = function () {
+      if (i >= passes.length) return Promise.resolve('');
+      var p = passes[i++], src = p[0] === 'rot' ? (rot = rot || rotate90(canvas)) : p[0], r = p[1];
+      var k = Math.min(1, 1280 / Math.max(r[2], r[3]));
+      var c = document.createElement('canvas'); c.width = Math.round(r[2] * k); c.height = Math.round(r[3] * k);
+      c.getContext('2d').drawImage(src, r[0], r[1], r[2], r[3], 0, 0, c.width, c.height);
+      return detectOne(c.toDataURL('image/jpeg', 0.92)).then(function (v) { return v || next(); });
+    };
+    return next();
+  }
+  // ── 自己的 EAN-13 掃描線解碼：給「解析度很低但很乾淨」的圖（螢幕截圖、縮很小的條碼）
+  // 條碼每條基本單位只有 1～2 個像素時，現成套件會把線的粗細量錯。這裡先找出條碼左右邊界，
+  // 把中間平均切 95 等分，每等分取像素覆蓋率加權的平均深淺，再照 EAN-13 編碼表解，起訖碼、中間碼、檢查碼都對才算
+  var EAN_L = ['0001101', '0011001', '0010011', '0111101', '0100011', '0110001', '0101111', '0111011', '0110111', '0001011'];
+  var EAN_G = ['0100111', '0110011', '0011011', '0100001', '0011101', '0111001', '0000101', '0010001', '0001001', '0010111'];
+  var EAN_R = EAN_L.map(function (x) { return x.replace(/./g, function (c) { return c === '0' ? '1' : '0'; }); });
+  var EAN_PARITY = ['LLLLLL', 'LLGLGG', 'LLGGLG', 'LLGGGL', 'LGLLGG', 'LGGLLG', 'LGGGLL', 'LGLGLG', 'LGLGGL', 'LGGLGL'];
+  function eanFromBits(b) {
+    if (b.slice(0, 3) !== '101' || b.slice(45, 50) !== '01010' || b.slice(92, 95) !== '101') return '';
+    var par = '', d = '', k, i;
+    for (i = 0; i < 6; i++) {
+      var seg = b.substr(3 + i * 7, 7);
+      if ((k = EAN_L.indexOf(seg)) >= 0) { par += 'L'; d += k; } else if ((k = EAN_G.indexOf(seg)) >= 0) { par += 'G'; d += k; } else return '';
+    }
+    for (i = 0; i < 6; i++) { if ((k = EAN_R.indexOf(b.substr(50 + i * 7, 7))) < 0) return ''; d += k; }
+    var f = EAN_PARITY.indexOf(par); if (f < 0) return '';
+    var code = f + d, sum = 0;
+    for (i = 0; i < 12; i++) sum += (+code[i]) * (i % 2 ? 3 : 1);
+    return (10 - sum % 10) % 10 === +code[12] ? code : '';
+  }
+  function avgDark(dk, a, b) {
+    var t = 0, w = 0;
+    for (var p = Math.floor(a); p < Math.ceil(b); p++) {
+      if (p < 0 || p >= dk.length) continue;
+      var cov = Math.min(b, p + 1) - Math.max(a, p);
+      if (cov > 0) { t += dk[p] * cov; w += cov; }
+    }
+    return w ? t / w : 0;
+  }
+  function scanRow(dk) {
+    var n = dk.length, starts = [], ends = [], cnt = [0], i;
+    for (i = 0; i < n; i++) {
+      var on = dk[i] > 0.5, prev = i > 0 && dk[i - 1] > 0.5, nxt = i < n - 1 && dk[i + 1] > 0.5;
+      if (on && !prev) starts.push(i);
+      if (on && !nxt) ends.push(i + 1);
+      cnt.push(cnt[i] + (on && !prev ? 1 : 0));        // 到第 i 個像素為止有幾條黑線
+    }
+    if (starts.length < 26) return '';
+    for (var a = 0; a < starts.length; a++) {
+      var s0 = starts[a];
+      for (var z = 0; z < ends.length; z++) {
+        var e0 = ends[z], W = e0 - s0;
+        if (W < 95 * 0.9 || W > 95 * 20) continue;
+        var bars = cnt[e0] - cnt[s0];                   // EAN-13 剛好 30 條黑線；差太多就不是
+        if (bars < 26 || bars > 34) continue;
+        for (var ds = -0.5; ds <= 0.5; ds += 0.25) for (var de = -0.5; de <= 0.5; de += 0.25) {
+          var st = s0 + ds, m = (e0 + de - st) / 95, vals = [], lo = 1, hi = 0, k;
+          for (k = 0; k < 95; k++) { var v = avgDark(dk, st + k * m, st + (k + 1) * m); vals.push(v); if (v < lo) lo = v; if (v > hi) hi = v; }
+          var th = (lo + hi) / 2, bits = '';
+          for (k = 0; k < 95; k++) bits += vals[k] > th ? '1' : '0';
+          var c = eanFromBits(bits) || eanFromBits(bits.split('').reverse().join(''));
+          if (c) return c;
+        }
+      }
+    }
+    return '';
+  }
+  function scanCanvas(c) {
+    var W = c.width, H = c.height, data = c.getContext('2d').getImageData(0, 0, W, H).data;
+    for (var t = 0; t < 40; t++) {
+      var y = Math.floor(H * (t + 0.5) / 40), dk = new Array(W);
+      for (var i = 0; i < W; i++) {
+        var o = (y * W + i) * 4, al = data[o + 3] / 255;   // 透明的地方當白底
+        dk[i] = 1 - ((data[o] * 0.299 + data[o + 1] * 0.587 + data[o + 2] * 0.114) * al + 255 * (1 - al)) / 255;
+      }
+      var r = scanRow(dk);
+      if (r) return r;
+    }
+    return '';
+  }
+  // 先用掃描線解（截圖這種低解析度的圖靠它），解不到再切格交給 html5-qrcode（實拍照片靠它）
+  function detectCanvas(c) {
+    var k = Math.min(1, 1600 / c.width), sc = c;
+    if (k < 1) { sc = document.createElement('canvas'); sc.width = Math.round(c.width * k); sc.height = Math.round(c.height * k); sc.getContext('2d').drawImage(c, 0, 0, sc.width, sc.height); }
+    var quick = scanCanvas(sc);
+    return quick ? Promise.resolve(quick) : detectTiled(c);
+  }
+
+  // 照片偵測條碼：有原檔就用原檔辨識
+  function detectBarcode(src) {
+    var file = ORIGINAL.get(src);
+    ORIGINAL.delete(src);
+    return loadCanvas(file || src).then(detectCanvas).catch(function () { return ''; });
+  }
+
+  // 相機即時掃條碼：用內嵌的 html5-qrcode，瀏覽器有內建 BarcodeDetector 就交給它，沒有（Windows Chrome、iOS Safari）用套件自己的辨識
+  // 回傳 Promise<stop 函式>；失敗時 reject 'denied'（沒給權限）或 'nocamera'（沒有相機／瀏覽器不支援）
+  function startLiveScan(elId, onCode) {
+    var lib = window.__Html5QrcodeLibrary__;
+    if (!lib || !navigator.mediaDevices) return Promise.reject('nocamera');
+    var q = new lib.Html5Qrcode(elId, { formatsToSupport: [lib.Html5QrcodeSupportedFormats.EAN_13], verbose: false,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
+    var done = false;
+    var stop = function () {
+      if (done) return Promise.resolve(); done = true;
+      return q.stop().catch(function () { }).then(function () { try { q.clear(); } catch (e) { } });
+    };
+    var box = function (w, h) { return { width: Math.floor(w * 0.85), height: Math.floor(Math.min(h, w) * 0.45) }; };
+    return q.start({ facingMode: 'environment' }, { fps: 10, qrbox: box },
+      function (text) { if (done || !/^\d{13}$/.test(text)) return; stop(); onCode(text); }, function () { })
+      .then(function () { return stop; })
+      .catch(function (e) { done = true; throw (/NotAllowed|Permission/i.test(String(e)) ? 'denied' : 'nocamera'); });
+  }
+  // 選一張圖片辨識條碼（不存照片）
+  function detectFromFile(file) { return loadCanvas(file).then(detectCanvas).catch(function () { return ''; }); }
+
   function addPhotos(no, srcs) {
     var at = today();
     var r = state.records.filter(function (x) { return x.no === no; })[0];
@@ -1037,7 +1201,7 @@ window.INSP = (function () {
   function isExpired(r) { return !!r.expDate && r.expDate < today(); }
   function hasFail(r) { return r.items.some(function (x) { return x.item && x.result === '不合格'; }); }
 
-  // 上架前要補齊的東西：四個日期都要有、選了項目的都要有結果
+  // 上架或下架前要補齊的東西：四個日期都要有、選了項目的都要有結果
   var DATE_FIELDS = [['mfgDate', '製作日期'], ['expDate', '有效日期'], ['receivedDate', '收樣日期'], ['inspectDate', '檢驗日期']];
   function missingForComplete(r) {
     var m = DATE_FIELDS.filter(function (f) { return !r[f[0]]; }).map(function (f) { return f[1]; });
@@ -1071,8 +1235,9 @@ window.INSP = (function () {
     return ps.every(function (p) { var l = latestForProduct(p.id); return l && l.no !== r.no; });
   }
 
-  // 畫面上的狀態：待檢驗／檢驗中／上架中／下架（被取代）／過期／取消。下架、過期只會從「上架」算出來
+  // 畫面上的狀態：待檢驗／檢驗中／上架中／下架（手動）／被取代／過期／取消。被取代、過期只會從「上架」算出來
   function viewState(r) {
+    if (r.status === '下架') return 'withdrawn';
     if (r.status === '待檢驗') return 'pending';
     if (r.status === '檢驗中') return 'testing';
     if (r.status === '取消') return 'cancelled';
@@ -1080,31 +1245,37 @@ window.INSP = (function () {
     if (isSuperseded(r)) return 'superseded';
     return 'live';
   }
-  // 下架、過期：所有欄位不可修改，只能改回檢驗中；取消：也不能改，只能恢復成待檢驗
-  function isLocked(r) { var v = viewState(r); return v === 'expired' || v === 'superseded' || v === 'cancelled'; }
+  // 下架、被取代、過期、取消：所有欄位不可修改；要改先改回檢驗中（取消是恢復成待檢驗）
+  function isLocked(r) { var v = viewState(r); return v === 'withdrawn' || v === 'expired' || v === 'superseded' || v === 'cancelled'; }
   // 每個狀態可以切去哪裡（2026-10-05 C 版）
   function allowedNext(r) {
     switch (viewState(r)) {
-      case 'pending': return ['檢驗中', '上架', '取消'];
-      case 'testing': return ['上架', '待檢驗', '取消'];
+      case 'pending': return ['檢驗中', '上架', '下架', '取消'];
+      case 'testing': return ['上架', '下架', '待檢驗', '取消'];
+      case 'live': return ['下架', '檢驗中'];
+      case 'withdrawn': return ['上架', '檢驗中'];
       case 'cancelled': return ['待檢驗'];
-      default: return ['檢驗中'];                       // 上架中、下架、過期
+      default: return ['檢驗中'];                       // 被取代、過期
     }
   }
-  // 上架過的紀錄（上架中、下架、過期）才能重新送驗
-  function canResend(r) { return ['live', 'superseded', 'expired'].indexOf(viewState(r)) >= 0; }
+  // 驗完的紀錄（上架中、下架、被取代、過期）才能重新送驗
+  function canResend(r) { return ['live', 'withdrawn', 'superseded', 'expired'].indexOf(viewState(r)) >= 0; }
 
   // 狀態文字與按鈕文字（電腦版、手機版共用）
-  function statusText(r) { return { pending: '待檢驗', testing: '檢驗中', live: '上架中', superseded: '已下架', expired: '已過期', cancelled: '已取消' }[viewState(r)]; }
+  function statusText(r) { return { pending: '待檢驗', testing: '檢驗中', live: '上架中', withdrawn: '已下架', superseded: '已被取代', expired: '已過期', cancelled: '已取消' }[viewState(r)]; }
   function actionLabel(r, target) {
     var v = viewState(r);
     if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
     if (target === '待檢驗') return v === 'cancelled' ? '恢復檢驗' : '改回待檢驗';
     if (target === '取消') return '取消檢驗';
+    if (target === '上架' && v === 'withdrawn') return '重新上架';
+    if (target === '下架') return v === 'live' ? '手動下架' : '直接下架';   // 上架中撤下／驗完不上架
     return target;
   }
-  // 這顆按鈕現在能不能按：上架要欄位填齊
-  function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && (target !== '上架' || !missingForComplete(r).length); }
+  // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
+  // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
+  function withdrawText(r) { return r.withdrawnAt + ' ' + (r.withdrawKind || '下架'); }
+  function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && ((target !== '上架' && target !== '下架') || !missingForComplete(r).length); }
 
   function receiversFor(r) {
     var groups = {};
@@ -1117,9 +1288,9 @@ window.INSP = (function () {
     PRODUCTS: PRODUCTS, BARCODES: BARCODES,
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
-    today: today, compressImage: compressImage, detectBarcode: detectBarcode, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
+    today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
 })();
 
@@ -1137,7 +1308,7 @@ window.INSP = (function () {
   .insp-muted { font-size:12px; color:var(--gox-text-muted); }
   .insp-qr { display:flex; flex-direction:column; align-items:center; gap:12px; padding:8px 0; }
   .insp-qr .url { font-size:12px; color:var(--gox-text-muted); word-break:break-all; text-align:center; }
-  .insp-scan video { width:100%; border-radius:6px; background:#000; }
+  .insp-scan video { width:100% !important; border-radius:6px; background:#000; }
   .insp-lookup-name { font-size:16px; font-weight:500; }
   .insp-photos { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
   .insp-photos img { width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--gox-card-border); cursor:pointer; }
@@ -1153,6 +1324,9 @@ window.INSP = (function () {
   .insp-stack-row { display:flex; align-items:center; gap:8px; }
   .insp-stack-row > b { flex:0 0 32px; font-size:12px; font-weight:400; color:var(--gox-text-muted); }
   .insp-stack-row .ant-picker { flex:1; }
+  .insp-opt { display:inline-flex; align-items:center; gap:4px; }
+  .insp-dot { flex:0 0 8px; width:8px; height:8px; border-radius:9999px; }
+  .insp-mark { flex:0 0 12px; width:12px; text-align:center; font-weight:700; font-size:12px; line-height:1; }
   .insp-item-row { display:flex; align-items:center; gap:4px; }
   .insp-item-row > b { flex:0 0 16px; font-size:12px; font-weight:400; color:var(--gox-text-muted); }
   .insp-ps { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
@@ -1221,8 +1395,16 @@ const theme = {
 const D = (s) => (s ? dayjs(s) : null);
 const S = (d) => (d ? d.format('YYYY-MM-DD') : '');
 // 下拉不用叉叉清除：「不選／未填」直接放成第一個選項
-const ITEM_OPTIONS = [{ value: '', label: '不選' }].concat(INSP.ITEMS.map((x) => ({ value: x, label: x })));
-const RESULT_OPTIONS = [{ value: '', label: '未填' }].concat(INSP.RESULTS.map((x) => ({ value: x, label: x })));
+// 五種檢驗項目各一個色點，顏色取 antd 內建色盤（避開結果用的紅綠）；腸桿菌科用咖啡色（Glen 指定，橘跟金太像，色盤沒有咖啡色所以自訂）
+const PRESET = antd.theme.getDesignToken();
+const ITEM_COLOR = { '大腸桿菌群': PRESET.blue, '沙門氏菌': PRESET.purple, '李斯特菌': PRESET.cyan, '腸桿菌科': '#8b5a2b', '金黃色葡萄球菌': PRESET.gold };
+const itemLabel = (x) => <span className="insp-opt"><i className="insp-dot" style={{ background: ITEM_COLOR[x] }} />{x}</span>;
+// 結果：陰性綠勾、不合格紅叉，顏色用主題的 success／error
+const RESULT_MARK = { '陰性': ['✓', theme.token.colorSuccess], '不合格': ['✕', theme.token.colorError] };
+const resultLabel = (x) => <span className="insp-opt"><b className="insp-mark" style={{ color: RESULT_MARK[x][1] }}>{RESULT_MARK[x][0]}</b>{x}</span>;
+const ITEM_OPTIONS = [{ value: '', label: '不選' }].concat(INSP.ITEMS.map((x) => ({ value: x, label: itemLabel(x) })));
+// 未填也留一格記號的位置，三種選項的文字才會左邊對齊
+const RESULT_OPTIONS = [{ value: '', label: <span className="insp-opt"><b className="insp-mark" />未填</span> }].concat(INSP.RESULTS.map((x) => ({ value: x, label: resultLabel(x) })));
 
 function useRecords() {
   const [, force] = React.useState(0);
@@ -1316,21 +1498,46 @@ function PhotoPickerField({ value, onAdd, onRemove, expect }) {
   );
 }
 
+// 只讀條碼、不存照片：開相機即時掃，或選一張圖片辨識。沒相機（多數電腦）就用選圖片
+let scanSeq = 0;
+function useBarcodeScan(onCode) {
+  const { message } = AntApp.useApp();
+  const [on, setOn] = React.useState(false);
+  const [err, setErr] = React.useState('');
+  const [reading, setReading] = React.useState(false);
+  const elId = React.useMemo(() => 'insp-live-scan-' + (++scanSeq), []);
+  const stopRef = React.useRef(null);
+  const fileRef = React.useRef(null);
+  const stop = () => { if (stopRef.current) stopRef.current(); stopRef.current = null; setOn(false); };
+  const start = () => {
+    setErr(''); setOn(true);
+    setTimeout(() => {
+      INSP.startLiveScan(elId, (c) => { stopRef.current = null; setOn(false); onCode(c); })
+        .then((s) => { stopRef.current = s; })
+        .catch((k) => { setOn(false); setErr(k === 'denied' ? '沒有相機權限，請在瀏覽器允許相機，或改用「選圖片辨識」' : '找不到可用的相機，請改用「選圖片辨識」或手動輸入'); });
+    }, 0);
+  };
+  const pickFile = () => { setErr(''); fileRef.current.click(); };
+  const onFile = async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    setReading(true);
+    try {
+      const code = await INSP.detectFromFile(f);
+      if (code) onCode(code); else message.warning('這張圖片找不到國際條碼，請換一張拍清楚條碼的，或手動輸入');
+    } catch (x) { message.error('圖片讀不到，請換一張'); }
+    setReading(false);
+  };
+  React.useEffect(() => stop, []);
+  return { elId, on, err, reading, start, stop, pickFile, fileInput: <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} /> };
+}
+
 function CreateModal({ open, onClose, initialBarcode }) {
   const { message } = AntApp.useApp();
   const [barcode, setBarcode] = React.useState('');
   const [result, setResult] = React.useState(null);
   const [name, setName] = React.useState('');
   const [photos, setPhotos] = React.useState([]);
-  const [scanning, setScanning] = React.useState(false);
-  const [camError, setCamError] = React.useState('');
-  const videoRef = React.useRef(null);
-  const streamRef = React.useRef(null);
-
-  const stopCam = () => {
-    if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
-    setScanning(false);
-  };
   const barcodeRef = React.useRef('');
   const doLookup = (code) => {
     const c = (code || '').trim();
@@ -1347,31 +1554,13 @@ function CreateModal({ open, onClose, initialBarcode }) {
       if (code && !barcodeRef.current) doLookup(code);
     }
   };
+  const scan = useBarcodeScan((c) => doLookup(c));
+  const stopCam = scan.stop;
   const detecting = photos.some((x) => x.detecting);
   React.useEffect(() => {
-    if (open) { barcodeRef.current = ''; setBarcode(initialBarcode || ''); setResult(null); setName(''); setPhotos([]); setCamError(''); if (initialBarcode) doLookup(initialBarcode); }
+    if (open) { barcodeRef.current = ''; setBarcode(initialBarcode || ''); setResult(null); setName(''); setPhotos([]); if (initialBarcode) doLookup(initialBarcode); }
     else stopCam();
   }, [open, initialBarcode]);
-
-  const startCam = async () => {
-    setCamError('');
-    if (!('BarcodeDetector' in window) || !navigator.mediaDevices) { setCamError('這個瀏覽器無法開相機掃碼，請手動輸入條碼'); return; }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      streamRef.current = stream; setScanning(true);
-      const det = new window.BarcodeDetector({ formats: ['ean_13'] });
-      setTimeout(() => { if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); } }, 0);
-      const tick = async () => {
-        if (!streamRef.current) return;
-        try {
-          const codes = videoRef.current ? await det.detect(videoRef.current) : [];
-          if (codes.length) { stopCam(); doLookup(codes[0].rawValue); return; }
-        } catch (e) { }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    } catch (e) { setCamError('無法開啟相機，請確認已允許相機權限'); }
-  };
 
   const submit = () => {
     if (detecting) { message.warning('照片還在辨識條碼，請稍等'); return; }
@@ -1390,10 +1579,14 @@ function CreateModal({ open, onClose, initialBarcode }) {
         <div><div className="insp-muted" style={{ marginBottom: 4 }}>樣品照片（每張都會自動找國際條碼，找到就帶入下方）</div>
           <PhotoPickerField value={photos} expect={barcode.length === 13 ? barcode : ''} onAdd={addPhotos} onRemove={(i) => setPhotos(photos.filter((_, j) => j !== i))} /></div>
         <div className="insp-muted">國際條碼</div>
-        {scanning
-          ? <div className="insp-scan"><video ref={videoRef} playsInline muted /><Button block onClick={stopCam} style={{ marginTop: 8 }}>停止掃描</Button></div>
-          : <Button block onClick={startCam}>只掃條碼（不存照片）</Button>}
-        {camError && <Alert type="info" showIcon message={camError} />}
+        {scan.on
+          ? <div className="insp-scan"><div id={scan.elId} /><Button block onClick={scan.stop} style={{ marginTop: 8 }}>停止掃描</Button></div>
+          : <div><Space.Compact block>
+              <Button style={{ width: '50%' }} onClick={scan.start}>開相機掃條碼</Button>
+              <Button style={{ width: '50%' }} loading={scan.reading} onClick={scan.pickFile}>選圖片辨識</Button>
+            </Space.Compact><div className="insp-muted" style={{ marginTop: 4 }}>這兩個只讀條碼，不存照片</div></div>}
+        {scan.fileInput}
+        {scan.err && <Alert type="info" showIcon message={scan.err} />}
         <Space.Compact style={{ width: '100%' }}>
           <Input placeholder="或手動輸入 13 碼國際條碼" value={barcode} maxLength={13} inputMode="numeric"
             onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setBarcode(v); if (v.length === 13) doLookup(v); }} onPressEnter={() => doLookup(barcode)} />
@@ -1466,10 +1659,10 @@ function Page() {
     message.success('已開新紀錄 ' + n.no + '（待檢驗），原本這份不變');
   };
 
-  // 狀態切換（C 版 2026-10-05，檢驗狀態與處理狀態合一）：待檢驗 ⇄ 檢驗中 ⇄（欄位填齊）上架；還沒上架的可取消檢驗
+  // 狀態切換（C 版 2026-10-05）：待檢驗 ⇄ 檢驗中 →（欄位填齊）上架 ⇄ 下架；驗完也可以不上架直接下架；還沒驗完的可取消檢驗
   const changeStatus = (r, t) => {
     if (INSP.allowedNext(r).indexOf(t) < 0) return;
-    if (!INSP.canSwitch(r, t)) { message.error('還不能上架，請先填：' + INSP.missingForComplete(r).join('、')); return; }
+    if (!INSP.canSwitch(r, t)) { message.error('還不能' + t + '，請先填：' + INSP.missingForComplete(r).join('、')); return; }
     const from = INSP.viewState(r);
     if (t === '上架') {
       INSP.update(r.no, { status: t, publishedAt: INSP.today() });
@@ -1483,6 +1676,7 @@ function Page() {
       }
       return;
     }
+    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: INSP.actionLabel(r, t) }); message.info(from === 'live' ? '已下架，前台不再顯示這份報告' : '已下架，這份報告不會放上前台'); return; }
     INSP.update(r.no, { status: t });
     if (t === '檢驗中' && from !== 'pending') message.info('已改回檢驗中，前台不再顯示這份報告，可以修改欄位');
     else if (t === '取消') message.info('已取消檢驗');
@@ -1493,7 +1687,7 @@ function Page() {
   const inTab = (r, t) => {
     const v = INSP.viewState(r);
     if (t === 'testing') return v === 'pending' || v === 'testing';
-    if (t === 'off') return v === 'expired' || v === 'superseded';
+    if (t === 'off') return v === 'withdrawn' || v === 'expired' || v === 'superseded';
     return v === t;
   };
   const matchKw = (r) => !kw || (r.no + r.barcode + r.name).includes(kw.trim());
@@ -1517,10 +1711,10 @@ function Page() {
     { title: '日期', key: 'dates', width: 200, render: (_, r) => (<div className="insp-stack">
         {DATES.map(([k, l]) => (<div className="insp-stack-row" key={k}><b>{l}</b>
           <DatePicker placeholder="未填" size="small" disabled={INSP.isLocked(r)} value={D(r[k])} onChange={(d) => setDate(r, k, S(d))} /></div>))}</div>) },
-    { title: '檢驗項目／結果', key: 'items', width: 260, render: (_, r) => (<div className="insp-stack">
+    { title: '檢驗項目／結果', key: 'items', width: 300, render: (_, r) => (<div className="insp-stack">
         {r.items.map((x, idx) => (<div className="insp-item-row" key={idx}><b>{'ABCD'[idx]}</b>
           <Select size="small" style={{ flex: 1, minWidth: 0 }} disabled={INSP.isLocked(r)} value={x.item} options={ITEM_OPTIONS} onChange={(v) => setItem(r, idx, 'item', v)} />
-          <Select size="small" style={{ flex: '0 0 80px' }} disabled={INSP.isLocked(r) || !x.item} value={x.result}
+          <Select size="small" style={{ flex: '0 0 104px' }} disabled={INSP.isLocked(r) || !x.item} value={x.result}
             status={x.result === '不合格' ? 'error' : undefined} options={RESULT_OPTIONS} onChange={(v) => setItem(r, idx, 'result', v)} /></div>))}</div>) },
     // 分頁就是狀態，這欄只放切換按鈕；檢驗中分頁有兩種，才標出待檢驗或檢驗中
     { title: '切換狀態', key: 'ps', width: 210, render: (_, r) => {
@@ -1530,11 +1724,12 @@ function Page() {
           {INSP.hasFail(r) && <Tag color="error">含不合格</Tag>}
           {r.resendOf && <span className="insp-muted">重新送驗（原 {r.resendOf}）</span>}
           {v === 'live' && <span className="insp-muted">{r.publishedAt} 上架</span>}
+          {v === 'withdrawn' && <span className="insp-muted">{INSP.withdrawText(r)}</span>}
           {v === 'superseded' && <span className="insp-muted">被新報告取代</span>}
           {v === 'expired' && <span className="insp-muted">已過有效日期</span>}
           <Space size={4} wrap>
             {INSP.allowedNext(r).map((t) => (
-              <Button key={t} size="small" type={t === '上架' ? 'primary' : 'default'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>))}
+              <Button key={t} size="small" type={t === '上架' ? 'primary' : 'default'} danger={t === '下架'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>))}
             {INSP.canResend(r) && <Button size="small" onClick={() => resend(r)}>重新送驗</Button>}
           </Space>
           {miss.length > 0 && <span className="insp-muted">未填寫完畢</span>}</div>);
@@ -1556,7 +1751,7 @@ function Page() {
         <div className="insp-filters">
           <Input.Search allowClear placeholder="紀錄編號、條碼、產品名稱" style={{ width: 240 }} onSearch={setKw} onChange={(e) => !e.target.value && setKw('')} />
         </div>
-        <Table rowKey="no" size="small" columns={columns} dataSource={data} scroll={{ x: 1460 }} pagination={{ pageSize: 20, hideOnSinglePage: true }}
+        <Table rowKey="no" size="small" columns={columns} dataSource={data} scroll={{ x: 1500 }} pagination={{ pageSize: 20, hideOnSinglePage: true }}
           locale={{ emptyText: records.length ? (kw ? '沒有符合搜尋條件的紀錄' : emptyText) : '尚無檢驗紀錄，點右上角「掃描新增紀錄」開始' }} />
       </div>
       <CreateModal open={createOpen} initialBarcode={simBarcode} onClose={() => { setCreateOpen(false); setSimBarcode(''); }} />
