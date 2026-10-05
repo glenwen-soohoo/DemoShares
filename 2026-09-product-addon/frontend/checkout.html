@@ -623,7 +623,34 @@
     const del = e.target.closest('.cartItem-area .field-delete a');
     if(del){ e.preventDefault(); const row=del.closest('.cartItem-area'); const nx=row.nextElementSibling; if(nx&&nx.classList.contains('coa'))nx.remove(); row.remove(); recalc(); return; }
     const rm = e.target.closest('.coa-added .rm');
-    if(rm){ const a=rm.closest('.coa-added'); const blk=a.closest('.coa-added-block'); a.remove(); if(blk&&!blk.querySelector('.coa-added'))blk.remove(); recalc(); return; }
+    if(rm){
+      const a=rm.closest('.coa-added');
+      const coa=a.closest('.coa');
+      // 移除已加購 → 退回「尚未加購」的加購清單（重建一列 coa-pk）
+      const pick = coa && coa.querySelector('.coa-pick');
+      const foot = pick && pick.querySelector('.coa-pick-foot');
+      if(pick && foot){
+        const g = s => a.querySelector(s);
+        const qty = (a.querySelector('.field-amt select') || {}).value || '1';
+        const opts = [1,2,3].map(v=>`<option${String(v)===qty?' selected':''}>${v}</option>`).join('');
+        const unit = parseMoney(g('.field-price .n').textContent);
+        const label = document.createElement('label');
+        label.className = 'coa-pk col-xs-12 order-field-basc';
+        label.innerHTML =
+          `<div class="base-field field-pd col-xs-4"><input type="checkbox" class="coa-ck">`+
+          `<img class="coa-thumb" src="${g('.coa-thumb').src}" alt="">`+
+          `<div class="coa-desc"><div class="nm">${g('.nm').innerHTML}</div><div class="sub">${g('.sub').textContent}</div></div></div>`+
+          `<div class="base-field field-order-time col-xs-2"></div>`+
+          `<div class="base-field field-price col-xs-1"><span class="o">${g('.field-price .o').textContent}</span><span class="n">${g('.field-price .n').textContent}</span></div>`+
+          `<div class="base-field field-amt col-xs-2"><select>${opts}</select></div>`+
+          `<div class="base-field field-pd-total col-xs-2">${money(unit*Number(qty))}</div>`+
+          `<div class="base-field field-delete col-xs-1"></div>`;
+        pick.insertBefore(label, foot);
+        const prompt = coa.querySelector('.coa-prompt');
+        if(prompt){ prompt.style.display=''; const b=prompt.querySelector('b'); if(b) b.textContent = coa.querySelectorAll('.coa-pk').length; }
+      }
+      const blk=a.closest('.coa-added-block'); a.remove(); if(blk&&!blk.querySelector('.coa-added'))blk.remove(); recalc(); return;
+    }
     const addBtn = e.target.closest('.coa-pick-foot button');
     if(addBtn){ addToCartFromPick(addBtn); return; }
     const saBtn = e.target.closest('.sa-pd-slick .buybutton');

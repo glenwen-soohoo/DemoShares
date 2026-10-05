@@ -721,9 +721,22 @@ a:hover { text-decoration: underline; }
   .ac-step-hint { font-size: 12px; color: var(--gox-text-muted); margin: 0 0 16px; }
 
   .ac-bind-row { display: flex; gap: 8px; align-items: flex-start; }
-  .ac-bind-row .gox-input { width: 200px; }
+  .ac-bind-card { overflow: visible; }  /* 讓綁定產品的搜尋下拉不被卡片外框裁切 */
+  .ac-search-wrap { position: relative; width: 320px; }
+  .ac-search-wrap .gox-input { width: 100%; }
   .ac-bind-err { color: var(--gox-danger); font-size: 13px; margin-top: 8px; }
   .ac-bind-err.is-hidden { display: none; }
+
+  .ac-suggest { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+    background: #fff; border: 1px solid var(--gox-card-border); border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.08); max-height: 260px; overflow-y: auto; }
+  .ac-suggest.is-hidden { display: none; }
+  .ac-suggest-item { display: flex; align-items: baseline; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 14px; }
+  .ac-suggest-item:hover, .ac-suggest-item.is-active { background: var(--gox-hover, #f4f6f5); }
+  .ac-suggest-item b { color: var(--gox-text); min-width: 56px; }
+  .ac-suggest-item .nm { color: var(--gox-text); }
+  .ac-suggest-item .mt { color: var(--gox-text-muted); font-size: 12px; margin-left: auto; }
+  .ac-suggest-empty { padding: 10px 12px; font-size: 13px; color: var(--gox-text-muted); }
 
   .ac-product { display: none; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
   .ac-product.is-shown { display: flex; }
@@ -778,12 +791,15 @@ a:hover { text-decoration: underline; }
     <button type="button" class="gox-btn gox-btn-default" id="ac-back">回列表</button>
   </div>
 
-  <div class="gox-card">
+  <div class="gox-card ac-bind-card">
     <div class="gox-card-title">綁定產品</div>
     <div class="gox-card-body">
       <p class="ac-step-hint">加購品是掛在某個產品底下的一個專屬規格。先指定要建立在哪一個產品下，才能往下填規格。</p>
       <div class="ac-bind-row">
-        <input type="text" class="gox-input" id="ac-pid" placeholder="輸入產品 ID">
+        <div class="ac-search-wrap">
+          <input type="text" class="gox-input" id="ac-pid" placeholder="輸入產品 ID 或名稱搜尋" autocomplete="off">
+          <div class="ac-suggest is-hidden" id="ac-suggest"></div>
+        </div>
         <button type="button" class="gox-btn gox-btn-primary" id="ac-bind">綁定</button>
       </div>
       <div class="ac-bind-err is-hidden" id="ac-bind-err"></div>
@@ -937,8 +953,75 @@ a:hover { text-decoration: underline; }
     box.classList.add('is-shown'); setLocked(false);
     window.gox && window.gox.toast('已綁定「' + p.name + '」');
   }
-  document.getElementById('ac-bind').addEventListener('click', bind);
-  document.getElementById('ac-pid').addEventListener('keydown', function (e) { if (e.key === 'Enter') bind(); });
+  // 搜尋下拉：可打產品 ID，也可打名稱關鍵字
+  var sugEl = document.getElementById('ac-suggest');
+  var pidEl = document.getElementById('ac-pid');
+  var activeIdx = -1;
+
+  function matches(q) {
+    q = q.trim().toLowerCase();
+    var keys = Object.keys(PRODUCTS);
+    if (!q) return keys;
+    return keys.filter(function (pid) {
+      return pid.toLowerCase().indexOf(q) !== -1 || PRODUCTS[pid].name.toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  function renderSuggest() {
+    var list = matches(pidEl.value);
+    activeIdx = -1;
+    if (!list.length) {
+      sugEl.innerHTML = '<div class="ac-suggest-empty">找不到相符的產品</div>';
+      sugEl.classList.remove('is-hidden'); return;
+    }
+    sugEl.innerHTML = list.map(function (pid) {
+      var p = PRODUCTS[pid];
+      return '<div class="ac-suggest-item" data-pid="' + pid + '"><b>' + pid + '</b>'
+        + '<span class="nm">' + p.name + '</span><span class="mt">' + p.line + '・' + p.temp + '</span></div>';
+    }).join('');
+    sugEl.classList.remove('is-hidden');
+  }
+  function hideSuggest() { sugEl.classList.add('is-hidden'); activeIdx = -1; }
+  function choose(pid) { pidEl.value = pid; hideSuggest(); bind(); }
+
+  pidEl.addEventListener('input', renderSuggest);
+  pidEl.addEventListener('focus', renderSuggest);
+  pidEl.addEventListener('keydown', function (e) {
+    var items = sugEl.classList.contains('is-hidden') ? [] : sugEl.querySelectorAll('.ac-suggest-item');
+    if (e.key === 'ArrowDown' && items.length) {
+      e.preventDefault(); activeIdx = Math.min(activeIdx + 1, items.length - 1); paintActive(items);
+    } else if (e.key === 'ArrowUp' && items.length) {
+      e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); paintActive(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIdx >= 0 && items[activeIdx]) { choose(items[activeIdx].getAttribute('data-pid')); return; }
+      if (PRODUCTS[pidEl.value.trim()]) { hideSuggest(); bind(); return; }
+      var list = matches(pidEl.value);
+      if (list.length === 1) { choose(list[0]); return; }
+      bind(); // 交給 bind 顯示「找不到／請輸入」
+    } else if (e.key === 'Escape') {
+      hideSuggest();
+    }
+  });
+  function paintActive(items) {
+    for (var i = 0; i < items.length; i++) items[i].classList.toggle('is-active', i === activeIdx);
+    if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
+  }
+  sugEl.addEventListener('mousedown', function (e) {
+    var it = e.target.closest('[data-pid]'); if (!it) return;
+    e.preventDefault(); choose(it.getAttribute('data-pid'));
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.ac-search-wrap')) hideSuggest();
+  });
+
+  document.getElementById('ac-bind').addEventListener('click', function () {
+    // 若輸入的不是精確 ID、但只有一筆相符，直接綁它
+    if (!PRODUCTS[pidEl.value.trim()]) {
+      var list = matches(pidEl.value);
+      if (list.length === 1) { choose(list[0]); return; }
+    }
+    hideSuggest(); bind();
+  });
 
   function money(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
   document.getElementById('ac-create').addEventListener('click', function () {
