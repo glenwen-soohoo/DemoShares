@@ -2,18 +2,9 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 檢驗紀錄頁（手機版）
-  真相來源：D:\GreenBox\fruit_weborigin/dev（07f0c120a，2026-10-05 讀；DEV-3977 分支要先更新到這個版本以後）
-  對應正式站（待新建）：
-    view       : Areas/GoX/Views/InspectionRecord/Mobile.cshtml（待新建，空 div #admin-inspection-record-mobile，不套 GoX 三段式殼）
-    react      : react-component-export/exports/admin-inspection-record-mobile.tsx（待新建）
-    進入點     : 電腦版 QR code → Mobile?mode=create
-    手機框     : demo 預覽用，正式版只做滿版
-  這一頁的真實欄位名：
-    同電腦版；照片上傳用 Method.UploadPictureToBlob（Models/Method.cs:2081），檔名 {RecordNo}-{Seq:00}.jpg
-  這一頁打的真實 API：
-    同電腦版（待新建）
-  完整名稱對照見同資料夾 _交接對照.md
+  DemoShares 交接對照 | 檢驗紀錄頁（手機版）｜B 版（舊版，2026-10-05 封存）
+  ⚠ 這一頁不是開發依據。狀態已經改成 C 版（檢驗狀態與處理狀態合一），開發照 admin-inspection-mobile.html
+  對應正式站、真實欄位名、要新建的 API：見 admin-inspection-mobile.html 檔頭與同資料夾 _交接對照.md
 -->
 
 <meta charset="UTF-8">
@@ -110,7 +101,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
 <script>
 /* 檢驗紀錄 demo 共用資料層：後台頁與前台頁共用同一份 localStorage，後台改了前台會跟著變 */
 window.INSP = (function () {
-  var KEY = 'gb-inspection-demo-v6';  // C 版（狀態合一）；A 版（-a.html）用 v2，兩版資料互不干擾
+  var KEY = 'gb-inspection-demo-v4';  // B 版；A 版（-a.html）用 v2，兩版資料互不干擾
 
   var ITEMS = ['大腸桿菌群', '沙門氏菌', '李斯特菌', '腸桿菌科', '金黃色葡萄球菌'];
   var RESULTS = ['陰性', '不合格'];
@@ -122,9 +113,7 @@ window.INSP = (function () {
     '金黃色葡萄球菌': ['100.0 CFU/g (mL)', '10.0 CFU/g (mL)']
   };
   var STORAGES = ['冷凍', '冷藏', '常溫'];
-  // 狀態只有一個（2026-10-05 C 版：檢驗狀態與處理狀態合併）。下架、過期不存，從「上架」算出來
-  // 驗完就上架，沒有另外的「已完成」（2026-10-05 Glen：已完成其實就是上架中）
-  var STATUS = ['待檢驗', '檢驗中', '上架', '取消'];
+  var INSPECT_STATUS = ['待檢驗', '檢驗中', '完成', '重新送驗', '取消'];
 
   var PRODUCTS = [
     { id: 28417, name: '阿婆手工肉圓 6 顆裝', spec: '6 顆／包', type: '冷凍專區', price: 360 },
@@ -198,7 +187,7 @@ window.INSP = (function () {
     var r = {
       no: no, barcode: barcode, name: name, storage: o.storage || '冷凍', qty: o.qty || '1包',
       mfgDate: o.mfg || '', expDate: o.exp || '', receivedDate: o.recv, inspectDate: o.insp,
-      items: o.items, status: o.st, publishedAt: o.done || ''
+      items: o.items, inspectStatus: o.st, processStatus: o.ps || '處理中', completedAt: o.done || ''
     };
     return r;
   }
@@ -218,38 +207,38 @@ window.INSP = (function () {
     var D = dayOffset, C = function (n, k) { return compact(D(n)) + pad(k); };
     var A = function (v) { return ['大腸桿菌群', v]; }, B = function (v) { return ['沙門氏菌', v]; }, L = function (v) { return ['李斯特菌', v]; };
     return [
-      // ── 檢驗中分頁 ──
+      // ── 處理中分頁 ──
       mk(C(0, 3), '紅藜麥蛋捲(試產)', '紅藜麥蛋捲', { storage: '常溫', qty: '1盒', recv: D(0), insp: D(0), st: '待檢驗',      // 條碼沒綁商品、結果全空
         items: items(A(), B(), ['金黃色葡萄球菌'], null), mfg: D(-3), exp: D(87) }),
       withPhotos(mk(C(0, 2), '南瓜雞肉粥6入', '寶寶南瓜雞肉粥', { storage: '冷凍', qty: '2包', recv: D(0), insp: D(0), st: '待檢驗', // 有 1 張照片
         items: items(A(), B(), L(), null), mfg: D(-2), exp: D(178) }), 1),
       mk(C(0, 1), '有機無糖豆漿950', '台東有機無糖豆漿', { storage: '冷藏', qty: '1瓶', recv: D(-1), insp: D(0), st: '檢驗中',   // 部分結果、未填有效日期
         items: items(A('陰性'), B(), L(), null), mfg: D(-2), exp: '' }),
-      withPhotos(mk(C(-1, 1), '無籽檸檬5斤', '屏東無籽檸檬', { storage: '常溫', qty: '1箱', recv: D(-3), insp: D(-1), st: '檢驗中', // 填齊了，可以直接上架
+      withPhotos(mk(C(-1, 1), '無籽檸檬5斤', '屏東無籽檸檬', { storage: '常溫', qty: '1箱', recv: D(-3), insp: D(-1), st: '完成', // 驗完、還沒發布，可以直接切上架
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-5), exp: D(30) }), 2),
-      mk(C(-2, 1), '高麗菜豬肉水餃30入', '高麗菜豬肉手工水餃', { storage: '冷凍', qty: '1包', recv: D(-4), insp: D(-2), st: '檢驗中', // 填齊、有不合格，上架時會寄信
+      mk(C(-2, 1), '高麗菜豬肉水餃30入', '高麗菜豬肉手工水餃', { storage: '冷凍', qty: '1包', recv: D(-4), insp: D(-2), st: '重新送驗', // 重新送驗
         items: items(A('陰性'), B('不合格'), L('陰性'), null), mfg: D(-10), exp: D(170) }),
-      mk(C(-30, 1), '玉荷包禮盒3斤', '屏東玉荷包禮盒', { storage: '冷藏', qty: '1盒', recv: D(-30), insp: D(-30), st: '取消',   // 取消分頁
+      mk(C(-30, 1), '玉荷包禮盒3斤', '屏東玉荷包禮盒', { storage: '冷藏', qty: '1盒', recv: D(-30), insp: D(-30), st: '取消',   // 取消
         items: items(A(), B(), null, null), mfg: '', exp: '' }),
       // ── 上架中分頁 ──
-      withPhotos(mk(C(-3, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-5), insp: D(-3), st: '上架', done: D(-2), // 一條碼對 2 個商品、2 張照片
+      withPhotos(mk(C(-3, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-5), insp: D(-3), st: '完成', ps: '上架', done: D(-2), // 一條碼對 2 個商品、2 張照片
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-12), exp: D(160) }), 2),
-      mk(C(-14, 2), '鮮蝦餛飩20入', '花蓮鮮蝦餛飩', { storage: '冷凍', qty: '1盒', recv: D(-16), insp: D(-14), st: '上架', done: D(-12), // 冷凍專區不合格
+      mk(C(-14, 2), '鮮蝦餛飩20入', '花蓮鮮蝦餛飩', { storage: '冷凍', qty: '1盒', recv: D(-16), insp: D(-14), st: '完成', ps: '上架', done: D(-12), // 冷凍專區不合格
         items: items(A('陰性'), B('陰性'), L('不合格'), ['腸桿菌科', '陰性']), mfg: D(-18), exp: D(92) }),
-      withPhotos(mk(C(-6, 1), '有機板豆腐400g', '非基改有機板豆腐', { storage: '冷藏', qty: '1盒', recv: D(-7), insp: D(-6), st: '上架', done: D(-5), // 4 個項目全用、3 張照片
+      withPhotos(mk(C(-6, 1), '有機板豆腐400g', '非基改有機板豆腐', { storage: '冷藏', qty: '1盒', recv: D(-7), insp: D(-6), st: '完成', ps: '上架', done: D(-5), // 4 個項目全用、3 張照片
         items: items(A('陰性'), B('陰性'), ['腸桿菌科', '陰性'], ['金黃色葡萄球菌', '陰性']), mfg: D(-8), exp: D(10) }), 3),
-      mk(C(-9, 1), '鳳梨釋迦6顆', '台東鳳梨釋迦', { storage: '常溫', qty: '1箱', recv: D(-10), insp: D(-9), st: '上架', done: D(-8), // 產地直送不合格
+      mk(C(-9, 1), '鳳梨釋迦6顆', '台東鳳梨釋迦', { storage: '常溫', qty: '1箱', recv: D(-10), insp: D(-9), st: '完成', ps: '上架', done: D(-8), // 產地直送不合格
         items: items(A('不合格'), B('陰性'), null, null), mfg: D(-11), exp: D(20) }),
-      mk(C(-4, 1), '小農鮮乳936', '小農鮮乳', { storage: '冷藏', qty: '1瓶', recv: D(-5), insp: D(-4), st: '上架', done: D(-3), // 冷藏、快到期
+      mk(C(-4, 1), '小農鮮乳936', '小農鮮乳', { storage: '冷藏', qty: '1瓶', recv: D(-5), insp: D(-4), st: '完成', ps: '不顯示', // 不顯示：填齊了但先不放前台
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-6), exp: D(12) }),
-      mk(C(-8, 1), '桂圓核桃酥(試產)', '桂圓核桃酥', { storage: '常溫', qty: '1盒', recv: D(-9), insp: D(-8), st: '上架', done: D(-7), // 已發布但條碼沒綁商品
+      mk(C(-8, 1), '桂圓核桃酥(試產)', '桂圓核桃酥', { storage: '常溫', qty: '1盒', recv: D(-9), insp: D(-8), st: '完成', ps: '上架', done: D(-7), // 已發布但條碼沒綁商品
         items: items(A('陰性'), B('陰性'), null, null), mfg: D(-15), exp: D(120) }),
       // ── 下架／過期分頁 ──
-      mk(C(-40, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-42), insp: D(-40), st: '上架', done: D(-38), // 被新報告取代、還沒過期
+      mk(C(-40, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-42), insp: D(-40), st: '完成', ps: '上架', done: D(-38), // 被新報告取代、還沒過期
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-50), exp: D(130) }),
-      mk(C(-95, 1), '鱸魚片300g', '澎湖鱸魚片', { storage: '冷凍', qty: '1片', recv: D(-97), insp: D(-95), st: '上架', done: D(-93), // 過期
+      mk(C(-95, 1), '鱸魚片300g', '澎湖鱸魚片', { storage: '冷凍', qty: '1片', recv: D(-97), insp: D(-95), st: '完成', ps: '上架', done: D(-93), // 過期
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-110), exp: D(-20) }),
-      mk(C(-60, 1), '豬肉貢丸600g', '新竹豬肉貢丸', { storage: '冷凍', qty: '1包', recv: D(-61), insp: D(-60), st: '檢驗中', // 檢驗中但有效日期已過（一直沒做完，不算過期）
+      mk(C(-60, 1), '豬肉貢丸600g', '新竹豬肉貢丸', { storage: '冷凍', qty: '1包', recv: D(-61), insp: D(-60), st: '檢驗中', // 處理中但已過期（一直沒做完）
         items: items(A('陰性'), B(), null, null), mfg: D(-70), exp: D(-5) })
     ];
   }
@@ -259,27 +248,27 @@ window.INSP = (function () {
     var list = scenarioNormal(), D = dayOffset;
     var codes = Object.keys(BARCODES).filter(function (c) { return BARCODES[c].productIds.length; });
     var nameOf = function (c) { return product(BARCODES[c].productIds[0]).name.replace(/ \d+ 顆.*$/, ''); };
-    var ST = ['待檢驗', '檢驗中', '檢驗中', '檢驗中', '待檢驗', '檢驗中'];
-    // 檢驗中 +24 筆（每 6 筆有一筆已填齊、可直接上架）：近兩週陸續送來，狀態輪流
+    var ST = ['待檢驗', '檢驗中', '完成', '重新送驗', '待檢驗', '檢驗中'];
+    // 處理中 +24 筆：近兩週陸續送來，狀態輪流
     for (var i = 0; i < 24; i++) {
       var c = codes[i % codes.length], back = Math.floor(i / 2), st = ST[i % ST.length];
       var res = st === '待檢驗' ? '' : '陰性';
       list.push(rec(compact(D(-back)) + pad(10 + (i % 5)), c, nameOf(c), { storage: i % 3 ? '冷凍' : '冷藏', qty: '1包', recv: D(-back - 1), insp: D(-back), st: st,
-        items: items(['大腸桿菌群', res], ['沙門氏菌', i % 6 === 3 ? '不合格' : res], ['李斯特菌', i % 6 === 2 ? '陰性' : ''], null),
+        items: items(['大腸桿菌群', res], ['沙門氏菌', st === '重新送驗' ? '不合格' : res], ['李斯特菌', st === '完成' ? '陰性' : ''], null),
         mfg: D(-back - 5), exp: i % 4 === 1 ? '' : D(150 - i) }));
     }
     // 上架中：每個還沒有報告的商品各補一份最新的（一個商品只會有一份在上架中）
-    var live = {}; list.forEach(function (r) { if (r.status === '上架') live[r.barcode] = true; });
+    var live = {}; list.forEach(function (r) { if (r.processStatus === '上架') live[r.barcode] = true; });
     codes.forEach(function (c, k) {
       if (live[c]) return;
       var back = 4 + k;
-      list.push(rec(compact(D(-back)) + '20', c, nameOf(c), { storage: '冷凍', qty: '1包', recv: D(-back - 2), insp: D(-back), st: '上架', done: D(-back + 1),
+      list.push(rec(compact(D(-back)) + '20', c, nameOf(c), { storage: '冷凍', qty: '1包', recv: D(-back - 2), insp: D(-back), st: '完成', ps: '上架', done: D(-back + 1),
         items: items(['大腸桿菌群', '陰性'], ['沙門氏菌', k === 3 ? '不合格' : '陰性'], ['李斯特菌', '陰性'], null), mfg: D(-back - 7), exp: D(90 + k) }));
     });
     // 下架／過期 +30 筆：過去半年的舊報告，一半被取代、一半過期
     for (var j = 0; j < 30; j++) {
       var cc = codes[j % codes.length], b2 = 30 + j * 5;
-      list.push(rec(compact(D(-b2)) + pad(30 + (j % 3)), cc, nameOf(cc), { storage: '冷凍', qty: '1包', recv: D(-b2 - 2), insp: D(-b2), st: '上架', done: D(-b2 + 2),
+      list.push(rec(compact(D(-b2)) + pad(30 + (j % 3)), cc, nameOf(cc), { storage: '冷凍', qty: '1包', recv: D(-b2 - 2), insp: D(-b2), st: '完成', ps: '上架', done: D(-b2 + 2),
         items: items(['大腸桿菌群', '陰性'], ['沙門氏菌', j % 9 === 4 ? '不合格' : '陰性'], ['李斯特菌', '陰性'], null),
         mfg: D(-b2 - 6), exp: j % 2 ? D(-b2 + 60) : D(200 - j) }));
     }
@@ -408,27 +397,10 @@ window.INSP = (function () {
     return save();
   }
 
-  // 重新送驗＝開一筆新紀錄（2026-10-05）：帶入同條碼、品名、保存方式、數量與選過的項目，結果、照片、日期都重來；舊紀錄不動
-  function resend(no) {
-    var o = state.records.filter(function (x) { return x.no === no; })[0], t = today();
-    var picked = items.apply(null, o.items.map(function (x) { return x.item ? [x.item] : null; }));
-    var r = rec(nextNo(), o.barcode, o.name, { storage: o.storage, qty: o.qty, recv: t, insp: t, st: '待檢驗', items: picked });
-    r.photos = []; r.photoSeq = 0; r.resendOf = o.no;
-    state.records.unshift(r);
-    save();
-    return r;
-  }
-
-  // 上架的紀錄必須維持填齊；這次修改會讓它缺欄位就擋下（回傳要補的欄位）
-  function editBreaks(r, patch) {
-    if (r.status !== '上架') return [];
-    return missingForComplete(Object.assign({}, r, patch));
-  }
-
   function isExpired(r) { return !!r.expDate && r.expDate < today(); }
   function hasFail(r) { return r.items.some(function (x) { return x.item && x.result === '不合格'; }); }
 
-  // 上架前要補齊的東西：四個日期都要有、選了項目的都要有結果
+  // 從處理中切到「上架」或「不顯示」前要補齊的東西：四個日期都要有、選了項目的都要有結果（2026-10-05 定）
   var DATE_FIELDS = [['mfgDate', '製作日期'], ['expDate', '有效日期'], ['receivedDate', '收樣日期'], ['inspectDate', '檢驗日期']];
   function missingForComplete(r) {
     var m = DATE_FIELDS.filter(function (f) { return !r[f[0]]; }).map(function (f) { return f[1]; });
@@ -441,7 +413,7 @@ window.INSP = (function () {
   function latestForProduct(pid) {
     var best = null;
     state.records.forEach(function (r) {
-      if (r.status !== '上架') return;
+      if (r.processStatus !== '上架') return;
       if (!productsOf(r).some(function (p) { return p.id === pid; })) return;
       if (!best || r.inspectDate > best.inspectDate || (r.inspectDate === best.inspectDate && r.no > best.no)) best = r;
     });
@@ -456,46 +428,35 @@ window.INSP = (function () {
 
   // 被取代：上架、有對到商品，但對到的每個商品都有更新的一份
   function isSuperseded(r) {
-    if (r.status !== '上架') return false;
+    if (r.processStatus !== '上架') return false;
     var ps = productsOf(r);
     if (!ps.length) return false;
     return ps.every(function (p) { var l = latestForProduct(p.id); return l && l.no !== r.no; });
   }
 
-  // 畫面上的狀態：待檢驗／檢驗中／上架中／下架（被取代）／過期／取消。下架、過期只會從「上架」算出來
+  // 畫面上的狀態：處理中／上架中／不顯示／下架（被取代）／過期。下架、過期只會發生在「上架」的紀錄
   function viewState(r) {
-    if (r.status === '待檢驗') return 'pending';
-    if (r.status === '檢驗中') return 'testing';
-    if (r.status === '取消') return 'cancelled';
+    if (r.processStatus === '處理中') return 'processing';
+    if (r.processStatus === '不顯示') return 'hidden';
     if (isExpired(r)) return 'expired';
     if (isSuperseded(r)) return 'superseded';
     return 'live';
   }
-  // 下架、過期：所有欄位不可修改，只能改回檢驗中；取消：也不能改，只能恢復成待檢驗
-  function isLocked(r) { var v = viewState(r); return v === 'expired' || v === 'superseded' || v === 'cancelled'; }
-  // 每個狀態可以切去哪裡（2026-10-05 C 版）
+  // 下架、過期：所有欄位不可修改，只能切回處理中
+  function isLocked(r) { var v = viewState(r); return v === 'expired' || v === 'superseded'; }
+  // 每個狀態可以切去哪裡（2026-10-05）
   function allowedNext(r) {
-    switch (viewState(r)) {
-      case 'pending': return ['檢驗中', '上架', '取消'];
-      case 'testing': return ['上架', '待檢驗', '取消'];
-      case 'cancelled': return ['待檢驗'];
-      default: return ['檢驗中'];                       // 上架中、下架、過期
-    }
-  }
-  // 上架過的紀錄（上架中、下架、過期）才能重新送驗
-  function canResend(r) { return ['live', 'superseded', 'expired'].indexOf(viewState(r)) >= 0; }
-
-  // 狀態文字與按鈕文字（電腦版、手機版共用）
-  function statusText(r) { return { pending: '待檢驗', testing: '檢驗中', live: '上架中', superseded: '已下架', expired: '已過期', cancelled: '已取消' }[viewState(r)]; }
-  function actionLabel(r, target) {
     var v = viewState(r);
-    if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
-    if (target === '待檢驗') return v === 'cancelled' ? '恢復檢驗' : '改回待檢驗';
-    if (target === '取消') return '取消檢驗';
-    return target;
+    if (v === 'processing') return ['上架', '不顯示'];   // 欄位要填齊，見 missingForComplete
+    if (v === 'live') return ['處理中', '不顯示'];
+    return ['處理中'];                                  // 不顯示、下架、過期
   }
-  // 這顆按鈕現在能不能按：上架要欄位填齊
-  function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && (target !== '上架' || !missingForComplete(r).length); }
+
+  // 狀態標籤文字與按鈕文字（電腦版、手機版共用）
+  function statusText(r) { return { processing: '處理中', live: '上架中', hidden: '不顯示', superseded: '已下架', expired: '已過期' }[viewState(r)]; }
+  function actionLabel(target) { return target === '處理中' ? '改回處理中' : target; }
+  // 這顆按鈕現在能不能按：從處理中切出去要欄位填齊
+  function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && (r.processStatus !== '處理中' || !missingForComplete(r).length); }
 
   function receiversFor(r) {
     var groups = {};
@@ -504,12 +465,12 @@ window.INSP = (function () {
   }
 
   return {
-    ITEMS: ITEMS, RESULTS: RESULTS, STANDARDS: STANDARDS, STORAGES: STORAGES, STATUS: STATUS,
+    ITEMS: ITEMS, RESULTS: RESULTS, STANDARDS: STANDARDS, STORAGES: STORAGES, INSPECT_STATUS: INSPECT_STATUS,
     PRODUCTS: PRODUCTS, BARCODES: BARCODES,
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
-    setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
-    latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
+    setScenario: setScenario, create: create, update: update, lookup: lookup, productsOf: productsOf, product: product,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
 })();
@@ -611,13 +572,7 @@ function useRecords() {
   return INSP.records();
 }
 
-const TABS = [['testing', '檢驗中'], ['live', '上架中'], ['off', '下架/過期'], ['cancelled', '取消']];
-const inTab = (r, t) => {
-  const v = INSP.viewState(r);
-  if (t === 'testing') return v === 'pending' || v === 'testing';
-  if (t === 'off') return v === 'expired' || v === 'superseded';
-  return v === t;
-};
+const inTab = (r, t) => { const v = INSP.viewState(r); return t === 'off' ? (v === 'expired' || v === 'superseded') : v === t; };
 
 async function pickPhotos(files) {
   const out = [];
@@ -735,43 +690,36 @@ function CreateDrawer({ open, onClose, initialBarcode }) {
   );
 }
 
-function EditDrawer({ no, onClose, onOpen }) {
+function EditDrawer({ no, onClose }) {
   const { message, notification } = AntApp.useApp();
   const records = useRecords();
   const r = records.find((x) => x.no === no);
   if (!r) return null;
-  // 上架的紀錄要維持填齊，清空必填欄位會被擋下
-  const up = (patch) => {
-    const miss = INSP.editBreaks(r, patch);
-    if (miss.length) { message.error('上架中的紀錄要維持填齊，要清空請先改回檢驗中'); return; }
-    INSP.update(r.no, patch);
-  };
+  const up = (patch) => INSP.update(r.no, patch);
   const setItem = (idx, key, val) => {
     const items = r.items.map((x, i) => (i === idx ? { ...x, [key]: val || '' } : x));
     if (key === 'item' && !val) items[idx].result = '';
     up({ items });
   };
   const locked = INSP.isLocked(r), allowed = INSP.allowedNext(r), view = INSP.viewState(r);
-  // C 版：待檢驗 ⇄ 檢驗中 ⇄（欄位填齊）上架；還沒上架的可取消檢驗；下架、過期只能改回檢驗中
-  const changeStatus = (t) => {
-    if (allowed.indexOf(t) < 0) return;
-    if (!INSP.canSwitch(r, t)) { message.error('還不能上架，請先填：' + INSP.missingForComplete(r).join('、')); return; }
-    if (t === '上架') {
-      INSP.update(r.no, { status: t, publishedAt: INSP.today() });
+  // B 版：處理中 → 上架／不顯示（要填齊）；上架 → 處理中／不顯示；不顯示、下架、過期 → 處理中
+  const changeProcess = (v) => {
+    if (allowed.indexOf(v) < 0) return;
+    if (r.processStatus === '處理中') {
+      const miss = INSP.missingForComplete(r);
+      if (miss.length) { message.error('還不能切換，請先填：' + miss.join('、')); return; }
+    }
+    if (v === '上架') {
+      up({ processStatus: v, completedAt: INSP.today() });
       const ps = INSP.productsOf(r);
       message.success(ps.length ? '已上架到 ' + ps.length + ' 個商品頁' : '已上架；此條碼沒綁商品，前台不會顯示');
       if (INSP.hasFail(r)) {
         const g = INSP.receiversFor(r);
         notification.warning({ message: '已寄出不合格通知', placement: 'top', getContainer: frameEl, description: <div>{INSP.failItems(r).join('、')}不合格<br />{Object.keys(g).map((k) => <div key={k}>{k}：{g[k].join('、')}</div>)}</div> });
       }
-      return;
-    }
-    INSP.update(r.no, { status: t });
-    if (t === '檢驗中' && view !== 'pending') message.info('已改回檢驗中，前台不再顯示');
-    else if (t === '取消') message.info('已取消檢驗');
-    else message.info('已改為' + t);
+    } else if (v === '不顯示') { up({ processStatus: v }); message.info('已設為不顯示，前台不會出現這份報告'); }
+    else { up({ processStatus: v }); message.info('已改回處理中，可以修改欄位'); }
   };
-  const resend = () => { const n = INSP.resend(r.no); message.success('已開新紀錄 ' + n.no); onOpen(n.no); };
   const photos = INSP.photosOf(r);
   const addPhotos = async (srcs) => {
     const items = [];
@@ -785,21 +733,19 @@ function EditDrawer({ no, onClose, onOpen }) {
   return (
     <Drawer {...inFrame} title={r.name} placement="bottom" height="92%" open onClose={onClose}
       extra={<span className="m-muted">{r.no}</span>}>
-      <div className="m-section">狀態</div>
+      <div className="m-section">處理狀態</div>
       <Space size={4} wrap>
         <Tag color={view === 'live' ? 'success' : 'default'}>{INSP.statusText(r)}</Tag>
         {INSP.hasFail(r) && <Tag color="error">含不合格</Tag>}
       </Space>
       {view === 'superseded' && <div className="m-muted" style={{ marginTop: 4 }}>被新報告取代</div>}
       {view === 'expired' && <div className="m-muted" style={{ marginTop: 4 }}>已過有效日期</div>}
-      {view === 'live' && <div className="m-muted" style={{ marginTop: 4 }}>{r.publishedAt} 上架</div>}
-      {r.resendOf && <div className="m-muted" style={{ marginTop: 4 }}>重新送驗（原 {r.resendOf}）</div>}
+      {view === 'live' && <div className="m-muted" style={{ marginTop: 4 }}>{r.completedAt} 上架</div>}
       <div className="m-status-btns">
         {allowed.map((t) => (
-          <Button key={t} type={t === '上架' ? 'primary' : 'default'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(t)}>{INSP.actionLabel(r, t)}</Button>))}
-        {INSP.canResend(r) && <Button onClick={resend}>重新送驗</Button>}
+          <Button key={t} type={t === '上架' ? 'primary' : 'default'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeProcess(t)}>{INSP.actionLabel(t)}</Button>))}
       </div>
-      {(view === 'pending' || view === 'testing') && INSP.missingForComplete(r).length > 0 && <div className="m-muted" style={{ marginTop: 4 }}>未填寫完畢</div>}
+      {r.processStatus === '處理中' && INSP.missingForComplete(r).length > 0 && <div className="m-muted" style={{ marginTop: 4 }}>未填寫完畢</div>}
 
       <div className="m-section">樣品照片</div>
       {locked ? <PhotoPicker value={photos} expect={r.barcode} />
@@ -828,6 +774,7 @@ function EditDrawer({ no, onClose, onOpen }) {
         <div><label className="m-muted">收樣日期</label><DatePicker placeholder="未填" disabled={locked} inputReadOnly style={{ width: '100%' }} value={D(r.receivedDate)} onChange={(d) => up({ receivedDate: S(d) })} /></div>
         <div><label className="m-muted">檢驗日期</label><DatePicker placeholder="未填" disabled={locked} inputReadOnly style={{ width: '100%' }} value={D(r.inspectDate)} onChange={(d) => up({ inspectDate: S(d) })} /></div>
       </div>
+      <div className="m-field"><label>檢驗狀態</label><Select disabled={locked} style={{ width: '100%' }} value={r.inspectStatus} options={INSP.INSPECT_STATUS.map((v) => ({ value: v, label: v }))} onChange={(v) => up({ inspectStatus: v })} /></div>
       <div className="m-field"><label>國際條碼</label><div>{r.barcode}</div>
         <div className="m-muted">{INSP.productsOf(r).length ? '對應：' + INSP.productsOf(r).map((p) => p.name).join('、') : '沒綁官網商品'}</div></div>
     </Drawer>
@@ -843,9 +790,11 @@ function Card({ r, onOpen }) {
         <div className="m-card-name">{r.name}</div>
         <div className="m-card-sub">{r.no}・檢驗 {r.inspectDate}</div>
         <div className="m-card-tags">
-          <Tag color={INSP.viewState(r) === 'live' ? 'success' : 'default'}>{INSP.statusText(r)}</Tag>
+          <Tag>{r.inspectStatus}</Tag>
           {INSP.hasFail(r) && <Tag color="error">含不合格</Tag>}
-          {!r.expDate && (r.status === '待檢驗' || r.status === '檢驗中') && <Tag color="warning">未填有效日期</Tag>}
+          {!r.expDate && r.processStatus === '處理中' && <Tag color="warning">未填有效日期</Tag>}
+          {INSP.isExpired(r) && <Tag>已過期</Tag>}
+          {INSP.isSuperseded(r) && <Tag>已被取代</Tag>}
           {photos.length > 0 && <Tag>照片 {photos.length}</Tag>}
         </div>
       </div>
@@ -877,7 +826,7 @@ function DevPanel() {
 
 function Page() {
   const records = useRecords();
-  const [tab, setTab] = React.useState('testing');
+  const [tab, setTab] = React.useState('processing');
   const [kw, setKw] = React.useState('');
   const [createOpen, setCreateOpen] = React.useState(false);
   const [sim, setSim] = React.useState('');
@@ -891,14 +840,14 @@ function Page() {
   const match = (r) => !kw || (r.no + r.barcode + r.name).includes(kw.trim());
   const count = (t) => records.filter((r) => inTab(r, t) && match(r)).length;
   const list = records.filter((r) => inTab(r, tab) && match(r));
-  const empty = { testing: '沒有檢驗中的紀錄', live: '沒有上架中的紀錄', off: '沒有下架或過期的紀錄', cancelled: '沒有取消的紀錄' }[tab];
+  const empty = { processing: '沒有處理中的紀錄', live: '沒有上架中的紀錄', hidden: '沒有設為不顯示的紀錄', off: '沒有下架或過期的紀錄' }[tab];
   return (
     <>
     <div className="m-frame" id="m-frame">
       <div className="m-status"><span>9:41</span><span className="m-status-icons"><i style={{ height: 4 }} /><i style={{ height: 7 }} /><i style={{ height: 10 }} /><b /></span></div>
       <div className="m-header"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農" /><h1>檢驗紀錄</h1><a href="admin-inspection-records.html">電腦版</a></div>
       <div className="m-scroll">
-      <div className="m-tabs"><Tabs activeKey={tab} onChange={setTab} items={TABS.map(([k, l]) => ({ key: k, label: l + ' ' + count(k) }))} /></div>
+      <div className="m-tabs"><Tabs activeKey={tab} onChange={setTab} items={[['processing', '處理中'], ['live', '上架中'], ['hidden', '不顯示'], ['off', '下架/過期']].map(([k, l]) => ({ key: k, label: l + ' ' + count(k) }))} /></div>
       <div className="m-search"><Input.Search allowClear placeholder="紀錄編號、條碼、產品名稱" onSearch={setKw} onChange={(e) => !e.target.value && setKw('')} /></div>
       <div className="m-list">
         {list.length ? list.map((r) => <Card key={r.no} r={r} onOpen={() => setEditNo(r.no)} />)
@@ -907,7 +856,7 @@ function Page() {
       </div>
       <div className="m-cta"><Button type="primary" block style={{ height: 48, fontSize: 16 }} onClick={() => { setSim(''); setCreateOpen(true); }}>＋ 新增檢驗紀錄</Button></div>
       <CreateDrawer open={createOpen} initialBarcode={sim} onClose={() => { setCreateOpen(false); setSim(''); }} />
-      {editNo && <EditDrawer key={editNo} no={editNo} onClose={() => setEditNo(null)} onOpen={setEditNo} />}
+      {editNo && <EditDrawer no={editNo} onClose={() => setEditNo(null)} />}
     </div>
     <DevPanel />
     </>
