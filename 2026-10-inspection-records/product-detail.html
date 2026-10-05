@@ -891,9 +891,16 @@ window.INSP = (function () {
     if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
     if (target === '待檢驗') return v === 'cancelled' ? '恢復檢驗' : '改回待檢驗';
     if (target === '取消') return '取消檢驗';
-    if (target === '上架' && v === 'withdrawn') return '重新上架';
+    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '檢驗完上架';
     if (target === '下架') return v === 'live' ? '手動下架' : '直接下架';   // 上架中撤下／驗完不上架
     return target;
+  }
+  // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
+  function buttonRows(r) {
+    var next = allowedNext(r);
+    var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['取消']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
+    if (canResend(r)) rows[2].push('resend');
+    return rows.filter(function (g) { return g.length; });
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
   // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
@@ -911,7 +918,7 @@ window.INSP = (function () {
     PRODUCTS: PRODUCTS, BARCODES: BARCODES,
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };

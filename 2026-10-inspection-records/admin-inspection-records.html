@@ -1268,9 +1268,16 @@ window.INSP = (function () {
     if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
     if (target === '待檢驗') return v === 'cancelled' ? '恢復檢驗' : '改回待檢驗';
     if (target === '取消') return '取消檢驗';
-    if (target === '上架' && v === 'withdrawn') return '重新上架';
+    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '檢驗完上架';
     if (target === '下架') return v === 'live' ? '手動下架' : '直接下架';   // 上架中撤下／驗完不上架
     return target;
+  }
+  // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
+  function buttonRows(r) {
+    var next = allowedNext(r);
+    var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['取消']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
+    if (canResend(r)) rows[2].push('resend');
+    return rows.filter(function (g) { return g.length; });
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
   // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
@@ -1288,7 +1295,7 @@ window.INSP = (function () {
     PRODUCTS: PRODUCTS, BARCODES: BARCODES,
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
@@ -1326,6 +1333,7 @@ window.INSP = (function () {
   .insp-stack-row .ant-picker { flex:1; }
   .insp-opt { display:inline-flex; align-items:center; gap:4px; }
   .insp-dot { flex:0 0 8px; width:8px; height:8px; border-radius:9999px; }
+  .insp-none { color:var(--gox-text-muted); }
   .insp-mark { flex:0 0 12px; width:12px; text-align:center; font-weight:700; font-size:12px; line-height:1; }
   .insp-item-row { display:flex; align-items:center; gap:4px; }
   .insp-item-row > b { flex:0 0 16px; font-size:12px; font-weight:400; color:var(--gox-text-muted); }
@@ -1402,9 +1410,10 @@ const itemLabel = (x) => <span className="insp-opt"><i className="insp-dot" styl
 // 結果：陰性綠勾、不合格紅叉，顏色用主題的 success／error
 const RESULT_MARK = { '陰性': ['✓', theme.token.colorSuccess], '不合格': ['✕', theme.token.colorError] };
 const resultLabel = (x) => <span className="insp-opt"><b className="insp-mark" style={{ color: RESULT_MARK[x][1] }}>{RESULT_MARK[x][0]}</b>{x}</span>;
-const ITEM_OPTIONS = [{ value: '', label: '不選' }].concat(INSP.ITEMS.map((x) => ({ value: x, label: itemLabel(x) })));
+// 「不選／未填」是預設空值，用灰字跟真的選項區分
+const ITEM_OPTIONS = [{ value: '', label: <span className="insp-none">不選</span> }].concat(INSP.ITEMS.map((x) => ({ value: x, label: itemLabel(x) })));
 // 未填也留一格記號的位置，三種選項的文字才會左邊對齊
-const RESULT_OPTIONS = [{ value: '', label: <span className="insp-opt"><b className="insp-mark" />未填</span> }].concat(INSP.RESULTS.map((x) => ({ value: x, label: resultLabel(x) })));
+const RESULT_OPTIONS = [{ value: '', label: <span className="insp-opt insp-none"><b className="insp-mark">{'\u00a0'}</b>未填</span> }].concat(INSP.RESULTS.map((x) => ({ value: x, label: resultLabel(x) })));
 
 function useRecords() {
   const [, force] = React.useState(0);
@@ -1727,11 +1736,11 @@ function Page() {
           {v === 'withdrawn' && <span className="insp-muted">{INSP.withdrawText(r)}</span>}
           {v === 'superseded' && <span className="insp-muted">被新報告取代</span>}
           {v === 'expired' && <span className="insp-muted">已過有效日期</span>}
-          <Space size={4} wrap>
-            {INSP.allowedNext(r).map((t) => (
-              <Button key={t} size="small" type={t === '上架' ? 'primary' : 'default'} danger={t === '下架'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>))}
-            {INSP.canResend(r) && <Button size="small" onClick={() => resend(r)}>重新送驗</Button>}
-          </Space>
+          {INSP.buttonRows(r).map((row, i) => (<Space key={i} size={4}>
+            {row.map((t) => t === 'resend'
+              ? <Button key={t} size="small" onClick={() => resend(r)}>重新送驗</Button>
+              : <Button key={t} size="small" type={t === '上架' ? 'primary' : 'default'} danger={t === '下架'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>)}
+          </Space>))}
           {miss.length > 0 && <span className="insp-muted">未填寫完畢</span>}</div>);
       } },
     { title: '照片', key: 'photos', width: 180, render: (_, r) => <PhotoCell r={r} locked={INSP.isLocked(r)} /> },
