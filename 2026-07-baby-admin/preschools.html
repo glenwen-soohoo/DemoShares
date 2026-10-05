@@ -730,6 +730,7 @@ a:hover { text-decoration: underline; }
   .stat2 { line-height:1.35; }
   .stat2 .money { font-weight:600; }
   .stat2 .box { font-size:12px; color:var(--gox-text-sub); }
+  .bage-h { width:46px; text-align:center; font-size:11px; color:var(--gox-text-muted); display:inline-block; }
 
   /* 頁頭：左標題 / 右「當月統計」小區塊 */
   .page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
@@ -901,9 +902,8 @@ a:hover { text-decoration: underline; }
       <select class="gox-select" id="batch-start" style="width:150px;"></select>
       <label style="font-weight:400;min-width:auto;margin-left:16px;">要開幾個月</label>
       <select class="gox-select" id="batch-count" style="width:80px;"><option>1</option><option>2</option><option selected>3</option><option>6</option></select> 個月</div>
-    <div class="gox-hint" style="margin-bottom:10px;">自開始月份起連續開這幾個月。若某院所在選定月份中已有開過需求，則無法再開（下方該列不可勾選）。</div>
-    <div style="font-weight:500;margin:8px 0 6px;">要開的院所（勾選的才會開，可用「整批」一次勾）
-      <span class="gox-hint" style="font-weight:400;margin-left:6px;">人數欄位依序：3 歲以下 / 3–6 / 6–12 / 12–18，預設帶入上月人數，右側自動算每月箱數</span></div>
+    <div class="gox-hint" style="margin-bottom:10px;">若某院所在選定月份期間已有開過需求，則無法再開（下方該列不可勾選）。<br>勾選後人數預設帶入上月、可直接改</div>
+    <div style="font-weight:500;margin:8px 0 6px;">要開的院所</div>
     <div id="batch-list" style="max-height:320px;overflow:auto;"></div>
     <div class="gox-modal-actions">
       <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
@@ -1178,7 +1178,13 @@ a:hover { text-decoration: underline; }
     const groups={}; Object.entries(PRES).forEach(([id,p])=>{ if(!p.coop) return; (groups[p.type]=groups[p.type]||[]).push([id,p]); });
     const ageInputs=(id,p)=>['a','b','c','d'].map(k=>
       `<input type="number" class="gox-input bage" data-pid="${id}" data-k="${k}" min="0" value="${p.ages[k]}" style="width:46px;">`).join('');
-    document.querySelector('#batch-list').innerHTML = Object.entries(groups).map(([type,arr])=>`
+    // 欄頭：放進捲動容器內（與列同寬、不受捲軸影響），sticky 固定在頂端；盒模型與列一致以精準對齊
+    const headHTML=`<div class="batch-head" style="position:sticky;top:0;z-index:2;background:#fff;display:flex;align-items:flex-end;gap:8px;padding:4px 10px;border:1px solid transparent;margin-bottom:5px;">`
+      +`<span style="flex:1;min-width:150px;text-align:right;padding-right:4px;font-size:11px;color:var(--gox-text-muted);">各年齡層人數（歲）</span>`
+      +`<span style="display:inline-flex;align-items:flex-end;gap:8px;"><span style="display:inline-flex;gap:3px;">`
+      +`<span class="bage-h">未滿3</span><span class="bage-h">3–6</span><span class="bage-h">6–12</span><span class="bage-h">12–18</span></span>`
+      +`<span style="min-width:62px;text-align:right;font-size:11px;color:var(--gox-text-muted);">每月箱數</span></span></div>`;
+    document.querySelector('#batch-list').innerHTML = headHTML + Object.entries(groups).map(([type,arr])=>`
       <div class="baby-grp">${ptag(type)} <label style="font-weight:400;font-size:13px;"><input type="checkbox" class="bg-ck" data-type="${type}"> 整批</label></div>
       ${arr.map(([id,p])=>{ const conflict=targets.some(m=>p.months[m]); const checked=!conflict;
         return `<div class="baby-brow" data-pid="${id}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 10px;border:1px solid #eee;border-radius:4px;margin-bottom:5px;${conflict?'opacity:.5;':''}">
@@ -1192,9 +1198,15 @@ a:hover { text-decoration: underline; }
     Object.keys(groups).forEach(syncGroup);
   }
   function openBatch(){
-    const base=MONTHS.slice().sort(); const futs=base.filter(m=>m>curMonth);
-    fillSel(document.querySelector('#batch-start'), base, fmtMonth);
-    document.querySelector('#batch-start').value = futs.length?futs[0]:(base[base.length-1]||curMonth);
+    // 開始月份：當月起連續 6 個月（半年內）都可選，不帶過去月份
+    const opts=Array.from({length:6},(_,i)=>addMonth(curMonth,i));
+    fillSel(document.querySelector('#batch-start'), opts, fmtMonth);
+    // 預設落在第一個「還有院所可開」的月份（當月常常已全部開過），當月仍保留在選單可選
+    const n=+document.querySelector('#batch-count').value||1;
+    const coop=Object.values(PRES).filter(p=>p.coop);
+    const firstOpenable=opts.find(start=>{ const t=Array.from({length:n},(_,i)=>addMonth(start,i));
+      return coop.some(p=>!t.some(m=>p.months[m])); }) || curMonth;
+    document.querySelector('#batch-start').value = firstOpenable;
     renderBatchList();
     window.gox.openModal('#modal-batch');
   }
