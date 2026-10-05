@@ -2,11 +2,11 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 規格編輯・加購設定（admin-spec-addon.html・路徑二・規格內嵌）
+  DemoShares 交接對照 | 規格編輯・加購設定（admin-spec-addon.html・路徑二・勾選＋跳轉）
   真相來源（demo 對齊的 commit；行號會隨後續推進漂移，請以錨點 id／函式名為準）：
     fruit_web              D:\GreenBox\fruit_web              分支 dev（commit d18f11e2a）
     React-Component-Export D:\GreenBox\react-component-export 分支 dev（commit 2221a6f）
-  對應正式站（既有規格編輯頁；加購欄位＝內嵌新增）：
+  對應正式站（既有規格編輯頁；Q6 定案 10/05＝規格頁只放勾選＋跳轉鈕、折扣/掛載設定在路徑一 admin-addon-setting）：
     掛載點     HuashanCRM/Areas/GoX/Views/Product/Edit18.cshtml:365  <div id="product-detail-settings">
     bundle載入 Edit18.cshtml:33  product-detail-settings.js（:607 註解「antd 規格欄位」）
     驗證       window.productDetailsValidateFields()
@@ -19,10 +19,12 @@
     預計出貨日 ship→OrdersTime ⚠出貨日不是下單時間 / 開始結束販售 start,end→StartTime,EndTime
     自動延後區間 delay→Delay / 上架 display→Display / 是否貨到付款 cod
     滿額可購買 isMin,minPrice→MinimumPrice / 限購 limit→Limit
-  本頁「加購」新增部分（正式站還沒有，待新建）：
+  本頁「加購」新增部分（正式站還沒有，待新建；Q6 定案＝只勾選＋跳轉，不內嵌折扣）：
     可作為加購品   勾選欄 addon  → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）
-    加購折扣       aMode/aVal/aStart/aEnd → 沿用 PromoteCode（固定金額 or 百分比；生效起訖）
-    掛載主商品     aMains → ProductAddOnMapping（ProductId / ProductAddOnId / IsOnShelf）
+    前往加購設定   跳轉鈕 → admin-addon-setting.html（路徑一）；折扣與掛載主商品都在那頁管理（同一份資料）
+    （下列折扣/掛載欄位＝路徑一的設定，列此供對名；本頁已不內嵌）：
+    加購折扣       → 沿用 PromoteCode（固定金額 or 0.XX 倍率；生效起訖）
+    掛載主商品     → ProductAddOnMapping（ProductId / ProductAddOnId / IsOnShelf）
   完整名稱對照見同資料夾 _交接對照.md
 -->
 <meta charset="UTF-8">
@@ -885,43 +887,18 @@ a:hover { text-decoration: underline; }
   .ps-toast-host { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 1010; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
   .ps-toast { background: #fff; color: rgba(0,0,0,.88); padding: 9px 12px; border-radius: 8px; font-size: 14px; box-shadow: 0 6px 16px rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12); }
 
-  /* ── 加購品：規格限制尾端多一個「可作為加購品」（同既有 checkbox 樣式），勾選後展開折扣 ── */
-  .addon-tag { display: inline-flex; align-items: center; gap: 4px; background: #dcfce7; border: 1px solid #16a34a; color: #166534; border-radius: 4px; font-size: 12px; font-weight: 700; padding: 3px 10px; margin-top: 6px; text-decoration: none; cursor: pointer; transition: background .15s, color .15s; }
-  .addon-tag:hover { background: #16a34a; color: #fff; }
-  .addon-tag svg { width: 12px; height: 12px; }
-  .addon-box { margin-top: 12px; border: 1px solid #86efac; background: #f0fdf4; border-radius: 8px; padding: 12px 16px; }
-  .addon-box-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #166534; flex-wrap: wrap; margin-bottom: 12px; }
-  .addon-dot { width: 7px; height: 7px; border-radius: 9999px; background: #16a34a; flex: none; }
-  .addon-sub { font-weight: 400; color: #6b7280; font-size: 12px; }
-  .addon-grid { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
-  .addon-seg { display: inline-flex; border: 1px solid #d9d9d9; border-radius: 6px; overflow: hidden; height: 32px; }
-  .addon-seg button { border: 0; background: #fff; color: rgba(0,0,0,.65); font-size: 14px; padding: 0 14px; cursor: pointer; font-family: inherit; }
-  .addon-seg button + button { border-left: 1px solid #d9d9d9; }
-  .addon-seg button.is-on { background: #16a34a; color: #fff; }
-  .addon-val { width: 96px; }
-  .addon-unit { padding: 0 6px; color: rgba(0,0,0,.65); white-space: nowrap; }
-  .addon-preview { margin-top: 12px; font-size: 14px; color: rgba(0,0,0,.88); }
-  .addon-preview .o { color: #9ca3af; text-decoration: line-through; margin-right: 6px; }
-  .addon-preview .n { color: #16a34a; font-weight: 700; font-size: 16px; }
-  .addon-preview.is-bad .n { color: #ff4d4f; }
-  .addon-preview.is-bad .warn { color: #ff4d4f; font-weight: 600; margin-left: 6px; }
-  /* 掛載主商品 Modal 表格 */
-  .mains-tb { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 4px; }
-  .mains-tb th { text-align: left; color: #6b7280; font-weight: 600; font-size: 13px; padding: 6px 8px; border-bottom: 1px solid #eee; }
-  .mains-tb td { padding: 8px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
-  /* 狀態：上下架切換開關 */
-  .mains-tb .sw { position: relative; display: inline-flex; align-items: center; vertical-align: middle; }
-  .mains-tb .sw input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
-  .mains-tb .sw-track { width: 40px; height: 22px; border-radius: 11px; background: #bfbfbf; position: relative; transition: background .2s; cursor: pointer; }
-  .mains-tb .sw-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
-  .mains-tb .sw input:checked + .sw-track { background: #16a34a; }
-  .mains-tb .sw input:checked + .sw-track::after { left: 20px; }
-  .mains-tb .sw input:focus-visible + .sw-track { box-shadow: 0 0 0 2px rgba(22,163,74,.2); }
-  .mains-tb .sw-txt { margin-left: 8px; font-size: 13px; color: #9ca3af; }
-  .mains-tb .sw-txt.is-on { color: #16a34a; font-weight: 600; }
-  /* 移除：按鈕樣式 */
-  .mains-x { border: 1px solid #d9d9d9; background: #fff; color: rgba(0,0,0,.65); border-radius: 6px; height: 28px; padding: 0 12px; cursor: pointer; font-size: 13px; font-family: inherit; }
-  .mains-x:hover { color: #ff4d4f; border-color: #ff4d4f; }
+  /* ── 加購品：規格限制尾端多一個「可作為加購品」勾選欄（同既有 checkbox 樣式）。
+        Q6 定案：路徑二不內嵌折扣，勾選後只出現一個「前往加購設定」跳轉鈕，
+        折扣／掛載主商品一律到路徑一的加購設定頁管理（同一份資料）。 ── */
+  .addon-jump { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap;
+                border: 1px solid #86efac; background: #f0fdf4; border-radius: 8px; padding: 12px 16px; }
+  .addon-jump-txt { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #166534; font-weight: 600; }
+  .addon-jump-dot { width: 7px; height: 7px; border-radius: 9999px; background: #16a34a; flex: none; }
+  .addon-jump-btn { height: 32px; padding: 4px 15px; border: 1px solid #16a34a; border-radius: 6px;
+                    background: #16a34a; color: #fff; font-size: 14px; display: inline-flex; align-items: center; gap: 4px;
+                    white-space: nowrap; text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s; }
+  .addon-jump-btn:hover { background: #15803d; border-color: #15803d; color: #fff; text-decoration: none; }
+  .addon-jump-btn svg { width: 14px; height: 14px; }
 </style>
 
 <div class="ps">
@@ -955,15 +932,6 @@ a:hover { text-decoration: underline; }
 <div class="ps-toast-host" id="ps-toast-host"></div>
 
 <!-- 掛載主商品 Modal（比照既有「規格變更紀錄」按鈕開窗模式） -->
-<div class="pc-mask" id="mains-mask">
-  <div class="pc-box" style="width:560px;max-width:92vw;">
-    <div class="pc-title" style="margin-bottom:8px;">掛載的主商品 <span id="mains-id" style="color:#888;font-weight:400;font-size:13px;"></span></div>
-    <table class="mains-tb"><thead><tr><th>主商品ID</th><th>商品名稱</th><th>狀態</th><th></th></tr></thead><tbody id="mains-rows"></tbody></table>
-    <div style="margin-top:12px;display:flex;gap:8px;"><input type="text" class="ipt" id="mains-new" placeholder="輸入主商品 ID 新增…" style="max-width:220px;"><button type="button" class="btn" id="mains-add">新增</button></div>
-    <div class="pc-foot" style="margin-top:16px;"><button type="button" class="btn" id="mains-close">關閉</button><button type="button" class="btn btn-primary" id="mains-done">完成</button></div>
-  </div>
-</div>
-
 <script>
 (function () {
   'use strict';
@@ -1054,25 +1022,12 @@ a:hover { text-decoration: underline; }
       + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '>' + esc(label) + '</span></label></div>';
   }
 
-  function addonFinal(s) {
-    var orig = Number(s.price) || 0;
-    return s.aMode === 'fixed'
-      ? orig - (Number(s.aVal) || 0)
-      : Math.round(orig * (Number(s.aVal) || 0) / 10);
-  }
-  function addonBoxHtml(s, i) {
-    var orig = Number(s.price) || 0, fin = addonFinal(s), bad = fin <= 0;
-    var on = s.aMains.filter(function (m) { return m.on; }).length;
-    return '<div class="addon-box" data-abox="' + i + '">'
-      + '<div class="addon-box-h"><span class="addon-dot"></span>加購品折扣設定<span class="addon-sub">與「加購設定」頁共用同一份資料</span></div>'
-      + '<div class="addon-grid">'
-        + '<div class="repl-col"><div class="repl-label">折抵方式</div><div class="addon-seg" data-i="' + i + '"><button type="button" class="' + (s.aMode === 'fixed' ? 'is-on' : '') + '" data-amode="fixed">固定金額</button><button type="button" class="' + (s.aMode === 'percent' ? 'is-on' : '') + '" data-amode="percent">百分比</button></div></div>'
-        + '<div class="repl-col"><div class="repl-label">折扣數值</div><div class="cons-inline"><input type="number" class="ipt addon-val" value="' + esc(s.aVal) + '" data-i="' + i + '" data-k="aVal"><span class="addon-unit">' + (s.aMode === 'fixed' ? '元' : '折') + '</span></div></div>'
-        + '<div class="repl-col"><div class="repl-label">生效開始</div><input type="date" class="dp" value="' + esc(s.aStart) + '" data-i="' + i + '" data-k="aStart" style="width:150px;"></div>'
-        + '<div class="repl-col"><div class="repl-label">生效結束</div><input type="date" class="dp" value="' + esc(s.aEnd) + '" data-i="' + i + '" data-k="aEnd" style="width:150px;"></div>'
-        + '<div class="repl-col"><div class="repl-label">掛載的主商品</div><button type="button" class="btn" data-mains="' + i + '">查看／編輯掛載主商品（' + on + '）</button></div>'
-      + '</div>'
-      + '<div class="addon-preview' + (bad ? ' is-bad' : '') + '">預計折後金額：<span class="o">原價 $' + orig.toLocaleString('en-US') + '</span> <span class="n">$' + fin.toLocaleString('en-US') + '</span>' + (bad ? ' <span class="warn">折後 ≤ $0，無法儲存</span>' : '') + '</div>'
+  // Q6 定案：路徑二不內嵌折扣，勾「可作為加購品」後只出現前往加購設定的跳轉鈕。
+  // 折扣（折抵方式／數值／生效起訖）與掛載主商品都集中在路徑一的加購設定頁（admin-addon-setting.html）。
+  function addonJumpHtml(s, i) {
+    return '<div class="addon-jump">'
+      + '<div class="addon-jump-txt"><span class="addon-jump-dot"></span>此規格已設為加購品，折扣與掛載主商品請至「加購設定」頁管理（同一份資料）</div>'
+      + '<a class="addon-jump-btn" href="admin-addon-setting.html">前往加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a>'
       + '</div>';
   }
 
@@ -1087,7 +1042,7 @@ a:hover { text-decoration: underline; }
     /* 左：規格排序 + 規格ID */
     h += '<div>';
     h += item('規格排序', true, num(i, 'sort', s.sort), 'w28');
-    h += '<div class="ps-specid">規格ID: ' + s.id + (s.addon ? ' <a class="addon-tag" href="admin-addon-setting.html" title="前往加購設定頁">加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '') + '</div>';
+    h += '<div class="ps-specid">規格ID: ' + s.id + '</div>';
     h += '</div>';
 
     /* 中 */
@@ -1149,8 +1104,8 @@ a:hover { text-decoration: underline; }
     h += '</div>';
     h += '</div>';
 
-    /* 勾選「可作為加購品」才展開折扣（比照禮物券在此頁展開折扣的做法） */
-    if (s.addon) h += addonBoxHtml(s, i);
+    /* 勾選「可作為加購品」後，不內嵌折扣，改出現前往加購設定的跳轉鈕（Q6 定案） */
+    if (s.addon) h += addonJumpHtml(s, i);
 
     /* 第四層：直播設定（有規格 ID 才顯示） */
     h += '<div class="live">';
@@ -1213,30 +1168,10 @@ a:hover { text-decoration: underline; }
       s[k] = t.value;
       // 現況：填了最低金額或限購數量會自動把「滿」勾起來
       if ((k === 'minPrice' || k === 'limit') && Number(t.value) > 0 && !s.isMin) { s.isMin = true; render(); }
-      if (k === 'aVal' || k === 'aStart' || k === 'aEnd') render();
     }
   });
 
-  // 加購折扣數值：邊打邊更新折後預覽（不整列重繪，保住游標）
-  $('ps-list').addEventListener('input', function (e) {
-    var v = e.target.closest('.addon-val');
-    if (!v) return;
-    var i = Number(v.getAttribute('data-i'));
-    SPECS[i].aVal = v.value;
-    var box = v.closest('.addon-box'); if (!box) return;
-    var s = SPECS[i], orig = Number(s.price) || 0, fin = addonFinal(s), bad = fin <= 0;
-    var prev = box.querySelector('.addon-preview');
-    prev.classList.toggle('is-bad', bad);
-    prev.innerHTML = '預計折後金額：<span class="o">原價 $' + orig.toLocaleString('en-US') + '</span> <span class="n">$' + fin.toLocaleString('en-US') + '</span>' + (bad ? ' <span class="warn">折後 ≤ $0，無法儲存</span>' : '');
-  });
-
   $('ps-list').addEventListener('click', function (e) {
-    // 折抵方式（固定金額／百分比）
-    var am = e.target.closest('[data-amode]');
-    if (am) { var ai = Number(am.parentNode.getAttribute('data-i')); SPECS[ai].aMode = am.getAttribute('data-amode'); render(); return; }
-    // 查看／編輯掛載主商品
-    var mn = e.target.closest('[data-mains]');
-    if (mn) { openMains(Number(mn.getAttribute('data-mains'))); return; }
     var dup = e.target.closest('[data-dup]');
     if (dup) {
       var i = Number(dup.getAttribute('data-dup'));
@@ -1275,37 +1210,6 @@ a:hover { text-decoration: underline; }
     pendingDelete = null;
   });
   $('pc-mask').addEventListener('click', function (e) { if (e.target === this) { this.classList.remove('is-open'); pendingDelete = null; } });
-
-  /* ── 掛載主商品 Modal ── */
-  var mainsIdx = null;
-  function renderMains() {
-    var s = SPECS[mainsIdx];
-    $('mains-id').textContent = '規格ID ' + s.id;
-    $('mains-rows').innerHTML = s.aMains.map(function (m, x) {
-      return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.name) + '</td>'
-        + '<td><label class="sw"><input type="checkbox" data-mon="' + x + '"' + (m.on ? ' checked' : '') + '><span class="sw-track"></span></label>'
-        + '<span class="sw-txt' + (m.on ? ' is-on' : '') + '">' + (m.on ? '上架' : '下架') + '</span></td>'
-        + '<td style="text-align:right;"><button type="button" class="mains-x" data-mdel="' + x + '">移除</button></td></tr>';
-    }).join('') || '<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:16px;">尚未掛載主商品</td></tr>';
-  }
-  function openMains(i) { mainsIdx = i; renderMains(); $('mains-mask').classList.add('is-open'); }
-  function closeMains() { $('mains-mask').classList.remove('is-open'); render(); }
-  $('mains-rows').addEventListener('change', function (e) {
-    var cb = e.target.closest('[data-mon]'); if (!cb) return;
-    SPECS[mainsIdx].aMains[Number(cb.getAttribute('data-mon'))].on = cb.checked; renderMains();
-  });
-  $('mains-rows').addEventListener('click', function (e) {
-    var d = e.target.closest('[data-mdel]'); if (!d) return;
-    SPECS[mainsIdx].aMains.splice(Number(d.getAttribute('data-mdel')), 1); renderMains();
-  });
-  $('mains-add').addEventListener('click', function () {
-    var v = $('mains-new').value.trim(); if (!v) return;
-    SPECS[mainsIdx].aMains.push({ id: v, name: '（新掛載主商品）', on: true });
-    $('mains-new').value = ''; renderMains();
-  });
-  $('mains-close').addEventListener('click', closeMains);
-  $('mains-done').addEventListener('click', closeMains);
-  $('mains-mask').addEventListener('click', function (e) { if (e.target === this) closeMains(); });
 
   render();
 })();
