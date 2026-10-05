@@ -696,9 +696,11 @@ window.INSP = (function () {
 </script>
 <!-- 檢驗報告版面（網頁商品頁與 App 商品頁共用；logo、簽名、圓章的圖片佔位符由 build.py 換成 base64） -->
 <style>
+  /* 字型比照舊版報告產生工具（參考/無毒農測試報告生成工具 ReportTemplate.tsx）：Noto Serif TC */
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap');
   .rp-fit { overflow:hidden; }
   .rp-doc { width:794px; transform-origin:0 0; display:flex; flex-direction:column; gap:16px; }
-  .rp-paper { width:794px; padding:24px 32px 32px; background:#fff; color:#333; font-size:14px; border:1px solid #e5e5e5; position:relative; }
+  .rp-paper { width:794px; padding:24px 32px 32px; background:#fff; color:#333; font-size:14px; border:1px solid #e5e5e5; position:relative; font-family:'Noto Serif TC', serif; line-height:1.5; }
   .rp-page-no { text-align:center; font-size:12px; color:#888; margin-top:16px; }
   .rp-photo-meta { font-size:14px; margin-bottom:16px; }
   .rp-photos { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -710,7 +712,7 @@ window.INSP = (function () {
   .rp-org { text-align:right; color:#276749; font-size:13px; line-height:1.9; }
   .rp-title { text-align:center; color:#276749; font-size:20px; font-weight:700; padding:8px 0 12px; border-bottom:2px solid #276749; margin-bottom:20px; }
   .rp-boxes { display:flex; gap:16px; margin-bottom:20px; }
-  .rp-box { flex:1; border:2px solid #ec9ab5; border-radius:6px; padding:12px 16px; }
+  .rp-box { flex:1; border:2px solid #ec9ab5; border-radius:0; padding:12px 16px; }   /* 舊版工具的框線都是直角 */
   .rp-line { line-height:2; }
   .rp-subttl { color:#276749; font-weight:700; }
   .rp-table { width:100%; border-collapse:collapse; border:2px solid #ec9ab5; text-align:center; margin-bottom:20px; }
