@@ -3,12 +3,12 @@
 <head>
 <!--
   DemoShares 交接對照 | 商品頁｜檢驗報告
-  真相來源：D:\GreenBox\fruit_web（c262bcff7，2026-09-30 讀；開工前在 DEV-3977 分支再對一次行號）
+  真相來源：D:\GreenBox\fruit_weborigin/dev（07f0c120a，2026-10-05 讀；DEV-3977 分支要先更新到這個版本以後）
   對應正式站：
-    view       : HuashanCRM/Views/Products/ItemDetail.cshtml（按鈕 :599-605、彈窗 CSS＋markup :1690-1759、渲染 JS :1917-2005）
-    partial    : HuashanCRM/Views/Products/Partial/_ProductPurchasePartialView.cshtml:203-207  ⚠ :457-472 讀 API 格式錯，要一起修
-    controller : ProductsController.GetProductTestReport（Controllers/ProductsController.cs:776-868）
-    model      : ProductsModel.cs:1942-1963 hasTestReport
+    view       : HuashanCRM/Views/Products/ItemDetail.cshtml（按鈕 :604-609、彈窗 CSS＋markup :1701-1767、渲染 JS :1925-2020）
+    partial    : HuashanCRM/Views/Products/Partial/_ProductPurchasePartialView.cshtml:203-207  ⚠ :454-472 讀 API 格式錯，要一起修
+    controller : ProductsController.GetProductTestReport（Controllers/ProductsController.cs:791-883）
+    model      : ProductsModel.cs:1943-1960 hasTestReport
   這一頁的真實欄位名：
     按鈕出現條件  Model.ProductInfo.HasTestReport（沒報告就不出現按鈕，2026-09-30 確認維持）
     彈窗          #examine_modal / .examine-tabs / .examine-tab / .examine-body（demo 照抄）
@@ -661,6 +661,12 @@ window.INSP = (function () {
     return best;
   }
 
+  // 前台真的顯示的那份：最新一份已過期就不顯示，也不退回較舊的（2026-10-05 定）
+  function shownForProduct(pid) {
+    var r = latestForProduct(pid);
+    return r && !isExpired(r) ? r : null;
+  }
+
   // 被取代：上架、有對到商品，但對到的每個商品都有更新的一份
   function isSuperseded(r) {
     if (r.processStatus !== '上架') return false;
@@ -705,7 +711,7 @@ window.INSP = (function () {
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, lookup: lookup, productsOf: productsOf, product: product,
     isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
-    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
+    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
 })();
@@ -805,7 +811,7 @@ window.INSP_REPORT = (function () {
   }
   function recordFor(state, p) {
     if (state === 'none') return null;
-    if (state === 'live') return INSP.latestForProduct(p.id);
+    if (state === 'live') return INSP.shownForProduct(p.id);
     return sample(state, p);
   }
   return { build: buildMicro, fit: fitReport, STATES: STATES, recordFor: recordFor };

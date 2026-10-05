@@ -2,23 +2,9 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 檢驗紀錄頁（電腦版）
-  真相來源：D:\GreenBox\fruit_web（c262bcff7，2026-09-30 讀；開工前在 DEV-3977 分支再對一次行號）
-  對應正式站（待新建，照 Gift/Index.cshtml 的整頁 React 掛法）：
-    controller : Areas/GoX/Controllers/InspectionRecordController.cs（待新建）
-    view       : Areas/GoX/Views/InspectionRecord/Index.cshtml（待新建，空 div #admin-inspection-record）
-    react      : react-component-export/exports/admin-inspection-record.tsx（待新建）
-    參考既有   : Areas/GoX/Views/Gift/Index.cshtml:21,24 ＋ exports/admin-gift-list.tsx
-    權限       : CheckLogin.CheckPermission（Areas/GoX/Controllers/ProductController.cs:93），fun_id 待新建
-  這一頁的真實欄位名：
-    條碼對商品  dbo.ProductDetailBarcode.Barcode / ProductId / ProductDetailId
-    報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1546
-    樣品照片    dbo.Picture（相簿管理 fun_id 3035），關聯表 InspectionRecordPhoto 待新建
-    檢驗紀錄    表 InspectionRecord 待新建，欄位提案見 _交接對照.md B 區  ⚠ 不要叫 Batch
-  這一頁打的真實 API：
-    demo 沒打 API（資料在瀏覽器）。要新建的 /GoX/InspectionRecord/LookupBarcode、Create、Update、SetProcessStatus、UploadPhotos、DeletePhoto
-    不合格信收件人  ScheduleController.cs:5221-5232（寫死，要抽成共用）
-  完整名稱對照見同資料夾 _交接對照.md
+  DemoShares 交接對照 | 檢驗紀錄頁（電腦版）｜A 版（舊版，2026-10-05 封存）
+  ⚠ 這一頁不是開發依據。處理狀態、列表欄位、照片條碼偵測都已經改成 B 版，開發照 admin-inspection-records.html
+  對應正式站、真實欄位名、要新建的 API：見 admin-inspection-records.html 檔頭與同資料夾 _交接對照.md
 -->
 
 <meta charset="UTF-8">

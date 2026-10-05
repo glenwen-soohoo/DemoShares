@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 檢驗紀錄頁（電腦版）
-  真相來源：D:\GreenBox\fruit_web（c262bcff7，2026-09-30 讀；開工前在 DEV-3977 分支再對一次行號）
+  真相來源：D:\GreenBox\fruit_weborigin/dev（07f0c120a，2026-10-05 讀；DEV-3977 分支要先更新到這個版本以後）
   對應正式站（待新建，照 Gift/Index.cshtml 的整頁 React 掛法）：
     controller : Areas/GoX/Controllers/InspectionRecordController.cs（待新建）
     view       : Areas/GoX/Views/InspectionRecord/Index.cshtml（待新建，空 div #admin-inspection-record）
@@ -12,12 +12,14 @@
     權限       : CheckLogin.CheckPermission（Areas/GoX/Controllers/ProductController.cs:93），fun_id 待新建
   這一頁的真實欄位名：
     條碼對商品  dbo.ProductDetailBarcode.Barcode / ProductId / ProductDetailId
-    報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1546
+    報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1618
     樣品照片    dbo.Picture（相簿管理 fun_id 3035），關聯表 InspectionRecordPhoto 待新建
     檢驗紀錄    表 InspectionRecord 待新建，欄位提案見 _交接對照.md B 區  ⚠ 不要叫 Batch
+    處理狀態    ProcessStatus 只存 處理中/上架/不顯示  ⚠ 下架、過期是算出來的，不要存（規則見 _交接對照.md〈算出來的狀態〉）
+    上架時間    PublishTime（demo 叫 completedAt）  ⚠ 不要叫 CompletedTime，會跟檢驗狀態的「完成」混
   這一頁打的真實 API：
     demo 沒打 API（資料在瀏覽器）。要新建的 /GoX/InspectionRecord/LookupBarcode、Create、Update、SetProcessStatus、UploadPhotos、DeletePhoto
-    不合格信收件人  ScheduleController.cs:5221-5232（寫死，要抽成共用）
+    不合格信收件人  ScheduleController.cs:5580-5591（寫死，要抽成共用）
   完整名稱對照見同資料夾 _交接對照.md
 -->
 
@@ -1034,6 +1036,12 @@ window.INSP = (function () {
     return best;
   }
 
+  // 前台真的顯示的那份：最新一份已過期就不顯示，也不退回較舊的（2026-10-05 定）
+  function shownForProduct(pid) {
+    var r = latestForProduct(pid);
+    return r && !isExpired(r) ? r : null;
+  }
+
   // 被取代：上架、有對到商品，但對到的每個商品都有更新的一份
   function isSuperseded(r) {
     if (r.processStatus !== '上架') return false;
@@ -1078,7 +1086,7 @@ window.INSP = (function () {
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, lookup: lookup, productsOf: productsOf, product: product,
     isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
-    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
+    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
 })();

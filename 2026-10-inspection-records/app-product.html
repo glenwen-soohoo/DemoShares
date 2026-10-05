@@ -11,7 +11,7 @@
   這一頁的真實欄位名：
     App 目前完全沒有檢驗報告（services/api.ts 沒有 TestReports）
   這一頁打的真實 API：
-    GET /api/Product/{productId}/TestReports（fruit_web Controllers/Api/Products/ProductController.cs:295-306），要加回傳微生物報告
+    GET /api/Product/{productId}/TestReports（fruit_web Controllers/Api/Products/ProductController.cs:296-307），要加回傳微生物報告
     services/api.ts 新增 useGetProductTestReportsQuery（待新建）
   開發預覽面板與手機框 demo 專用，不要做
   完整名稱對照見同資料夾 _交接對照.md
@@ -430,6 +430,12 @@ window.INSP = (function () {
     return best;
   }
 
+  // 前台真的顯示的那份：最新一份已過期就不顯示，也不退回較舊的（2026-10-05 定）
+  function shownForProduct(pid) {
+    var r = latestForProduct(pid);
+    return r && !isExpired(r) ? r : null;
+  }
+
   // 被取代：上架、有對到商品，但對到的每個商品都有更新的一份
   function isSuperseded(r) {
     if (r.processStatus !== '上架') return false;
@@ -474,7 +480,7 @@ window.INSP = (function () {
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, lookup: lookup, productsOf: productsOf, product: product,
     isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
-    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
+    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
 })();
@@ -574,7 +580,7 @@ window.INSP_REPORT = (function () {
   }
   function recordFor(state, p) {
     if (state === 'none') return null;
-    if (state === 'live') return INSP.latestForProduct(p.id);
+    if (state === 'live') return INSP.shownForProduct(p.id);
     return sample(state, p);
   }
   return { build: buildMicro, fit: fitReport, STATES: STATES, recordFor: recordFor };

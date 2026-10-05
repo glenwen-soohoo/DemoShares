@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 檢驗紀錄頁（手機版）
-  真相來源：D:\GreenBox\fruit_web（c262bcff7，2026-09-30 讀；開工前在 DEV-3977 分支再對一次行號）
+  真相來源：D:\GreenBox\fruit_weborigin/dev（07f0c120a，2026-10-05 讀；DEV-3977 分支要先更新到這個版本以後）
   對應正式站（待新建）：
     view       : Areas/GoX/Views/InspectionRecord/Mobile.cshtml（待新建，空 div #admin-inspection-record-mobile，不套 GoX 三段式殼）
     react      : react-component-export/exports/admin-inspection-record-mobile.tsx（待新建）
@@ -429,6 +429,12 @@ window.INSP = (function () {
     return best;
   }
 
+  // 前台真的顯示的那份：最新一份已過期就不顯示，也不退回較舊的（2026-10-05 定）
+  function shownForProduct(pid) {
+    var r = latestForProduct(pid);
+    return r && !isExpired(r) ? r : null;
+  }
+
   // 被取代：上架、有對到商品，但對到的每個商品都有更新的一份
   function isSuperseded(r) {
     if (r.processStatus !== '上架') return false;
@@ -473,7 +479,7 @@ window.INSP = (function () {
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, lookup: lookup, productsOf: productsOf, product: product,
     isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
-    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
+    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, shownForProduct: shownForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
 })();
