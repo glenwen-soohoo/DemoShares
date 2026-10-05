@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 專案管理 (2026-07-baby-admin)
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3915-baby-react-refactor（4538c4a2c）
+  ⚠ 這一頁現況「沒有對應的後台 CRUD 畫面，也沒有對應的資料表」——整頁屬新功能（待工程定案 / 新建）。
+    現況專案類型是硬編 enum、單價 / 換算 / 字號是全域常數：
+    enum(專案類型) : GreenBox.Domain.Enums.Baby.BabyProjectType
+                     （硬編；後台下拉由 SurveyBabyModel.Get_BabyProjectType_SelectListItem() 枚舉產生，非資料表）
+    單價(全域)     : GreenBox.Infrastructure/Constants/BabyConstant.cs  PricePerUnit = 599
+    一箱換算(全域) : BabyConstant.cs  CattiesPerBox = 5（斤→箱）
+    勸募字號(全域) : GreenBox.Infrastructure/Constants/Constant.cs  FundraisingNo；
+                     收據依日期走 OrdersController.GetFundraisingNumber(DateTime)
+  這一頁的 demo 欄位 → 現況：
+    專案類型 name    → enum BabyProjectType   ⚠ 是 enum 不是可增刪的表；要做成可 CRUD 需新建資料表
+    勸募字號 license → 全域 Constant.FundraisingNo（依日期）⚠ 現況非每專案；demo 要的是每專案指定
+    單價 price       → 🆕 無 per-project 單價（現況全域寫死 599；「解除599」方向已起頭：
+                        新程式算金額改讀 Orders.TotalPrice，見 BabyConstant.cs 註解「卡4-26」）
+    對應商品規格 spec → 🆕 無 project↔ProductDetail 綁定
+    單位 unit        → 🆕 無單位欄位（現況字串散寫「箱/組/包」）
+    一箱換算 conv    → ✘ 已移除：換算係數歸未來「獨立下單系統／商品規格」，不在專案管理設定
+                       （原全域值 BabyConstant.CattiesPerBox=5 斤→箱；Glen 2026-10-05 拍板移除此欄）
+    啟用專案 open    → 🆕 無 per-project 啟用旗標
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>專案管理 — 後台新版 (demo)</title>
 <link rel="icon" href="data:,">
@@ -240,7 +263,7 @@ a:hover { text-decoration: underline; }
   margin-left: auto;
   background: var(--gox-danger);
   color: #fff;
-  border-radius: 10px;
+  border-radius: 9999px;
   padding: 0 6px;
   font-size: 11px;
   min-width: 16px;
@@ -575,7 +598,7 @@ a:hover { text-decoration: underline; }
   display: inline-block;
   width: 40px;
   height: 22px;
-  border-radius: 11px;
+  border-radius: 9999px;
   border: 0;
   padding: 0;
   margin: 0;
@@ -617,44 +640,6 @@ a:hover { text-decoration: underline; }
 .gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
 .gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
 
-/* ─────────────────────────────────────────────────
-   臨時彈窗（mockup-only notice）
-   外部工作（寄信、串接其他系統、複雜後台流程）用這個提示
-   視覺：黃底 + 虛線邊框 = 看就知道「正式版會拿掉」
-   ───────────────────────────────────────────────── */
-.gox-mockup-notice {
-  background: #fff8e1;
-  border: 1px solid #d4a017;
-  border-radius: var(--gox-radius);
-  padding: 10px 14px;
-  margin: 12px 0;
-  font-size: var(--gox-font-size-sm);
-  color: #7a5a00;
-  line-height: 1.6;
-}
-.gox-mockup-notice::before {
-  content: '⚠ mockup 提示';
-  display: inline-block;
-  background: #d4a017;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 2px;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-.gox-mockup-notice .gox-mockup-strong { font-weight: 700; color: #5a4200; }
-
-/* 同樣 idea 的 modal 版本（彈窗式提示） */
-.gox-modal-box.is-mockup {
-  border: 2px solid #d4a017;
-  background: #fffbe6;
-}
-.gox-modal-box.is-mockup h4::before {
-  content: '⚠ ';
-  color: #d4a017;
-}
 
 /* ─────────────────────────────────────────────────
    Icon button（鉛筆 / 確認 / 取消）
@@ -709,7 +694,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">產品管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="index.html" class="gox-menu-child ">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child ">捐款名冊</a><a href="project-settings.html" class="gox-menu-child is-active">專案管理</a><a href="licenses.html" class="gox-menu-child ">勸募字號管理</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="preschools.html" class="gox-menu-child ">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child ">捐款名冊</a><a href="project-settings.html" class="gox-menu-child is-active">專案管理</a><a href="licenses.html" class="gox-menu-child ">勸募字號管理</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">網頁管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">售後服務</span></div>
 </aside>
@@ -726,13 +711,21 @@ a:hover { text-decoration: underline; }
 </div>
 
 <p style="color:var(--gox-text-sub);font-size:13px;margin:0 0 12px;">
-  每個專案的對應規格與單價（解除 599 綁定）、單位與「一箱＝幾份/幾天」換算、勸募字號、是否啟用都集中在這裡。<b>停用的專案不會出現在育幼院管理的專案下拉</b>，避免一次性/歷史專案一直干擾選擇。
+  每個專案選一個對應商品規格，單價與單位就跟著規格帶出；再設定金流、勸募字號與是否啟用。<b>停用的專案不會出現在育幼院管理的專案下拉</b>，避免一次性/歷史專案一直干擾選擇。
 </p>
 
+<!-- 🆕 待新建（整張表）：現況「沒有」專案設定的後台 CRUD 畫面或資料表。
+     專案類型＝硬編 enum BabyProjectType（非可增刪的列）；單價＝全域 BabyConstant.PricePerUnit=599；
+     一箱換算＝全域 BabyConstant.CattiesPerBox=5；勸募字號＝全域 Constant.FundraisingNo（依日期）；
+     對應商品規格 / 單位 / 啟用專案＝現況都沒有對應欄位。整頁要做需新建一張「專案設定」資料表＋後台。詳見檔頭 / 對照 md B 區。
+     設計決策（Glen 2026-10-05）：
+       · 「對應商品規格」標為「示意」：綁定要讀真實商品目錄，而等家商品模型會被未來獨立下單系統重新定義，
+         故此欄真實後台排在下單系統／商品模型定案之後，現在只示意目標互動。
+       · 「單位」改唯讀、跟著所選規格帶出（同單價），不在專案管理各自編輯；單價/單位/換算都是商品規格的屬性。 -->
 <div class="gox-card"><div class="gox-card-body is-table-padding">
   <table class="gox-table">
     <thead><tr>
-      <th>專案類型</th><th>對應商品規格</th><th class="cell-right">單價</th><th>單位</th><th>一箱換算</th><th>勸募字號</th><th class="cell-center">啟用專案</th><th class="cell-ops">操作</th>
+      <th>專案類型</th><th>對應商品規格 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-right">單價</th><th>單位</th><th>金流</th><th>勸募字號</th><th class="cell-center">啟用專案</th><th class="cell-ops">操作</th>
     </tr></thead>
     <tbody id="s-tbody"></tbody>
   </table>
@@ -744,15 +737,15 @@ a:hover { text-decoration: underline; }
     <div class="gox-form-row"><label>專案名稱</label><input class="gox-input" id="a-name" style="width:220px;"></div>
     <div class="gox-form-row"><label>對應商品規格</label>
       <select class="gox-select" id="a-spec" style="width:280px;">
-        <option data-price="599">安心蔬果 1 箱（5 斤）－ $599</option>
-        <option data-price="650">安心蔬果 1 箱（6 斤）－ $650</option>
-        <option data-price="720">豆漿鮮奶組 － $720</option>
-        <option data-price="880">圓夢專案箱 － $880</option>
+        <option data-price="599" data-unit="箱">安心蔬果 1 箱（5 斤）－ $599</option>
+        <option data-price="650" data-unit="箱">安心蔬果 1 箱（6 斤）－ $650</option>
+        <option data-price="720" data-unit="組">豆漿鮮奶組 － $720</option>
+        <option data-price="880" data-unit="箱">圓夢專案箱 － $880</option>
       </select>
-      <span class="gox-hint" style="margin-left:8px;">單價跟著規格走</span></div>
-    <div class="gox-form-row"><label>單位</label><select class="gox-select" id="a-unit" style="width:120px;"><option>箱</option><option>份</option><option>組</option><option>瓶</option><option>案</option></select></div>
-    <div class="gox-form-row"><label>一箱換算</label><input class="gox-input" id="a-conv" style="width:100px;"> <span class="gox-hint">例：一箱＝20 天／7 瓶</span></div>
-    <div class="gox-form-row"><label>勸募字號</label><select class="gox-select" id="a-license" style="width:280px;"></select> <span class="gox-hint">於「勸募字號管理」維護</span></div>
+      <span class="gox-hint" style="margin-left:8px;">單價、單位跟著規格帶出</span></div>
+    <div class="gox-form-row"><label>單位</label><input class="gox-input" id="a-unit" style="width:120px;" disabled> <span class="gox-hint">跟著規格帶出，不另外設定</span></div>
+    <div class="gox-form-row"><label>金流</label><select class="gox-select" id="a-gw" style="width:200px;"></select> <span class="gox-hint">育幼院預設沿用此金流</span></div>
+    <div class="gox-form-row"><label>勸募字號</label><select class="gox-select" id="a-license" style="width:280px;"></select> <span class="gox-hint">於「勸募字號管理」維護，育幼院預設沿用此字號</span></div>
     <div class="gox-form-row"><label>啟用專案</label><span class="gox-switch" id="a-open"></span> <span class="gox-hint">停用後育幼院管理選不到</span></div>
     <div class="gox-modal-actions"><button class="gox-btn gox-btn-default" data-gox-close>取消</button><button class="gox-btn gox-btn-primary" id="a-save">儲存</button></div>
   </div>
@@ -761,42 +754,61 @@ a:hover { text-decoration: underline; }
 <script>
 (function(){
   'use strict';
-  const PT={ '安心蔬果':'#389e0d|#f6ffed','豆漿鮮奶':'#a37d00|#fff7d6','圓夢計畫':'#722ed1|#f9f0ff','聖誕捐款':'#c41d7f|#fff0f6','公益修繕':'#0958d9|#e6f4ff','快篩試劑':'#08979c|#e6fffb','寶寶粥':'#d46b08|#fff7e6' };
+  const PT={ '一般捐款':'#5f6b7a|#eef1f5','安心蔬果':'#5a8a3c|#f3f8ee','愛心稻田':'#8a7a2e|#f8f4e6','圓夢計畫':'#7a6aa8|#f5f1fb','聖誕傳情':'#b05c86|#fbf0f5','豆漿鮮奶':'#a8803f|#faf3e8','工程公益修繕':'#5278a8|#eef4fb','快篩試劑':'#4e8a90|#eef7f7','寶寶粥':'#c2703a|#fbf0e8' };
   function ptag(t){ const [fg,bg]=(PT[t]||'#555|#eee').split('|'); return `<span class="ptag" style="color:${fg};background:${bg};border-color:${fg}55;">${t}</span>`; }
-  const LICENSES=['衛部救字第 1130000000 號（年度主字號）','衛部救字第 1130012345 號（2026 圓夢）','衛部救字第 1130067890 號（2026 聖誕）'];
+  // 真實勸募字號（年度主字號，取自 OrdersController.GetFundraisingNumber 依日期對照）
+  const LICENSES=['衛部救字第1151362501號（年度主字號・2026/07起）','衛部救字第1150012345號（專案字號・圓夢）','衛部救字第1150067890號（專案字號・聖誕）','衛部救字第1141361220號（舊主字號・2025/01起）'];
+  const GATEWAYS=['綠界金流','TapPay金流'];  // 真實金流類型：EC_PAY / TAP_PAY
+  // 單價僅安心蔬果 599（BabyConstant.PricePerUnit）為程式碼實際值；
+  // 其餘專案之 per-project 單價正式站尚無常數（屬本次新功能），以自由金額／依品項表示。
+  // 「一箱換算」欄位已移除：換算係數歸未來獨立下單系統／商品規格，不在專案管理設定（Glen 2026-10-05 拍板）。
   const ACTS=[
-    {name:'安心蔬果', spec:'安心蔬果 1 箱（5 斤）', price:599, unit:'箱', conv:'20 天', license:LICENSES[0], open:true},
-    {name:'豆漿鮮奶', spec:'豆漿鮮奶組', price:720, unit:'組', conv:'7 瓶', license:LICENSES[0], open:true},
-    {name:'圓夢計畫', spec:'圓夢專案箱', price:880, unit:'箱', conv:'—', license:LICENSES[1], open:true},
-    {name:'公益修繕', spec:'（依專案報價）', price:0, unit:'案', conv:'—', license:LICENSES[0], open:true},
-    {name:'聖誕捐款', spec:'聖誕愛心箱', price:650, unit:'箱', conv:'—', license:LICENSES[2], open:false},
-    {name:'快篩試劑', spec:'快篩試劑組', price:500, unit:'組', conv:'—', license:LICENSES[0], open:false},
-    {name:'寶寶粥', spec:'寶寶粥 8 包', price:560, unit:'組', conv:'8 包', license:LICENSES[0], open:false},
+    {name:'一般捐款', spec:'（不指定用途・自由金額）', price:0, unit:'筆', gw:'TapPay金流', license:LICENSES[0], open:true},
+    {name:'安心蔬果', spec:'安心蔬果 1 箱（5 斤）', price:599, unit:'箱', gw:'綠界金流', license:LICENSES[0], open:true},
+    {name:'愛心稻田', spec:'愛心稻田認養', price:0, unit:'份', gw:'綠界金流', license:LICENSES[0], open:true},
+    {name:'圓夢計畫', spec:'圓夢專案（依品項）', price:0, unit:'案', gw:'綠界金流', license:LICENSES[1], open:true},
+    {name:'聖誕傳情', spec:'聖誕愛心禮物（依品項）', price:0, unit:'份', gw:'綠界金流', license:LICENSES[2], open:false},
+    {name:'豆漿鮮奶', spec:'豆漿鮮奶組', price:0, unit:'組', gw:'綠界金流', license:LICENSES[0], open:true},
+    {name:'工程公益修繕', spec:'（依專案報價）', price:0, unit:'案', gw:'綠界金流', license:LICENSES[0], open:true},
+    {name:'快篩試劑', spec:'快篩試劑組', price:0, unit:'組', gw:'綠界金流', license:LICENSES[0], open:false},
+    {name:'寶寶粥', spec:'寶寶粥', price:0, unit:'組', gw:'綠界金流', license:LICENSES[0], open:false},
   ];
   let idx=-1; const v=s=>document.querySelector(s).value;
   document.querySelector('#a-license').innerHTML=LICENSES.map(l=>`<option>${l}</option>`).join('');
+  document.querySelector('#a-gw').innerHTML=GATEWAYS.map(g=>`<option>${g}</option>`).join('');
+  // 單位跟著規格帶出（唯讀，不另外設定）
+  document.querySelector('#a-spec').addEventListener('change',e=>{ document.querySelector('#a-unit').value=e.target.selectedOptions[0].dataset.unit||''; });
 
   function render(){ document.querySelector('#s-count').textContent=ACTS.length;
     document.querySelector('#s-tbody').innerHTML=ACTS.map((a,i)=>`<tr style="${a.open?'':'opacity:.55;'}">
-      <td>${ptag(a.name)}</td><td>${a.spec}</td><td class="cell-right">${a.price?'$'+a.price.toLocaleString():'—'}</td>
-      <td>${a.unit}</td><td>${a.conv}</td><td style="font-size:12px;">${a.license}</td>
+      <td>${ptag(a.name)}</td><td style="color:var(--gox-text-muted);">${a.spec}</td><td class="cell-right">${a.price?'$'+a.price.toLocaleString():'—'}</td>
+      <td>${a.unit}</td><td style="font-size:12px;">${a.gw||'—'}</td><td style="font-size:12px;">${a.license}</td>
       <td class="cell-center"><span class="gox-switch ${a.open?'is-on':''}" data-open="${i}"></span></td>
       <td class="cell-ops"><a href="#" class="gox-btn-op" data-edit="${i}">編輯</a></td></tr>`).join(''); }
 
-  document.querySelector('#btn-add').addEventListener('click',()=>window.gox.toast('開啟「新增專案」表單'));
+  document.querySelector('#btn-add').addEventListener('click',()=>{ idx=-1;
+    document.querySelector('#a-title').textContent='新增專案';
+    document.querySelector('#a-name').value='';
+    document.querySelector('#a-license').selectedIndex=0;
+    document.querySelector('#a-spec').selectedIndex=0; document.querySelector('#a-gw').selectedIndex=0;
+    document.querySelector('#a-unit').value=document.querySelector('#a-spec').selectedOptions[0].dataset.unit||'箱';
+    document.querySelector('#a-open').classList.add('is-on'); window.gox.openModal('#modal-act'); });
   document.addEventListener('click',e=>{ const ed=e.target.closest('[data-edit]'); if(!ed)return; e.preventDefault();
     idx=+ed.dataset.edit; const a=ACTS[idx];
     document.querySelector('#a-title').textContent='編輯專案 — '+a.name;
     document.querySelector('#a-name').value=a.name; document.querySelector('#a-unit').value=a.unit;
-    document.querySelector('#a-conv').value=a.conv; document.querySelector('#a-license').value=a.license;
+    document.querySelector('#a-license').value=a.license;
+    document.querySelector('#a-gw').value=a.gw||GATEWAYS[0];
     document.querySelector('#a-open').classList.toggle('is-on',a.open); window.gox.openModal('#modal-act'); });
   document.addEventListener('gox:switch',e=>{ const t=e.target.closest('[data-open]'); if(!t)return;
     const i=+t.dataset.open; ACTS[i].open=e.detail.on; render(); window.gox.toast(`已${e.detail.on?'啟用':'停用'}「${ACTS[i].name}」${e.detail.on?'':'（育幼院管理將選不到）'}`); });
-  document.querySelector('#a-save').addEventListener('click',()=>{ if(idx<0)return; const a=ACTS[idx];
-    a.unit=v('#a-unit'); a.conv=v('#a-conv'); a.license=v('#a-license');
-    const o=document.querySelector('#a-spec').selectedOptions[0]; a.spec=o.textContent.split(' － ')[0]; a.price=+o.dataset.price;
-    a.open=document.querySelector('#a-open').classList.contains('is-on');
-    window.gox.closeModal('#modal-act'); render(); window.gox.toast('已儲存專案設定'); });
+  document.querySelector('#a-save').addEventListener('click',()=>{
+    const o=document.querySelector('#a-spec').selectedOptions[0];
+    const data={ name:(v('#a-name')||'未命名'), unit:v('#a-unit'), gw:v('#a-gw'), license:v('#a-license'),
+      spec:o.textContent.split(' － ')[0], price:+o.dataset.price,
+      open:document.querySelector('#a-open').classList.contains('is-on') };
+    if(idx<0){ ACTS.push(data); } else { Object.assign(ACTS[idx], data); }
+    window.gox.closeModal('#modal-act'); render(); window.gox.toast(idx<0?'已新增專案':'已儲存專案設定'); });
   render();
 })();
 </script>

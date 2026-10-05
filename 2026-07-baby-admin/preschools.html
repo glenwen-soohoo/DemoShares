@@ -1,6 +1,37 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 育幼院管理 (2026-07-baby-admin)
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3915-baby-react-refactor（4538c4a2c）
+  對應正式站（後台 GoX / SurveyBaby）：
+    view(列表)     : HuashanCRM/Areas/GoX/Views/SurveyBaby/Preschool.cshtml
+    view(新增/編輯) : AddPreschool.cshtml / EditPreschool.cshtml
+    view(每月需求)  : PreschoolFruitDemand.cshtml / AddFruitDemand.cshtml / EditFruitDemand.cshtml
+    controller     : Areas/GoX/Controllers/SurveyBabyController.cs（頂層那支；fun_id 寫死 3040）
+    route          : /GoX/SurveyBaby/Preschool
+    entity         : Preschool、PreschoolFruitDemand（GreenBox.Persistence/Data/HuashanCRM.designer.cs）
+    enum(專案類型)  : GreenBox.Domain.Enums.Baby.BabyProjectType
+                     None0 / 一般捐款1 / 安心蔬果2 / 愛心稻田3 / 圓夢4 / 聖誕-捐款5 / 豆漿鮮奶6 /
+                     公益修繕7 / 聖誕-禮物8 / 快篩9 / 寶寶粥10 / 公務車11 / 窩12
+  這一頁的真實欄位名（demo 名 → 真名）：
+    院所名稱 name   → Preschool.Name
+    專案類型 type   → Preschool.BabyProjectType（nullable int，存 enum 值；DEV-3915 新增）
+    合作中  coop    → Preschool.IsCooperating（bool）
+    前台顯示 show   → Preschool.Hide   ⚠ 極性相反：Hide=true 是隱藏，demo 的 show = !Hide
+    人數   ages     → PreschoolFruitDemand.UnderThreeYSO / ThreeToSixYSO / SixToTwelveYSO / TwelveToEighteenYSO
+                      ⚠ 人數是「每月一筆」存在需求表、不在院所主檔；只有 4 個年齡桶；總人數＝四者相加
+    需求(箱) demand → PreschoolFruitDemand.FruitDemand   ⚠ DB 存「斤」，箱＝FruitDemand/5（讀時換算）
+    已募得  led.sys → PreschoolFruitDemand.DonatedDemand ⚠ 單一可覆寫值，非 demo 的「系統自動累計」
+    完成度          → 算值 DonatedDemand/FruitDemand*100（PreschoolModelShow.Percentage）
+    年月            → PreschoolFruitDemand.YearMonth（格式 "yyyyM" 不補零，如 20259；複合主鍵）
+    前台介紹(簡介)  → Preschool.Note（NVarChar300，單一欄）
+  現況沒有（🆕 待新建，見元素旁註解與 _交接對照.md B 區）：
+    1) 前台介紹 主標題/內容段落（兩段式）—— 現況只有單一 Note
+    2) 人工加減分錄台帳（每筆 時間/操作人/加減值/原因）—— 現況無逐筆台帳，只有整筆 UpdateTime/UpdateUserId；
+       且現況「人工覆寫」蓋的是「需求 FruitDemand」，不是 demo 的「已募得」側
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>育幼院管理 — 後台新版 (demo)</title>
 <link rel="icon" href="data:,">
@@ -240,7 +271,7 @@ a:hover { text-decoration: underline; }
   margin-left: auto;
   background: var(--gox-danger);
   color: #fff;
-  border-radius: 10px;
+  border-radius: 9999px;
   padding: 0 6px;
   font-size: 11px;
   min-width: 16px;
@@ -575,7 +606,7 @@ a:hover { text-decoration: underline; }
   display: inline-block;
   width: 40px;
   height: 22px;
-  border-radius: 11px;
+  border-radius: 9999px;
   border: 0;
   padding: 0;
   margin: 0;
@@ -603,10 +634,10 @@ a:hover { text-decoration: underline; }
   padding: 2px 8px;
   border-radius: var(--gox-radius);
   font-size: var(--gox-font-size-xs);
-  font-weight: 600;
+  font-weight: 400;
   background: #f0f0f0;
   color: var(--gox-text-sub);
-  border: 1px solid #e0e0e0;
+  border: 1px solid #cfcfcf;
 }
 .gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
 .gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
@@ -617,44 +648,6 @@ a:hover { text-decoration: underline; }
 .gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
 .gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
 
-/* ─────────────────────────────────────────────────
-   臨時彈窗（mockup-only notice）
-   外部工作（寄信、串接其他系統、複雜後台流程）用這個提示
-   視覺：黃底 + 虛線邊框 = 看就知道「正式版會拿掉」
-   ───────────────────────────────────────────────── */
-.gox-mockup-notice {
-  background: #fff8e1;
-  border: 1px solid #d4a017;
-  border-radius: var(--gox-radius);
-  padding: 10px 14px;
-  margin: 12px 0;
-  font-size: var(--gox-font-size-sm);
-  color: #7a5a00;
-  line-height: 1.6;
-}
-.gox-mockup-notice::before {
-  content: '⚠ mockup 提示';
-  display: inline-block;
-  background: #d4a017;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 2px;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-.gox-mockup-notice .gox-mockup-strong { font-weight: 700; color: #5a4200; }
-
-/* 同樣 idea 的 modal 版本（彈窗式提示） */
-.gox-modal-box.is-mockup {
-  border: 2px solid #d4a017;
-  background: #fffbe6;
-}
-.gox-modal-box.is-mockup h4::before {
-  content: '⚠ ';
-  color: #d4a017;
-}
 
 /* ─────────────────────────────────────────────────
    Icon button（鉛筆 / 確認 / 取消）
@@ -709,7 +702,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">產品管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="index.html" class="gox-menu-child is-active">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child ">捐款名冊</a><a href="project-settings.html" class="gox-menu-child ">專案管理</a><a href="licenses.html" class="gox-menu-child ">勸募字號管理</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="preschools.html" class="gox-menu-child is-active">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child ">捐款名冊</a><a href="project-settings.html" class="gox-menu-child ">專案管理</a><a href="licenses.html" class="gox-menu-child ">勸募字號管理</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">網頁管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">售後服務</span></div>
 </aside>
@@ -717,18 +710,23 @@ a:hover { text-decoration: underline; }
 <main class="gox-content">
 <style>
   /* 專案類型標籤配色 */
-  .ptag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; border:1px solid; white-space:nowrap; }
+  .ptag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:400; border:1px solid; white-space:nowrap; }
   /* 進度條：半長、綠色；超額(≥100%)轉黃 */
   .baby-bar { position:relative; height:8px; width:42px; border-radius:4px; background:#e9edf2; overflow:hidden; display:inline-block; vertical-align:middle; }
   .baby-bar > span { position:absolute; inset:0 auto 0 0; border-radius:4px; background:var(--gox-green); }
   .baby-bar.is-over > span { background:var(--gox-warning); }
   .baby-pct { font-size:12px; color:var(--gox-text-sub); margin-left:8px; white-space:nowrap; }
   /* 合作/停止狀態標籤：彩度調低 */
-  .gox-table .gox-tag.is-success { background:#eef5ef; color:#5f8a63; border-color:#cfe3cf; }
-  .gox-table .gox-tag.is-danger { background:#f6edec; color:#b26a62; border-color:#e6cecb; }
+  .gox-table .gox-tag.is-success { background:#eef5ef; color:#1d5e36; border-color:#7ab392; }
+  .gox-table .gox-tag.is-danger { background:#f6edec; color:#7a2a21; border-color:#c59a92; }
   .baby-name-link { color:var(--gox-info); font-weight:500; cursor:pointer; }
   .baby-name-link:hover { text-decoration:underline; }
   .avatar { width:34px; height:34px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px; flex-shrink:0; }
+  /* 清單照片欄：整格置中、完整顯示 logo（contain 不裁切） */
+  .gox-table td.photo-cell { padding:0; }
+  .gox-table td.photo-cell .avatar { width:100%; height:72px; border-radius:0; font-size:18px; object-fit:contain; object-position:center; padding:4px; background:#fff; }
+  /* 無圖的字首色塊 fallback 仍填滿（cover 效果）：蓋回 contain/白底 */
+  .gox-table td.photo-cell span.avatar { object-fit:cover; padding:0; }
   .stat2 { line-height:1.35; }
   .stat2 .money { font-weight:600; }
   .stat2 .box { font-size:12px; color:var(--gox-text-sub); }
@@ -821,7 +819,7 @@ a:hover { text-decoration: underline; }
         <thead>
           <tr>
             <th style="width:44px;">編號</th>
-            <th style="width:48px;"></th>
+            <th style="width:72px;"></th>
             <th>院所名稱</th>
             <th>專案類型</th>
             <th>合作／顯示</th>
@@ -857,18 +855,20 @@ a:hover { text-decoration: underline; }
           <span class="lbl">專案類型</span><span>
             <select class="gox-select" id="d-type" style="width:180px;"></select></span>
           <span class="lbl">合作中</span><span><span class="gox-switch is-on" id="d-coop"></span> <span class="gox-hint" style="margin-left:8px;">關閉＝停止合作，名冊顯示警示</span></span>
+          <!-- ⚠ 真名 Preschool.Hide（true=隱藏）；此「前台顯示」開關是反相：顯示 = !Hide。寫回時記得反轉。 -->
           <span class="lbl">前台顯示</span><span><span class="gox-switch is-on" id="d-show"></span> <span class="gox-hint" style="margin-left:8px;">關閉＝前台隱藏</span></span>
-          <span class="lbl">照片</span><span style="display:flex;align-items:center;gap:12px;"><span class="baby-photo">院所照片</span><button class="gox-btn gox-btn-default">更換照片</button></span>
+          <span class="lbl">照片</span><span style="display:flex;align-items:center;gap:12px;"><span class="baby-photo" id="d-photo"></span><button class="gox-btn gox-btn-default">更換照片</button></span>
         </div>
       </div>
     </div>
     <!-- 院所介紹 -->
+    <!-- 🆕 待新建：前台介紹（主標 d-intro-title / 內容 d-intro-body）。
+         現況 Preschool 只有單一「簡介」Preschool.Note(NVarChar300)。建議命名：IntroTitle / IntroBody。 -->
     <div class="gox-card">
       <h3 class="gox-card-title">院所介紹</h3>
       <div class="gox-card-body">
         <div class="baby-detail-grid">
           <span class="lbl">主標題</span><span><input class="gox-input" id="d-intro-title" style="width:100%;"></span>
-          <span class="lbl">副標</span><span><input class="gox-input" id="d-intro-sub" style="width:100%;"></span>
           <span class="lbl" style="align-self:start;padding-top:6px;">內容段落</span><span><textarea class="gox-textarea" id="d-intro-body" style="width:100%;min-height:120px;"></textarea></span>
         </div>
       </div>
@@ -895,15 +895,16 @@ a:hover { text-decoration: underline; }
 
 <!-- ══════════════════ Modal：批次開需求（多月 + 依專案分組）══════════════════ -->
 <div id="modal-batch" class="gox-modal-overlay is-hidden">
-  <div class="gox-modal-box" style="min-width:560px;">
+  <div class="gox-modal-box" style="min-width:720px;max-width:880px;">
     <h4>批次開需求</h4>
-    <div style="font-weight:500;margin-bottom:6px;">要開哪些月份（可多選）</div>
-    <div id="batch-months" style="margin-bottom:10px;"></div>
-    <div class="gox-form-row"><label>人數怎麼帶</label>
-      <label style="font-weight:400;display:flex;align-items:center;gap:8px;min-width:auto;"><span class="gox-switch is-on" id="batch-copy"></span> 沿用上個月的人數</label>
-      <span class="gox-hint">關閉＝開空白</span></div>
-    <div style="font-weight:500;margin:8px 0 6px;">要開的院所（可依專案整批勾選）</div>
-    <div id="batch-list" style="max-height:260px;overflow:auto;"></div>
+    <div class="gox-form-row"><label>開始月份</label>
+      <select class="gox-select" id="batch-start" style="width:150px;"></select>
+      <label style="font-weight:400;min-width:auto;margin-left:16px;">要開幾個月</label>
+      <select class="gox-select" id="batch-count" style="width:80px;"><option>1</option><option>2</option><option selected>3</option><option>6</option></select> 個月</div>
+    <div class="gox-hint" style="margin-bottom:10px;">自開始月份起連續開這幾個月。若某院所在選定月份中已有開過需求，則無法再開（下方該列不可勾選）。</div>
+    <div style="font-weight:500;margin:8px 0 6px;">要開的院所（勾選的才會開，可用「整批」一次勾）
+      <span class="gox-hint" style="font-weight:400;margin-left:6px;">人數欄位依序：3 歲以下 / 3–6 / 6–12 / 12–18，預設帶入上月人數，右側自動算每月箱數</span></div>
+    <div id="batch-list" style="max-height:320px;overflow:auto;"></div>
     <div class="gox-modal-actions">
       <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
       <button class="gox-btn gox-btn-primary" id="batch-submit">建立</button>
@@ -913,9 +914,9 @@ a:hover { text-decoration: underline; }
 
 <!-- ══════════════════ Modal：開需求（雙模式）══════════════════ -->
 <div id="modal-open" class="gox-modal-overlay is-hidden">
-  <div class="gox-modal-box">
+  <div class="gox-modal-box" data-tab-scope>
     <h4 id="om-title">開需求</h4>
-    <div class="gox-tab-group" data-tab-scope style="margin-bottom:14px;">
+    <div class="gox-tab-group" style="margin-bottom:14px;">
       <button class="gox-tab-btn is-active" data-tab="cont">連開接下來幾個月</button>
       <button class="gox-tab-btn" data-tab="pick">指定月份</button>
     </div>
@@ -952,6 +953,10 @@ a:hover { text-decoration: underline; }
       <label>12–18 歲<input type="number" class="gox-input" id="dm-d" min="0"></label>
     </div>
     <div class="gox-hint" style="margin-bottom:14px;">總人數 <b id="dm-childtotal">0</b> 人｜系統依人數自動算需求：<b id="dm-demand">—</b></div>
+    <!-- 🆕 待新建：「捐款自動累計(dm-sys) ＋ 人工加減台帳(dm-manual / dm-ledger)」＝基準值+調整分錄台帳。
+         現況沒有此拆分：PreschoolFruitDemand 只有單一可覆寫 DonatedDemand(已募得) 與 FruitDemand(需求)；
+         而且現況「人工覆寫」蓋的是「需求 FruitDemand=actualValue」、不是這裡的「已募得」側，也不留逐筆台帳
+         （只有整筆 UpdateTime/UpdateUserId）。建議命名：DonatedBase(系統基準) + DonatedAdjustmentLedger(調整分錄)。見檔頭。 -->
     <div style="font-weight:500;margin:12px 0 6px;">已募得箱數</div>
     <div class="baby-donate-sum">
       <div><div class="k">捐款自動累計</div><div class="v" style="color:var(--gox-green);" id="dm-sys">0</div></div>
@@ -982,7 +987,6 @@ a:hover { text-decoration: underline; }
       <label style="min-width:auto;margin-left:20px;">前台顯示</label><span class="gox-switch is-on" id="ap-show"></span></div>
     <div style="font-weight:500;margin:12px 0 6px;">院所介紹（結構化）</div>
     <div class="gox-form-row"><label>主標題</label><input class="gox-input" id="ap-title" style="flex:1;min-width:200px;"></div>
-    <div class="gox-form-row"><label>副標</label><input class="gox-input" id="ap-sub" style="flex:1;min-width:200px;"></div>
     <div class="gox-form-row"><label>內容段落</label><textarea class="gox-textarea" id="ap-body" style="flex:1;min-width:200px;"></textarea></div>
     <div class="gox-modal-actions"><button class="gox-btn gox-btn-default" data-gox-close>取消</button><button class="gox-btn gox-btn-primary" id="ap-submit">新增</button></div>
   </div>
@@ -992,11 +996,11 @@ a:hover { text-decoration: underline; }
 (function () {
   'use strict';
   const MONTHS = ['2026-09','2026-08','2026-07','2026-06','2026-05'];
-  const TYPES = ['安心蔬果','豆漿鮮奶','圓夢計畫','公益修繕','聖誕捐款','快篩試劑','寶寶粥'];
-  const PT = { '安心蔬果':'#389e0d|#f6ffed|#3a8347','豆漿鮮奶':'#a37d00|#fff7d6|#93781f','圓夢計畫':'#722ed1|#f9f0ff|#6d5aa0',
-    '聖誕捐款':'#c41d7f|#fff0f6|#b04b73','聖誕禮物':'#c41d7f|#fff0f6|#b04b73','公益修繕':'#0958d9|#e6f4ff|#3a6ea8',
-    '快篩試劑':'#08979c|#e6fffb|#2c7a82','寶寶粥':'#d46b08|#fff7e6|#b26535' };
-  function ptag(t){ const [fg,bg]=(PT[t]||'#555|#eee').split('|'); return `<span class="ptag" style="color:${fg};background:${bg};border-color:${fg}55;">${t}</span>`; }
+  const TYPES = ['一般捐款','安心蔬果','愛心稻田','圓夢計畫','聖誕傳情','豆漿鮮奶','工程公益修繕','快篩試劑','寶寶粥'];
+  const PT = { '一般捐款':'#232a34|#eef1f5|#232a34','安心蔬果':'#274d13|#f3f8ee|#274d13','愛心稻田':'#4a3d0d|#f8f4e6|#4a3d0d','圓夢計畫':'#382a6b|#f5f1fb|#382a6b',
+    '聖誕傳情':'#6e2449|#fbf0f5|#6e2449','豆漿鮮奶':'#5a4110|#faf3e8|#5a4110','工程公益修繕':'#1f3a5e|#eef4fb|#1f3a5e',
+    '快篩試劑':'#174a50|#eef7f7|#174a50','寶寶粥':'#74380f|#fbf0e8|#74380f' };
+  function ptag(t){ const [fg,bg]=(PT[t]||'#555|#eee').split('|'); return `<span class="ptag" style="color:${fg};background:${bg};border-color:${fg}aa;">${t}</span>`; }
   function ptColor(t){ return (PT[t]||'#888|#eee|#888').split('|')[2]; }
   const KILO_PER_BOX = 5;
   function mkLedger(sys){ return {sys:sys, manual:[]}; }
@@ -1008,19 +1012,43 @@ a:hover { text-decoration: underline; }
   function bar(pct){ const over=pct>=100; return `<div class="baby-bar ${over?'is-over':''}"><span style="width:${Math.min(100,pct)}%"></span></div><span class="baby-pct">${pct}%</span>`; }
 
   // ── 產 22 間假院所（含超額）──
-  const NAMES = ['晨光','向陽','小樹苗','溫暖','希望','陽光','幸福','天使','彩虹','微光','安康','恩典','喜樂','平安','仁愛','慈幼','育德','光明','幼幼','家家','大同','明日'];
-  const SUF = ['育幼院','兒少之家','學園','之家'];
   const FACTORS = [0.3,0.55,1.0,1.2,0.45,0.8,1.35,0.65,0.9,1.0,0.4,0.75];
+  // 真實育幼院名稱＋照片（取自正式站資料庫 Preschool 表、公開 CDN，僅供 demo 模擬效果）
+  const REAL = [
+    {name:'忠義基金會', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010823101.png'},
+    {name:'基督徒救世會附設 牧恩中途之家', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010824251.png'},
+    {name:'聖方濟育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201608030306371.png'},
+    {name:'雲林縣信義育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010818391.png'},
+    {name:'財團法人高雄市 私立小天使家園', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010821481.png'},
+    {name:'財團法人台灣關愛基金會', img:'https://greenboxcdn.azureedge.net/upload/Preschool/202006090201131.png'},
+    {name:'桃園巿私立育德兒童之家', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010811231.png'},
+    {name:'財團法人高雄市私立希恩之家', img:'https://greenboxcdn.azureedge.net/upload/Preschool/202204110947061.png'},
+    {name:'財團法人屏東縣私立青山育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010811501.png'},
+    {name:'中華育幼機構兒童關懷協會', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010812121.png'},
+    {name:'伯特利全人關懷協會', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010813001.png'},
+    {name:'社團法人新北市保母協會', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810011024501.png'},
+    {name:'天主教善牧基金會 花蓮兒童之家', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010809041.png'},
+    {name:'私立藍天家園', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201810010825241.png'},
+    {name:'社團法人中華兒童與家庭促進協會', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201812100747401.png'},
+    {name:'家扶基金會 大同育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/202204110946271.png'},
+    {name:'財團法人佛教私立禪光育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201908130218571.png'},
+    {name:'財團法人新北市榮光育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201908130255451.png'},
+    {name:'臺北市私立伯大尼兒少家園', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201908230821491.png'},
+    {name:'基督教門諾會花蓮善牧中心', img:'https://greenboxcdn.azureedge.net/upload/Preschool/201908260651281.png'},
+    {name:'雲林縣私立長愛家園育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/202003240916451.png'},
+    {name:'桃園市私立睦祥育幼院', img:'https://greenboxcdn.azureedge.net/upload/Preschool/202004090345511.png'}
+  ];
   const PRES = {};
-  for(let i=0;i<22;i++){
+  for(let i=0;i<REAL.length;i++){
     const type = TYPES[i%TYPES.length];
     const ages = { a:3+(i%5), b:2+(i%4), c:6+(i%9), d:1+(i%6) };
     const dmd = calcDemandBox(ages);
     const done07 = Math.round(dmd*FACTORS[i%FACTORS.length]);
     const done06 = dmd;
     PRES[i+1] = {
-      name: NAMES[i]+SUF[i%SUF.length], type, coop:(i!==7&&i!==15), show:(i!==4),
-      intro:{title:'關於'+NAMES[i], sub:'陪伴需要照顧的孩子', body:'提供生活、課業與心理支持的中長期安置。'},
+      name: REAL[i].name, type, coop:(i!==7&&i!==15), show:(i!==4),
+      img: REAL[i].img,
+      intro:{title:'關於'+REAL[i].name, body:'提供生活、課業與心理支持的中長期安置。'},
       ages,
       months:{ '2026-07':{demand:dmd, led:mkLedger(done07)}, '2026-06':{demand:dmd, led:mkLedger(done06)} }
     };
@@ -1052,10 +1080,10 @@ a:hover { text-decoration: underline; }
       else if(!mon){ prog='<span class="gox-tag">未開需求</span>'; }
       else { const done=donatedTotal(mon.led), pct=Math.round(done/mon.demand*100);
         td+=mon.demand; tdone+=done; people=childTotal(p.ages); demand=mon.demand; prog=bar(pct); }
-      const st = `${p.coop?'<span class="gox-tag is-success">合作中</span>':'<span class="gox-tag is-danger">已停止</span>'} ${p.show?'<span class="gox-tag" style="background:#eef4ff;color:#0958d9;border-color:#c5dbf7;">顯示</span>':'<span class="gox-tag">隱藏</span>'}`;
-      const av = `<span class="avatar" style="background:${ptColor(p.type)};">${p.name.slice(0,1)}</span>`;
+      const st = `${p.coop?'<span class="gox-tag is-success">合作中</span>':'<span class="gox-tag is-danger">已停止</span>'} ${p.show?'<span class="gox-tag" style="background:#eef4ff;color:#073a8c;border-color:#8fb3e6;">顯示</span>':'<span class="gox-tag">隱藏</span>'}`;
+      const av = p.img ? `<img class="avatar" src="${p.img}" alt="${p.name}">` : `<span class="avatar" style="background:${ptColor(p.type)};">${p.name.slice(0,1)}</span>`;
       return `<tr>
-        <td>${id}</td><td>${av}</td>
+        <td>${id}</td><td class="photo-cell">${av}</td>
         <td><span class="baby-name-link" data-manage="${id}">${p.name}</span></td>
         <td>${ptag(p.type)}</td>
         <td style="white-space:nowrap;">${st}</td>
@@ -1095,8 +1123,8 @@ a:hover { text-decoration: underline; }
     document.querySelector('#d-coop').classList.toggle('is-on',p.coop);
     document.querySelector('#d-show').classList.toggle('is-on',p.show);
     document.querySelector('#d-intro-title').value=p.intro.title;
-    document.querySelector('#d-intro-sub').value=p.intro.sub;
     document.querySelector('#d-intro-body').value=p.intro.body;
+    const ph=document.querySelector('#d-photo'); if(ph){ if(p.img){ ph.style.backgroundImage=`url('${p.img}')`; ph.textContent=''; } else { ph.style.backgroundImage=''; ph.textContent='院所照片'; } }
     renderMonths();
     document.querySelector('#view-list').setAttribute('hidden','');
     document.querySelector('#view-detail').removeAttribute('hidden'); window.scrollTo(0,0);
@@ -1133,20 +1161,46 @@ a:hover { text-decoration: underline; }
     document.querySelector('#om-demand').textContent=`每月 ${calcDemandBox(a)} 箱`; }
   function currentTab(){ const b=document.querySelector('#modal-open .gox-tab-btn.is-active'); return b?b.dataset.tab:'cont'; }
 
-  // 批次開需求（多月 + 依專案分組）
-  function openBatch(){
-    document.querySelector('#batch-months').innerHTML = MONTHS.slice().sort().map((m,i)=>
-      `<label class="mon-ck"><input type="checkbox" class="bm-ck" value="${m}" ${m===curMonth?'checked':''}> ${fmtMonth(m)}</label>`).join('');
+  // 批次：每間院所各自的人數欄位 → 自動算該院所每月箱數
+  function browAges(pid){ const a={}; ['a','b','c','d'].forEach(k=>{ a[k]=+(document.querySelector(`.bage[data-pid="${pid}"][data-k="${k}"]`)?.value)||0; }); return a; }
+  function browRecalc(pid){ const el=document.querySelector(`.brow-demand[data-pid="${pid}"]`); if(el) el.textContent=`每月 ${calcDemandBox(browAges(pid))} 箱`; }
+
+  // 批次開需求（開始月份 + 連開幾個月；依專案分組；逐院所填人數）
+  function addMonth(ym,n){ const [y,m]=ym.split('-').map(Number); const t=(y*12+(m-1))+n; return `${Math.floor(t/12)}-${String((t%12)+1).padStart(2,'0')}`; }
+  function batchTargets(){ const start=document.querySelector('#batch-start').value; const n=+document.querySelector('#batch-count').value||1;
+    return Array.from({length:n},(_,i)=>addMonth(start,i)); }
+  function syncGroup(type){ const cb=document.querySelector(`.bg-ck[data-type="${type}"]`); if(!cb) return;
+    const kids=[...document.querySelectorAll(`.bp-ck[data-type="${type}"]:not(:disabled)`)];
+    const on=kids.filter(k=>k.checked).length;
+    cb.disabled=kids.length===0; cb.checked=kids.length>0&&on===kids.length; cb.indeterminate=on>0&&on<kids.length; }
+  function renderBatchList(){
+    const targets=batchTargets();
     const groups={}; Object.entries(PRES).forEach(([id,p])=>{ if(!p.coop) return; (groups[p.type]=groups[p.type]||[]).push([id,p]); });
+    const ageInputs=(id,p)=>['a','b','c','d'].map(k=>
+      `<input type="number" class="gox-input bage" data-pid="${id}" data-k="${k}" min="0" value="${p.ages[k]}" style="width:46px;">`).join('');
     document.querySelector('#batch-list').innerHTML = Object.entries(groups).map(([type,arr])=>`
-      <div class="baby-grp">${ptag(type)} <label style="font-weight:400;font-size:13px;"><input type="checkbox" class="bg-ck" data-type="${type}" checked> 整批</label></div>
-      ${arr.map(([id,p])=>`<label class="baby-ck"><input type="checkbox" class="bp-ck" data-type="${type}" value="${id}" checked> ${p.name}</label>`).join('')}
+      <div class="baby-grp">${ptag(type)} <label style="font-weight:400;font-size:13px;"><input type="checkbox" class="bg-ck" data-type="${type}"> 整批</label></div>
+      ${arr.map(([id,p])=>{ const conflict=targets.some(m=>p.months[m]); const checked=!conflict;
+        return `<div class="baby-brow" data-pid="${id}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 10px;border:1px solid #eee;border-radius:4px;margin-bottom:5px;${conflict?'opacity:.5;':''}">
+        <label style="display:flex;align-items:center;gap:6px;min-width:150px;flex:1;"><input type="checkbox" class="bp-ck" data-type="${type}" value="${id}" ${checked?'checked':''} ${conflict?'disabled':''}> ${p.name}${conflict?' <span class="gox-hint">（選定月份已開過）</span>':''}</label>
+        <span class="brow-fields" data-pid="${id}" style="display:${checked?'inline-flex':'none'};align-items:center;gap:8px;">
+          <span style="display:inline-flex;gap:3px;">${ageInputs(id,p)}</span>
+          <span class="brow-demand" data-pid="${id}" style="font-size:12px;color:#389e0d;min-width:62px;text-align:right;">每月 ${calcDemandBox(p.ages)} 箱</span>
+        </span>
+      </div>`; }).join('')}
     `).join('');
+    Object.keys(groups).forEach(syncGroup);
+  }
+  function openBatch(){
+    const base=MONTHS.slice().sort(); const futs=base.filter(m=>m>curMonth);
+    fillSel(document.querySelector('#batch-start'), base, fmtMonth);
+    document.querySelector('#batch-start').value = futs.length?futs[0]:(base[base.length-1]||curMonth);
+    renderBatchList();
     window.gox.openModal('#modal-batch');
   }
 
   // 新增院所
-  function openAddPres(){ ['#ap-name','#ap-title','#ap-sub','#ap-body'].forEach(s=>document.querySelector(s).value='');
+  function openAddPres(){ ['#ap-name','#ap-title','#ap-body'].forEach(s=>document.querySelector(s).value='');
     document.querySelector('#ap-type').value=TYPES[0];
     document.querySelector('#ap-coop').classList.add('is-on'); document.querySelector('#ap-show').classList.add('is-on');
     window.gox.openModal('#modal-addpres'); }
@@ -1171,24 +1225,33 @@ a:hover { text-decoration: underline; }
   document.querySelector('#btn-add-pres').addEventListener('click', openAddPres);
   document.querySelector('#d-btn-open').addEventListener('click', openOpen);
 
-  // 批次：整批勾選連動
+  // 批次：列勾選→顯示/隱藏人數欄位＋同步整批；整批→勾選該組可選院所
   document.addEventListener('change',(e)=>{
-    const g=e.target.closest('.bg-ck'); if(g){ document.querySelectorAll(`.bp-ck[data-type="${g.dataset.type}"]`).forEach(c=>c.checked=g.checked); }
+    const bp=e.target.closest('.bp-ck');
+    if(bp){ const f=bp.closest('.baby-brow').querySelector('.brow-fields'); if(f) f.style.display=bp.checked?'inline-flex':'none'; syncGroup(bp.dataset.type); return; }
+    const bg=e.target.closest('.bg-ck');
+    if(bg){ document.querySelectorAll(`.bp-ck[data-type="${bg.dataset.type}"]:not(:disabled)`).forEach(c=>{ c.checked=bg.checked;
+      const f=c.closest('.baby-brow').querySelector('.brow-fields'); if(f) f.style.display=bg.checked?'inline-flex':'none'; }); bg.indeterminate=false; }
   });
   document.querySelector('#batch-submit').addEventListener('click',()=>{
-    const months=[...document.querySelectorAll('.bm-ck:checked')].map(c=>c.value);
-    const ids=[...document.querySelectorAll('.bp-ck:checked')].map(c=>c.value);
-    if(!months.length){ window.gox.toast('請至少選一個月份'); return; }
+    const targets=batchTargets();
+    const ids=[...document.querySelectorAll('.bp-ck:checked:not(:disabled)')].map(c=>c.value);
     if(!ids.length){ window.gox.toast('請至少選一間院所'); return; }
-    const copy=document.querySelector('#batch-copy').classList.contains('is-on');
-    ids.forEach(id=>{ const p=PRES[id]; months.forEach(m=>{ if(!p.months[m]) p.months[m]={demand:calcDemandBox(p.ages),led:mkLedger(0)}; }); });
+    const touched=new Set();
+    ids.forEach(id=>{ const p=PRES[id]; const ages=browAges(id); p.ages=ages; targets.forEach(m=>{ if(!p.months[m]){ p.months[m]={demand:calcDemandBox(ages),led:mkLedger(0)}; touched.add(m); } }); });
+    if(!touched.size){ window.gox.toast('沒有可開的月份（選定月份都已開過）'); return; }
+    [...touched].forEach(m=>{ if(!MONTHS.includes(m)) MONTHS.push(m); }); MONTHS.sort().reverse();
+    curMonth=targets.slice().sort()[0];
     refreshMonthSel();
     window.gox.closeModal('#modal-batch');
-    window.gox.toast(`已為 ${ids.length} 間院所開 ${months.length} 個月的需求${copy?'（沿用上月人數）':'（空白）'}`);
+    window.gox.toast(`已為 ${ids.length} 間院所開 ${targets.length} 個月的需求（各自人數），已切到 ${fmtMonth(curMonth)}`);
     renderList();
   });
 
   document.querySelectorAll('#om-a,#om-b,#om-c,#om-d').forEach(el=>el.addEventListener('input', omRecalc));
+  document.addEventListener('input',(e)=>{ if(e.target.classList&&e.target.classList.contains('bage')){ browRecalc(e.target.dataset.pid); } });
+  document.querySelector('#batch-start').addEventListener('change', renderBatchList);
+  document.querySelector('#batch-count').addEventListener('change', renderBatchList);
   document.querySelector('#om-submit').addEventListener('click',()=>{
     const p=PRES[detailId]; const ages={a:+v('#om-a')||0,b:+v('#om-b')||0,c:+v('#om-c')||0,d:+v('#om-d')||0};
     p.ages=ages;
@@ -1222,7 +1285,8 @@ a:hover { text-decoration: underline; }
     const id=Math.max(...Object.keys(PRES).map(Number))+1;
     PRES[id]={ name, type:v('#ap-type'), coop:document.querySelector('#ap-coop').classList.contains('is-on'),
       show:document.querySelector('#ap-show').classList.contains('is-on'),
-      intro:{title:v('#ap-title'),sub:v('#ap-sub'),body:v('#ap-body')}, ages:{a:0,b:0,c:0,d:0}, months:{} };
+      img:'https://greenboxcdn.azureedge.net/upload/preschool/preschoolDef.jpg',
+      intro:{title:v('#ap-title'),body:v('#ap-body')}, ages:{a:0,b:0,c:0,d:0}, months:{} };
     window.gox.closeModal('#modal-addpres'); renderList(); window.gox.toast(`已新增「${name}」`);
   });
 
@@ -1243,14 +1307,14 @@ a:hover { text-decoration: underline; }
   #baby-dev-panel { position:fixed; bottom:20px; left:20px; z-index:99998; width:280px; background:#fff; border:1px solid #d3adf7; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.15); font-family:'Noto Sans TC',sans-serif; font-size:13px; }
   #baby-dev-panel.is-hidden { display:none; }
   #baby-dev-panel .dev-head { background:#f9f0ff; border-bottom:1px solid #efdbff; border-radius:8px 8px 0 0; padding:8px 12px; display:flex; align-items:center; gap:6px; color:#722ed1; }
-  #baby-dev-panel .dev-head strong { color:#531dab; } #baby-dev-panel .dev-head .dev-tag { background:#722ed1; color:#fff; font-size:10px; padding:1px 6px; border-radius:3px; }
+  #baby-dev-panel .dev-head strong { color:#531dab; } #baby-dev-panel .dev-head .dev-tag { background:#722ed1; color:#fff; font-size:10px; padding:1px 6px; border-radius:4px; }
   #baby-dev-panel .dev-head .dev-close { margin-left:auto; background:transparent; border:0; color:#722ed1; font-size:18px; cursor:pointer; padding:0 4px; }
   #baby-dev-panel .dev-body { padding:10px 12px; } #baby-dev-panel .dev-hint { color:#888; font-size:12px; margin:0 0 8px; }
   .dev-scenario { display:flex; align-items:flex-start; gap:8px; border:1px solid #f0f0f0; border-radius:4px; padding:8px 10px; cursor:pointer; margin-bottom:6px; }
   .dev-scenario:hover { border-color:#b37feb; } .dev-scenario.is-active { border-color:#722ed1; background:#f9f0ff; }
   .dev-scenario input { margin-top:2px; } .dev-scenario-title { font-weight:600; color:#262626; } .dev-scenario-desc { color:#666; font-size:12px; margin-top:2px; }
 </style>
-<button id="baby-dev-toggle" type="button">🧪 切換情境</button>
+<button id="baby-dev-toggle" type="button">切換情境</button>
 <div id="baby-dev-panel" class="is-hidden">
   <div class="dev-head"><strong>情境切換</strong><span class="dev-tag">demo</span><button type="button" class="dev-close" id="baby-dev-close">×</button></div>
   <div class="dev-body"><p class="dev-hint">demo 用，正式版會拿掉。</p>

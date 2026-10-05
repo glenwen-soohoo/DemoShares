@@ -240,7 +240,7 @@ a:hover { text-decoration: underline; }
   margin-left: auto;
   background: var(--gox-danger);
   color: #fff;
-  border-radius: 10px;
+  border-radius: 9999px;
   padding: 0 6px;
   font-size: 11px;
   min-width: 16px;
@@ -575,7 +575,7 @@ a:hover { text-decoration: underline; }
   display: inline-block;
   width: 40px;
   height: 22px;
-  border-radius: 11px;
+  border-radius: 9999px;
   border: 0;
   padding: 0;
   margin: 0;
@@ -617,44 +617,6 @@ a:hover { text-decoration: underline; }
 .gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
 .gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
 
-/* ─────────────────────────────────────────────────
-   臨時彈窗（mockup-only notice）
-   外部工作（寄信、串接其他系統、複雜後台流程）用這個提示
-   視覺：黃底 + 虛線邊框 = 看就知道「正式版會拿掉」
-   ───────────────────────────────────────────────── */
-.gox-mockup-notice {
-  background: #fff8e1;
-  border: 1px solid #d4a017;
-  border-radius: var(--gox-radius);
-  padding: 10px 14px;
-  margin: 12px 0;
-  font-size: var(--gox-font-size-sm);
-  color: #7a5a00;
-  line-height: 1.6;
-}
-.gox-mockup-notice::before {
-  content: '⚠ mockup 提示';
-  display: inline-block;
-  background: #d4a017;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 2px;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-.gox-mockup-notice .gox-mockup-strong { font-weight: 700; color: #5a4200; }
-
-/* 同樣 idea 的 modal 版本（彈窗式提示） */
-.gox-modal-box.is-mockup {
-  border: 2px solid #d4a017;
-  background: #fffbe6;
-}
-.gox-modal-box.is-mockup h4::before {
-  content: '⚠ ';
-  color: #d4a017;
-}
 
 /* ─────────────────────────────────────────────────
    Icon button（鉛筆 / 確認 / 取消）
@@ -709,7 +671,7 @@ a:hover { text-decoration: underline; }
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">產品管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="index.html" class="gox-menu-child ">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child is-active">捐款名冊</a><a href="project-settings.html" class="gox-menu-child ">專案管理</a><a href="licenses.html" class="gox-menu-child ">勸募字號管理</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="preschools.html" class="gox-menu-child ">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child is-active">捐款名冊</a><a href="project-settings.html" class="gox-menu-child ">專案管理</a><a href="licenses.html" class="gox-menu-child ">勸募字號管理</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">網頁管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">售後服務</span></div>
 </aside>
@@ -763,11 +725,13 @@ a:hover { text-decoration: underline; }
 <script>
 (function(){
   'use strict';
-  const PT={ '安心蔬果':'#389e0d|#f6ffed','豆漿鮮奶':'#a37d00|#fff7d6','圓夢計畫':'#722ed1|#f9f0ff','聖誕捐款':'#c41d7f|#fff0f6','公益修繕':'#0958d9|#e6f4ff','快篩試劑':'#08979c|#e6fffb','寶寶粥':'#d46b08|#fff7e6' };
+  const PT={ '一般捐款':'#5f6b7a|#eef1f5','安心蔬果':'#5a8a3c|#f3f8ee','愛心稻田':'#8a7a2e|#f8f4e6','圓夢計畫':'#7a6aa8|#f5f1fb','聖誕傳情':'#b05c86|#fbf0f5','豆漿鮮奶':'#a8803f|#faf3e8','工程公益修繕':'#5278a8|#eef4fb','快篩試劑':'#4e8a90|#eef7f7','寶寶粥':'#c2703a|#fbf0e8' };
   function ptag(t){ const [fg,bg]=(PT[t]||'#555|#eee').split('|'); return `<span class="ptag" style="color:${fg};background:${bg};border-color:${fg}55;">${t}</span>`; }
-  const TYPES=Object.keys(PT).filter(t=>t!=='聖誕禮物');
-  const PRES=['晨光育幼院','向陽兒少之家','小樹苗學園','溫暖之家','希望之家'];
-  const PAYS=['信用卡','ATM','定期定額','劃撥']; const NAMES=['測試 A','測試 B','測試 C','測試 D','測試 E','範例公司'];
+  const TYPES=Object.keys(PT);
+  // 真實育幼院名稱（取自資料庫 Preschool 表）
+  const PRES=['聖方濟育幼院','雲林縣信義育幼院','財團法人新北市榮光育幼院','天主教善牧基金會 花蓮兒童之家','家扶基金會 大同育幼院','臺北市私立伯大尼兒少家園'];
+  // 捐款人為個資，demo 用匿名化示意名
+  const PAYS=['信用卡','ATM','定期定額','劃撥']; const NAMES=['王小明','陳怡君','林志豪','張淑芬','黃建宏','行動家股份有限公司'];
   const ROWS=[];
   for(let i=0;i<26;i++){ const type=TYPES[i%TYPES.length]; const box=[1,2,3,5][i%4]; const price=[599,650,720,880][i%4];
     ROWS.push({ no:'DEMO-'+(1001+i), name:NAMES[i%NAMES.length], type, pres:PRES[i%PRES.length], amount:box*price, box, pay:PAYS[i%PAYS.length], sent:i%3===0, time:'2026-07-'+String(2+(i%26)).padStart(2,'0') }); }

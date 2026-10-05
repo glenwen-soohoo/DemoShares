@@ -240,7 +240,7 @@ a:hover { text-decoration: underline; }
   margin-left: auto;
   background: var(--gox-danger);
   color: #fff;
-  border-radius: 10px;
+  border-radius: 9999px;
   padding: 0 6px;
   font-size: 11px;
   min-width: 16px;
@@ -575,7 +575,7 @@ a:hover { text-decoration: underline; }
   display: inline-block;
   width: 40px;
   height: 22px;
-  border-radius: 11px;
+  border-radius: 9999px;
   border: 0;
   padding: 0;
   margin: 0;
@@ -617,44 +617,6 @@ a:hover { text-decoration: underline; }
 .gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
 .gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
 
-/* ─────────────────────────────────────────────────
-   臨時彈窗（mockup-only notice）
-   外部工作（寄信、串接其他系統、複雜後台流程）用這個提示
-   視覺：黃底 + 虛線邊框 = 看就知道「正式版會拿掉」
-   ───────────────────────────────────────────────── */
-.gox-mockup-notice {
-  background: #fff8e1;
-  border: 1px solid #d4a017;
-  border-radius: var(--gox-radius);
-  padding: 10px 14px;
-  margin: 12px 0;
-  font-size: var(--gox-font-size-sm);
-  color: #7a5a00;
-  line-height: 1.6;
-}
-.gox-mockup-notice::before {
-  content: '⚠ mockup 提示';
-  display: inline-block;
-  background: #d4a017;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 2px;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-.gox-mockup-notice .gox-mockup-strong { font-weight: 700; color: #5a4200; }
-
-/* 同樣 idea 的 modal 版本（彈窗式提示） */
-.gox-modal-box.is-mockup {
-  border: 2px solid #d4a017;
-  background: #fffbe6;
-}
-.gox-modal-box.is-mockup h4::before {
-  content: '⚠ ';
-  color: #d4a017;
-}
 
 /* ─────────────────────────────────────────────────
    Icon button（鉛筆 / 確認 / 取消）
@@ -709,48 +671,32 @@ a:hover { text-decoration: underline; }
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">產品管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="index.html" class="gox-menu-child ">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child ">捐款名冊</a><a href="project-settings.html" class="gox-menu-child ">專案管理</a><a href="licenses.html" class="gox-menu-child is-active">勸募字號管理</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>等家管理</span></button><div class="gox-menu-children"><a href="preschools.html" class="gox-menu-child ">育幼院管理</a><a href="donate-roster.html" class="gox-menu-child ">捐款名冊</a><a href="project-settings.html" class="gox-menu-child ">專案管理</a><a href="licenses.html" class="gox-menu-child is-active">勸募字號管理</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">網頁管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">售後服務</span></div>
 </aside>
 
 <main class="gox-content">
-<style>
-  .lic-main { border:1px solid #b7eb8f; background:#f6ffed; border-radius:8px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-  .lic-main .k { font-size:12px; color:var(--gox-text-sub); }
-  .lic-main .num { font-size:18px; font-weight:700; }
-</style>
 
 <div class="gox-list-head">
   <h2 style="margin:0;font-size:18px;">勸募字號管理</h2>
-  <div style="display:flex;gap:8px;"><button class="gox-btn gox-btn-primary" id="btn-add">＋ 新增年度字號</button></div>
-</div>
-
-<p style="color:var(--gox-text-sub);font-size:13px;margin:0 0 12px;">
-  勸募字號每年更新。有一個<b>年度主字號</b>常態使用（一般捐款、修繕等沿用），另外每年可為特定專案（圓夢、聖誕…）申請新的字號。專案管理裡的每個專案會指定要用哪一個。
-</p>
-
-<div class="lic-main">
-  <span class="gox-tag is-success">年度主字號</span>
-  <div><div class="k">目前使用中</div><div class="num" id="main-num">衛部救字第 1130000000 號</div></div>
-  <div><div class="k">適用年度</div><div class="num">2026</div></div>
-  <span style="flex:1;"></span>
-  <button class="gox-btn gox-btn-default" id="btn-edit-main">更換主字號</button>
+  <div style="display:flex;gap:8px;"><button class="gox-btn gox-btn-primary" id="btn-add">＋ 新增字號</button></div>
 </div>
 
 <div class="gox-card"><div class="gox-card-body is-table-padding">
   <table class="gox-table">
-    <thead><tr><th>字號</th><th>類型</th><th class="cell-center">適用年度</th><th>適用專案</th><th class="cell-center">狀態</th><th class="cell-ops">操作</th></tr></thead>
+    <thead><tr><th>字號</th><th>類型</th><th class="cell-center">生效日</th><th class="cell-center">到期日</th><th class="cell-center">狀態</th><th class="cell-ops">操作</th></tr></thead>
     <tbody id="l-tbody"></tbody>
   </table>
 </div></div>
 
 <div id="modal-lic" class="gox-modal-overlay is-hidden">
   <div class="gox-modal-box">
-    <h4 id="l-title">新增年度字號</h4>
+    <h4 id="l-title">新增字號</h4>
+    <div class="gox-form-row"><label>類型</label><select class="gox-select" id="l-type" style="width:160px;"><option value="專案">年度專案字號</option><option value="主">年度主字號</option></select> <span class="gox-hint">哪個專案用哪個字號，於「專案管理」指定</span></div>
     <div class="gox-form-row"><label>字號</label><input class="gox-input" id="l-num" placeholder="衛部救字第 ____ 號" style="width:280px;"></div>
-    <div class="gox-form-row"><label>適用年度</label><select class="gox-select" id="l-year" style="width:120px;"><option>2026</option><option>2027</option></select></div>
-    <div class="gox-form-row"><label>適用專案</label><select class="gox-select" id="l-proj" style="width:180px;"><option>圓夢計畫</option><option>聖誕捐款</option><option>快篩試劑</option><option>寶寶粥</option></select></div>
+    <div class="gox-form-row"><label>生效日</label><input type="date" class="gox-input" id="l-date" value="2026-01-01" style="width:170px;"> <span class="gox-hint">自此日起適用（可到日）</span></div>
+    <div class="gox-form-row"><label>到期日</label><input type="date" class="gox-input" id="l-end" value="2026-12-31" style="width:170px;"> <span class="gox-hint">留空＝無到期日（持續中）</span></div>
     <div class="gox-modal-actions"><button class="gox-btn gox-btn-default" data-gox-close>取消</button><button class="gox-btn gox-btn-primary" id="l-save">新增</button></div>
   </div>
 </div>
@@ -759,25 +705,49 @@ a:hover { text-decoration: underline; }
 (function(){
   'use strict';
   const ROWS=[
-    {num:'衛部救字第 1130000000 號', type:'年度主字號', year:'2026', proj:'一般捐款／安心蔬果／修繕…', active:true},
-    {num:'衛部救字第 1130012345 號', type:'年度專案', year:'2026', proj:'圓夢計畫', active:true},
-    {num:'衛部救字第 1130067890 號', type:'年度專案', year:'2026', proj:'聖誕捐款', active:true},
-    {num:'衛部救字第 1120000000 號', type:'年度主字號', year:'2025', proj:'（去年，已停用）', active:false},
+    // 主字號：真實歷史字號（取自 OrdersController.GetFundraisingNumber 依日期對照）
+    {num:'衛部救字第1151362501號', type:'年度主字號', date:'2026/07/01', end:'—', disabled:false},
+    {num:'衛部救字第1141361220號', type:'年度主字號', date:'2025/01/20', end:'2026/06/30', disabled:false},
+    {num:'衛部救字第1131361027號', type:'年度主字號', date:'2024/01/21', end:'2025/01/19', disabled:false},
+    // 專案字號：本次新功能（正式站尚無；號碼為示意，實際由協會另向衛福部申請）
+    {num:'衛部救字第1150012345號', type:'年度專案', date:'2026/01/01', end:'2026/12/31', disabled:false},
+    {num:'衛部救字第1150067890號', type:'年度專案', date:'2026/10/01', end:'2026/12/31', disabled:true},
   ];
   const v=s=>document.querySelector(s).value;
-  function render(){ document.querySelector('#l-tbody').innerHTML=ROWS.map((r,i)=>`<tr style="${r.active?'':'opacity:.55;'}">
+  let editIdx=-1;
+  const TODAY=new Date();
+  function parseYmd(s){ if(!s||s==='—')return null; const p=s.split('/').map(Number); return new Date(p[0],p[1]-1,p[2]); }
+  // 狀態三種：停用（人工關閉）／已過期（過到期日）／使用中
+  function statusOf(r){ if(r.disabled) return {t:'停用',cls:''}; const e=parseYmd(r.end); if(e && e<TODAY) return {t:'已過期',cls:'is-warning'}; return {t:'使用中',cls:'is-success'}; }
+  // 到期日越後面越上面；無到期日（持續中）排最上面
+  function sortRows(){ ROWS.sort((a,b)=>{ const ae=parseYmd(a.end), be=parseYmd(b.end); if(!ae&&!be)return 0; if(!ae)return -1; if(!be)return 1; return be-ae; }); }
+  function render(){ sortRows(); document.querySelector('#l-tbody').innerHTML=ROWS.map((r,i)=>{ const st=statusOf(r); return `<tr style="${r.disabled?'opacity:.55;':''}">
     <td>${r.num}</td>
     <td>${r.type==='年度主字號'?'<span class="gox-tag is-success">主字號</span>':'<span class="gox-tag is-info">專案</span>'}</td>
-    <td class="cell-center">${r.year}</td><td>${r.proj}</td>
-    <td class="cell-center">${r.active?'<span class="gox-tag is-success">使用中</span>':'<span class="gox-tag">已停用</span>'}</td>
-    <td class="cell-ops"><a href="#" class="gox-btn-op" data-toggle="${i}">${r.active?'停用':'啟用'}</a></td></tr>`).join(''); }
-  document.querySelector('#btn-add').addEventListener('click',()=>window.gox.openModal('#modal-lic'));
-  document.querySelector('#btn-edit-main').addEventListener('click',()=>window.gox.toast('開啟「更換年度主字號」表單'));
-  document.querySelector('#l-save').addEventListener('click',()=>{ const num=v('#l-num').trim()||'衛部救字第（新）號';
-    ROWS.push({num, type:'年度專案', year:v('#l-year'), proj:v('#l-proj'), active:true});
-    document.querySelector('#l-num').value=''; window.gox.closeModal('#modal-lic'); render(); window.gox.toast('已新增年度字號'); });
-  document.addEventListener('click',e=>{ const t=e.target.closest('[data-toggle]'); if(!t)return; e.preventDefault();
-    const r=ROWS[+t.dataset.toggle]; r.active=!r.active; render(); window.gox.toast(`已${r.active?'啟用':'停用'}${r.num}`); });
+    <td class="cell-center">${r.date}</td>
+    <td class="cell-center">${r.end||'—'}</td>
+    <td class="cell-center"><span class="gox-tag ${st.cls}">${st.t}</span></td>
+    <td class="cell-ops"><a href="#" class="gox-btn-op" data-edit="${i}">編輯</a> <a href="#" class="gox-btn-op" data-toggle="${i}">${r.disabled?'啟用':'停用'}</a></td></tr>`; }).join(''); }
+  function openForm(idx){ editIdx=idx;
+    const r = idx>=0 ? ROWS[idx] : {type:'年度專案', num:'', date:'2026/01/01', end:'2026/12/31'};
+    document.querySelector('#l-title').textContent = idx>=0 ? '編輯字號' : '新增字號';
+    document.querySelector('#l-save').textContent = idx>=0 ? '儲存' : '新增';
+    document.querySelector('#l-type').value = r.type==='年度主字號' ? '主' : '專案';
+    document.querySelector('#l-num').value = r.num||'';
+    document.querySelector('#l-date').value = (r.date||'2026/01/01').replace(/\//g,'-');
+    document.querySelector('#l-end').value = (r.end && r.end!=='—') ? r.end.replace(/\//g,'-') : '';
+    window.gox.openModal('#modal-lic'); }
+  document.querySelector('#btn-add').addEventListener('click',()=>openForm(-1));
+  document.addEventListener('click',e=>{
+    const ed=e.target.closest('[data-edit]'); if(ed){ e.preventDefault(); openForm(+ed.dataset.edit); return; }
+    const t=e.target.closest('[data-toggle]'); if(t){ e.preventDefault(); const r=ROWS[+t.dataset.toggle]; r.disabled=!r.disabled; render(); window.gox.toast(`已${r.disabled?'停用':'啟用'}${r.num}`); } });
+  document.querySelector('#l-save').addEventListener('click',()=>{
+    const num=v('#l-num').trim()||'衛部救字第（新）號';
+    const date=v('#l-date').replace(/-/g,'/'); const end = v('#l-end') ? v('#l-end').replace(/-/g,'/') : '—';
+    const type = v('#l-type')==='主' ? '年度主字號' : '年度專案';
+    if(editIdx>=0){ Object.assign(ROWS[editIdx], {num, type, date, end}); }
+    else { ROWS.push({num, type, date, end, disabled:false}); }
+    window.gox.closeModal('#modal-lic'); render(); window.gox.toast(editIdx>=0?'已儲存字號':'已新增字號'); });
   render();
 })();
 </script>

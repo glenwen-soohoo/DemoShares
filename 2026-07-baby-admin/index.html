@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | 等家後台新版 demo・portal 入口
+  portal 無對應正式站 view（純 demo 索引頁，工程不需照抄）。
+  連到的子頁（各頁檔頭有自己的對照）：
+    後台（GoX / SurveyBaby）：preschools.html（育幼院管理）、donate-roster.html（捐款名冊）、
+      project-settings.html（專案管理）、licenses.html（勸募字號管理）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
+<meta charset="UTF-8">
+<title>等家後台新版 demo 索引</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; padding:56px 20px; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;
+        font-size:16px; line-height:1.7; color:#1a1a1a; background:#fafbfb; }
+  .wrap{ max-width:960px; margin:0 auto; }
+  h1{ font-size:30px; margin:0 0 4px; color:#4ba83b; }
+  .sub{ color:#999; font-size:14px; margin:0 0 32px; }
+
+  .side{ margin-bottom:40px; }
+  .side>h2{ font-size:20px; font-weight:700; color:#1a1a1a; margin:0 0 16px; padding-left:12px; border-left:4px solid #4ba83b; }
+
+  .entries{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media (max-width:760px){ .entries{ grid-template-columns:1fr; } }
+
+  .entry{ display:flex; flex-direction:column; background:#fff; border:1px solid #e0e4e6; border-radius:4px;
+          padding:20px; text-decoration:none; color:inherit; transition:border-color .15s, box-shadow .15s, transform .15s; }
+  .entry:hover{ border-color:#4ba83b; box-shadow:0 4px 14px rgba(0,0,0,.08); transform:translateY(-2px); }
+  .entry .name{ font-size:16px; font-weight:700; color:#4ba83b; margin-bottom:4px; }
+  .entry .desc{ font-size:13px; color:#595757; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>等家後台新版・demo</h1>
+  <p class="sub">2026-07</p>
+
+  <div class="side">
+    <h2>等家管理</h2>
+    <div class="entries">
+      <a class="entry" href="preschools.html">
+        <span class="name">育幼院管理｜院所清單與每月需求</span>
+        <span class="desc">院所清單、合作／前台顯示狀態、每月水果需求與完成度，含人工加減台帳與批次開需求。</span>
+      </a>
+      <a class="entry" href="donate-roster.html">
+        <span class="name">捐款名冊｜查詢與收據</span>
+        <span class="desc">依院所／專案／月份查捐款，勾選後匯出名冊、合成收據 PDF、排程寄送。</span>
+      </a>
+      <a class="entry" href="project-settings.html">
+        <span class="name">專案管理｜單價規格字號</span>
+        <span class="desc">每個專案的對應規格與單價（解除 599）、單位、一箱換算、勸募字號、是否啟用。</span>
+      </a>
+      <a class="entry" href="licenses.html">
+        <span class="name">勸募字號管理｜年度字號</span>
+        <span class="desc">維護年度主字號與各專案字號，可更換主字號、新增與停用。</span>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
