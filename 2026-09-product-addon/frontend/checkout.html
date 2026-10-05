@@ -1,6 +1,31 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+  <!--
+    DemoShares 交接對照 | 結帳頁（確認訂單）・加價購商品
+    真相來源：D:\GreenBox\fruit_web dev（d18f11e2a）；加購品明細投影 Product_Api（ddff3fd）
+    對應正式站：
+      view       : HuashanCRM/Views/Orders/ConfirmOrder.cshtml
+      controller : OrdersController.ConfirmOrder
+      route      : /Orders/ConfirmOrder
+      js         : Scripts/Web/ConfirmOrder.js（加購相關約 :1005）
+      css        : greenbox.tw/Dist/Css/Order/ConfirmOrder-min.css、Order/order-payment-min.css
+    購物車骨架用的是真站真 class（工程直接抄）：
+      order-field-basc / cartItem-area / top-field / categorey-title / cart-order-totel
+      base-field 欄位：field-pd（商品）、field-order-time（出貨時間 ⚠Recive 系前端他頁才有）、field-price（單價）、field-amt（數量）、field-pd-total（總計）、field-delete（刪除）
+    既有「超值加購專區」（#SA-Area / .sa-pd-slick / .DiscountPrice）＝現行公司加購（CompanyGift），slick 設定同 CompanyGift.js；
+      與本次新增的「商品加購品」是兩套獨立機制，勿混用。
+    新功能・商品加購品（正式站尚無・待新建）：
+      加購資料入 view ： ViewBag.AddOnProducts（ConfirmOrder.cshtml:57），由 OrdersController 的
+                        _productAddOnHandler.GetAddOnsProductData(shoppingCart) 產生（撰時約 2290 行）
+      新資料表 ： ProductAddOn（主檔）、ProductAddOnMapping（主商品－加購品配對）、OrderDetailAddOn（訂單標記，§6-3）
+      就地加入購物車 API ： POST /Cart/AddToShoppingCartByModule（CartController.cs:269）
+      class coa-* / coa-pk / coa-added 為 demo 自取（新功能無既有真名）
+    加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
+      名 name ← Product.Name；規格 fullDetailDescription；原價 Price；折後價 SellPrice ＝ DiscPrice ?? Price（折扣沿用 PromoteCode）；
+      溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
+    完整名稱對照見同資料夾 _交接對照.md
+  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>結帳頁・加價購商品｜無毒農 1:1 原型</title>
@@ -269,6 +294,10 @@
       </section>
 
       <!-- 加價購①：部分已加購（已加購 + 尚未加購並存） -->
+      <!-- 新功能：商品加購品區塊，正式站尚無。資料來源 ViewBag.AddOnProducts（ConfirmOrder.cshtml:57）。
+           coa-* 為 demo 自取（新功能無既有真名）；內層欄位沿用真站 base-field（field-pd/price/amt/...）以對齊主商品。
+           .coa-added ＝已加購列、.coa-pk ＝尚未加購可勾選列；折後價 .n ← SellPrice、原價 .o ← Price（折扣沿用 PromoteCode）。
+           加入訂單後於 OrderDetailAddOn 標記（§6-3，待新建） -->
       <div class="coa" id="coa1">
         <div class="coa-added-block">
           <div class="coa-added-title">加價購商品</div>
@@ -378,6 +407,8 @@
   </div>
 
   <!-- ======= 既有「超值加購專區」banner（實際基底：真站 panel + sa-pd-slick 真 class） ======= -->
+  <!-- 既有機制：公司加購 CompanyGift（非本次新增的商品加購品）。#SA-Area / .sa-pd-slick / .DiscountPrice 皆真站真 class；
+       slick 設定同 CompanyGift.js。與上方 .coa 商品加購品是兩套獨立機制，勿混用。 -->
   <div class="col-xs-12 p-0 cartorder" id="SA-Area">
     <div class="panel panel-default">
       <div class="panel-heading">

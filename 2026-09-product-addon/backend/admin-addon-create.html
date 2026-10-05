@@ -1,8 +1,32 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 新增加購品子流程（admin-addon-create.html）
+  ⚠ 全新機制：正式站無此頁，待新建。流程＝綁定一個既有產品 → 填一筆加購品專屬規格 → 建立。
+  名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\需求規格.md §3-3
+  對應正式站：
+    view       : 待新建
+    controller : 待新建（建立 ProductAddOn；寫入走 Product_Api(EF) 或 GoX＝待工程定案）
+    route      : 待新建
+  這一頁的真實欄位名（綁定的產品為既有，加購品規格欄位對齊既有 ProductDetail，建議命名）：
+    綁定產品ID    ac-pid   → Product.Id（productId）
+    規格描述      ac-desc  → Detail
+    規格量        ac-qty   → Amt
+    單位          ac-unit  → Module
+    產品原價      ac-price → Price
+    成本          ac-cost  → Cost
+    開始/結束販售 ac-start/ac-end → StartTime / EndTime
+    剩餘數量      ac-stock → ⚠ 建立時輸入的其實是「進貨量 OriginAmt（庫存量）」，不是剩餘；標籤沿用列表用語但語意是原始庫存
+    上架          ac-listed → Display
+    可貨到付款    ac-cod   → 貨到付款旗標（對 ProductDetail 既有 COD 欄；確切欄名待工程定案）
+    可作為加購品  固定勾選  → 建議 IsAddOn；即把此規格登記成 ProductAddOn（待新建）
+  這一頁打的真實 API：待新建（建立加購品）；成功後導向 admin-addon-setting.html
+  本頁 demo JS 鍵（PRODUCTS/PIC、ac-* 的 id）為自由命名，勿照抄進 codebase。
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
-<title>產線加購品設定 — 後台 demo</title>
+<title>新增加購品 — 後台 demo</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -671,7 +695,9 @@ a:hover { text-decoration: underline; }
   <nav class="gox-breadcrumb">
     <span>產品管理</span>
     <span class="sep">&gt;</span>
-    <strong>產線加購品</strong>
+    <a href="admin-addon-list.html">產品頁加購設定</a>
+    <span class="sep">&gt;</span>
+    <strong>新增加購品</strong>
   </nav>
   <div class="gox-header-right">
     <span class="gox-user">Glen Wen</span>
@@ -683,469 +709,275 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child ">產品頁加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child is-active">產線加購品</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">產品頁加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
 </aside>
 
 <main class="gox-content">
-<!-- ═══ 交接對照（工程請對回真名，勿照 demo JS 鍵／假 ID）詳見同資料夾 _交接對照.md ═══
-  現有真名：id=productDetailId, pid=productId, name, spec=detail(+amt 規格量,module 單位),
-  price=原價, disc=discountPrice(優惠價,實體DiscPrice), stock=剩餘數量(＝OriginAmt庫存量−SoldAmt銷售量,非原始庫存), temp=temperatureType(溫層),
-  display=上架, minPrice=minimumPrice(滿額限購), limit=limit(限購數量,另有 totalLimit),
-  vip=vipLevelId, firstBuy, shipping=isShipping(含運), img=coverImg；產線=ProductCategoryEnum/categoryType。
-  真實欄位皆在 react-component-export extraProductsSetting/Setting.tsx IProductDetail。
-  新功能(待新建)：subs=限定子分類→新表 ExtraProductSubCategory.SubCategoryType(=Product.Type2)；
-  清單本體→新表 ExtraProduct(ProductCategory,ProductDetailId,Sort)；儲存契約/CartSubCategoryTypes 見工程規格 §3/§5。
-  Demo 假資料：每產線子分類、規格ID 90001+/產品ID 30001+、20 筆商品名皆為示意；真實子分類只有 5 個且動態撈 ProductSubCategory。 -->
 <style>
-  /* 產線加購品設定：既有機制（整條產線共用一份清單）＋ E 限定子分類。清爽版：去 emoji、核心欄位、少用欄位縮成小標籤 */
-  .la-sub{ font-size:13px; font-weight:400; color:var(--gox-text-muted); }
+  /* 新增加購品：綁定產品 → 規格設定 → 建立，比照禮物券新增流程 */
+  .ac-step-hint { font-size: 12px; color: var(--gox-text-muted); margin: 0 0 16px; }
 
-  /* 產線頁籤（antd segmented 風） */
-  .la-tabs{ display:inline-flex; flex-wrap:wrap; border:1px solid #d9d9d9; border-radius:var(--gox-radius); overflow:hidden; margin:4px 0 14px; }
-  .la-tabs button{ border:0; background:#fff; color:var(--gox-text); font-size:14px; padding:7px 18px; cursor:pointer; font-family:inherit; }
-  .la-tabs button + button{ border-left:1px solid #d9d9d9; }
-  .la-tabs button.is-on{ background:var(--gox-green); color:#fff; font-weight:600; }
+  .ac-bind-row { display: flex; gap: 8px; align-items: flex-start; }
+  .ac-bind-row .gox-input { width: 200px; }
+  .ac-bind-err { color: var(--gox-danger); font-size: 13px; margin-top: 8px; }
+  .ac-bind-err.is-hidden { display: none; }
 
-  /* 分類篩選 chips（E-①） */
-  .la-filter{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
-  .la-filter-lbl{ font-size:13px; color:var(--gox-text-sub); font-weight:600; margin-right:4px; }
-  #la-chips{ display:inline-flex; flex-wrap:wrap; gap:8px; }
-  .la-chip{ border:1px solid #d9d9d9; background:#fff; color:var(--gox-text-sub); border-radius:4px; padding:5px 14px; font-size:13px; cursor:pointer; font-family:inherit; }
-  .la-chip:hover{ border-color:var(--gox-green); color:var(--gox-green); }
-  .la-chip.is-on{ background:#eaf7ea; border-color:var(--gox-green); color:var(--gox-green-hover); font-weight:600; }
-  .la-clear{ border:0; background:none; color:var(--gox-info); font-size:12.5px; cursor:pointer; font-family:inherit; }
-  .la-clear[hidden]{ display:none; }
+  .ac-product { display: none; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); }
+  .ac-product.is-shown { display: flex; }
+  .ac-pic {
+    width: 116px; aspect-ratio: 4 / 3; height: auto; flex: none; align-self: flex-start; overflow: hidden; border-radius: var(--gox-radius);
+    border: 1px solid var(--gox-card-border); background: #f7f7f7;
+    display: flex; align-items: center; justify-content: center; color: var(--gox-text-muted); font-size: 12px;
+  }
+  .ac-pic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: var(--gox-radius); }
+  .ac-pinfo { flex: 1; }
+  .ac-pname { font-size: 15px; font-weight: 600; color: var(--gox-text); margin-bottom: 8px; }
+  .ac-pmeta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 13px; color: var(--gox-text-sub); }
+  .ac-pmeta div span { color: var(--gox-text-muted); margin-right: 4px; }
+  .ac-tt { display:inline-block; font-size:11px; font-weight:600; line-height:1.6; border-radius:4px; padding:0 6px; }
+  .ac-tt.normal{ background:#fff7e6; border:1px solid #ffd591; color:#c86e1a; }
+  .ac-tt.cold{ background:#e6fffb; border:1px solid #87e8de; color:#229599; }
+  .ac-tt.frozen{ background:#f0f5ff; border:1px solid #adc6ff; color:#5563c2; }
 
-  /* 加入列（E-②：限定子分類複選） */
-  .la-addbar{ display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; background:#fafbfc; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); padding:12px; margin-bottom:14px; }
-  .la-ac{ position:relative; flex:1 1 280px; min-width:220px; }
-  .la-ac .gox-input{ width:100%; }
-  .la-ac textarea{ min-height:38px; resize:vertical; line-height:1.6; }
-  .la-ac-list{ position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:30; background:#fff; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); box-shadow:0 6px 18px rgba(0,0,0,.12); max-height:240px; overflow-y:auto; display:none; }
-  .la-ac.is-open .la-ac-list{ display:block; }
-  .la-ac-list button{ display:block; width:100%; text-align:left; border:0; background:#fff; padding:9px 12px; cursor:pointer; font-family:inherit; font-size:13.5px; color:var(--gox-text); }
-  .la-ac-list button + button{ border-top:1px solid #f0f0f0; }
-  .la-ac-list button:hover{ background:#f4fbf4; }
-  .la-ac-list .r2{ display:block; font-size:12px; color:var(--gox-text-muted); margin-top:2px; }
-  .la-ac-list .none{ padding:11px 12px; font-size:13px; color:var(--gox-text-muted); }
+  .ac-spec-body.is-locked { opacity: .45; pointer-events: none; }
+  .ac-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+  .ac-row:last-of-type { margin-bottom: 0; }
+  .ac-span-2 { grid-column: span 2; }
+  .ac-field label { display: block; font-size: 13px; color: var(--gox-text-sub); margin-bottom: 4px; }
+  .ac-field .gox-input, .ac-field .gox-select { width: 100%; }
+  .ac-req { color: var(--gox-danger); margin-left: 2px; }
+  .ac-field-hint { font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
+  .ac-checks { display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gox-card-border); flex-wrap: wrap; }
+  .ac-checks label { font-size: 13px; color: var(--gox-text-sub); display: flex; align-items: center; gap: 6px; }
+  .ac-checks label.is-fixed { color: var(--gox-green-hover); font-weight: 600; }
+  .ac-locked-msg { font-size: 13px; color: var(--gox-text-muted); margin-top: 16px; }
+  .ac-locked-msg.is-hidden { display: none; }
+  .ac-submit-bar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
-  /* 限定子分類複選下拉 */
-  .la-multi{ position:relative; flex:0 0 auto; }
-  .la-multi-btn{ display:inline-flex; align-items:center; gap:6px; min-width:180px; justify-content:space-between; border:1px solid #ccc; background:#fff; color:var(--gox-text); border-radius:var(--gox-radius); padding:6px 12px; min-height:32px; font-size:13.5px; cursor:pointer; font-family:inherit; }
-  .la-multi-btn .cnt{ color:var(--gox-text-muted); }
-  .la-multi-pop{ position:absolute; top:calc(100% + 4px); left:0; z-index:30; background:#fff; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); box-shadow:0 6px 18px rgba(0,0,0,.12); padding:6px; min-width:180px; display:none; }
-  .la-multi.is-open .la-multi-pop{ display:block; }
-  .la-multi-pop label{ display:flex; align-items:center; gap:8px; padding:6px 8px; font-size:13.5px; border-radius:4px; cursor:pointer; }
-  .la-multi-pop label:hover{ background:#f4fbf4; }
-  .la-multi-pop input{ accent-color:var(--gox-green); width:15px; height:15px; }
-
-  /* 表格 */
-  .la-scroll{ overflow-x:auto; }
-  .la-table th, .la-table td{ vertical-align:middle; white-space:nowrap; }
-  .la-table tr.is-off td{ opacity:.55; }
-  .la-table tr.is-drag{ opacity:.4; }
-  .la-table tr.is-over td{ box-shadow:inset 0 2px 0 var(--gox-green); }
-  .la-table tbody tr{ cursor:default; }
-  .la-thumb{ width:46px; height:46px; flex:none; border-radius:4px; border:1px solid var(--gox-card-border); background:#f2f4f5; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; }
-  .la-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .la-thumb.is-empty::before{ content:''; width:20px; height:20px; background:no-repeat center/contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c2c8cc' stroke-width='1.6'><rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='8.5' cy='9.5' r='1.5'/><path d='M21 15l-5-5L5 20'/></svg>"); }
-  .la-pname{ font-size:14px; font-weight:600; color:var(--gox-text); }
-  .la-pspec{ font-size:13px; color:var(--gox-text-sub); }
-  .la-pid{ font-size:12px; color:var(--gox-text-muted); font-variant-numeric:tabular-nums; margin-top:2px; }
-  .la-mono{ font-variant-numeric:tabular-nums; }
-  .la-stock.is-zero{ color:var(--gox-danger); font-weight:600; }
-  .la-yes{ color:#389e0d; font-weight:700; font-size:13px; }
-  .la-dash{ color:#d0d3d6; }
-
-  /* 溫層小標籤 */
-  .tt{ display:inline-block; font-size:11px; font-weight:600; line-height:1.6; border-radius:4px; padding:0 6px; }
-  .tt.normal{ background:#fff7e6; border:1px solid #ffd591; color:#c86e1a; }
-  .tt.cold{ background:#e6fffb; border:1px solid #87e8de; color:#229599; }
-  .tt.frozen{ background:#f0f5ff; border:1px solid #adc6ff; color:#5563c2; }
-
-  /* 限定子分類標籤（唯讀） */
-  .la-subs{ display:flex; flex-wrap:wrap; gap:4px; min-width:120px; }
-  .la-subtag{ font-size:11.5px; line-height:1.7; padding:0 8px; border-radius:4px; background:#f1f2f7; border:1px solid #e0e0e0; color:var(--gox-text-sub); white-space:nowrap; }
-  .la-nolimit{ font-size:12.5px; color:var(--gox-text-muted); }
-
-  /* 排序 / 操作 小按鈕 */
-  .la-drag{ cursor:grab; color:var(--gox-text-muted); font-size:15px; user-select:none; }
-  .la-ord{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
-  .la-ord .no{ font-variant-numeric:tabular-nums; color:var(--gox-text-sub); min-width:1.4em; text-align:right; }
-  .la-iconbtn{ border:1px solid #d9d9d9; background:#fff; color:var(--gox-text-sub); border-radius:4px; width:24px; height:24px; line-height:1; cursor:pointer; font-family:inherit; font-size:12px; padding:0; }
-  .la-iconbtn:hover:not(:disabled){ border-color:var(--gox-green); color:var(--gox-green); }
-  .la-iconbtn:disabled{ opacity:.35; cursor:default; }
-  .la-ops{ display:flex; gap:6px; white-space:nowrap; }
-  .la-linkbtn{ border:1px solid #d9d9d9; background:#fff; color:var(--gox-text); border-radius:4px; padding:3px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; }
-  .la-linkbtn:hover{ border-color:var(--gox-green); color:var(--gox-green); }
-  .la-linkbtn.is-danger{ color:var(--gox-danger); }
-  .la-linkbtn.is-danger:hover{ border-color:var(--gox-danger); background:#fff1f0; }
-
-  .la-bar{ display:flex; align-items:center; gap:12px; margin-top:16px; }
-  .la-status{ font-size:13px; }
-  .la-status.is-clean{ color:var(--gox-text-muted); }
-  .la-status.is-dirty{ color:#d4820a; font-weight:600; }
-  .la-status.is-saving{ color:var(--gox-text-sub); }
-  .la-hideoff{ display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--gox-text-sub); cursor:pointer; user-select:none; }
-  .la-filter-sep{ width:1px; height:18px; background:var(--gox-card-border); }
-  .la-empty{ text-align:center; padding:28px; color:var(--gox-text-muted); }
-
-  /* 限定子分類編輯 modal */
-  .la-modal-box{ min-width:360px; }
-  .la-modal-subs{ display:flex; flex-direction:column; gap:2px; margin:4px 0 8px; }
-  .la-modal-subs label{ display:flex; align-items:center; gap:9px; padding:8px 10px; border:1px solid var(--gox-card-border); border-radius:var(--gox-radius); font-size:14px; cursor:pointer; }
-  .la-modal-subs label:hover{ background:#f4fbf4; }
-  .la-modal-subs input{ accent-color:var(--gox-green); width:16px; height:16px; }
-  .la-modal-hint{ font-size:12.5px; color:var(--gox-text-muted); margin:0 0 6px; }
-  .la-rule-fields{ display:flex; flex-direction:column; gap:12px; margin:8px 0; }
-  .la-rule-f{ display:flex; flex-direction:column; gap:6px; }
-  .la-rule-f > span:first-child{ font-size:13px; color:var(--gox-text-sub); font-weight:600; }
-  .la-rule-inline{ display:flex; align-items:center; gap:8px; font-size:14px; color:var(--gox-text); flex-wrap:wrap; }
+  /* 開發者面板（demo 用） */
+  #devbar { position: fixed; left: 16px; bottom: 16px; z-index: 10001; font-family: var(--gox-font-family); }
+  #devbar .toggle { background: #1a1a1a; color: #fff; border: 0; border-radius: 999px; font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); font-family: inherit; }
+  #devbar .box { display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 280px; margin-bottom: 8px; }
+  #devbar.is-open .box { display: block; }
+  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
+  #devbar .grp-t { font-size: 13px; font-weight: 600; color: #55606e; margin-bottom: 6px; }
+  #devbar .pid-list { display: flex; flex-direction: column; gap: 6px; }
+  #devbar .pid-list button { text-align: left; border: 1px solid #d5d9de; border-radius: 6px; background: #fff; padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 13px; color: #1a1a1a; }
+  #devbar .pid-list button:hover { border-color: #1a1a1a; }
+  #devbar .pid-list b { font-variant-numeric: tabular-nums; margin-right: 6px; }
+  #devbar .pid-list span { display: block; font-size: 12px; color: #8a939e; margin-top: 2px; }
 </style>
 
-<div class="gox-list-head">
-  <h2 style="margin:0;font-size:18px;">產線加購品設定</h2>
-</div>
-
-<!-- 產線頁籤 -->
-<div class="la-tabs" id="la-tabs"></div>
-
-<!-- 分類篩選 chips（E-①） -->
-<div class="la-filter">
-  <span class="la-hideoff"><button type="button" class="gox-switch" id="la-hideoff-sw" role="switch"></button>隱藏下架</span>
-  <span class="la-filter-sep"></span>
-  <span class="la-filter-lbl">篩選子分類</span>
-  <span id="la-chips"></span>
-  <button class="la-clear" id="la-clear" hidden>清除篩選</button>
-</div>
-
-<!-- 加入加購品（限定子分類於加入後再用「編輯子分類」設定）-->
-<div class="la-addbar">
-  <div class="la-ac" id="la-ac">
-    <textarea class="gox-input" id="la-ac-input" rows="1" placeholder="輸入規格 ID 加入（請用空格、換行、逗號區分多個規格 ID）" autocomplete="off"></textarea>
-    <div class="la-ac-list" id="la-ac-list"></div>
+<div class="gox-toolbox is-wide">
+  <div class="gox-list-head">
+    <h2 style="margin:0;font-size:18px;">新增加購品</h2>
+    <button type="button" class="gox-btn gox-btn-default" id="ac-back">回列表</button>
   </div>
-  <select class="gox-select" id="la-add-pos" title="加入順序" style="width:120px;">
-    <option value="end">加到最後</option>
-    <option value="start">加到最前</option>
-  </select>
-  <button class="gox-btn gox-btn-primary" id="la-add">加入</button>
-</div>
 
-<div class="gox-card">
-  <div class="gox-card-body is-table-padding">
-    <div class="la-scroll">
-    <table class="gox-table la-table">
-      <thead><tr>
-        <th class="cell-center"><input type="checkbox" id="la-all" style="width:16px;height:16px;accent-color:var(--gox-green);"></th>
-        <th class="cell-center">排序</th>
-        <th>封面</th>
-        <th>名稱</th>
-        <th>規格</th>
-        <th class="cell-right">原價</th>
-        <th class="cell-right">優惠價</th>
-        <th class="cell-right">剩餘數量</th>
-        <th class="cell-center">溫層</th>
-        <th class="cell-center">上架</th>
-        <th>限定子分類</th>
-        <th class="cell-right">滿額限購</th>
-        <th class="cell-center">限購數量</th>
-        <th class="cell-center">VIP限購</th>
-        <th class="cell-center">首購</th>
-        <th class="cell-center">含運</th>
-        <th class="cell-center">操作</th>
-      </tr></thead>
-      <tbody id="la-body"></tbody>
-    </table>
-    </div>
-  </div>
-</div>
+  <div class="gox-card">
+    <div class="gox-card-title">綁定產品</div>
+    <div class="gox-card-body">
+      <p class="ac-step-hint">加購品是掛在某個產品底下的一個專屬規格。先指定要建立在哪一個產品下，才能往下填規格。</p>
+      <div class="ac-bind-row">
+        <input type="text" class="gox-input" id="ac-pid" placeholder="輸入產品 ID">
+        <button type="button" class="gox-btn gox-btn-primary" id="ac-bind">綁定</button>
+      </div>
+      <div class="ac-bind-err is-hidden" id="ac-bind-err"></div>
 
-<div class="la-bar">
-  <button class="gox-btn gox-btn-danger" id="la-del" disabled>移除選取（<span id="la-delcnt">0</span>）</button>
-  <button class="gox-btn gox-btn-primary" id="la-save">儲存</button>
-  <span class="la-status is-clean" id="la-status">無改動</span>
-</div>
-
-<!-- 限定子分類編輯 modal -->
-<!-- 編輯加購設定 modal（加購規則＋限定子分類，一次設定） -->
-<div class="gox-modal-overlay is-hidden" id="la-edit-modal">
-  <div class="gox-modal-box la-modal-box">
-    <h4>編輯限購條件 — <span id="la-edit-name"></span></h4>
-    <div class="la-rule-fields">
-      <label class="la-rule-f"><span>滿額限購</span>
-        <span class="la-rule-inline">購物車同產線滿 <input type="number" class="gox-input" id="la-edit-min" min="0" style="width:110px;"> 元才可購買（0＝不限）</span>
-      </label>
-      <label class="la-rule-f"><span>限購數量</span>
-        <span class="la-rule-inline">每筆訂單限購 <input type="number" class="gox-input" id="la-edit-limit" min="0" style="width:90px;"> 件（0＝不限）</span>
-      </label>
-      <div class="la-rule-f"><span>限定子分類</span>
-        <p class="la-modal-hint" style="margin:2px 0 4px;">勾選後只在購物車含所選子分類的商品時顯示；全部不勾＝不限。</p>
-        <div class="la-modal-subs" id="la-edit-subs"></div>
+      <div class="ac-product" id="ac-product">
+        <div class="ac-pic" id="ac-pic-box">商品圖</div>
+        <div class="ac-pinfo">
+          <div class="ac-pname" id="ac-pname"></div>
+          <div class="ac-pmeta">
+            <div><span>產線</span><b id="ac-pline"></b></div>
+            <div><span>溫層</span><b id="ac-ptemp"></b></div>
+            <div><span>現有規格數</span><b id="ac-pspecs"></b></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="gox-modal-actions">
-      <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
-      <button class="gox-btn gox-btn-primary" id="la-edit-ok">確定</button>
+  </div>
+
+  <div class="gox-card">
+    <div class="gox-card-title">規格設定</div>
+    <div class="gox-card-body">
+      <div class="ac-locked-msg" id="ac-locked-msg">先綁定產品後才能填寫規格。</div>
+
+      <div class="ac-spec-body is-locked" id="ac-spec-body">
+        <div class="ac-row">
+          <div class="ac-field ac-span-2">
+            <label>規格描述<span class="ac-req">*</span></label>
+            <input type="text" class="gox-input" id="ac-desc" placeholder="例：加價購・單瓶 500ml">
+          </div>
+        </div>
+
+        <div class="ac-row">
+          <div class="ac-field">
+            <label>規格量<span class="ac-req">*</span></label>
+            <input type="number" class="gox-input" id="ac-qty" value="1" min="1">
+          </div>
+          <div class="ac-field">
+            <label>單位<span class="ac-req">*</span></label>
+            <select class="gox-select" id="ac-unit">
+              <option>個</option><option>瓶</option><option>包</option><option>盒</option><option>組</option><option>入</option>
+            </select>
+          </div>
+          <div class="ac-field">
+            <label>產品原價<span class="ac-req">*</span></label>
+            <input type="number" class="gox-input" id="ac-price" placeholder="399">
+          </div>
+          <div class="ac-field">
+            <label>成本</label>
+            <input type="number" class="gox-input" id="ac-cost" placeholder="選填">
+          </div>
+        </div>
+
+        <div class="ac-row">
+          <div class="ac-field">
+            <label>開始販售<span class="ac-req">*</span></label>
+            <input type="date" class="gox-input" id="ac-start">
+          </div>
+          <div class="ac-field">
+            <label>結束販售<span class="ac-req">*</span></label>
+            <input type="date" class="gox-input" id="ac-end">
+          </div>
+          <div class="ac-field">
+            <!-- ⚠ 建立時此欄輸入的是「進貨量 OriginAmt（庫存量）」，非剩餘；列表/編輯頁的「剩餘」才是 OriginAmt-SoldAmt -->
+            <label>剩餘數量<span class="ac-req">*</span></label>
+            <input type="number" class="gox-input" id="ac-stock" placeholder="100">
+          </div>
+        </div>
+
+        <div class="ac-checks">
+          <label><input type="checkbox" id="ac-listed" checked> 上架</label>
+          <label><input type="checkbox" id="ac-cod" checked> 可貨到付款</label>
+          <label class="is-fixed"><input type="checkbox" checked disabled> 可作為加購品（本流程固定建立）</label>
+        </div>
+      </div>
+
+      <div class="ac-submit-bar">
+        <button type="button" class="gox-btn gox-btn-primary" id="ac-create" disabled>建立加購品</button>
+      </div>
     </div>
   </div>
+</div>
+
+<div class="gox-modal-overlay is-hidden" id="ac-confirm">
+  <div class="gox-modal-box">
+    <div class="gox-card-title">確認建立</div>
+    <div class="gox-card-body">
+      <p style="font-size:14px;color:var(--gox-text);margin:0 0 12px;">將在下列產品底下建立一個加購品專屬規格，建立後即可到「加購設定」設定折扣與掛載主商品：</p>
+      <div style="font-size:14px;line-height:1.9;color:var(--gox-text-sub);">
+        <div>產品：<b id="ac-c-product" style="color:var(--gox-text);"></b></div>
+        <div>規格描述：<b id="ac-c-desc" style="color:var(--gox-text);"></b></div>
+        <div>原價：<b id="ac-c-price" style="color:var(--gox-text);"></b></div>
+        <div>剩餘數量：<b id="ac-c-stock" style="color:var(--gox-text);"></b></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+        <button type="button" class="gox-btn gox-btn-default" data-gox-close>取消</button>
+        <button type="button" class="gox-btn gox-btn-primary" id="ac-c-ok">確定建立</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="devbar">
+  <div class="box">
+    <h4>開發者面板</h4>
+    <p class="cap">demo 只認得這幾個產品 ID，點一下直接填入並綁定。</p>
+    <div class="grp-t">可綁定的產品</div>
+    <div class="pid-list" id="dev-pids"></div>
+  </div>
+  <button type="button" class="toggle">開發者面板</button>
 </div>
 
 <script>
-(function(){
-  var money=function(n){ return '$'+Math.round(n).toLocaleString('en-US'); };
-  var IMG1='https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp';
-  var IMG2='https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp';
-  var IMG3='https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg';
-  // 不同產線的子分類不同（動態撈；demo 先寫死每條產線各自的子分類）
-  var SUBCATS_BY_LINE={
-    direct:['在地小農','安心時蔬','進口菁品','嚴選好物','水產直送'],
-    dried:['嚴選好物','堅果雜糧','果乾蜜餞'],
-    fresh:['水產直送','溫體肉品','鮮凍海鮮'],
-    baby:['在地小農','安心時蔬','寶寶副食'],
-    eagle:['進口菁品','機能保健']
-  };
-  var LINES=[['direct','產地直送'],['dried','蔬果乾貨'],['fresh','生鮮肉舖'],['baby','粥寶寶'],['eagle','益菓保']];
+(function () {
+  'use strict';
 
-  function it(o){ return Object.assign({disc:0,stock:100,temp:'常溫',display:true,subs:[],minPrice:0,limit:0,vip:false,firstBuy:false,shipping:false,img:''},o); }
-  // 產地直送：模擬 20 筆（售完＝剩餘數量 0 標紅；下架＝上架關閉，兩者獨立：有售完但仍上架、也有下架但有庫存）
-  function genDirect(){
-    var N=['316 不鏽鋼保溫瓶 500ml','手沖濾掛咖啡 10入','冷壓初榨苦茶油 250ml','有機黑芝麻粉 300g','台灣龍眼蜂蜜 380g','冷壓初榨橄欖油 250ml','手工原味餅乾 綜合','鮮乳坊 鮮奶 936ml','西螺有機醬油 500ml','澳洲天然海鹽 250g','台灣黑糖磚 400g','有機紅藜 300g','日曬乾香菇 150g','埔里手工筍乾 200g','金鑽鳳梨乾 100g','愛文芒果乾 120g','綜合堅果 隨手包','花蓮有機糙米 1kg','蜜香紅茶 30入','古法桂圓乾 250g'];
-    var S=['單瓶','10 入袋裝','玻璃瓶','罐裝','玻璃罐','玻璃瓶','一盒','一瓶','一瓶','袋裝','一塊','袋裝','袋裝','袋裝','袋裝','袋裝','50g','一包','30 入','袋裝'];
-    var STK=[128,64,8,0,53,40,120,31,0,90,12,22,60,0,44,7,38,0,26,15];  // 0＝售完（索引 3、8、13、17）
-    var DSP=[1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1];                    // 0＝下架（索引 5、10、12、17）
-    var IMGS=[IMG1,IMG2,IMG3], SC=SUBCATS_BY_LINE.direct;
-    return N.map(function(n,i){
-      var price=99+((i*47)%420);
-      var subs = i%5===0 ? [SC[0],SC[3]] : (i%4===0 ? [SC[0]] : (i%4===1 ? [SC[3]] : (i%4===3 ? [SC[1]] : [])));
-      return it({ id:90001+i, pid:30001+i, name:n, spec:S[i], img:(i%3===2?'':IMGS[i%3]),
-        price:price, disc:(i%3===0?price-30:0), stock:STK[i], temp:['常溫','冷藏','冷凍'][i%3],
-        display:DSP[i]===1, subs:subs,
-        minPrice:(i%6===1?500:0), limit:(i%7===2?2:0), vip:(i%8===3), firstBuy:(i%9===4), shipping:(i%5===2) });
-    });
-  }
-  var DATA={
-    direct: genDirect(),
-    dried:[
-      it({id:50011,pid:16001,img:IMG3,name:'綜合堅果 隨手包',spec:'50g',price:99,stock:40,temp:'常溫',subs:['嚴選好物']}),
-      it({id:50022,pid:16008,name:'古法金鑽鳳梨乾',spec:'100g',price:150,disc:120,stock:22,temp:'常溫',subs:[]})
-    ],
-    fresh:[
-      it({id:60003,pid:17001,name:'鮮凍白蝦仁 250g',spec:'250g',price:220,disc:199,stock:15,temp:'冷凍',subs:['水產直送']})
-    ],
-    baby:[
-      it({id:77208,pid:15003,name:'寶寶粥 鮮蔬雞肉',spec:'150g',price:75,stock:260,temp:'冷凍',subs:['在地小農']}),
-      it({id:77385,pid:15010,img:IMG1,name:'寶寶果泥 隨手包',spec:'80g',price:45,disc:39,stock:84,temp:'常溫',subs:['安心時蔬']}),
-      it({id:77412,pid:15022,img:IMG2,name:'有機米餅 二入',spec:'2 入',price:60,stock:12,temp:'常溫',subs:[]})
-    ],
-    eagle:[
-      it({id:70001,pid:18001,name:'益生菌粉 30入',spec:'30 條',price:680,stock:53,temp:'常溫',subs:['進口菁品']})
-    ]
+  var PIC = {
+    '88021': 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp',
+    '88105': 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp'
   };
-  // 可加入的產品池（搜尋加入用）
-  var POOL=[
-    {id:88021,pid:19001,name:'台灣龍眼蜂蜜 小罐',spec:'250g',price:320,temp:'常溫',img:IMG1},
-    {id:88105,pid:19008,name:'冷壓初榨橄欖油 250ml',spec:'玻璃瓶',price:360,temp:'常溫',img:IMG2},
-    {id:88230,pid:19015,name:'手工原味餅乾 綜合',spec:'一盒',price:180,temp:'常溫',img:''},
-    {id:88342,pid:19022,name:'鮮乳坊 鮮奶 一瓶',spec:'936ml',price:95,temp:'冷藏',img:''}
-  ];
-
-  var line='direct', filter=new Set(), selected=new Set(), dragId=null, modalId=null, hideOff=false, dirty=false;
-  var $=function(id){ return document.getElementById(id); };
-  function rowsOfLine(){ return DATA[line]; }
-  function subcatsOfLine(){ return SUBCATS_BY_LINE[line]||[]; }
-  function visible(){ return rowsOfLine().filter(function(r){
-    if(hideOff && !r.display) return false;
-    if(filter.size && !r.subs.some(function(s){return filter.has(s);})) return false;
-    return true;
-  }); }
-  function setStatus(s){ var el=$('la-status'); if(!el)return; el.className='la-status is-'+s; el.textContent=(s==='saving'?'儲存中…':s==='dirty'?'改動尚未儲存':'無改動'); }
-  function markDirty(){ dirty=true; setStatus('dirty'); }
+  var PRODUCTS = {
+    '88021': { name: '台灣龍眼蜂蜜 小罐', line: '產地直送', temp: '常溫', specs: 2 },
+    '88105': { name: '冷壓初榨橄欖油 250ml', line: '蔬果乾貨', temp: '常溫', specs: 1 },
+    '88230': { name: '手工原味餅乾 綜合', line: '蔬果乾貨', temp: '常溫', specs: 3 },
+    '88342': { name: '鮮乳坊 鮮奶 一瓶', line: '生鮮肉舖', temp: '冷藏', specs: 1 }
+  };
   function tempCls(t){ return t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); }
-  function tempTag(t){ return '<span class="tt '+tempCls(t)+'">'+t+'</span>'; }
-  function thumb(img){ return '<span class="la-thumb'+(img?'':' is-empty')+'">'+(img?'<img src="'+img+'" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'is-empty\');this.remove();">':'')+'</span>'; }
 
-  function pills(r){
-    var p=[];
-    if(r.minPrice) p.push('滿額 '+money(r.minPrice));
-    if(r.vip) p.push('VIP限購');
-    if(r.firstBuy) p.push('首購限定');
-    if(r.shipping) p.push('含運');
-    return p.length? '<div class="la-pills">'+p.map(function(x){return '<span class="la-pill">'+x+'</span>';}).join('')+'</div>' : '';
-  }
-  function subsCell(r){
-    if(!r.subs.length) return '<span class="la-nolimit">不限</span>';
-    return '<div class="la-subs">'+r.subs.map(function(s){return '<span class="la-subtag">'+s+'</span>';}).join('')+'</div>';
+  var bound = null;
+
+  function setLocked(locked) {
+    document.getElementById('ac-spec-body').classList.toggle('is-locked', locked);
+    document.getElementById('ac-locked-msg').classList.toggle('is-hidden', !locked);
+    document.getElementById('ac-create').disabled = locked;
   }
 
-  // ── 產線頁籤 ──
-  $('la-tabs').innerHTML=LINES.map(function(l){ return '<button data-line="'+l[0]+'"'+(l[0]===line?' class="is-on"':'')+'>'+l[1]+'</button>'; }).join('');
-  $('la-tabs').addEventListener('click', function(e){ var b=e.target.closest('[data-line]'); if(!b)return;
-    line=b.getAttribute('data-line'); selected.clear();
-    $('la-tabs').querySelectorAll('button').forEach(function(x){x.classList.toggle('is-on', x.getAttribute('data-line')===line);});
-    renderChips(); render();
-  });
-
-  // ── 篩選 chips（依產線動態）──
-  function renderChips(){
-    filter.clear();
-    $('la-chips').innerHTML=subcatsOfLine().map(function(s){ return '<button class="la-chip" data-sub="'+s+'">'+s+'</button>'; }).join('');
-    $('la-clear').hidden=true;
+  function bind() {
+    var pid = document.getElementById('ac-pid').value.trim();
+    var err = document.getElementById('ac-bind-err');
+    var box = document.getElementById('ac-product');
+    var p = PRODUCTS[pid];
+    if (!p) {
+      err.textContent = pid ? ('找不到產品編號 ' + pid) : '請輸入產品 ID';
+      err.classList.remove('is-hidden'); box.classList.remove('is-shown'); bound = null; setLocked(true); return;
+    }
+    err.classList.add('is-hidden'); bound = { pid: pid, p: p };
+    document.getElementById('ac-pname').textContent = p.name + '（#' + pid + '）';
+    document.getElementById('ac-pic-box').innerHTML = PIC[pid] ? '<img src="' + PIC[pid] + '" alt="' + p.name + '">' : '商品圖';
+    document.getElementById('ac-pline').textContent = p.line;
+    document.getElementById('ac-ptemp').innerHTML = '<span class="ac-tt ' + tempCls(p.temp) + '">' + p.temp + '</span>';
+    document.getElementById('ac-pspecs').textContent = p.specs + ' 個';
+    box.classList.add('is-shown'); setLocked(false);
+    window.gox && window.gox.toast('已綁定「' + p.name + '」');
   }
-  $('la-chips').addEventListener('click', function(e){ var b=e.target.closest('[data-sub]'); if(!b)return;
-    var s=b.getAttribute('data-sub'); if(filter.has(s))filter.delete(s); else filter.add(s);
-    b.classList.toggle('is-on', filter.has(s)); $('la-clear').hidden=!filter.size; render();
-  });
-  $('la-clear').addEventListener('click', function(){ filter.clear(); this.hidden=true;
-    $('la-chips').querySelectorAll('.la-chip').forEach(function(x){x.classList.remove('is-on');}); render();
-  });
-  document.addEventListener('gox:switch', function(e){ if(e.target && e.target.id==='la-hideoff-sw'){ hideOff=e.target.classList.contains('is-on'); render(); } });
-  document.querySelector('.la-hideoff').addEventListener('click', function(e){ if(e.target.id!=='la-hideoff-sw') $('la-hideoff-sw').click(); });
+  document.getElementById('ac-bind').addEventListener('click', bind);
+  document.getElementById('ac-pid').addEventListener('keydown', function (e) { if (e.key === 'Enter') bind(); });
 
-  // ── 加入（可貼多筆規格ID，用空格／換行／逗號分隔；搜尋只是把 ID 帶進欄位，不直接加入）──
-  var ac=$('la-ac'), acIn=$('la-ac-input'), acList=$('la-ac-list');
-  var SEP=/[\s,，、]+/;
-  function tokens(){ return acIn.value.split(SEP).map(function(t){return t.trim();}).filter(Boolean); }
-  function lastToken(){ var v=acIn.value.replace(/[，、]/g,' '); var m=v.split(/[\s,]/); return (m[m.length-1]||'').trim(); }
-  function acDraw(){
-    var q=lastToken();
-    var existing=new Set(rowsOfLine().map(function(r){return r.id;}));
-    var inField=new Set(tokens());
-    var cs=POOL.filter(function(p){ return !existing.has(p.id) && !inField.has(String(p.id)) && (!q || (p.name+p.spec+p.id).indexOf(q)>=0); });
-    acList.innerHTML = cs.length? cs.map(function(p){ return '<button data-pick="'+p.id+'">'+p.name+tempTag(p.temp)+'<span class="r2">規格ID '+p.id+'・'+p.spec+'・'+money(p.price)+'</span></button>'; }).join('')
-      : '<div class="none">沒有可帶入的規格 ID</div>';
-  }
-  acIn.addEventListener('focus', function(){ acDraw(); ac.classList.add('is-open'); });
-  acIn.addEventListener('input', function(){ acDraw(); ac.classList.add('is-open'); });
-  // 點搜尋結果＝把該規格 ID 帶進欄位（取代最後一個未完成的 token），不直接加入
-  acList.addEventListener('mousedown', function(e){ var b=e.target.closest('[data-pick]'); if(!b)return; e.preventDefault();
-    var id=b.getAttribute('data-pick');
-    var toks=tokens();
-    var q=lastToken();
-    if(q && toks.length && toks[toks.length-1]===q) toks.pop();  // 移除未完成的最後 token
-    toks.push(id);
-    acIn.value=toks.join(' ')+' ';
-    acDraw(); acIn.focus();
+  function money(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+  document.getElementById('ac-create').addEventListener('click', function () {
+    var desc = document.getElementById('ac-desc').value.trim();
+    var price = document.getElementById('ac-price').value.trim();
+    var stock = document.getElementById('ac-stock').value.trim();
+    if (!desc) { window.gox.toast('請填寫規格描述'); document.getElementById('ac-desc').focus(); return; }
+    if (!price) { window.gox.toast('請填寫產品原價'); document.getElementById('ac-price').focus(); return; }
+    if (!stock) { window.gox.toast('請填寫剩餘數量'); document.getElementById('ac-stock').focus(); return; }
+    document.getElementById('ac-c-product').textContent = bound.p.name + '（#' + bound.pid + '）';
+    document.getElementById('ac-c-desc').textContent = desc;
+    document.getElementById('ac-c-price').textContent = money(Number(price));
+    document.getElementById('ac-c-stock').textContent = stock;
+    document.getElementById('ac-confirm').classList.remove('is-hidden');
   });
-  document.addEventListener('click', function(e){ if(!ac.contains(e.target)) ac.classList.remove('is-open'); });
-
-  $('la-add').addEventListener('click', function(){
-    var toks=tokens(); if(!toks.length){ acIn.focus(); ac.classList.add('is-open'); acDraw(); return; }
-    var existing=new Set(rowsOfLine().map(function(r){return r.id;}));
-    var added=[], notfound=[], dup=[], seen=new Set();
-    toks.forEach(function(t){
-      if(seen.has(t)) return; seen.add(t);
-      var p=POOL.find(function(x){ return String(x.id)===t; });
-      if(!p){ notfound.push(t); return; }
-      if(existing.has(p.id)){ dup.push(t); return; }
-      added.push(it({id:p.id,pid:p.pid,img:p.img,name:p.name,spec:p.spec,price:p.price,temp:p.temp,subs:[]}));
-      existing.add(p.id);
-    });
-    if(added.length){ var pos=$('la-add-pos').value;
-      DATA[line] = pos==='start' ? added.concat(DATA[line]) : DATA[line].concat(added); markDirty(); }
-    acIn.value=''; ac.classList.remove('is-open'); render();
-    var msg = added.length? ('已加入 '+added.length+' 筆（'+($('la-add-pos').value==='start'?'加到最前':'加到最後')+'）') : '沒有加入任何規格';
-    if(notfound.length) msg += '；查無：'+notfound.join('、');
-    if(dup.length) msg += '；已存在：'+dup.join('、');
-    window.gox&&window.gox.toast(msg);
+  document.getElementById('ac-c-ok').addEventListener('click', function () {
+    document.getElementById('ac-confirm').classList.add('is-hidden');
+    window.gox.toast('已建立加購品，接著設定折扣與掛載');
+    setTimeout(function () { location.href = 'admin-addon-setting.html'; }, 900);
   });
+  document.getElementById('ac-back').addEventListener('click', function () { location.href = 'admin-addon-list.html'; });
 
-  // ── 表格 render ──
-  function render(){
-    var rows=visible();
-    var body=$('la-body');
-    if(!rows.length){ body.innerHTML='<tr><td colspan="17" class="la-empty">'+(filter.size?'此篩選下沒有加購品':'這條產線尚未設定加購品，用上方搜尋加入')+'</td></tr>'; syncBars(); return; }
-    var full=rowsOfLine();
-    body.innerHTML=rows.map(function(r){
-      var idx=full.indexOf(r);
-      return '<tr draggable="true" data-id="'+r.id+'"'+(r.display?'':' class="is-off"')+'>'
-        + '<td class="cell-center"><input type="checkbox" class="la-pick" data-id="'+r.id+'"'+(selected.has(r.id)?' checked':'')+' style="width:16px;height:16px;accent-color:var(--gox-green);"></td>'
-        + '<td class="cell-center"><div class="la-ord"><span class="la-drag" title="拖曳排序">⠿</span><span class="no">'+(idx+1)+'</span>'
-          + '<button class="la-iconbtn" data-top="'+r.id+'" title="移到最前"'+(idx===0?' disabled':'')+'>↑</button>'
-          + '<button class="la-iconbtn" data-bottom="'+r.id+'" title="移到最後"'+(idx===full.length-1?' disabled':'')+'>↓</button></div></td>'
-        + '<td>'+thumb(r.img)+'</td>'
-        + '<td><div class="la-pname">'+r.name+'</div><div class="la-pid">#'+r.pid+'</div></td>'
-        + '<td><div class="la-pspec">'+r.spec+'</div><div class="la-pid">#'+r.id+'</div></td>'
-        + '<td class="cell-right la-mono">'+money(r.price)+'</td>'
-        + '<td class="cell-right la-mono">'+(r.disc?money(r.disc):'<span class="la-dash">—</span>')+'</td>'
-        + '<td class="cell-right la-mono la-stock'+(r.stock<=0?' is-zero':'')+'">'+r.stock+'</td>'
-        + '<td class="cell-center">'+tempTag(r.temp)+'</td>'
-        + '<td class="cell-center"><span class="gox-tag '+(r.display?'is-success':'')+'">'+(r.display?'上架':'下架')+'</span></td>'
-        + '<td>'+subsCell(r)+'</td>'
-        + '<td class="cell-right la-mono">'+(r.minPrice?money(r.minPrice):'<span class="la-dash">—</span>')+'</td>'
-        + '<td class="cell-center la-mono">'+(r.limit?r.limit+' 件':'<span class="la-dash">—</span>')+'</td>'
-        + '<td class="cell-center">'+(r.vip?'<span class="la-yes">VIP</span>':'<span class="la-dash">—</span>')+'</td>'
-        + '<td class="cell-center">'+(r.firstBuy?'<span class="la-yes">✓</span>':'<span class="la-dash">—</span>')+'</td>'
-        + '<td class="cell-center">'+(r.shipping?'<span class="la-yes">✓</span>':'<span class="la-dash">—</span>')+'</td>'
-        + '<td class="cell-center"><div class="la-ops"><button class="la-linkbtn" data-edit="'+r.id+'">編輯限購條件</button>'
-          + '<button class="la-linkbtn is-danger" data-rm="'+r.id+'">移除</button></div></td></tr>';
+  setLocked(true);
+
+  // 開發者面板
+  document.addEventListener('DOMContentLoaded', function () {
+    var devBar = document.getElementById('devbar');
+    devBar.querySelector('.toggle').addEventListener('click', function () { devBar.classList.toggle('is-open'); });
+    var devList = document.getElementById('dev-pids');
+    devList.innerHTML = Object.keys(PRODUCTS).map(function (pid) {
+      var dp = PRODUCTS[pid];
+      return '<button type="button" data-pid="' + pid + '"><b>' + pid + '</b>' + dp.name + '<span>' + dp.line + '・' + dp.temp + '</span></button>';
     }).join('');
-    syncBars();
-  }
-  function syncBars(){
-    var n=selected.size; $('la-delcnt').textContent=n; $('la-del').disabled=n===0;
-    var vis=visible();
-    $('la-all').checked = vis.length>0 && vis.every(function(r){return selected.has(r.id);});
-    $('la-all').indeterminate = n>0 && !$('la-all').checked;
-  }
-
-  // ── 表格互動 ──
-  $('la-body').addEventListener('click', function(e){
-    var pick=e.target.closest('.la-pick');
-    if(pick){ var id=Number(pick.getAttribute('data-id')); if(pick.checked)selected.add(id); else selected.delete(id); syncBars(); return; }
-    var top=e.target.closest('[data-top]'); if(top){ moveTo(Number(top.getAttribute('data-top')),'top'); return; }
-    var bot=e.target.closest('[data-bottom]'); if(bot){ moveTo(Number(bot.getAttribute('data-bottom')),'bottom'); return; }
-    var ed=e.target.closest('[data-edit]'); if(ed){ openEditModal(Number(ed.getAttribute('data-edit'))); return; }
-    var rm=e.target.closest('[data-rm]'); if(rm){ var rid=Number(rm.getAttribute('data-rm')); DATA[line]=DATA[line].filter(function(r){return r.id!==rid;}); selected.delete(rid); markDirty(); render(); return; }
+    devList.addEventListener('click', function (e) {
+      var pb = e.target.closest('[data-pid]'); if (!pb) return;
+      document.getElementById('ac-pid').value = pb.getAttribute('data-pid');
+      bind(); devBar.classList.remove('is-open');
+    });
   });
-  $('la-all').addEventListener('change', function(){ var vis=visible();
-    if(this.checked) vis.forEach(function(r){selected.add(r.id);}); else vis.forEach(function(r){selected.delete(r.id);}); render();
-  });
-  $('la-del').addEventListener('click', function(){ DATA[line]=DATA[line].filter(function(r){return !selected.has(r.id);}); selected.clear(); markDirty(); render(); });
-  $('la-save').addEventListener('click', function(){
-    var btn=this;
-    if(!dirty){ window.gox&&window.gox.toast('目前沒有變更'); return; }
-    setStatus('saving'); btn.disabled=true;
-    setTimeout(function(){ dirty=false; setStatus('clean'); btn.disabled=false;
-      window.gox&&window.gox.toast('已儲存「'+LINES.find(function(l){return l[0]===line;})[1]+'」的加購清單'); }, 800);
-  });
-
-  function moveTo(id,where){ var arr=DATA[line]; var i=arr.findIndex(function(r){return r.id===id;}); if(i<0)return;
-    var item=arr.splice(i,1)[0]; if(where==='top')arr.unshift(item); else arr.push(item); markDirty(); render(); }
-
-  // ── 拖曳排序 ──
-  var body=$('la-body');
-  body.addEventListener('dragstart', function(e){ var tr=e.target.closest('tr[data-id]'); if(!tr)return; dragId=Number(tr.dataset.id); tr.classList.add('is-drag'); e.dataTransfer.effectAllowed='move'; });
-  body.addEventListener('dragover', function(e){ if(dragId==null)return; e.preventDefault(); var tr=e.target.closest('tr[data-id]');
-    body.querySelectorAll('.is-over').forEach(function(x){x.classList.remove('is-over');});
-    if(tr && Number(tr.dataset.id)!==dragId) tr.classList.add('is-over'); });
-  body.addEventListener('drop', function(e){ if(dragId==null)return; e.preventDefault(); var tr=e.target.closest('tr[data-id]');
-    if(tr){ var targetId=Number(tr.dataset.id); var arr=DATA[line];
-      var from=arr.findIndex(function(r){return r.id===dragId;}), to=arr.findIndex(function(r){return r.id===targetId;});
-      if(from>=0&&to>=0&&from!==to){ var item=arr.splice(from,1)[0]; arr.splice(to,0,item); markDirty(); } }
-    dragId=null; render(); });
-  body.addEventListener('dragend', function(){ dragId=null; render(); });
-
-  // ── 編輯加購設定 modal（加購規則＋限定子分類，一次設定；依產線動態）──
-  var editId=null;
-  function openEditModal(id){ editId=id; var r=DATA[line].find(function(x){return x.id===id;}); if(!r)return;
-    $('la-edit-name').textContent=r.name;
-    $('la-edit-min').value=r.minPrice||'';
-    $('la-edit-limit').value=r.limit||'';
-    $('la-edit-subs').innerHTML=subcatsOfLine().map(function(s){ return '<label><input type="checkbox" value="'+s+'"'+(r.subs.indexOf(s)>=0?' checked':'')+'>'+s+'</label>'; }).join('');
-    $('la-edit-modal').classList.remove('is-hidden');
-  }
-  $('la-edit-ok').addEventListener('click', function(){ var r=DATA[line].find(function(x){return x.id===editId;}); if(r){
-    r.minPrice=Math.max(0, parseInt($('la-edit-min').value,10)||0);
-    r.limit=Math.max(0, parseInt($('la-edit-limit').value,10)||0);
-    r.subs=[...$('la-edit-subs').querySelectorAll('input:checked')].map(function(cb){return cb.value;}); markDirty(); }
-    $('la-edit-modal').classList.add('is-hidden'); render();
-  });
-
-  renderChips(); render();
 })();
 </script>
 

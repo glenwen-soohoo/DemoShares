@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 快速預覽彈窗・加價購商品
+  真相來源：D:\GreenBox\react-component-export（2221a6f）；加入菜籃 API 在 D:\GreenBox\fruit_web（d18f11e2a）；加購品明細投影 Product_Api（ddff3fd）
+  對應正式站：
+    component  : src/components/product/modal/info/index.tsx:37（快速預覽彈窗本體）
+    缺貨/售完   : src/components/product/modal/specs/addToCart.tsx 依 availableStatus（soldOut／endSale／notYetStart）disable 加入鈕
+                 ⚠ 是「disable 按鈕」不是彈確認框；舊說的 out-of-stock-gate.tsx 不存在
+    加入菜籃    : cartContext.tsx → fruit_web POST /Cart/AddToShoppingCartByModule（CartController.cs:269）
+  註：demo 的彈窗版型依主人提供的「線上舊版彈窗」截圖 1:1 還原（每規格帶數量下拉），與 react-component-export 未上線重構版不同；class qv-* 為 demo 自取。
+  這一頁的加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
+    加購品名   name ← Product.Name      規格 detail＋amt＋module（fullDetailDescription）
+    原價 Price   折後價 SellPrice ＝ DiscPrice ?? Price（DTO DiscountPrice ← DiscPrice）；折扣沿用 PromoteCode
+    溫層 temperatureType   封面圖 coverImg   剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
+  新功能（正式站尚無・提案命名・待新建）：
+    加購品主檔 ProductAddOn、配對 ProductAddOnMapping（§3-3）；APP 取清單 GET app/products/{productId}/addOns（§6-4）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>快速預覽彈窗・加價購商品｜無毒農 1:1 原型</title>
 <link rel="icon" href="data:,">
@@ -102,7 +119,7 @@
             <div class="qv-spec on">
               <div class="r0">規格：1 盒</div>
               <div class="desc">優選 5 斤裝，限購 1 盒</div>
-              <div class="row"><div><span class="now">$829</span><span class="ori">$920</span></div><span class="stock">剩餘：12 組</span></div>
+              <div class="row"><div><span class="now">$829</span><span class="ori">$920</span></div><span class="stock">剩餘：12 組<!-- 剩餘 ＝ Stock（OriginAmt − SoldAmt），非原始庫存 --></span></div>
             </div>
             <select><option>1</option></select>
           </div>
@@ -125,10 +142,14 @@
         </div>
 
         <!-- 加價購區塊（在加入菜籃上方・窄版・風格同結帳頁） -->
+        <!-- 整個 .coa 區塊為新功能，正式站尚無；class coa-* 為 demo 自取（無既有真名）。
+             data-price ＝ 加購折後價 SellPrice（折扣沿用 PromoteCode）；.o ← Price、.n ← SellPrice；
+             .nm ← name、.sub ← fullDetailDescription、.coa-temp ← temperatureType；
+             加購品本身是 ProductDetail，主商品與它的配對 ＝ ProductAddOnMapping（待新建） -->
         <div class="coa" id="addon">
           <div class="coa-prompt" id="addonToggle">優惠加購商品<span class="arrow">▾</span></div>
           <div class="coa-list" id="addonList" hidden>
-            <label class="coa-pk" data-price="360">
+            <label class="coa-pk" data-price="360"><!-- data-price ＝ SellPrice（折後價） -->
               <input type="checkbox">
               <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
               <div class="body">
@@ -162,6 +183,7 @@
         </div>
 
         <!-- 加入菜籃（主商品＋已勾加購，底部單一，文字依勾選動態） -->
+        <!-- 加入菜籃 → cartContext.tsx → fruit_web POST /Cart/AddToShoppingCartByModule（CartController.cs:269） -->
         <button class="qv-addcart" id="addcart"><i class="fa fa-shopping-cart"></i>加入菜籃</button>
 
         <div class="qv-divider"></div>

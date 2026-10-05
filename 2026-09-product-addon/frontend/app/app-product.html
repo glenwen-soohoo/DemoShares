@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | APP 商品詳情頁・加價購商品（React Native）
+  真相來源：D:\GreenBox\fruit_app（iOS/Android 同一套）；加購品明細投影 Product_Api（ddff3fd）
+  對應正式站：
+    screen     : src/screens/ProductDetailScreen（既有商品詳情頁；加購卡為新增區塊）
+    底部購買列  : ProductShoppingTab（既有）
+    色票        : fruit_app theme primary #4BA83B、red #FF4040；溫層 常溫#FFA451／冷藏#00D1FF／冷凍#3253FF
+  ⚠ 商品加購品的 APP 端是新功能，正式站尚無對應 screen／元件；加購卡 class addon-* 為 demo 自取。
+  APP 取加購清單 API（新 endpoint・待新建，§6-4）：
+    詳情頁取清單  GET app/products/{productId}/addOns
+    （既有 POST app/extraProducts ＝ Product_Api src/Web/EndPoints/Product.cs:102，只服務「產線加購品」，勿混用）
+  加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
+    名 name ← Product.Name；規格 fullDetailDescription；原價 Price（data-price ＝ 折後價 SellPrice ＝ DiscPrice ?? Price，折扣沿用 PromoteCode）；
+    溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
+  新資料表：ProductAddOn（主檔）、ProductAddOnMapping（配對）（§3-3，待新建）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>APP 商品詳情頁・加價購商品｜無毒農 1:1 原型</title>
 <link rel="icon" href="data:,">
@@ -137,10 +154,13 @@
         </div>
 
         <!-- 加價購卡（選購入口・§5-1 窄版） -->
+        <!-- 新功能・RN 端尚無此卡（待新建）。addon-* 為 demo 自取；data-price ＝ 折後價 SellPrice（折扣沿用 PromoteCode）；
+             .addon-name ← name、.addon-spec ← fullDetailDescription、.addon-temp ← temperatureType、.addon-thumb ← coverImg；
+             .o ← Price、.n ← SellPrice。清單來源 GET app/products/{productId}/addOns（待新建） -->
         <div class="card">
           <div class="addon-hd"><span class="t">加價購商品</span></div>
           <div class="addon-list" id="addonList">
-            <label class="addon-row" data-price="360">
+            <label class="addon-row" data-price="360"><!-- data-price ＝ SellPrice（折後價） -->
               <input type="checkbox" class="addon-ck">
               <img class="addon-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
               <div class="addon-info">
@@ -187,6 +207,7 @@
     <div class="shoptab">
       <div class="shoptab-in">
         <div class="cart"><i class="fa fa-shopping-cart"></i><span class="badge">2</span></div>
+        <!-- 加入購物車（含已勾加購）→ 走 APP 購物車 API（POST app/cart/productAddOns 回已/未加購，§6-4，待新建） -->
         <button class="add" id="ctaAdd">加入購物車</button>
       </div>
     </div>

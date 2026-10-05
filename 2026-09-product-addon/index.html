@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 商品頁加購品 demo・portal 入口
+  portal 無對應正式站 view（純 demo 索引頁，工程不需照抄）。
+  連到的子頁（各頁檔頭有自己的對照）：
+    前台：frontend/product-detail.html、frontend/checkout.html、frontend/quick-view.html、
+          frontend/cart/side-cart.html、frontend/app/app-product.html、frontend/app/app-cart.html
+    後台：backend/admin-addon-list.html、admin-addon-setting.html、admin-spec-addon.html、admin-lineaddon-setting.html
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>商品頁加購品 demo 索引</title>
 <link rel="icon" href="data:,">
@@ -40,27 +49,27 @@
   <div class="side">
     <h2>前台</h2>
     <div class="entries">
-      <a class="entry ready" href="product-detail.html">
+      <a class="entry ready" href="frontend/product-detail.html">
         <span class="name">商品詳情頁</span>
         <span class="desc">商品資訊卡片下方的加價購區塊。</span>
       </a>
-      <a class="entry ready" href="checkout.html">
+      <a class="entry ready" href="frontend/checkout.html">
         <span class="name">結帳頁</span>
         <span class="desc">加購品掛在主商品列下方，可就地選購。</span>
       </a>
-      <a class="entry ready" href="quick-view.html">
+      <a class="entry ready" href="frontend/quick-view.html">
         <span class="name">快速預覽彈窗</span>
         <span class="desc">列表頁快速預覽彈窗的加購區塊。</span>
       </a>
-      <a class="entry ready" href="side-cart.html">
+      <a class="entry ready" href="frontend/cart/side-cart.html">
         <span class="name">側邊購物車</span>
         <span class="desc">唯讀呈現已購入加購品，縮排掛在主商品下。</span>
       </a>
-      <a class="entry ready" href="app-product.html">
+      <a class="entry ready" href="frontend/app/app-product.html">
         <span class="name">APP 商品詳情頁</span>
         <span class="desc">App 商品詳情頁的加購卡。</span>
       </a>
-      <a class="entry ready" href="app-cart.html">
+      <a class="entry ready" href="frontend/app/app-cart.html">
         <span class="name">APP 購物車</span>
         <span class="desc">App 購物車的加購品：已加購框＋可加購下拉，金額即時重算。</span>
       </a>
@@ -70,19 +79,19 @@
   <div class="side">
     <h2>後台</h2>
     <div class="entries">
-      <a class="entry ready" href="admin-addon-list.html">
+      <a class="entry ready" href="backend/admin-addon-list.html">
         <span class="name">產品頁加購・設定列表</span>
         <span class="desc">依加購品／依主商品兩檢視、產線篩選與搜尋；右上「批次操作」一次掛載或取下。</span>
       </a>
-      <a class="entry ready" href="admin-addon-setting.html">
+      <a class="entry ready" href="backend/admin-addon-setting.html">
         <span class="name">產品頁加購・編輯設定</span>
         <span class="desc">從列表進入，設一筆加購品的折扣與要掛的主商品，可切換編輯對象。</span>
       </a>
-      <a class="entry ready" href="admin-spec-addon.html">
+      <a class="entry ready" href="backend/admin-spec-addon.html">
         <span class="name">產品編輯頁・規格設定</span>
         <span class="desc">在產品規格編輯頁勾「可作為加購品」，就地展開設折扣（同一份資料）。</span>
       </a>
-      <a class="entry ready" href="admin-lineaddon-setting.html">
+      <a class="entry ready" href="backend/admin-lineaddon-setting.html">
         <span class="name">產線加購品設定（限定子分類）</span>
         <span class="desc">整條產線共用一份加購清單，擴充「限定子分類」：可篩選、加入複選、標籤欄。</span>
       </a>

@@ -1,6 +1,31 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+  <!--
+    DemoShares 交接對照 | 商品詳情頁・加價購商品
+    真相來源：D:\GreenBox\fruit_web dev（d18f11e2a）；加購品明細投影 D:\GreenBox\Product_Api（ddff3fd）
+    對應正式站（加購區塊掛在這個 view）：
+      view       : HuashanCRM/Views/Products/ItemDetail.cshtml
+      controller : ProductsController.ItemDetail(int id)  ＠68、220
+      model      : ItemDetailViewModel
+      js         : Scripts/Web/ProductsDetail.js
+      route      : /Products/ItemDetail/{id}
+      css        : greenbox.tw/Dist/Css/Product/ItemDeail-min.css ⚠ 真站拼字就是 ItemDeail（少一個 t），別改成 ItemDetail
+    這一頁的加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
+      加購品名     name            ← 實體 Product.Name
+      規格描述     detail＋amt＋module  顯示組成 fullDetailDescription
+      原價         Price
+      加購折後價   SellPrice ＝ DiscPrice ?? Price（DTO DiscountPrice ← 實體 DiscPrice）；加購折扣沿用 PromoteCode
+      溫層         temperatureType
+      封面圖       coverImg
+      剩餘數量     Stock ＝ OriginAmt − SoldAmt（clamp≥0）⚠ 不是原始庫存 OriginAmt
+    新功能（正式站尚無，命名為提案・待新建）：
+      加購品主檔         ProductAddOn（新表，§3-3）
+      主商品－加購品配對  ProductAddOnMapping（新表，§3-3）
+      APP 詳情頁取加購清單  GET app/products/{productId}/addOns（新 endpoint，§6-4）；web 端沿用 ItemDetail 的 Model/ViewBag 帶出
+    加入菜籃 API：POST /Cart/AddToShoppingCartByModule（CartController.cs:269）
+    完整名稱對照見同資料夾 _交接對照.md
+  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>商品詳情頁・加價購商品｜無毒農 1:1 原型</title>
@@ -242,9 +267,10 @@
               <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option>
             </select>
             &emsp;&ensp;
-            <label><span style="color:#4ba83b;font-size:16px;font-weight:normal">剩餘 <span>7</span> 盒</span></label>
+            <label><span style="color:#4ba83b;font-size:16px;font-weight:normal">剩餘 <span>7</span> 盒<!-- 剩餘數量 ＝ Stock（OriginAmt − SoldAmt），非原始庫存 --></span></label>
           </div>
           <div class="col-xs-12 m-t-10 p-0">
+            <!-- 加入菜籃 → POST /Cart/AddToShoppingCartByModule（CartController.cs:269）；含已勾加購品一併送 -->
             <a href="javascript:void(0)" class="buybutton" id="btnBuy"><i class="fa fa-shopping-basket"></i> 加入菜籃</a>
           </div>
         </div>
@@ -252,6 +278,12 @@
     </div>
 
     <!-- ======= 加價購商品（新功能・全寬，接在商品資訊卡片下方） ======= -->
+    <!-- 整個 .addon 區塊為新功能，正式站尚無對應 markup；工程於 ItemDetail.cshtml 新增。
+         class 均為 demo 自取（新功能無既有真名），不須改名；資料對應：
+           .addon-name  ← name（Product.Name）   .addon-spec ← fullDetailDescription
+           .addon-price .orig ← Price            .addon-price .now ← SellPrice（折扣沿用 PromoteCode）
+           .addon-temp ← temperatureType         .addon-thumb ← coverImg
+           每項加購品本身仍是一筆 ProductDetail；主商品與它的配對 ＝ ProductAddOnMapping（待新建） -->
     <div class="col-xs-12 p-0">
       <section class="addon" id="addon">
         <div class="addon-head">加價購商品（<span id="addonCount">0</span>）<span class="note">勾選後與主商品一併結帳，每項限購 3 件</span></div>

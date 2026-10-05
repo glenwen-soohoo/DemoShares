@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 側邊購物車・加價購商品
+  真相來源：D:\GreenBox\platform-components-webpack（5201d8f）＝獨立 repo（React＋MUI Drawer＋Tailwind）
+  對應正式站：
+    components : src/components/cart/（original／sameDay 兩種購物車）
+    css/溫層色  : src/styles/cart.css（常溫 #ff8e88／冷藏 #73bf00／冷凍 #cff6ff）
+  加購品明細真名（跨前端共用・＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs，commit ddff3fd）：
+    名 name ← Product.Name；規格 fullDetailDescription；原價 Price；折後價 SellPrice ＝ DiscPrice ?? Price（折扣沿用 PromoteCode）；
+    溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
+  新功能・商品加購品（正式站尚無・待新建）：
+    資料表 ProductAddOn（主檔）、ProductAddOnMapping（主商品－加購品配對）、OrderDetailAddOn（訂單標記，§6-3）
+    本頁依 §7-1 為唯讀呈現（＋依主人指示保留刪除）；class sc-coa-* 為 demo 自取（新功能無既有真名）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>側邊購物車・加價購商品｜無毒農 1:1 原型</title>
 <link rel="icon" href="data:,">
@@ -117,9 +131,12 @@
           </div>
           <button class="rm" title="移除商品"><i class="fa fa-trash"></i></button>
         </div>
+        <!-- 新功能：商品加購品（唯讀呈現）。sc-coa-* 為 demo 自取（無既有真名）；
+             data-price ＝ 加購折後價 SellPrice（折扣沿用 PromoteCode）；.o ← Price、.n ← SellPrice；
+             .nm ← name、.sub ← fullDetailDescription；外層 data-temp（normal/refrigerated）← temperatureType -->
         <div class="sc-coa">
           <div class="sc-coa-title">加價購商品</div>
-          <div class="sc-coa-row" data-price="360">
+          <div class="sc-coa-row" data-price="360"><!-- data-price ＝ SellPrice（折後價） -->
             <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
             <div class="body">
               <div class="nm">【冷壓初榨苦茶油】小農直送</div>

@@ -1,6 +1,30 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 規格編輯・加購設定（admin-spec-addon.html・路徑二・規格內嵌）
+  真相來源（demo 對齊的 commit；行號會隨後續推進漂移，請以錨點 id／函式名為準）：
+    fruit_web              D:\GreenBox\fruit_web              分支 dev（commit d18f11e2a）
+    React-Component-Export D:\GreenBox\react-component-export 分支 dev（commit 2221a6f）
+  對應正式站（既有規格編輯頁；加購欄位＝內嵌新增）：
+    掛載點     HuashanCRM/Areas/GoX/Views/Product/Edit18.cshtml:365  <div id="product-detail-settings">
+    bundle載入 Edit18.cshtml:33  product-detail-settings.js（:607 註解「antd 規格欄位」）
+    驗證       window.productDetailsValidateFields()
+    元件源     react-component-export/src/pages/productSetting/productDetailSettings/ProductDetailSettings.tsx
+               （禮物券 admin-product-spec 也是 clone 這支）
+  這一頁的真實欄位名（既有規格欄位＝ProductDetail／CartProductDetailDto，工程直接對）：
+    規格ID id→productDetailId / 規格描述 detail→Detail / 規格量 amount→Amt / 單位 unit→Module
+    產品原價 price→Price / 產品優惠價 disc→DiscPrice(DTO DiscountPrice)
+    庫存量 stock→OriginAmt ⚠不是剩餘 / 銷售量 sold→SoldAmt / 成本 cost→Cost / 運費 freight
+    預計出貨日 ship→OrdersTime ⚠出貨日不是下單時間 / 開始結束販售 start,end→StartTime,EndTime
+    自動延後區間 delay→Delay / 上架 display→Display / 是否貨到付款 cod
+    滿額可購買 isMin,minPrice→MinimumPrice / 限購 limit→Limit
+  本頁「加購」新增部分（正式站還沒有，待新建）：
+    可作為加購品   勾選欄 addon  → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）
+    加購折扣       aMode/aVal/aStart/aEnd → 沿用 PromoteCode（固定金額 or 百分比；生效起訖）
+    掛載主商品     aMains → ProductAddOnMapping（ProductId / ProductAddOnId / IsOnShelf）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>規格編輯・加購設定 — 後台 demo</title>
 <link rel="icon" href="data:,">
@@ -1112,6 +1136,7 @@ a:hover { text-decoration: underline; }
     h += '<div class="fi" style="margin-bottom:24px;">' + num(i, 'limit', s.limit, lock, 'maxw56') + '</div>';
     h += '</div>';
     // 加購入口：比照既有規格限制項，群組尾端新增（與其他 checkbox 同一套 antd 樣式）
+    // 'addon'（可作為加購品）＝待新建欄位，建議 IsAddOn；勾選即把此規格登記成 ProductAddOn
     h += chk(i, 'addon', '可作為加購品', s.addon);
     h += '</div></div>';
 

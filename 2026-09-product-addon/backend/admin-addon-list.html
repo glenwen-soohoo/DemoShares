@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 產品頁加購設定・列表頁（admin-addon-list.html）
+  ⚠ 全新機制：正式站目前沒有「商品加購品」後台，list／create／setting 整批待新建。
+  名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\需求規格.md §3-3
+  對應正式站：
+    view       : 待新建
+    controller : 待新建（寫入走 Product_Api(EF) 或 GoX＝待工程定案）
+    route      : 待新建
+  這一頁的真實欄位名（＝待新建的新表欄位，以下為建議命名）：
+    加購品主檔          ProductAddOn（折扣與「加購品上下架」歸此檔＝兩層狀態的外層）
+    主商品－加購品配對  ProductAddOnMapping（ProductId / ProductAddOnId / IsOnShelf / Sort；唯一鍵 (ProductId,ProductAddOnId)）
+    產線（篩選器）      Product.Type              ⚠ 是 Product.Type，不是 ProductDetail
+    折抵方式/折抵值     沿用既有 PromoteCode；後台輸入 0.XX 倍率（折後＝原價×倍率）
+    剩餘數量           OriginAmt − SoldAmt       ⚠ 是算出來的剩餘，不是原始庫存量
+    上架（依加購品欄）  ProductAddOn 上下架
+    上架（配對）        ProductAddOnMapping.IsOnShelf
+  這一頁打的真實 API：待新建（讀清單 / 切上下架 / 批次配對，皆待工程定案）
+  本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-on-addon/data-on-main/data-tab）為自由命名，勿照抄進 codebase。
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>產品頁加購設定列表 — 後台 demo</title>
 <link rel="icon" href="data:,">
@@ -849,6 +869,9 @@ a:hover { text-decoration: underline; }
   var IMG1 = 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp';
   var IMG2 = 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp';
   var IMG3 = 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg';
+  // ADDONS：加購品列表資料（待新建 ProductAddOn）。id→加購品主檔PK；line→Product.Type；
+  //   mode/val→折扣沿用 PromoteCode；orig→Price；start/end→折扣生效期間(PromoteCode)；
+  //   mains→掛載主商品數(count of ProductAddOnMapping)；stock→OriginAmt-SoldAmt(剩餘，非原始庫存)；on→ProductAddOn 上下架
   var ADDONS = [
     { id:99753, name:'316 不鏽鋼保溫瓶 500ml', img:IMG1, line:'產地直送', temp:'常溫', mode:'fixed', val:50, orig:399, start:'2026/09/01', end:'2026/09/30', mains:3, stock:128, on:true },
     { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', mode:'percent', val:8, orig:299, start:'', end:'', mains:1, stock:64, on:true },
@@ -927,6 +950,7 @@ a:hover { text-decoration: underline; }
   ];
   function tempTag(t){ if(!t) return ''; var c = t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); return '<span class="tt '+c+'">'+t+'</span>'; }
   function tagOf(arr,id){ var x=arr.find(function(o){return o.id===id;}); return x?tempTag(x.temp):''; }
+  // pairs：主商品-加購品配對（待新建 ProductAddOnMapping，鍵＝addonId-mainId，對 ProductAddOnId-ProductId）
   var pairs = new Set();
   [50001,50002,50003,50004,50005].forEach(function(a){ pairs.add(a+'-33012'); pairs.add(a+'-60088'); });
   pairs.add('36007-40894'); pairs.add('101509-40894'); pairs.add('101509-55210');

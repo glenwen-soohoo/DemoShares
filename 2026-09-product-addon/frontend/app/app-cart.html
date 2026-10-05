@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | APP 購物車・加價購商品（React Native）
+  真相來源：D:\GreenBox\fruit_app（iOS/Android 同一套）；加購品明細投影 Product_Api（ddff3fd）
+  對應正式站：
+    screen     : src/screens/CartScreen（既有購物車）；底部 BottomTab、產線分組 ProductGroups、商品列 ProductItem 均既有
+    色票        : fruit_app theme primary #4BA83B、red #FF4040；溫層 常溫#FFA451／冷藏#00D1FF
+  本頁含兩套獨立機制：
+    (1) 既有「加購專區」.extra-*（產線加購品／超值加購）＝既有 ExtraProducts，API 既有
+        POST app/extraProducts（Product_Api src/Web/EndPoints/Product.cs:102，只服務產線加購品）
+    (2) 新功能「單一商品加購」.acoa-*（掛主商品下）＝本次新增，RN 端尚無；class acoa-* 為 demo 自取。
+        購物車回已/未加購 API（新 endpoint・待新建，§6-4）：POST app/cart/productAddOns
+  加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
+    名 name ← Product.Name；規格 fullDetailDescription；原價 Price；折後價 SellPrice ＝ DiscPrice ?? Price（data-price，折扣沿用 PromoteCode）；
+    溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）；每項限購 data-max ＝ limit
+  新資料表：ProductAddOn（主檔）、ProductAddOnMapping（配對）、OrderDetailAddOn（訂單標記，§6-3）（待新建）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>APP 購物車・加價購商品｜無毒農 1:1 原型</title>
 <link rel="icon" href="data:,">
@@ -174,6 +191,10 @@
             </div>
           </div>
           <!-- ①的加購（單一商品加入・掛主商品下）：已加入置頂恆顯示；未加入收在下拉列內 -->
+          <!-- 新功能：單一商品加購（非既有 ExtraProducts）。acoa-* 為 demo 自取（無既有真名）。
+               data-price ＝ 折後價 SellPrice（.o←Price、.n←SellPrice，折扣沿用 PromoteCode）；
+               data-max ＝ 每項限購 limit；data-added 為 demo 狀態旗標（非後端欄位，加/未加由 OrderDetailAddOn 標記）；
+               .acoa-nm ← name、.acoa-spec ← fullDetailDescription、.acoa-temp ← temperatureType -->
           <div class="acoa" data-line="origin">
             <div class="acoa-item" data-price="360" data-max="3" data-added="1">
               <div class="acoa-thumb-wrap"><img class="acoa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt=""><span class="acoa-badge"></span></div>
@@ -266,6 +287,8 @@
         </div>
       </div>
       <!-- 加購專區（產線加購品／超值加購・既有 ExtraProducts 機制，1:1；與上方單品加購並存、兩套獨立機制） -->
+      <!-- 既有機制：加購專區（產線加購品／超值加購）＝ ExtraProducts，API 既有 POST app/extraProducts
+           （Product_Api src/Web/EndPoints/Product.cs:102）。extra-* 為 demo 自取；與上方 .acoa 單一商品加購為兩套獨立機制。 -->
       <div class="extra">
         <div class="extra-headline">加購專區</div>
         <div class="extra-detail">
