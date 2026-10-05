@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 商品頁｜檢驗報告
+  真相來源：D:\GreenBox\fruit_web（c262bcff7，2026-09-30 讀；開工前在 DEV-3977 分支再對一次行號）
+  對應正式站：
+    view       : HuashanCRM/Views/Products/ItemDetail.cshtml（按鈕 :599-605、彈窗 CSS＋markup :1690-1759、渲染 JS :1917-2005）
+    partial    : HuashanCRM/Views/Products/Partial/_ProductPurchasePartialView.cshtml:203-207  ⚠ :457-472 讀 API 格式錯，要一起修
+    controller : ProductsController.GetProductTestReport（Controllers/ProductsController.cs:776-868）
+    model      : ProductsModel.cs:1942-1963 hasTestReport
+  這一頁的真實欄位名：
+    按鈕出現條件  Model.ProductInfo.HasTestReport（沒報告就不出現按鈕，2026-09-30 確認維持）
+    彈窗          #examine_modal / .examine-tabs / .examine-tab / .examine-body（demo 照抄）
+    報告版面      .rp-* 為新 CSS（待新建）
+  這一頁打的真實 API：
+    GET /Products/GetProductTestReport?pid=  → 既有 SelfStructured / SelfImages / ThirdImages，新增 SelfMicrobial（待新建）
+  開發預覽面板 demo 專用，不要做
+  完整名稱對照見同資料夾 _交接對照.md
+-->
+
 <meta charset="UTF-8">
 <title>商品頁檢驗報告 (demo)</title>
 <link rel="icon" href="data:,">
@@ -324,7 +342,7 @@ img { vertical-align: middle; }
 <script>
 /* 檢驗紀錄 demo 共用資料層：後台頁與前台頁共用同一份 localStorage，後台改了前台會跟著變 */
 window.INSP = (function () {
-  var KEY = 'gb-inspection-demo-v2';
+  var KEY = 'gb-inspection-demo-v4';  // B 版；A 版（-a.html）用 v2，兩版資料互不干擾
 
   var ITEMS = ['大腸桿菌群', '沙門氏菌', '李斯特菌', '腸桿菌科', '金黃色葡萄球菌'];
   var RESULTS = ['陰性', '不合格'];
@@ -358,23 +376,23 @@ window.INSP = (function () {
   ];
 
   var BARCODES = {
-    '4717208310254': { erpName: '阿婆肉圓(6入)', productIds: [28417, 28418] },
-    '4719865002371': { erpName: '鮮蝦餛飩20入', productIds: [30152] },
-    '4711432006614': { erpName: '高麗菜豬肉水餃30入', productIds: [31201] },
-    '4718890231457': { erpName: '鱸魚片300g', productIds: [31202] },
-    '4716027705532': { erpName: '豬肉貢丸600g', productIds: [31203] },
-    '4710088430126': { erpName: '有機無糖豆漿950', productIds: [26803] },
-    '4712205518840': { erpName: '有機板豆腐400g', productIds: [26811] },
-    '4713377092265': { erpName: '小農鮮乳936', productIds: [26812] },
-    '4719102368871': { erpName: '希臘優格450g', productIds: [26813] },
-    '4713502116489': { erpName: '南瓜雞肉粥6入', productIds: [31077] },
-    '4713502116496': { erpName: '鮭魚時蔬粥6入', productIds: [31081] },
-    '4713502116502': { erpName: '牛肉燉飯6入', productIds: [31082] },
-    '4712970045518': { erpName: '玉荷包禮盒3斤', productIds: [29560] },
-    '4714458801239': { erpName: '無籽檸檬5斤', productIds: [29571] },
-    '4714458801246': { erpName: '鳳梨釋迦6顆', productIds: [29572] },
-    '4715631907724': { erpName: '紅藜麥蛋捲(試產)', productIds: [] },
-    '4715631907731': { erpName: '桂圓核桃酥(試產)', productIds: [] }
+    '4717208310256': { erpName: '阿婆肉圓(6入)', productIds: [28417, 28418] },
+    '4719865002376': { erpName: '鮮蝦餛飩20入', productIds: [30152] },
+    '4711432006619': { erpName: '高麗菜豬肉水餃30入', productIds: [31201] },
+    '4718890231454': { erpName: '鱸魚片300g', productIds: [31202] },
+    '4716027705533': { erpName: '豬肉貢丸600g', productIds: [31203] },
+    '4710088430120': { erpName: '有機無糖豆漿950', productIds: [26803] },
+    '4712205518841': { erpName: '有機板豆腐400g', productIds: [26811] },
+    '4713377092269': { erpName: '小農鮮乳936', productIds: [26812] },
+    '4719102368876': { erpName: '希臘優格450g', productIds: [26813] },
+    '4713502116488': { erpName: '南瓜雞肉粥6入', productIds: [31077] },
+    '4713502116495': { erpName: '鮭魚時蔬粥6入', productIds: [31081] },
+    '4713502116501': { erpName: '牛肉燉飯6入', productIds: [31082] },
+    '4712970045511': { erpName: '玉荷包禮盒3斤', productIds: [29560] },
+    '4714458801237': { erpName: '無籽檸檬5斤', productIds: [29571] },
+    '4714458801244': { erpName: '鳳梨釋迦6顆', productIds: [29572] },
+    '4715631907722': { erpName: '紅藜麥蛋捲(試產)', productIds: [] },
+    '4715631907739': { erpName: '桂圓核桃酥(試產)', productIds: [] }
   };
 
   // 比照既有到期提醒信的分組（ScheduleController.ProductTestReportRemind）
@@ -437,27 +455,29 @@ window.INSP = (function () {
         items: items(A(), B(), L(), null), mfg: D(-2), exp: D(178) }), 1),
       mk(C(0, 1), '有機無糖豆漿950', '台東有機無糖豆漿', { storage: '冷藏', qty: '1瓶', recv: D(-1), insp: D(0), st: '檢驗中',   // 部分結果、未填有效日期
         items: items(A('陰性'), B(), L(), null), mfg: D(-2), exp: '' }),
-      withPhotos(mk(C(-1, 1), '無籽檸檬5斤', '屏東無籽檸檬', { storage: '常溫', qty: '1箱', recv: D(-3), insp: D(-1), st: '完成', // 驗完、還沒發布，可以直接切處理完成
+      withPhotos(mk(C(-1, 1), '無籽檸檬5斤', '屏東無籽檸檬', { storage: '常溫', qty: '1箱', recv: D(-3), insp: D(-1), st: '完成', // 驗完、還沒發布，可以直接切上架
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-5), exp: D(30) }), 2),
       mk(C(-2, 1), '高麗菜豬肉水餃30入', '高麗菜豬肉手工水餃', { storage: '冷凍', qty: '1包', recv: D(-4), insp: D(-2), st: '重新送驗', // 重新送驗
         items: items(A('陰性'), B('不合格'), L('陰性'), null), mfg: D(-10), exp: D(170) }),
       mk(C(-30, 1), '玉荷包禮盒3斤', '屏東玉荷包禮盒', { storage: '冷藏', qty: '1盒', recv: D(-30), insp: D(-30), st: '取消',   // 取消
         items: items(A(), B(), null, null), mfg: '', exp: '' }),
       // ── 上架中分頁 ──
-      withPhotos(mk(C(-3, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-5), insp: D(-3), st: '完成', ps: '處理完成', done: D(-2), // 一條碼對 2 個商品、2 張照片
+      withPhotos(mk(C(-3, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-5), insp: D(-3), st: '完成', ps: '上架', done: D(-2), // 一條碼對 2 個商品、2 張照片
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-12), exp: D(160) }), 2),
-      mk(C(-14, 2), '鮮蝦餛飩20入', '花蓮鮮蝦餛飩', { storage: '冷凍', qty: '1盒', recv: D(-16), insp: D(-14), st: '完成', ps: '處理完成', done: D(-12), // 冷凍專區不合格
+      mk(C(-14, 2), '鮮蝦餛飩20入', '花蓮鮮蝦餛飩', { storage: '冷凍', qty: '1盒', recv: D(-16), insp: D(-14), st: '完成', ps: '上架', done: D(-12), // 冷凍專區不合格
         items: items(A('陰性'), B('陰性'), L('不合格'), ['腸桿菌科', '陰性']), mfg: D(-18), exp: D(92) }),
-      withPhotos(mk(C(-6, 1), '有機板豆腐400g', '非基改有機板豆腐', { storage: '冷藏', qty: '1盒', recv: D(-7), insp: D(-6), st: '完成', ps: '處理完成', done: D(-5), // 4 個項目全用、3 張照片
+      withPhotos(mk(C(-6, 1), '有機板豆腐400g', '非基改有機板豆腐', { storage: '冷藏', qty: '1盒', recv: D(-7), insp: D(-6), st: '完成', ps: '上架', done: D(-5), // 4 個項目全用、3 張照片
         items: items(A('陰性'), B('陰性'), ['腸桿菌科', '陰性'], ['金黃色葡萄球菌', '陰性']), mfg: D(-8), exp: D(10) }), 3),
-      mk(C(-9, 1), '鳳梨釋迦6顆', '台東鳳梨釋迦', { storage: '常溫', qty: '1箱', recv: D(-10), insp: D(-9), st: '完成', ps: '處理完成', done: D(-8), // 產地直送不合格
+      mk(C(-9, 1), '鳳梨釋迦6顆', '台東鳳梨釋迦', { storage: '常溫', qty: '1箱', recv: D(-10), insp: D(-9), st: '完成', ps: '上架', done: D(-8), // 產地直送不合格
         items: items(A('不合格'), B('陰性'), null, null), mfg: D(-11), exp: D(20) }),
-      mk(C(-8, 1), '桂圓核桃酥(試產)', '桂圓核桃酥', { storage: '常溫', qty: '1盒', recv: D(-9), insp: D(-8), st: '完成', ps: '處理完成', done: D(-7), // 已發布但條碼沒綁商品
+      mk(C(-4, 1), '小農鮮乳936', '小農鮮乳', { storage: '冷藏', qty: '1瓶', recv: D(-5), insp: D(-4), st: '完成', ps: '不顯示', // 不顯示：填齊了但先不放前台
+        items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-6), exp: D(12) }),
+      mk(C(-8, 1), '桂圓核桃酥(試產)', '桂圓核桃酥', { storage: '常溫', qty: '1盒', recv: D(-9), insp: D(-8), st: '完成', ps: '上架', done: D(-7), // 已發布但條碼沒綁商品
         items: items(A('陰性'), B('陰性'), null, null), mfg: D(-15), exp: D(120) }),
       // ── 下架／過期分頁 ──
-      mk(C(-40, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-42), insp: D(-40), st: '完成', ps: '處理完成', done: D(-38), // 被新報告取代、還沒過期
+      mk(C(-40, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-42), insp: D(-40), st: '完成', ps: '上架', done: D(-38), // 被新報告取代、還沒過期
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-50), exp: D(130) }),
-      mk(C(-95, 1), '鱸魚片300g', '澎湖鱸魚片', { storage: '冷凍', qty: '1片', recv: D(-97), insp: D(-95), st: '完成', ps: '處理完成', done: D(-93), // 過期
+      mk(C(-95, 1), '鱸魚片300g', '澎湖鱸魚片', { storage: '冷凍', qty: '1片', recv: D(-97), insp: D(-95), st: '完成', ps: '上架', done: D(-93), // 過期
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-110), exp: D(-20) }),
       mk(C(-60, 1), '豬肉貢丸600g', '新竹豬肉貢丸', { storage: '冷凍', qty: '1包', recv: D(-61), insp: D(-60), st: '檢驗中', // 處理中但已過期（一直沒做完）
         items: items(A('陰性'), B(), null, null), mfg: D(-70), exp: D(-5) })
@@ -479,17 +499,17 @@ window.INSP = (function () {
         mfg: D(-back - 5), exp: i % 4 === 1 ? '' : D(150 - i) }));
     }
     // 上架中：每個還沒有報告的商品各補一份最新的（一個商品只會有一份在上架中）
-    var live = {}; list.forEach(function (r) { if (r.processStatus === '處理完成') live[r.barcode] = true; });
+    var live = {}; list.forEach(function (r) { if (r.processStatus === '上架') live[r.barcode] = true; });
     codes.forEach(function (c, k) {
       if (live[c]) return;
       var back = 4 + k;
-      list.push(rec(compact(D(-back)) + '20', c, nameOf(c), { storage: '冷凍', qty: '1包', recv: D(-back - 2), insp: D(-back), st: '完成', ps: '處理完成', done: D(-back + 1),
+      list.push(rec(compact(D(-back)) + '20', c, nameOf(c), { storage: '冷凍', qty: '1包', recv: D(-back - 2), insp: D(-back), st: '完成', ps: '上架', done: D(-back + 1),
         items: items(['大腸桿菌群', '陰性'], ['沙門氏菌', k === 3 ? '不合格' : '陰性'], ['李斯特菌', '陰性'], null), mfg: D(-back - 7), exp: D(90 + k) }));
     });
     // 下架／過期 +30 筆：過去半年的舊報告，一半被取代、一半過期
     for (var j = 0; j < 30; j++) {
       var cc = codes[j % codes.length], b2 = 30 + j * 5;
-      list.push(rec(compact(D(-b2)) + pad(30 + (j % 3)), cc, nameOf(cc), { storage: '冷凍', qty: '1包', recv: D(-b2 - 2), insp: D(-b2), st: '完成', ps: '處理完成', done: D(-b2 + 2),
+      list.push(rec(compact(D(-b2)) + pad(30 + (j % 3)), cc, nameOf(cc), { storage: '冷凍', qty: '1包', recv: D(-b2 - 2), insp: D(-b2), st: '完成', ps: '上架', done: D(-b2 + 2),
         items: items(['大腸桿菌群', '陰性'], ['沙門氏菌', j % 9 === 4 ? '不合格' : '陰性'], ['李斯特菌', '陰性'], null),
         mfg: D(-b2 - 6), exp: j % 2 ? D(-b2 + 60) : D(200 - j) }));
     }
@@ -537,8 +557,47 @@ window.INSP = (function () {
 
   function photosOf(r) { return r.photos || []; }
   // 檔名＝紀錄編號-兩碼序號，序號不回收（正式版理由：CDN 長效快取，同網址換圖會看到舊圖）
+  // srcs 每一項可以是圖片字串，或 { src, barcode }（barcode＝這張照片偵測到的國際條碼）
   function nameNext(no, seq, srcs, at) {
-    return srcs.map(function (s, i) { return { src: s, at: at, file: no + '-' + pad(seq + i + 1) + '.jpg' }; });
+    return srcs.map(function (s, i) {
+      var o = typeof s === 'string' ? { src: s } : s;
+      return { src: o.src, barcode: o.barcode || '', at: at, file: no + '-' + pad(seq + i + 1) + '.jpg' };
+    });
+  }
+
+  // 每張照片都偵測國際條碼（EAN-13）：瀏覽器內建 BarcodeDetector 優先，沒有就用內嵌的 html5-qrcode
+  var detectorPromise = null;
+  function nativeDetector() {
+    if (!detectorPromise) {
+      detectorPromise = ('BarcodeDetector' in window && window.BarcodeDetector.getSupportedFormats)
+        ? window.BarcodeDetector.getSupportedFormats().then(function (f) { return f.indexOf('ean_13') >= 0 ? new window.BarcodeDetector({ formats: ['ean_13'] }) : null; }).catch(function () { return null; })
+        : Promise.resolve(null);
+    }
+    return detectorPromise;
+  }
+  function dataUrlToFile(src) {
+    var parts = src.split(','), bin = atob(parts[1]), arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], 'photo.jpg', { type: 'image/jpeg' });
+  }
+  function libDetect(src) {
+    var lib = window.__Html5QrcodeLibrary__;
+    if (!lib) return Promise.resolve('');
+    var el = document.getElementById('insp-barcode-scan');
+    if (!el) { el = document.createElement('div'); el.id = 'insp-barcode-scan'; el.style.display = 'none'; document.body.appendChild(el); }
+    var q = new lib.Html5Qrcode('insp-barcode-scan', { formatsToSupport: [lib.Html5QrcodeSupportedFormats.EAN_13], verbose: false });
+    return q.scanFile(dataUrlToFile(src), false).then(function (t) { return t; }).catch(function () { return ''; });
+  }
+  function detectBarcode(src) {
+    return nativeDetector().then(function (det) {
+      if (!det) return libDetect(src);
+      return new Promise(function (res) {
+        var img = new Image();
+        img.onload = function () { det.detect(img).then(function (c) { res(c.length ? c[0].rawValue : ''); }).catch(function () { res(''); }); };
+        img.onerror = function () { res(''); };
+        img.src = src;
+      }).then(function (v) { return v || libDetect(src); });
+    }).then(function (v) { return /^\d{13}$/.test(v) ? v : ''; });
   }
   function addPhotos(no, srcs) {
     var at = today();
@@ -581,26 +640,58 @@ window.INSP = (function () {
 
   function isExpired(r) { return !!r.expDate && r.expDate < today(); }
   function hasFail(r) { return r.items.some(function (x) { return x.item && x.result === '不合格'; }); }
+
+  // 從處理中切到「上架」或「不顯示」前要補齊的東西：四個日期都要有、選了項目的都要有結果（2026-10-05 定）
+  var DATE_FIELDS = [['mfgDate', '製作日期'], ['expDate', '有效日期'], ['receivedDate', '收樣日期'], ['inspectDate', '檢驗日期']];
+  function missingForComplete(r) {
+    var m = DATE_FIELDS.filter(function (f) { return !r[f[0]]; }).map(function (f) { return f[1]; });
+    r.items.forEach(function (x, i) { if (x.item && !x.result) m.push('項目 ' + 'ABCD'[i] + '（' + x.item + '）的結果'); });
+    return m;
+  }
   function failItems(r) { return r.items.filter(function (x) { return x.item && x.result === '不合格'; }).map(function (x) { return x.item; }); }
 
-  // 前台：該商品最新一份處理完成的紀錄（比檢驗日期，同一天比紀錄編號）
+  // 前台：該商品最新一份「上架」的紀錄（比檢驗日期，同一天比紀錄編號）
   function latestForProduct(pid) {
     var best = null;
     state.records.forEach(function (r) {
-      if (r.processStatus !== '處理完成') return;
+      if (r.processStatus !== '上架') return;
       if (!productsOf(r).some(function (p) { return p.id === pid; })) return;
       if (!best || r.inspectDate > best.inspectDate || (r.inspectDate === best.inspectDate && r.no > best.no)) best = r;
     });
     return best;
   }
 
-  // 被取代：處理完成、有對到商品，但對到的每個商品都有更新的一份
+  // 被取代：上架、有對到商品，但對到的每個商品都有更新的一份
   function isSuperseded(r) {
-    if (r.processStatus !== '處理完成') return false;
+    if (r.processStatus !== '上架') return false;
     var ps = productsOf(r);
     if (!ps.length) return false;
     return ps.every(function (p) { var l = latestForProduct(p.id); return l && l.no !== r.no; });
   }
+
+  // 畫面上的狀態：處理中／上架中／不顯示／下架（被取代）／過期。下架、過期只會發生在「上架」的紀錄
+  function viewState(r) {
+    if (r.processStatus === '處理中') return 'processing';
+    if (r.processStatus === '不顯示') return 'hidden';
+    if (isExpired(r)) return 'expired';
+    if (isSuperseded(r)) return 'superseded';
+    return 'live';
+  }
+  // 下架、過期：所有欄位不可修改，只能切回處理中
+  function isLocked(r) { var v = viewState(r); return v === 'expired' || v === 'superseded'; }
+  // 每個狀態可以切去哪裡（2026-10-05）
+  function allowedNext(r) {
+    var v = viewState(r);
+    if (v === 'processing') return ['上架', '不顯示'];   // 欄位要填齊，見 missingForComplete
+    if (v === 'live') return ['處理中', '不顯示'];
+    return ['處理中'];                                  // 不顯示、下架、過期
+  }
+
+  // 狀態標籤文字與按鈕文字（電腦版、手機版共用）
+  function statusText(r) { return { processing: '處理中', live: '上架中', hidden: '不顯示', superseded: '已下架', expired: '已過期' }[viewState(r)]; }
+  function actionLabel(target) { return target === '處理中' ? '改回處理中' : target; }
+  // 這顆按鈕現在能不能按：從處理中切出去要欄位填齊
+  function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && (r.processStatus !== '處理中' || !missingForComplete(r).length); }
 
   function receiversFor(r) {
     var groups = {};
@@ -613,8 +704,9 @@ window.INSP = (function () {
     PRODUCTS: PRODUCTS, BARCODES: BARCODES,
     records: function () { return state.records; }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, latestForProduct: latestForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
-    today: today, compressImage: compressImage, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    PROCESS: ['處理中', '上架', '不顯示'], latestForProduct: latestForProduct, isSuperseded: isSuperseded, receiversFor: receiversFor,
+    today: today, compressImage: compressImage, detectBarcode: detectBarcode, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
 })();
 
