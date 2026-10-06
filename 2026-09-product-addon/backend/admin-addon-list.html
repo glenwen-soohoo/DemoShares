@@ -780,6 +780,21 @@ a:hover { text-decoration: underline; }
   .bx-log{ margin-top:10px; font-size:13px; color:#2e6b26; min-height:18px; }
   .bx-warn{ color:#c0554d; font-weight:600; margin-left:4px; }
   .bx-rtempty{ color:#999; font-size:13px; padding:10px 2px; }
+  /* 待套用的 chip：待加入（黃虛線）／待取下（紅刪除線） */
+  .bx-chip.pend{ background:#fff8e6; border-color:#f0d58a; border-style:dashed; color:#8a6d1f; }
+  .bx-chip.pend .x{ color:#b5851f; }
+  .bx-chip.rmv{ background:#fbeceb; border-color:#f0c2bd; color:#b24a41; }
+  .bx-chip.rmv .rmv-line{ text-decoration:line-through; }   /* 待取下：只劃掉品名＋溫層，不劃「待取下」標籤與 ↺ */
+  .bx-chip.rmv .rmv-line .tt{ text-decoration:line-through; }   /* 溫層 tag 是 inline-block，父層刪除線穿不過，需明確補劃 */
+  .bx-chip.rmv .x{ color:#c0554d; }
+  .bx-chip .tag-pend{ font-size:11px; font-weight:700; margin-left:2px; padding:0 6px; border-radius:999px; background:#f3e2ab; color:#7a5f10; }
+  .bx-chip.rmv .tag-pend{ background:#f3c7c2; color:#8f352c; }
+  /* 頁尾動作列：待套用計數＋確定／清除 */
+  .bx-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid #eee; }
+  .bx-pend{ font-size:13px; color:#999; }
+  .bx-pend.has{ color:#2e6b26; }
+  .bx-pend .rm{ color:#c0554d; }
+  .bx-foot-btns{ display:flex; gap:8px; }
 </style>
 
 <div class="gox-list-head">
@@ -859,6 +874,13 @@ a:hover { text-decoration: underline; }
         <div class="bx-rtempty" id="bx-right-empty">← 先在左邊加入一個以上的<span class="bx-word">加購品</span></div>
       </div>
     </div>
+    <div class="bx-foot">
+      <div class="bx-pend" id="bx-pend">尚無待套用的變更</div>
+      <div class="bx-foot-btns">
+        <button class="gox-btn gox-btn-default" id="bx-clear" disabled>清除待變更</button>
+        <button class="gox-btn gox-btn-primary" id="bx-confirm" disabled>確定</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -874,7 +896,7 @@ a:hover { text-decoration: underline; }
   //   mains→掛載主商品數(count of ProductAddOnMapping)；stock→OriginAmt-SoldAmt(剩餘，非原始庫存)；on→ProductAddOn 上下架
   var ADDONS = [
     { id:99753, name:'316 不鏽鋼保溫瓶 500ml', img:IMG1, line:'產地直送', temp:'常溫', mode:'fixed', val:50, orig:399, start:'2026/09/01', end:'2026/09/30', mains:3, stock:128, on:true },
-    { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', mode:'percent', val:8, orig:299, start:'', end:'', mains:1, stock:64, on:true },
+    { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', mode:'percent', val:0.8, orig:299, start:'', end:'', mains:1, stock:64, on:true },
     { id:36007, name:'冷壓初榨苦茶油 250ml', img:IMG3, line:'產地直送', temp:'冷藏', mode:'fixed', val:60, orig:420, start:'2026/09/01', end:'2026/10/31', mains:5, stock:8, on:true },
     { id:24011, name:'有機黑芝麻粉 300g', img:'', line:'蔬果乾貨', temp:'冷凍', mode:'fixed', val:40, orig:280, start:'2026/07/01', end:'2026/08/31', mains:2, stock:0, on:false }
   ];
@@ -885,8 +907,8 @@ a:hover { text-decoration: underline; }
     { id:61120, name:'冬季草莓禮盒（已下架）', img:'', line:'產地直送', temp:'冷凍', addons:1, stock:0, on:false }
   ];
   var line = 'all', kw = '', TODAY = '2026/09/16';
-  function finalOf(a){ return a.mode==='fixed' ? a.orig-a.val : Math.round(a.orig*a.val/10); }
-  function discText(a){ return a.mode==='fixed' ? '固定 '+money(a.val) : '折數 '+Math.round(a.val*10)+'%'; }
+  function finalOf(a){ return a.mode==='fixed' ? a.orig-a.val : Math.round(a.orig*a.val); }   // percent: val=0.XX 倍率，折後＝原價×倍率
+  function discText(a){ return a.mode==='fixed' ? '固定 '+money(a.val) : '×'+a.val; }          // percent 顯示 0.XX 倍率（無「幾折」），與設定頁口徑一致
   function effStatus(a){
     var s=a.start||'', e=a.end||'';
     if(s && TODAY<s) return {t:'尚未生效', c:'wait'};
@@ -942,7 +964,7 @@ a:hover { text-decoration: underline; }
     { id:50001, name:'米餅・原味', temp:'常溫', disc:'固定 $10' },{ id:50002, name:'米餅・海苔', temp:'常溫', disc:'固定 $10' },
     { id:50003, name:'米餅・黑糖', temp:'常溫', disc:'固定 $10' },{ id:50004, name:'米餅・起司', temp:'常溫', disc:'固定 $10' },
     { id:50005, name:'米餅・南瓜', temp:'常溫', disc:'固定 $10' },{ id:36007, name:'冷壓初榨苦茶油 250ml', temp:'冷藏', disc:'固定 $60' },
-    { id:101509, name:'手沖濾掛咖啡 10入', temp:'常溫', disc:'8 折' }
+    { id:101509, name:'手沖濾掛咖啡 10入', temp:'常溫', disc:'×0.8' }
   ];
   var MAINS = [
     { id:40894, name:'台灣蜜棗禮盒 3斤裝', temp:'常溫' },{ id:55210, name:'日曬紅龍果原箱', temp:'冷藏' },{ id:47788, name:'當季鮮採蔬菜箱', temp:'冷藏' },
@@ -951,9 +973,11 @@ a:hover { text-decoration: underline; }
   function tempTag(t){ if(!t) return ''; var c = t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); return '<span class="tt '+c+'">'+t+'</span>'; }
   function tagOf(arr,id){ var x=arr.find(function(o){return o.id===id;}); return x?tempTag(x.temp):''; }
   // pairs：主商品-加購品配對（待新建 ProductAddOnMapping，鍵＝addonId-mainId，對 ProductAddOnId-ProductId）
+  //   committed＝已套用；pendAdd/pendRemove＝暫存待變更，按「確定」才寫回 pairs（選好→確定的關卡）
   var pairs = new Set();
   [50001,50002,50003,50004,50005].forEach(function(a){ pairs.add(a+'-33012'); pairs.add(a+'-60088'); });
   pairs.add('36007-40894'); pairs.add('101509-40894'); pairs.add('101509-55210');
+  var pendAdd = new Set(), pendRemove = new Set();
 
   var axis='addon', selL=new Set();
   var $=function(id){ return document.getElementById(id); };
@@ -962,8 +986,13 @@ a:hover { text-decoration: underline; }
   function Ln(){ return axis==='addon'?'加購品':'主商品'; }
   function Rn(){ return axis==='addon'?'主商品':'加購品'; }
   function nameOf(arr,id){ var x=arr.find(function(o){return o.id===id;}); return x?x.name:id; }
-  function has(l,r){ return axis==='addon'?pairs.has(l+'-'+r):pairs.has(r+'-'+l); }
-  function setPair(l,r,on){ var k=axis==='addon'?(l+'-'+r):(r+'-'+l); if(on)pairs.add(k); else pairs.delete(k); }
+  function keyOf(l,r){ return axis==='addon'?(l+'-'+r):(r+'-'+l); }
+  function committed(l,r){ return pairs.has(keyOf(l,r)); }
+  // 投影狀態＝已套用疊加暫存：UI 一律顯示「按確定後會變成的樣子」
+  function has(l,r){ var k=keyOf(l,r); return (pairs.has(k)||pendAdd.has(k)) && !pendRemove.has(k); }
+  function stageAdd(l,r){ var k=keyOf(l,r); if(pendRemove.has(k)) pendRemove.delete(k); else if(!pairs.has(k)) pendAdd.add(k); }
+  function stageRemove(l,r){ var k=keyOf(l,r); if(pendAdd.has(k)) pendAdd.delete(k); else if(pairs.has(k)) pendRemove.add(k); }
+  function clearPend(){ pendAdd.clear(); pendRemove.clear(); }
   function acount(l){ return RIGHT().filter(function(r){return has(l,r.id);}).length; }
   function inter(){ if(!selL.size) return []; return RIGHT().filter(function(r){ return [...selL].every(function(l){return has(l,r.id);}); }).map(function(r){return r.id;}); }
   function partial(rid){ return [...selL].filter(function(l){return has(l,rid);}).length; }
@@ -990,11 +1019,30 @@ a:hover { text-decoration: underline; }
     var body=$('bx-right-body'), empty=$('bx-right-empty');
     if(!selL.size){ body.hidden=true; empty.hidden=false; return; }
     body.hidden=false; empty.hidden=true;
-    var it=inter(), box=$('bx-common-box');
-    if(it.length){ box.className='bx-chipbox'; box.innerHTML = it.map(function(id){ return '<span class="bx-chip">'+nameOf(RIGHT(),id)+tagOf(RIGHT(),id)+'<button class="x" data-rmc="'+id+'" title="從全部取下">×</button></span>'; }).join(''); }
+    var selArr=[...selL], box=$('bx-common-box');
+    var stay=[], toAdd=[], toRemove=[];
+    RIGHT().forEach(function(r){
+      var cN=selArr.filter(function(l){return committed(l,r.id);}).length;  // 已套用：全部選取都掛的
+      var pN=selArr.filter(function(l){return has(l,r.id);}).length;        // 投影：確定後全部選取都掛的
+      if(pN===selArr.length && cN===selArr.length) stay.push(r.id);
+      else if(pN===selArr.length && cN<selArr.length) toAdd.push(r.id);
+      else if(cN===selArr.length && pN<selArr.length) toRemove.push(r.id);
+    });
+    var html='';
+    html += stay.map(function(id){ return '<span class="bx-chip">'+nameOf(RIGHT(),id)+tagOf(RIGHT(),id)+'<button class="x" data-rmc="'+id+'" title="取下（待套用）">×</button></span>'; }).join('');
+    html += toAdd.map(function(id){ return '<span class="bx-chip pend">'+nameOf(RIGHT(),id)+tagOf(RIGHT(),id)+'<span class="tag-pend">待加入</span><button class="x" data-canceladd="'+id+'" title="取消加入">×</button></span>'; }).join('');
+    html += toRemove.map(function(id){ return '<span class="bx-chip rmv"><span class="rmv-line">'+nameOf(RIGHT(),id)+tagOf(RIGHT(),id)+'</span><span class="tag-pend">待取下</span><button class="x" data-undormv="'+id+'" title="復原">↺</button></span>'; }).join('');
+    if(html){ box.className='bx-chipbox'; box.innerHTML=html; }
     else { box.className='bx-chipbox empty'; box.textContent='這些'+Ln()+'目前沒有共同掛載的'+Rn()+'（用下方加入）'; }
   }
-  function renderAll(){ renderLeftChips(); renderCommon(); }
+  function updatePend(){
+    var a=pendAdd.size, b=pendRemove.size, el=$('bx-pend');
+    if(a+b===0){ el.className='bx-pend'; el.textContent='尚無待套用的變更'; }
+    else { el.className='bx-pend has'; el.innerHTML='待套用：新增 <b>'+a+'</b> 組配對'+(b?' · <span class="rm">取下 '+b+' 組</span>':''); }
+    $('bx-confirm').disabled = (a+b===0);
+    $('bx-clear').disabled = (a+b===0);
+  }
+  function renderAll(){ renderLeftChips(); renderCommon(); updatePend(); }
 
   function applyText(){
     var L=Ln(), R=Rn();
@@ -1010,25 +1058,33 @@ a:hover { text-decoration: underline; }
   $('bx-axis').addEventListener('click', function(e){
     var b=e.target.closest('[data-axis]'); if(!b)return;
     document.querySelectorAll('#bx-axis button').forEach(function(x){x.classList.remove('on');});
-    b.classList.add('on'); axis=b.getAttribute('data-axis'); selL.clear();
+    b.classList.add('on'); axis=b.getAttribute('data-axis'); selL.clear(); clearPend();
     $('bx-left-input').value=''; $('bx-add-input').value=''; $('bx-log').textContent='';
     applyText(); renderAll();
   });
   attachSearch($('bx-left-input'), $('bx-left-box'),
     function(){ return LEFT().filter(function(x){return !selL.has(x.id);}).map(function(x){ return {id:x.id,name:x.name,temp:x.temp,meta:(axis==='addon'?'掛 '+acount(x.id):acount(x.id)+' 個加購品')}; }); },
-    function(id){ selL.add(id); });
+    function(id){ selL.add(id); clearPend(); });   // 改動①選取＝重設：清掉先前對舊選取暫存的②③變更
   attachSearch($('bx-add-input'), $('bx-add-box'),
     function(){ var s=new Set(inter()); return RIGHT().filter(function(r){return !s.has(r.id);}).map(function(r){ var p=partial(r.id); return {id:r.id,name:r.name,temp:r.temp,meta:(p===0?'未掛':'部分已掛 '+p+'/'+selL.size),part:p>0}; }); },
-    function(id){ var n=0; [...selL].forEach(function(l){ if(!has(l,id)){ setPair(l,id,true); n++; } });
+    function(id){ [...selL].forEach(function(l){ if(!has(l,id)){ stageAdd(l,id); } });
       var rt=(RIGHT().find(function(o){return o.id===id;})||{}).temp;
       var cross=[...selL].some(function(l){ var lt=(LEFT().find(function(o){return o.id===l;})||{}).temp; return lt&&rt&&lt!==rt; });
-      $('bx-log').innerHTML='已把「'+nameOf(RIGHT(),id)+'」加到 '+selL.size+' 個'+Ln()+'（新增 '+n+' 組配對）'+(cross?' <span class="bx-warn">含異溫層，出貨會拆單</span>':''); });
+      $('bx-log').innerHTML = cross ? '<span class="bx-warn">含異溫層，出貨會拆單</span>' : ''; });   // 只留異溫層警告，其餘狀態靠上方 chip 與待套用計數表達
 
   document.addEventListener('click', function(e){
     var rml=e.target.closest('[data-rml]');
-    if(rml){ selL.delete(Number(rml.getAttribute('data-rml'))); $('bx-log').textContent=''; renderAll(); return; }
+    if(rml){ var lid=Number(rml.getAttribute('data-rml')); selL.delete(lid); clearPend(); $('bx-log').textContent=''; renderAll(); return; }
     var rmc=e.target.closest('[data-rmc]');
-    if(rmc){ var rid=Number(rmc.getAttribute('data-rmc')); var n=0; [...selL].forEach(function(l){ if(has(l,rid)){ setPair(l,rid,false); n++; } }); $('bx-log').textContent='已把「'+nameOf(RIGHT(),rid)+'」從 '+selL.size+' 個'+Ln()+'取下（移除 '+n+' 組配對）'; renderAll(); return; }
+    if(rmc){ var rid=Number(rmc.getAttribute('data-rmc')); [...selL].forEach(function(l){ if(committed(l,rid)){ stageRemove(l,rid); } }); $('bx-log').textContent=''; renderAll(); return; }
+    var ca=e.target.closest('[data-canceladd]');
+    if(ca){ var aid=Number(ca.getAttribute('data-canceladd')); [...selL].forEach(function(l){ pendAdd.delete(keyOf(l,aid)); }); $('bx-log').textContent=''; renderAll(); return; }
+    var ur=e.target.closest('[data-undormv]');
+    if(ur){ var uid=Number(ur.getAttribute('data-undormv')); [...selL].forEach(function(l){ pendRemove.delete(keyOf(l,uid)); }); $('bx-log').textContent=''; renderAll(); return; }
+    var cf=e.target.closest('#bx-confirm');
+    if(cf){ if(pendAdd.size+pendRemove.size===0) return; pendAdd.forEach(function(k){pairs.add(k);}); pendRemove.forEach(function(k){pairs.delete(k);}); clearPend(); renderAll(); $('bx-log').textContent=''; return; }
+    var cl=e.target.closest('#bx-clear');
+    if(cl){ if(pendAdd.size+pendRemove.size===0) return; clearPend(); renderAll(); $('bx-log').textContent=''; return; }
   });
 
   applyText(); renderAll();

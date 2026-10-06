@@ -118,6 +118,9 @@
     .devseg button{ flex:1; padding:5px 0; background:#3a3f44; color:#e8eaed; border:1px solid #4a5057; border-radius:4px; cursor:pointer; font-family:inherit; font-size:13px; }
     .devseg button.on{ background:#4ba83b; border-color:#4ba83b; color:#fff; }
     .devnote{ margin:0; color:#9aa0a6; font-size:11px; line-height:1.5; }
+    .devchk{ display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+    .devchk label{ justify-content:flex-start; gap:7px; font-size:12px; color:#d7d9dc; cursor:pointer; }
+    .devchk input{ accent-color:#4ba83b; flex:0 0 auto; }
   </style>
 </head>
 <body>
@@ -130,12 +133,19 @@
     <input type="range" id="devTotal" min="0" max="8" value="6">
     <div>展開前顯示幾筆
       <div class="devseg" id="devVis">
-        <button type="button" data-vis="2">2</button>
-        <button type="button" data-vis="4" class="on">4</button>
+        <button type="button" data-vis="2" class="on">2</button>
+        <button type="button" data-vis="4">4</button>
         <button type="button" data-vis="6">6</button>
       </div>
     </div>
-    <p class="devnote">切換加購品數量與「展開前顯示幾筆」，預覽多／少兩種情境。此面板僅供預覽，正式頁不會有。</p>
+    <div>示範狀態（切著看）
+      <div class="devchk">
+        <label><input type="checkbox" id="devQ1"> 加購品缺貨／下架（反灰不可勾·排最後）</label>
+        <label><input type="checkbox" id="devQ2"> 加購優惠已過期（整列不顯示）</label>
+        <label><input type="checkbox" id="devQ7"> 規格停售／未開賣（不顯示·不可購）</label>
+      </div>
+    </div>
+    <p class="devnote">切換加購品數量、「展開前顯示幾筆」與三種特殊狀態，預覽各情境。此面板僅供預覽，正式頁不會有。</p>
   </div>
 </div>
 
@@ -196,7 +206,7 @@
 
       <!-- 右：商品資訊 + 購買區 -->
       <div class="col-md-6 col-xs-12 m-b-15">
-        <h2 class="itemtitle" style="margin-bottom:0!important;padding-bottom:0!important">早鳥預購 文旦季【老欉文旦禮盒】樂古農園</h2>
+        <h2 class="itemtitle" style="margin-bottom:0!important;padding-bottom:0!important">文旦季【老欉文旦禮盒】樂古農園</h2>
 
         <div class="col-xs-12 score-area" style="border-bottom:1px solid #b3b3b1;">
           <div class="col-xs-12 p-0">
@@ -354,13 +364,13 @@
   const list=document.getElementById('addonList');
   const moreBtn=document.getElementById('addonMore');
   const btnBuy=document.getElementById('btnBuy');
-  const state={ total:6, visible:4, expanded:false };
+  const state={ total:6, visible:2, expanded:false };
   const money=n=>'$'+n.toLocaleString('en-US');
 
   function rowHTML(it, hidden){
     const cls='addon-row'+(it.out?' addon-out':'')+(hidden?' extra':'');
     const ck=it.out?'<input class="addon-ck" type="checkbox" disabled>':'<input class="addon-ck" type="checkbox">';
-    const action=it.out?'<span class="addon-out-tag">已售完</span>'
+    const action=it.out?('<span class="addon-out-tag">'+(it.outLabel||'已售完')+'</span>')
                        :'<select class="addon-qty"><option>1</option><option>2</option><option>3</option></select>';
     return `<label class="${cls}"${hidden?' hidden':''}>${ck}`
       +`<img class="addon-thumb" src="${it.img}" alt="">`
@@ -369,10 +379,12 @@
       +`<div class="addon-price"><span class="orig">${money(it.orig)}</span><span class="now">${money(it.now)}</span></div></label>`;
   }
   function render(){
-    const items=ADDONS.slice(0, state.total);
+    const items=ADDONS.slice(0, state.total)
+      .filter(it=>!it.expired && !it.unsold)            // Q2 加購優惠過期／Q7 規格停售未開賣：整列不顯示、不可購
+      .sort((a,b)=>(a.out?1:0)-(b.out?1:0));            // Q1 缺貨/下架：顯示但排到清單最後
     list.innerHTML=items.map((it,i)=>rowHTML(it, i>=state.visible && !state.expanded)).join('');
-    document.getElementById('addonCount').textContent=state.total;
-    const hasHidden=state.total>state.visible;
+    document.getElementById('addonCount').textContent=items.length;
+    const hasHidden=items.length>state.visible;
     moreBtn.style.display=hasHidden?'':'none';
     if(!hasHidden) state.expanded=false;
     moreBtn.textContent=state.expanded?'▴ 收合加價購商品':'▾ 更多加價購商品';
@@ -401,6 +413,10 @@
     const p=document.getElementById('devpanel'); p.classList.toggle('collapsed');
     this.textContent=p.classList.contains('collapsed')?'＋':'－';
   });
+  // 三種特殊狀態切換（套在前 3 個加購品上示範）
+  document.getElementById('devQ1').addEventListener('change', e=>{ ADDONS[0].out=e.target.checked; ADDONS[0].outLabel=e.target.checked?'已下架':undefined; render(); });
+  document.getElementById('devQ2').addEventListener('change', e=>{ ADDONS[1].expired=e.target.checked; render(); });
+  document.getElementById('devQ7').addEventListener('change', e=>{ ADDONS[2].unsold=e.target.checked; render(); });
   render();
 </script>
 </body>

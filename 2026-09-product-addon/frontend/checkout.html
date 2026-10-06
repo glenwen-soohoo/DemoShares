@@ -127,6 +127,20 @@
     .coa .field-delete{ justify-content:center; }
     .coa .field-delete .rm{ color:#8a8a8a; cursor:pointer; }
     .coa .field-delete .rm:hover{ color:#dc4e43; }
+    /* Q1 缺貨/下架：反灰、不可勾、藏數量、顯示「已下架」標籤（排序置底由 JS 處理）；Q2/Q7：整列不顯示 */
+    .coa-pk.coa-out .coa-thumb{ filter:grayscale(1); opacity:.5; }
+    .coa-pk.coa-out .nm{ color:#999; } .coa-pk.coa-out .sub{ color:#bbb; }
+    .coa-pk.coa-out .coa-temp{ background:#c6c6c6; }
+    .coa-pk.coa-out .field-price .n{ color:#aaa; } .coa-pk.coa-out .field-price .o{ color:#c8c8c8; }
+    .coa-pk.coa-out .field-pd-total{ color:#aaa; }
+    .coa-pk.coa-out .coa-ck{ cursor:not-allowed; }
+    .coa-pk.coa-out .field-amt{ visibility:hidden; }
+    .coa-out-tag{ display:none; color:#999; font-size:13px; white-space:nowrap; }
+    .coa-pk.coa-out .coa-out-tag{ display:inline; }
+    .coa-pk[hidden]{ display:none !important; }
+    .devchk{ display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+    .devchk label{ justify-content:flex-start; gap:7px; font-size:12px; color:#d7d9dc; cursor:pointer; }
+    .devchk input{ accent-color:#4ba83b; flex:0 0 auto; }
 
     /* 超值加購 slick 卡片內圖片與 slide 間距（真站靠這頁沒載到的 CSS 補齊，避免 slide 內圖無約束破版） */
     .sa-pd-slick .slick-slide{ padding:0 8px; box-sizing:border-box; }
@@ -213,7 +227,14 @@
         <button type="button" data-st="none">未加購</button>
       </div>
     </div>
-    <p class="devnote">切換主商品①的加購狀態，預覽「已加購＋尚未加購並存」與「只有尚未加購」。此面板僅供預覽，正式頁不會有。</p>
+    <div>加購品特殊狀態（主商品①的尚未加購清單）
+      <div class="devchk">
+        <label><input type="checkbox" id="devQ1"> 加購品缺貨／下架（反灰不可勾·排最後）</label>
+        <label><input type="checkbox" id="devQ2"> 加購優惠已過期（整列不顯示）</label>
+        <label><input type="checkbox" id="devQ7"> 規格停售／未開賣（不顯示·不可購）</label>
+      </div>
+    </div>
+    <p class="devnote">切換主商品①的加購狀態與三種特殊狀態，預覽各情境。切換前請先展開主商品①的「加價購優惠」清單。此面板僅供預覽，正式頁不會有。</p>
   </div>
 </div>
 
@@ -313,9 +334,9 @@
             <div class="base-field field-delete col-xs-1"><span class="rm" title="移除"><i class="fa fa-trash"></i></span></div>
           </div>
         </div>
-        <div class="coa-prompt" data-target="coa1pick">加價購優惠（<b>2</b>）<span class="arrow">▾</span></div>
+        <div class="coa-prompt" data-target="coa1pick">加價購優惠（<b>3</b>）<span class="arrow">▾</span></div>
         <div class="coa-pick" id="coa1pick" hidden>
-          <label class="coa-pk col-xs-12 order-field-basc">
+          <label class="coa-pk col-xs-12 order-field-basc" data-idx="0">
             <div class="base-field field-pd col-xs-4">
               <input type="checkbox" class="coa-ck">
               <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824471.jpg" alt="">
@@ -325,9 +346,9 @@
             <div class="base-field field-price col-xs-1"><span class="o">$150</span><span class="n">$120</span></div>
             <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
             <div class="base-field field-pd-total col-xs-2">$120</div>
-            <div class="base-field field-delete col-xs-1"></div>
+            <div class="base-field field-delete col-xs-1"><span class="coa-out-tag">已下架</span></div>
           </label>
-          <label class="coa-pk col-xs-12 order-field-basc">
+          <label class="coa-pk col-xs-12 order-field-basc" data-idx="1">
             <div class="base-field field-pd col-xs-4">
               <input type="checkbox" class="coa-ck">
               <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509181007201.jpg" alt="">
@@ -337,7 +358,19 @@
             <div class="base-field field-price col-xs-1"><span class="o">$280</span><span class="n">$240</span></div>
             <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
             <div class="base-field field-pd-total col-xs-2">$240</div>
-            <div class="base-field field-delete col-xs-1"></div>
+            <div class="base-field field-delete col-xs-1"><span class="coa-out-tag">已下架</span></div>
+          </label>
+          <label class="coa-pk col-xs-12 order-field-basc" data-idx="2">
+            <div class="base-field field-pd col-xs-4">
+              <input type="checkbox" class="coa-ck">
+              <img class="coa-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg" alt="">
+              <div class="coa-desc"><div class="nm">【台灣龍眼蜂蜜】<span class="coa-temp">常溫</span></div><div class="sub">規格：700g</div></div>
+            </div>
+            <div class="base-field field-order-time col-xs-2"></div>
+            <div class="base-field field-price col-xs-1"><span class="o">$680</span><span class="n">$580</span></div>
+            <div class="base-field field-amt col-xs-2"><select><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="base-field field-pd-total col-xs-2">$580</div>
+            <div class="base-field field-delete col-xs-1"><span class="coa-out-tag">已下架</span></div>
           </label>
           <div class="coa-pick-foot"><button type="button">加入購物車</button></div>
         </div>
@@ -621,7 +654,32 @@
   // 點擊：委派處理（含動態新增的列）
   document.addEventListener('click', e=>{
     const del = e.target.closest('.cartItem-area .field-delete a');
-    if(del){ e.preventDefault(); const row=del.closest('.cartItem-area'); const nx=row.nextElementSibling; if(nx&&nx.classList.contains('coa'))nx.remove(); row.remove(); recalc(); return; }
+    if(del){
+      e.preventDefault();
+      const row=del.closest('.cartItem-area');
+      const nx=row.nextElementSibling;
+      if(nx&&nx.classList.contains('coa')){
+        // 刪主商品≠刪加購品：加購品是獨立可販售商品，不依附主商品。
+        // 已加購品轉成購物車「獨立品項列」保留（demo 簡化，維持現顯示價）；只有主商品列與「尚未加購」清單隨主商品移除。
+        [...nx.querySelectorAll('.coa-added')].forEach(a=>{
+          const g=s=>a.querySelector(s);
+          const priceEl=g('.field-price .n')||g('.field-price');
+          const sec=document.createElement('section');
+          sec.className='col-xs-12 order-field-basc cartItem-area';
+          sec.innerHTML=
+            '<div class="base-field field-pd col-xs-4"><div class="col-xs-4 p-0"><img src="'+g('.coa-thumb').src+'" alt=""></div>'+
+            '<div class="col-xs-8 pd-descs"><div class="pd-title">'+g('.nm').innerHTML+'</div><div class="pd-spec">'+g('.sub').textContent+'</div></div></div>'+
+            '<div class="base-field field-order-time col-xs-2">'+(g('.field-order-time')?g('.field-order-time').textContent:'—')+'</div>'+
+            '<div class="base-field field-price col-xs-1">'+priceEl.textContent+'</div>'+
+            '<div class="base-field field-amt col-xs-2">'+(g('.field-amt')?g('.field-amt').innerHTML:'<select><option>1</option></select>')+'</div>'+
+            '<div class="base-field field-pd-total col-xs-2">'+(g('.field-pd-total')?g('.field-pd-total').textContent:priceEl.textContent)+'</div>'+
+            '<div class="base-field field-delete col-xs-1"><a href="javascript:void(0)"><i class="fa fa-trash" style="font-size:22px;"></i></a></div>';
+          nx.parentNode.insertBefore(sec, nx);
+        });
+        nx.remove();
+      }
+      row.remove(); recalc(); return;
+    }
     const rm = e.target.closest('.coa-added .rm');
     if(rm){
       const a=rm.closest('.coa-added');
@@ -677,6 +735,27 @@
     const p=document.getElementById('devpanel'); p.classList.toggle('collapsed');
     this.textContent=p.classList.contains('collapsed')?'＋':'－';
   });
+  // 加購品特殊狀態（Q1/Q2/Q7），套在主商品①的尚未加購清單 #coa1pick
+  const pick1=document.getElementById('coa1pick');
+  const pkByIdx=i=>[...pick1.querySelectorAll('.coa-pk')].find(r=>r.dataset.idx===String(i));
+  function reorderPick(){
+    const foot=pick1.querySelector('.coa-pick-foot');
+    [...pick1.querySelectorAll('.coa-pk')]
+      .sort((a,b)=>((a.classList.contains('coa-out')?1:0)-(b.classList.contains('coa-out')?1:0))||(+a.dataset.idx-+b.dataset.idx))
+      .forEach(r=>pick1.insertBefore(r,foot));
+  }
+  function updatePickCount(){
+    const n=[...pick1.querySelectorAll('.coa-pk')].filter(r=>!r.hidden).length;
+    const b=document.querySelector('.coa-prompt[data-target="coa1pick"] b'); if(b) b.textContent=n;
+  }
+  document.getElementById('devQ1').addEventListener('change', e=>{
+    const row=pkByIdx(0); if(!row) return;
+    row.classList.toggle('coa-out', e.target.checked);
+    const ck=row.querySelector('.coa-ck'); if(ck){ ck.disabled=e.target.checked; if(e.target.checked){ ck.checked=false; row.classList.remove('checked'); } }
+    reorderPick(); recalc();
+  });
+  document.getElementById('devQ2').addEventListener('change', e=>{ const row=pkByIdx(1); if(row){ row.hidden=e.target.checked; const ck=row.querySelector('.coa-ck'); if(e.target.checked&&ck){ck.checked=false;row.classList.remove('checked');} } updatePickCount(); recalc(); });
+  document.getElementById('devQ7').addEventListener('change', e=>{ const row=pkByIdx(2); if(row){ row.hidden=e.target.checked; const ck=row.querySelector('.coa-ck'); if(e.target.checked&&ck){ck.checked=false;row.classList.remove('checked');} } updatePickCount(); recalc(); });
 
   recalc();
 </script>

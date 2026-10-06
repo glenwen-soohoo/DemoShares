@@ -90,6 +90,13 @@
   .coa-pk.checked .stepper{ display:inline-flex; }
   .coa-pk .stepper button{ width:28px; height:28px; border:0; background:#fff; color:#555; cursor:pointer; font-size:14px; }
   .coa-pk .stepper .n{ width:34px; text-align:center; font-size:14px; }
+  /* Q1 缺貨/下架 靜態示例：反灰、不可勾、「已售完」標籤，排在清單最後（完整可切換展示見商品詳情頁） */
+  .coa-pk.coa-out img{ filter:grayscale(1); opacity:.5; }
+  .coa-pk.coa-out .nm{ color:#999; } .coa-pk.coa-out .sub{ color:#bbb; }
+  .coa-pk.coa-out .coa-temp{ background:#c6c6c6; }
+  .coa-pk.coa-out .price .n{ color:#aaa; } .coa-pk.coa-out .price .o{ color:#c8c8c8; }
+  .coa-pk.coa-out input{ cursor:not-allowed; }
+  .coa-sold{ display:inline-block; margin-top:6px; color:#999; font-size:13px; font-weight:600; }
 
   /* 商品內容／底部標籤（簡化佔位） */
   .qv-content{ font-size:14px; color:#595757; line-height:1.7; }
@@ -179,6 +186,17 @@
                 <div class="stepper"><button type="button" data-d="-1">－</button><span class="n">1</span><button type="button" data-d="1">＋</button></div>
               </div>
             </label>
+            <!-- Q1 缺貨/下架 靜態示例：反灰不可勾、排在最後（Q2/Q7 不顯示類規則見商品詳情頁完整展示） -->
+            <label class="coa-pk coa-out">
+              <input type="checkbox" disabled>
+              <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509190336361.jpg" alt="">
+              <div class="body">
+                <div class="nm">【綜合堅果禮盒】<span class="coa-temp">常溫</span></div>
+                <div class="sub">規格：500g</div>
+                <div class="price"><span class="o">$520</span><span class="n">$450</span></div>
+                <span class="coa-sold">已售完</span>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -230,7 +248,7 @@
       if(!btn) return;
       e.preventDefault();
       const nEl = btn.parentElement.querySelector('.n');
-      nEl.textContent = Math.max(1, Number(nEl.textContent) + Number(btn.dataset.d));
+      nEl.textContent = Math.min(3, Math.max(1, Number(nEl.textContent) + Number(btn.dataset.d)));   // 每加購品限購 3 件
     });
   </script>
 </body>
