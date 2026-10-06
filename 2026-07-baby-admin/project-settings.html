@@ -734,11 +734,17 @@ a:hover { text-decoration: underline; }
      設計決策（Glen 2026-10-05）：
        · 「對應商品規格」標為「示意」：綁定要讀真實商品目錄，而等家商品模型會被未來獨立下單系統重新定義，
          故此欄真實後台排在下單系統／商品模型定案之後，現在只示意目標互動。
-       · 「單位」改唯讀、跟著所選規格帶出（同單價），不在專案管理各自編輯；單價/單位/換算都是商品規格的屬性。 -->
+       · 「單位」改唯讀、跟著所選規格帶出（同單價），不在專案管理各自編輯；單價/單位/換算都是商品規格的屬性。
+     「示意」標記（2026-10-06 Glen 要先把本頁開起來）：無真實後端值、先示意的欄＝對應商品規格、單價、單位、啟用專案。
+       · 單價：僅安心蔬果 599（BabyConstant.PricePerUnit）是程式碼實際值，per-project 單價正式站尚無 → 示意。
+       · 單位：跟著示意的規格帶出 → 示意。
+       · 啟用專案：現況無 per-project 啟用旗標 → 示意。
+     不標示意（有真實後端值）：專案類型（enum BabyProjectType）、金流（BabyDonateConfiguration.PaymentGateway 依類型，Mongo）、
+       勸募字號（年度主字號取自 OrdersController.GetFundraisingNumber；惟 per-project「專案字號」仍屬新功能）。 -->
 <div class="gox-card"><div class="gox-card-body is-table-padding">
   <table class="gox-table" id="s-table">
     <thead><tr>
-      <th class="sort-col" style="width:44px;text-align:center;">排序</th><th>專案類型</th><th>對應商品規格 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-right">單價</th><th>單位</th><th>金流</th><th>勸募字號</th><th class="cell-center">啟用專案</th><th class="cell-ops">操作</th>
+      <th class="sort-col" style="width:44px;text-align:center;">排序</th><th>專案類型</th><th>對應商品規格 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-right">單價 <span class="gox-tag" style="font-weight:600;">示意</span></th><th>單位 <span class="gox-tag" style="font-weight:600;">示意</span></th><th>金流</th><th>勸募字號</th><th class="cell-center">啟用專案 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-ops">操作</th>
     </tr></thead>
     <tbody id="s-tbody"></tbody>
   </table>

@@ -867,7 +867,7 @@ a:hover { text-decoration: underline; }
     <!-- 🆕 待新建：前台介紹（主標 d-intro-title / 內容 d-intro-body）。
          現況 Preschool 只有單一「簡介」Preschool.Note(NVarChar300)。建議命名：IntroTitle / IntroBody。 -->
     <div class="gox-card">
-      <h3 class="gox-card-title">院所介紹</h3>
+      <h3 class="gox-card-title">院所介紹 <span class="gox-tag" style="font-weight:600;">示意</span></h3>
       <div class="gox-card-body">
         <div class="baby-detail-grid">
           <span class="lbl">主標題</span><span><input class="gox-input" id="d-intro-title" style="width:100%;"></span>
@@ -958,7 +958,7 @@ a:hover { text-decoration: underline; }
          現況沒有此拆分：PreschoolFruitDemand 只有單一可覆寫 DonatedDemand(已募得) 與 FruitDemand(需求)；
          而且現況「人工覆寫」蓋的是「需求 FruitDemand=actualValue」、不是這裡的「已募得」側，也不留逐筆台帳
          （只有整筆 UpdateTime/UpdateUserId）。建議命名：DonatedBase(系統基準) + DonatedAdjustmentLedger(調整分錄)。見檔頭。 -->
-    <div style="font-weight:500;margin:12px 0 6px;">已募得箱數</div>
+    <div style="font-weight:500;margin:12px 0 6px;">已募得箱數 <span class="gox-tag" style="font-weight:600;">示意</span></div>
     <div class="baby-donate-sum">
       <div><div class="k">捐款自動累計</div><div class="v" style="color:var(--gox-green);" id="dm-sys">0</div></div>
       <div><div class="k">人工加減</div><div class="v" id="dm-manual">0</div></div>
@@ -986,7 +986,7 @@ a:hover { text-decoration: underline; }
     <div class="gox-form-row"><label>專案類型</label><select class="gox-select" id="ap-type" style="width:200px;"></select></div>
     <div class="gox-form-row"><label>合作中</label><span class="gox-switch is-on" id="ap-coop"></span>
       <label style="min-width:auto;margin-left:20px;">前台顯示</label><span class="gox-switch is-on" id="ap-show"></span></div>
-    <div style="font-weight:500;margin:12px 0 6px;">院所介紹（結構化）</div>
+    <div style="font-weight:500;margin:12px 0 6px;">院所介紹（結構化）<span class="gox-tag" style="font-weight:600;">示意</span></div>
     <div class="gox-form-row"><label>主標題</label><input class="gox-input" id="ap-title" style="flex:1;min-width:200px;"></div>
     <div class="gox-form-row"><label>內容段落</label><textarea class="gox-textarea" id="ap-body" style="flex:1;min-width:200px;"></textarea></div>
     <div class="gox-modal-actions"><button class="gox-btn gox-btn-default" data-gox-close>取消</button><button class="gox-btn gox-btn-primary" id="ap-submit">新增</button></div>

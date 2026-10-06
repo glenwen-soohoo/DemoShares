@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 捐款名冊 (2026-07-baby-admin)
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3915-baby-react-refactor（4538c4a2c）
+  ⚠ 這一頁是「現有後台」的新版 UI——後端已存在，欄位幾乎都對得到真名，可直接抄（非整頁新功能）。
+  對應正式站（後台 GoX / SurveyBaby）：
+    view       : HuashanCRM/Areas/GoX/Views/SurveyBaby/Donate.cshtml（＋ EditDonate.cshtml、BabyDonateReceipt.cshtml）
+    controller : Areas/GoX/Controllers/SurveyBabyController.cs → Donate()（清單）／ExportDonate()（匯出）／BabyDonateReceipt()、SendBabyDonateReceipt()（收據）
+    route      : /GoX/SurveyBaby/Donate
+    VM         : GreenBox.Domain/ViewModels/Baby/DonateListViewModel.cs；查詢 Models/Baby/DonateSearchModel.cs
+  這一頁的真實欄位名（demo → 真名）：
+    訂單編號   → OrderNumber
+    捐款人     → name / Nickname   ⚠ 個資，demo 用匿名化示意名，真資料是捐款人姓名
+    捐贈院所   → Preschool_Name / School_Id（取自 Preschool 表）
+    捐贈年月   → Search_Year / Search_Month（或 CreateTime）
+    金額/箱數  → TotalPrice（金額真實，卡4-26 一律讀 Orders.TotalPrice）；箱數為金額÷單價換算
+    付款方式   → PaymentType
+    收據       → ReceiptType（BabyDonateReceiptTypeEnum）；寄送走 SendBabyDonateReceipt
+    建立時間   → CreateTime
+    來源管道   → ad_from（現有 Donate 清單即有此欄）
+  新增（非示意，真資料可推導，只是現有清單還沒顯示）：
+    專案類型   → 由 BabyProjectType 分類推導（Classify 依來源／ReceiverName）。現有 Donate 清單尚未顯示此欄 → 屬「新增顯示欄」，不是示意
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>捐款名冊 — 後台新版 (demo)</title>
 <link rel="icon" href="data:,">

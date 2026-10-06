@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
+<!--
+  DemoShares 交接對照 | 勸募字號管理 (2026-07-baby-admin)
+  真相來源：D:\GreenBox\fruit_web 分支 feature/DEV-3915-baby-react-refactor（4538c4a2c）
+  ⚠ 這一頁大部分是新功能：現況「沒有」勸募字號管理表，只有全域常數＋依日期硬編。
+  現況相關位置：
+    主字號（全域） : GreenBox.Infrastructure/Constants/Constant.cs  FundraisingNo
+    依日期取字號   : HuashanCRM/Controllers/OrdersController.cs  GetFundraisingNumber(DateTime)
+                     （≥2026/7/1→1151362501、≥2025/1/20→1141361220… 硬編對照）
+  demo 欄位 → 現況：
+    字號（年度主字號）  → 真實：Constant.FundraisingNo / GetFundraisingNumber 回傳值
+    生效日（年度主字號）→ 真實可推導：GetFundraisingNumber 的日期分界即生效日
+    類型「年度主字號」  → 真實
+    類型「年度專案」    → 🆕 示意（正式站尚無；號碼為示意，實際由協會另向衛福部申請）
+    到期日 / 狀態       → 🆕 示意（現況無字號表、無到期日／狀態概念，是算出來的）
+    新增／編輯／停用     → 🆕 待新建（要做需新建「勸募字號」資料表＋後台）
+  完整名稱對照見同資料夾 _交接對照.md
+-->
 <meta charset="UTF-8">
 <title>勸募字號管理 — 後台新版 (demo)</title>
 <link rel="icon" href="data:,">
@@ -685,7 +702,7 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-card"><div class="gox-card-body is-table-padding">
   <table class="gox-table">
-    <thead><tr><th>字號</th><th>類型</th><th class="cell-center">生效日</th><th class="cell-center">到期日</th><th class="cell-center">狀態</th><th class="cell-ops">操作</th></tr></thead>
+    <thead><tr><th>字號</th><th>類型</th><th class="cell-center">生效日</th><th class="cell-center">到期日 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-center">狀態 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-ops">操作</th></tr></thead>
     <tbody id="l-tbody"></tbody>
   </table>
 </div></div>
