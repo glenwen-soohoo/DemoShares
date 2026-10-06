@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | 檢驗紀錄通知信規則
+  說明頁，不對應正式站任何畫面（正式站不用做這頁）
+  對應正式站：
+    到期提醒排程 : HuashanCRM/Controllers/Api/ScheduleController.cs:5578 ProductTestReportRemind（收件人 :5580-5591 寫死，要抽共用）
+    寄信方法     : ScheduleController.cs:5700 SendRemindByReceiversAsync（_messageApiClient.SendMail，EmailSenderEnum.Greenbox）
+    自動送驗單   : ScheduleController.cs:6390 CreateInspectionOrder（到期 4 天判斷 :6499-6511；寄 MailReceivers.ItemNewGroup）
+    收件人常數   : GreenBox.Infrastructure/Constants/MailReceivers.cs  ⚠ 沒有 purchase，要補
+    到期日欄位   : dbo.ProductTestReportRemind.RemindDateTime／IsRemind（ReportType=0）
+  規則全文：開發文件 05
+-->
+
+<meta charset="UTF-8">
+<title>檢驗紀錄通知信規則 (demo)</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; padding:48px 16px; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;
+        font-size:15px; line-height:1.7; color:#1a1a1a; background:#fafbfb; }
+  .wrap{ max-width:1000px; margin:0 auto; }
+  .back{ font-size:14px; color:#4ba83b; text-decoration:none; }
+  a{ color:#4ba83b; }
+  h1{ font-size:28px; margin:8px 0 4px; color:#4ba83b; }
+  .sub{ color:#888; font-size:14px; margin:0 0 32px; }
+  h2{ font-size:20px; margin:40px 0 16px; padding-left:12px; border-left:4px solid #4ba83b; }
+  h3{ font-size:16px; margin:24px 0 8px; }
+  .card{ background:#fff; border:1px solid #e0e4e6; border-radius:4px; padding:24px; }
+  .flow{ width:100%; height:auto; display:block; }
+  .flow text{ font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; background:#fff; }
+  th,td{ border:1px solid #e0e4e6; padding:8px 12px; text-align:left; vertical-align:top; }
+  th{ background:#f1f2f7; font-weight:700; white-space:nowrap; }
+  td.k{ white-space:nowrap; font-weight:700; }
+  .tbl-scroll{ overflow-x:auto; }
+  .muted{ color:#888; }
+  .tag{ display:inline-block; font-size:12px; padding:0 8px; border-radius:4px; border:1px solid #e0e4e6; color:#595757; white-space:nowrap; }
+  .tag.new{ border-color:#4ba83b; color:#4ba83b; }
+  ul{ margin:0; padding-left:20px; }
+  li{ margin-bottom:4px; }
+  .mail{ font-size:14px; background:#f6f8fa; border:1px solid #e0e4e6; border-radius:4px; padding:16px; }
+  .mail .subj{ font-weight:700; margin-bottom:8px; }
+  .todo{ border-left:4px solid #fbbf24; padding:8px 16px; background:#fffbeb; margin-top:16px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">‹ 回 demo 目錄</a>
+  <h1>檢驗紀錄｜通知信規則</h1>
+  <p class="sub">2026-10-06。開發文件見 05；狀態怎麼切看 <a href="status-flow.html">狀態怎麼切換</a></p>
+
+  <h2>一共三封信</h2>
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>信</th><th>什麼時候寄</th><th>寄給誰</th><th>這次要做什麼</th></tr></thead>
+      <tbody>
+        <tr><td class="k">不合格通知 <span class="tag new">新做</span></td>
+          <td>按「檢驗完上架」或「重新上架」的當下，有任一項結果是不合格</td>
+          <td>依商品分類分組（下方表）</td>
+          <td>新寫</td></tr>
+        <tr><td class="k">檢驗報告即將到期通知 <span class="tag">既有排程</span></td>
+          <td>每天跑；報告到期日在<b>今天到 14 天後</b>之間、而且還沒提醒過</td>
+          <td>依商品分類分組（下方表）</td>
+          <td>不改排程。上架時把有效日期寫成商品的報告到期日，排程就會自己寄</td></tr>
+        <tr><td class="k">單品自動建立檢驗訂單 <span class="tag">既有排程</span></td>
+          <td>每週一、週四；產地直送的熱銷商品，前五名一定建，其他的報告到期日在 4 天內才建</td>
+          <td>itemnew</td>
+          <td>不改。一樣靠上架時寫入的到期日</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>時間軸（一份報告從上架到到期）</h2>
+  <div class="card">
+    <svg class="flow" viewBox="0 0 960 230" role="img" aria-label="通知信時間軸">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#595757"/></marker>
+      </defs>
+      <line x1="40" y1="110" x2="920" y2="110" stroke="#595757" stroke-width="2" marker-end="url(#ah)"/>
+
+      <!-- 上架 -->
+      <circle cx="100" cy="110" r="8" fill="#4ba83b"/>
+      <text x="100" y="84" font-size="15" font-weight="700" text-anchor="middle" fill="#4ba83b">檢驗完上架</text>
+      <text x="100" y="66" font-size="12" text-anchor="middle" fill="#595757">寫入到期日＝有效日期</text>
+      <rect x="30" y="134" width="140" height="56" rx="4" fill="#fff" stroke="#dc4e43"/>
+      <text x="100" y="158" font-size="13" font-weight="700" text-anchor="middle" fill="#dc4e43">不合格通知</text>
+      <text x="100" y="178" font-size="12" text-anchor="middle" fill="#595757">有不合格才寄，當下</text>
+
+      <!-- 到期前 14 天 -->
+      <circle cx="560" cy="110" r="7" fill="#fff" stroke="#595757" stroke-width="2"/>
+      <text x="560" y="84" font-size="14" font-weight="700" text-anchor="middle" fill="#1a1a1a">到期前 14 天內</text>
+      <rect x="480" y="134" width="160" height="56" rx="4" fill="#fff" stroke="#595757"/>
+      <text x="560" y="158" font-size="13" font-weight="700" text-anchor="middle" fill="#1a1a1a">即將到期通知</text>
+      <text x="560" y="178" font-size="12" text-anchor="middle" fill="#595757">每天排程，寄一次</text>
+
+      <!-- 到期前 4 天 -->
+      <circle cx="740" cy="110" r="7" fill="#fff" stroke="#595757" stroke-width="2"/>
+      <text x="740" y="84" font-size="14" font-weight="700" text-anchor="middle" fill="#1a1a1a">到期前 4 天內</text>
+      <rect x="664" y="134" width="152" height="56" rx="4" fill="#fff" stroke="#595757"/>
+      <text x="740" y="158" font-size="13" font-weight="700" text-anchor="middle" fill="#1a1a1a">自動建送驗單</text>
+      <text x="740" y="178" font-size="12" text-anchor="middle" fill="#595757">週一、週四，產地直送</text>
+
+      <!-- 到期 -->
+      <circle cx="860" cy="110" r="8" fill="#888"/>
+      <text x="860" y="84" font-size="14" font-weight="700" text-anchor="middle" fill="#595757">有效日期</text>
+      <text x="860" y="150" font-size="12" text-anchor="middle" fill="#888">前台不再顯示</text>
+      <text x="860" y="168" font-size="12" text-anchor="middle" fill="#888">（列表變「已過期」）</text>
+    </svg>
+  </div>
+
+  <h2>收件人分組</h2>
+  <p>不合格通知與到期提醒用<b>同一份</b>分組，依「條碼對到的商品」的分類決定。同一條碼對到不同分類的商品時，各組都寄。</p>
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>商品分類</th><th>收件人</th></tr></thead>
+      <tbody>
+        <tr><td class="k">產地直送</td><td>itemnew@soohoobook.com、purchase@soohoobook.com</td></tr>
+        <tr><td class="k">冷凍專區</td><td>frozenfood@soohoobook.com</td></tr>
+        <tr><td class="k">快速到貨</td><td>specialnew@soohoobook.com</td></tr>
+        <tr><td class="k">粥寶寶專區</td><td>babyfood@soohoobook.com</td></tr>
+        <tr><td class="k">其他分類</td><td class="muted">不寄（跟到期提醒現在的做法一樣）</td></tr>
+        <tr><td class="k">條碼沒綁任何商品</td><td>上面四組<b>都寄</b>（只有不合格通知會遇到，2026-10-06 定）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">這份清單現在寫死在到期提醒排程裡（fruit_web <code>ScheduleController.cs:5580-5591</code>），開發時抽成共用，兩封信一起讀。</p>
+
+  <h2>不合格通知</h2>
+  <h3>什麼時候寄</h3>
+  <ul>
+    <li>按「<b>檢驗完上架</b>」或「<b>重新上架</b>」，而且有選的檢驗項目裡，任一項結果是<b>不合格</b></li>
+    <li>重新上架<b>會再寄一次</b>（2026-10-06 定）</li>
+    <li>上架後檢驗項目與結果就鎖住，所以<b>不會有「上架後才改成不合格」</b>的情況；要改結果得先改回檢驗中，改完重新上架時才寄</li>
+  </ul>
+  <h3>什麼時候不寄</h3>
+  <ul>
+    <li>直接下架、手動下架、改回檢驗中、取消檢驗、重新送驗</li>
+    <li>上架中改日期或產品名稱</li>
+    <li>結果全部陰性（不寄「合格」通知）</li>
+  </ul>
+  <h3>信長這樣</h3>
+  <div class="mail">
+    <div class="muted">寄給：frozenfood@soohoobook.com（對到的商品是冷凍專區）</div>
+    <div class="subj">主旨：2026/10/06檢驗不合格通知｜花蓮鮮蝦餛飩（2026092102）</div>
+    <div>
+      以下檢驗紀錄已上架，結果有不合格：<br>
+      紀錄編號：2026092102　報告編號：GB2026092102<br>
+      國際條碼：4719865002376　產品名稱：花蓮鮮蝦餛飩<br>
+      檢驗日期：2026/09/21<br>
+      不合格項目：李斯特菌<br>
+      對應商品：花蓮鮮蝦餛飩（Id 30152）<br>
+      後台連結：檢驗紀錄頁（開到這一筆）
+    </div>
+  </div>
+  <p class="muted">主旨格式比照到期提醒的「{日期}檢驗報告即將到期通知」。寄件者、寄信方式照到期提醒（<code>SendRemindByReceiversAsync</code>）。</p>
+  <h3>寄信失敗</h3>
+  <ul>
+    <li><b>不能擋住上架</b>：狀態照樣切成上架，失敗寫進 log</li>
+    <li>畫面上的「已寄出不合格通知」提示，正式版要改成看寄信結果，失敗時提示「上架成功，但通知信沒寄出」</li>
+  </ul>
+
+  <h2>即將到期通知（既有，這次只寫資料）</h2>
+  <ul>
+    <li>上架時，把紀錄的<b>有效日期</b>寫成條碼對到的每個商品的自主把關報告到期日，並把「已提醒」清掉，提醒會重新算</li>
+    <li>上架中改了有效日期，一樣重寫、重算</li>
+    <li>到期日只認<b>現在顯示的那份</b>：之後營運在產品編輯頁手動上傳圖檔，改成圖檔的到期日；刪掉圖檔就清空，不寄提醒</li>
+    <li>下架、改回檢驗中都<b>不回滾</b>到期日，所以下架的報告到期前還是會收到提醒（提醒的意思是「這個商品該送新報告了」，跟報告有沒有在前台無關）</li>
+    <li>一份到期日只提醒一次；重新上架會重寫到期日，可能再提醒一次</li>
+  </ul>
+
+  <h2>自動送驗單（既有，不改）</h2>
+  <ul>
+    <li>每週一、週四跑，只看<b>產地直送</b>的熱銷商品：前五名一定建送驗單，其他的報告到期日在 4 天內才建</li>
+    <li>建完寄「單品自動建立檢驗訂單」給 itemnew，信裡列送驗單連結</li>
+    <li>它讀的就是上架時寫入的到期日，所以不用改</li>
+  </ul>
+
+</div>
+</body>
+</html>
