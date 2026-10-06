@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 檢驗紀錄頁（手機版）
-  真相來源：D:\GreenBox\fruit_web origin/dev（f360435cd，2026-10-06 讀；行號跟 10-05 的 07f0c120a 相同。DEV-3977 分支要先更新到這個版本以後）
+  真相來源：D:\GreenBox\fruit_web origin/dev（5518003cc，2026-10-06 再對；引用的檔案從 07f0c120a 起都沒變，行號有效。DEV-3977 分支要先更新到這個版本以後）
   對應正式站（待新建）：
     view       : Areas/GoX/Views/InspectionRecord/Mobile.cshtml（待新建，空 div #admin-inspection-record-mobile，不套 GoX 三段式殼）
     react      : react-component-export/exports/admin-inspection-record-mobile.tsx（待新建）
@@ -719,10 +719,15 @@ window.INSP = (function () {
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
+  // 刪除（2026-10-06 Glen：軟刪除，按鈕放取消檢驗旁邊）：只有沒上架過的待檢驗、檢驗中、取消可以刪；上架過的報告出現過在前台，不給刪
+  // 軟刪除＝資料留著、標 deleted，列表與所有畫面都看不到；紀錄編號照樣算進當天流水號（不會重號）
+  function canDelete(r) { var v = viewState(r); return v === 'pending' || v === 'testing' || v === 'cancelled'; }
+  function softDelete(no) { return update(no, { deleted: true, deletedAt: today() }); }
   function buttonRows(r) {
     var next = allowedNext(r);
     var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['取消']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
     if (canResend(r)) rows[2].push('resend');
+    if (canDelete(r)) rows[2].push('delete');
     return rows.filter(function (g) { return g.length; });
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
@@ -742,9 +747,10 @@ window.INSP = (function () {
   return {
     ITEMS: ITEMS, RESULTS: RESULTS, STANDARDS: STANDARDS, STORAGES: STORAGES, STATUS: STATUS,
     PRODUCTS: PRODUCTS, BARCODES: BARCODES,
-    records: function () { return state.records; }, scenario: function () { return state.scenario; },
+    // 軟刪除的不給畫面
+    records: function () { return state.records.filter(function (r) { return !r.deleted; }); }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, manualOf: manualOf, hasManualImgs: hasManualImgs, setManual: setManual, setManualExp: setManualExp, clearManual: clearManual, currentFor: currentFor, frontSelfFor: frontSelfFor, supersededText: supersededText, itemsLocked: itemsLocked, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
@@ -997,7 +1003,7 @@ function CreateDrawer({ open, onClose, initialBarcode }) {
 }
 
 function EditDrawer({ no, onClose, onOpen }) {
-  const { message, notification } = AntApp.useApp();
+  const { message, notification, modal } = AntApp.useApp();
   const records = useRecords();
   const r = records.find((x) => x.no === no);
   if (!r) return null;
@@ -1034,6 +1040,11 @@ function EditDrawer({ no, onClose, onOpen }) {
     else message.info('已改為' + t);
   };
   const resend = () => { const n = INSP.resend(r.no); message.success('已開新紀錄 ' + n.no); onOpen(n.no); };
+  const askDelete = () => modal.confirm({
+    title: '刪除這筆檢驗紀錄？', okText: '刪除', okButtonProps: { danger: true }, cancelText: '取消', getContainer: frameEl,
+    content: '刪除後列表不再顯示。資料會留著（軟刪除），之後要查還查得到。',
+    onOk: () => { INSP.softDelete(r.no); message.success('已刪除 ' + r.no); onClose(); },
+  });
   const photos = INSP.photosOf(r);
   const addPhotos = async (srcs) => {
     const items = [];
@@ -1060,6 +1071,7 @@ function EditDrawer({ no, onClose, onOpen }) {
       {INSP.buttonRows(r).map((row, i) => (<div className="m-status-btns" key={i}>
         {row.map((t) => t === 'resend'
           ? <Button key={t} onClick={resend}>重新送驗</Button>
+          : t === 'delete' ? <Button key={t} danger type="text" onClick={askDelete}>刪除</Button>
           : <Button key={t} type={t === '上架' ? 'primary' : 'default'} danger={t === '下架'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(t)}>{INSP.actionLabel(r, t)}</Button>)}
       </div>))}
       {(view === 'pending' || view === 'testing') && INSP.missingForComplete(r).length > 0 && <div className="m-muted" style={{ marginTop: 4 }}>未填寫完畢</div>}

@@ -725,10 +725,15 @@ window.INSP = (function () {
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
+  // 刪除（2026-10-06 Glen：軟刪除，按鈕放取消檢驗旁邊）：只有沒上架過的待檢驗、檢驗中、取消可以刪；上架過的報告出現過在前台，不給刪
+  // 軟刪除＝資料留著、標 deleted，列表與所有畫面都看不到；紀錄編號照樣算進當天流水號（不會重號）
+  function canDelete(r) { var v = viewState(r); return v === 'pending' || v === 'testing' || v === 'cancelled'; }
+  function softDelete(no) { return update(no, { deleted: true, deletedAt: today() }); }
   function buttonRows(r) {
     var next = allowedNext(r);
     var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['取消']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
     if (canResend(r)) rows[2].push('resend');
+    if (canDelete(r)) rows[2].push('delete');
     return rows.filter(function (g) { return g.length; });
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
@@ -748,9 +753,10 @@ window.INSP = (function () {
   return {
     ITEMS: ITEMS, RESULTS: RESULTS, STANDARDS: STANDARDS, STORAGES: STORAGES, STATUS: STATUS,
     PRODUCTS: PRODUCTS, BARCODES: BARCODES,
-    records: function () { return state.records; }, scenario: function () { return state.scenario; },
+    // 軟刪除的不給畫面
+    records: function () { return state.records.filter(function (r) { return !r.deleted; }); }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, manualOf: manualOf, hasManualImgs: hasManualImgs, setManual: setManual, setManualExp: setManualExp, clearManual: clearManual, currentFor: currentFor, frontSelfFor: frontSelfFor, supersededText: supersededText, itemsLocked: itemsLocked, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
