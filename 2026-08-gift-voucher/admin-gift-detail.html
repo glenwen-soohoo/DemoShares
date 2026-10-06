@@ -52,8 +52,9 @@
         欄位名建議改 IsRedeemable，不要留 Display——照字面實作的人會去改前台
         的顯示與否，那是錯的。分支還沒併 dev，migration 一起改成本最低。
       發券要不要停：靠「發券總量」發滿，或單純不再操作發券，不另設開關。
-      連帶要改：BabyBirthdayPresentBatch.cs:102 目前拿 type.Display 決定生日禮排程要不要
-      發券，語意換掉之後那條要改判斷依據，否則關掉「開放兌換」會連排程一起停掉。
+      連帶：BabyBirthdayPresentBatch 已經改成刻意不讀 Display（那是兌換端的閘門），
+      但也因此沒有任何暫停排程的辦法，現行註解寫的是「發滿總量或刪掉券模板」。
+      本規格要加一個真的開關，見 _交接對照.md L-1。
   常數：生日禮券種代碼 BD-BABY，券號格式 BD-BABY-0052（券代碼 ＋ 該券種第幾張）
   完整名稱對照見同資料夾 _交接對照.md
 -->
@@ -940,6 +941,17 @@ a:hover { text-decoration: underline; }
   .gv-sum-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 2px; }
   .gv-sum-num { font-size: 18px; font-weight: 600; color: var(--gox-text); font-variant-numeric: tabular-nums; }
   .gv-sum-num.is-green { color: var(--gox-green); }
+  .gv-sched { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--gox-border); border-radius: 4px; margin-bottom: 16px; }
+  /* 底色與邊框照這一頁既有的 danger 組（.gox-tag.is-danger / .row-error） */
+  .gv-sched.is-off { border-color: #ffccc7; background: #fff1f0; }
+  .gv-sched-txt { flex: 1; font-size: 14px; line-height: 1.6; color: var(--gox-text); }
+  .gv-sched-sub { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
+  .gv-sched-confirm { margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--gox-danger); border-radius: 4px; background: #fff1f0; font-size: 13px; line-height: 1.7; color: var(--gox-text); }
+  .gv-sched-confirm ul { margin: 8px 0 12px; padding-left: 20px; }
+  .gv-sched-btns { display: flex; justify-content: flex-end; gap: 8px; }
+  /* 按鈕旁的暫停標記：不打開彈窗也看得出排程停著。
+     配色沿用既有的 .gox-tag.is-danger，這裡只蓋掉 .is-hidden 的優先序。 */
+  .gv-sched-tag.is-hidden { display: none; }
   .gv-rule-body { font-size: 14px; line-height: 1.9; color: var(--gox-text-sub); }
   .gv-rule-body h4 { font-size: 14px; color: var(--gox-text); margin: 16px 0 4px; }
   .gv-rule-body h4:first-child { margin-top: 0; }
@@ -1107,6 +1119,7 @@ a:hover { text-decoration: underline; }
 <div class="gox-list-head" id="gv-voucher-head">
   <h2 style="font-size:16px;">禮物券模板<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
   <div class="gv-head-actions">
+    <span class="gox-tag is-danger gv-sched-tag is-hidden" id="gv-sched-tag">排程暫停中</span>
     <button type="button" class="gox-btn gox-btn-default" id="gv-btn-rule" style="display:none;">查看生日券發放規則</button>
     <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">建立新券模板</button>
   </div>
@@ -1275,6 +1288,26 @@ a:hover { text-decoration: underline; }
   <div class="gox-modal-box">
     <div class="gox-card-title">生日券發放規則</div>
     <div class="gox-card-body">
+      <div class="gv-sched" id="gv-sched-box">
+        <div class="gv-sched-txt">
+          <span id="gv-sched-state"></span>
+          <span class="gv-sched-sub" id="gv-sched-sub"></span>
+        </div>
+        <span class="gox-switch is-on" id="gv-sched-sw"></span>
+      </div>
+
+      <div class="gv-sched-confirm is-hidden" id="gv-sched-confirm">
+        確定暫停生日券排程？
+        <ul>
+          <li>下一批（本週三）起不再發新券，手上已經發出去的券不受影響。</li>
+          <li>暫停期間滿一歲的寶寶會在重新開啟後補發，但<b>超過補發期限的那些就永久錯過</b>，停越久漏越多。</li>
+        </ul>
+        <div class="gv-sched-btns">
+          <button type="button" class="gox-btn gox-btn-default" id="gv-sched-no">取消</button>
+          <button type="button" class="gox-btn gox-btn-danger" id="gv-sched-yes">確定暫停</button>
+        </div>
+      </div>
+
       <div class="gv-rule-body">
         <h4>什麼時候發</h4>
         <ul><li>每週三上午自動執行，不需要人工操作</li><li><b>不會每次都建一個新的券</b>，生日禮固定用列表上這一個券持續發放，每張發出去的券依發券日各自算到期日</li></ul>
@@ -1296,7 +1329,11 @@ a:hover { text-decoration: underline; }
           <li>累計已送出 <b id="gv-rule-sms"></b>，其中 <b class="gv-note-fail" id="gv-rule-sms-fail"></b></li>
         </ul>
         <h4>活動暫停</h4>
-        <ul><li>把禮物「上架」關掉就會停止發新的券</li><li>已經發出去的券不受影響</li></ul>
+        <ul>
+          <li>用上面的開關暫停，下一批起不再發新券</li>
+          <li>已經發出去的券不受影響，照各自的到期日繼續用</li>
+          <li>重新開啟後，暫停期間還在補發期限內的寶寶會在下一批補上</li>
+        </ul>
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:20px;">
         <button type="button" class="gox-btn gox-btn-default" data-gox-close>關閉</button>
@@ -1317,7 +1354,11 @@ a:hover { text-decoration: underline; }
     return { code: 'BD-BABY', name: '寶寶生日禮', recurring: true,
       start: '2026-04-20', expire: null, expireRule: '發券日起 14 天',
       used: used, issued: issued, unused: unused,
-      active: true, ended: false, sms: { sent: smsSent, failed: smsFail } };
+      active: true, ended: false, sms: { sent: smsSent, failed: smsFail },
+      // 排程開關。對到 PresentVoucherType 要新增的 IsAutoIssueEnabled：
+      // 排程本來就是用券代碼去撈券模板，閘門掛在這一層才是它自己讀得到的東西。
+      // pausedBy / pausedAt 只有關掉時才有值。
+      sched: { on: true, pausedBy: '', pausedAt: '' } };
   }
 
   function ymd(d) {
@@ -1846,7 +1887,58 @@ a:hover { text-decoration: underline; }
   });
 
 
-  if (g.hasAutoRule) document.getElementById('gv-btn-rule').style.display = '';
+  /* 生日券排程開關。掛在禮物層（g.sched），對到後端是排程自己的欄位，
+     不是券模板的 Display／IsRedeemable——那兩個管的是客人換不換得到。
+     ⚠ BabyBirthdayPresentBatch.cs:102 現在是拿 type.Display 決定要不要發券，
+       要改成讀這個開關，見 _交接對照.md L-1。 */
+  // 這份禮物的排程券模板（生日禮只會有一個）
+  var schedType = g.types.filter(function (x) { return x.recurring; })[0];
+
+  function paintSched() {
+    var on = schedType.sched.on;
+    document.getElementById('gv-sched-box').classList.toggle('is-off', !on);
+    document.getElementById('gv-sched-sw').classList.toggle('is-on', on);
+    document.getElementById('gv-sched-state').textContent = on ? '排程進行中' : '排程暫停中';
+    document.getElementById('gv-sched-sub').textContent = on
+      ? '每週三上午自動發券'
+      : (schedType.sched.pausedBy ? ('由 ' + schedType.sched.pausedBy + ' 於 ' + schedType.sched.pausedAt + ' 暫停') : '不再發新券');
+    document.getElementById('gv-sched-tag').classList.toggle('is-hidden', on);
+  }
+
+  if (g.hasAutoRule) {
+    document.getElementById('gv-btn-rule').style.display = '';
+    paintSched();
+
+    var schedConfirm = document.getElementById('gv-sched-confirm');
+    document.getElementById('gv-sched-sw').addEventListener('gox:switch', function (e) {
+      if (e.detail.on) {
+        // 開回來不必確認，恢復發券沒有不可逆的後果
+        schedConfirm.classList.add('is-hidden');
+        schedType.sched.on = true;
+        schedType.sched.pausedBy = '';
+        schedType.sched.pausedAt = '';
+        paintSched();
+        window.gox.toast('生日券排程已開啟，下一批照常發券');
+      } else {
+        // 關掉要確認：按錯的話要到下週三沒發券才會有人發現
+        e.target.classList.add('is-on');
+        schedConfirm.classList.remove('is-hidden');
+      }
+    });
+    document.getElementById('gv-sched-no').addEventListener('click', function () {
+      schedConfirm.classList.add('is-hidden');
+      paintSched();
+    });
+    document.getElementById('gv-sched-yes').addEventListener('click', function () {
+      schedConfirm.classList.add('is-hidden');
+      schedType.sched.on = false;
+      schedType.sched.pausedBy = '王小美';
+      schedType.sched.pausedAt = ymd(new Date()).replace(/-/g, '/');
+      paintSched();
+      window.gox.toast('生日券排程已暫停，不再發新券');
+    });
+  }
+
   function openRuleModal() {
     // 簡訊統計是排程的執行結果，放這裡而不是列表欄位裡
     var bd = g.types.filter(function (x) { return x.recurring && x.sms; })[0];
