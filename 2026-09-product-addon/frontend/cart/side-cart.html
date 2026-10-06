@@ -102,14 +102,14 @@
     <!-- info：地區選好後的各產線運費摘要 -->
     <div class="sc-info">
       <div class="sc-line-sum" data-line="origin">
-        <div class="r"><span>產地直送<small>（含運費 $0）</small></span><span data-linetotal>NT$1,299</span></div>
+        <div class="r"><span>產地直送<small>（含運費 $0）</small></span><span data-linetotal>NT$1,719</span></div>
       </div>
       <div class="sc-line-sum" data-line="frozen">
         <div class="r"><span>冷凍超市<small>（含運費 $150）</small></span><span data-linetotal>NT$1,629</span></div>
         <div class="short"><span>離免運門檻尚差</span><span data-short>$271</span></div>
       </div>
       <div class="sc-gift">贈品活動將於結帳頁面自動計算</div>
-      <div class="sc-total"><span>總額</span><span data-grandtotal>NT$2,928</span></div>
+      <div class="sc-total"><span>總額</span><span data-grandtotal>NT$3,348</span></div>
       <div class="sc-checkout">結帳</div>
     </div>
 
@@ -154,6 +154,21 @@
             </div>
             <button class="rm" title="移除加購品"><i class="fa fa-trash"></i></button>
           </div>
+        </div>
+      </div>
+
+      <!-- 同商品分兩列不合併：苦茶油「一般購買」是獨立一列（售價 $420），與上方木瓜下的「加購」苦茶油（$360）並存、不合併 -->
+      <div class="sc-order" data-line="origin">
+        <div class="sc-item" data-price="420">
+          <div class="imgbox">
+            <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="苦茶油">
+          </div>
+          <div class="info2">
+            <div class="nm">【冷壓初榨苦茶油】小農直送</div>
+            <div class="spec">250ml</div>
+            <div class="qp"><span>X 1</span><span>$420</span></div>
+          </div>
+          <button class="rm" title="移除商品"><i class="fa fa-trash"></i></button>
         </div>
       </div>
     </div>
@@ -212,16 +227,15 @@
       let grand = 0;
       Object.keys(LINES).forEach(line => {
         const cfg = LINES[line];
-        const order = document.querySelector(`.sc-order[data-line="${line}"]`);
+        // 同一產線可能有多筆 order（例：同商品一般買＋加購買＝分兩列不合併）
+        const orders = [...document.querySelectorAll(`.sc-order[data-line="${line}"]`)];
         const sumBox = document.querySelector(`.sc-line-sum[data-line="${line}"]`);
-        // 該產線商品總額（主商品＋所有加購品折後價）
+        // 該產線商品總額（所有 order 的主商品＋加購品折後價）
         let goods = 0;
-        if(order){
-          order.querySelectorAll('[data-price]').forEach(el => goods += Number(el.dataset.price));
-        }
+        orders.forEach(order => order.querySelectorAll('[data-price]').forEach(el => goods += Number(el.dataset.price)));
         // 產線整條被刪光 → 移除商品區與頂部摘要行
-        if(!order || goods === 0){
-          if(order) order.closest('.sc-group')?.remove();
+        if(!orders.length || goods === 0){
+          orders.forEach(order => order.closest('.sc-group')?.remove());
           sumBox?.remove();
           return;
         }

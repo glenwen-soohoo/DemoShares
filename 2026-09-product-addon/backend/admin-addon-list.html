@@ -892,11 +892,13 @@ a:hover { text-decoration: underline; }
   var IMG2 = 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp';
   var IMG3 = 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg';
   // ADDONS：加購品列表資料（待新建 ProductAddOn）。id→加購品主檔PK；line→Product.Type；
-  //   mode/val→折扣沿用 PromoteCode；orig→Price；start/end→折扣生效期間(PromoteCode)；
-  //   mains→掛載主商品數(count of ProductAddOnMapping)；stock→OriginAmt-SoldAmt(剩餘，非原始庫存)；on→ProductAddOn 上下架
+  //   mode/val→折扣沿用 PromoteCode；orig→Price（原價）；sell→目前售價(DiscPrice??Price，有特價才帶，省略＝同原價)；
+  //   加購折扣一律從「售價」往下算：finalOf＝售價×倍率／售價−金額（10/06 定案，不是原價）；
+  //   start/end→折扣生效期間(PromoteCode)；mains→掛載主商品數(count of ProductAddOnMapping)；
+  //   stock→OriginAmt-SoldAmt(剩餘，非原始庫存)；on→ProductAddOn 上下架
   var ADDONS = [
     { id:99753, name:'316 不鏽鋼保溫瓶 500ml', img:IMG1, line:'產地直送', temp:'常溫', mode:'fixed', val:50, orig:399, start:'2026/09/01', end:'2026/09/30', mains:3, stock:128, on:true },
-    { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', mode:'percent', val:0.8, orig:299, start:'', end:'', mains:1, stock:64, on:true },
+    { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', mode:'percent', val:0.8, orig:299, sell:249, start:'', end:'', mains:1, stock:64, on:true },
     { id:36007, name:'冷壓初榨苦茶油 250ml', img:IMG3, line:'產地直送', temp:'冷藏', mode:'fixed', val:60, orig:420, start:'2026/09/01', end:'2026/10/31', mains:5, stock:8, on:true },
     { id:24011, name:'有機黑芝麻粉 300g', img:'', line:'蔬果乾貨', temp:'冷凍', mode:'fixed', val:40, orig:280, start:'2026/07/01', end:'2026/08/31', mains:2, stock:0, on:false }
   ];
@@ -907,7 +909,8 @@ a:hover { text-decoration: underline; }
     { id:61120, name:'冬季草莓禮盒（已下架）', img:'', line:'產地直送', temp:'冷凍', addons:1, stock:0, on:false }
   ];
   var line = 'all', kw = '', TODAY = '2026/09/16';
-  function finalOf(a){ return a.mode==='fixed' ? a.orig-a.val : Math.round(a.orig*a.val); }   // percent: val=0.XX 倍率，折後＝原價×倍率
+  function sellOf(a){ return a.sell!=null ? a.sell : a.orig; }                                 // 目前售價 DiscPrice??Price（有特價用特價）
+  function finalOf(a){ var s=sellOf(a); return a.mode==='fixed' ? s-a.val : Math.round(s*a.val); }   // 加購折扣從「售價」往下算（10/06 定案，非原價）
   function discText(a){ return a.mode==='fixed' ? '固定 '+money(a.val) : '×'+a.val; }          // percent 顯示 0.XX 倍率（無「幾折」），與設定頁口徑一致
   function effStatus(a){
     var s=a.start||'', e=a.end||'';
@@ -927,7 +930,7 @@ a:hover { text-decoration: underline; }
     document.getElementById('al-addon-body').innerHTML = la.map(function(a){
       var fin = finalOf(a), period = a.start ? a.start+'～'+a.end : '不指定', st = effStatus(a);
       return '<tr>'+thumbCell(a.img)+'<td class="al-id">'+a.id+'</td><td>'+a.name+tempTag(a.temp)+'</td><td>'+a.line+'</td><td class="al-disc">'+discText(a)+'</td>'
-        + '<td><span class="al-old">'+money(a.orig)+'</span><span class="al-final">'+money(fin)+'</span></td>'
+        + '<td><span class="al-old">'+money(sellOf(a))+'</span><span class="al-final">'+money(fin)+'</span></td>'
         + '<td class="al-line">'+period+' <span class="as-eff '+st.c+'">'+st.t+'</span></td><td class="cell-center">'+a.mains+'</td>'
         + stockCell(a.stock)
         + '<td class="cell-center"><span class="gox-switch '+(a.on?'is-on':'')+'" data-on-addon="'+a.id+'"></span></td>'

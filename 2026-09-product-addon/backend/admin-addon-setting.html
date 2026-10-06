@@ -856,7 +856,8 @@ a:hover { text-decoration: underline; }
               {a:101509,m:40894,on:true},{a:36007,m:40894,on:true} ];
   var view={type:'addon', id:99753};
 
-  function finalOf(a){ return a.mode==='fixed'?a.orig-a.val:Math.round(a.orig*a.val); }
+  function sellOf(a){ return (a.disc!==''&&a.disc!=null)?a.disc:a.orig; }                      // 目前售價 DiscPrice??Price（有特價用特價）
+  function finalOf(a){ var s=sellOf(a); return a.mode==='fixed'?s-a.val:Math.round(s*a.val); }  // 加購折扣從「售價」往下算（10/06 定案，非原價）
   function mainsOf(aid){ return pairs.filter(function(p){return p.a==aid;}); }
   function addonsOf(mid){ return pairs.filter(function(p){return p.m==mid;}); }
   function effStatus(a){
@@ -893,7 +894,7 @@ a:hover { text-decoration: underline; }
     var mismatch = !isSubject && MAINS[pair.m].temp!==a.temp;
     return '<div class="as-ib'+(off?' is-off':'')+(isSubject?' is-bare':'')+'" data-addon="'+aid+'">'
       + '<div class="as-ib-head"><div class="as-summary'+(bad?' is-invalid':'')+'"><span class="as-badge">規格ID '+aid+'</span><span class="nm">'+esc(a.prod)+'</span>'+tempTag(a.temp, mismatch)+'<span class="spec">'+esc(a.spec)+'</span>'
-      + '<span class="calc">原價 <s>'+money(a.orig)+'</s> → 折後 <b class="as-final">'+money(fin)+'</b><span class="as-save">'+(bad?'折後 ≤ $0':'省 '+money(a.orig-fin))+'</span></span>'+specrow+'</div>'
+      + '<span class="calc">售價 <s>'+money(sellOf(a))+'</s> → 折後 <b class="as-final">'+money(fin)+'</b><span class="as-save">'+(bad?'折後 ≤ $0':'省 '+money(sellOf(a)-fin))+'</span></span>'+specrow+'</div>'
       + '<div class="as-acts">'+acts+'</div></div>'
       + '<div class="as-grid">'
         + '<div class="as-field"><span>折抵方式</span><div class="as-seg" data-seg><button class="'+(a.mode==='fixed'?'is-active':'')+'" data-mode="fixed">固定金額</button><button class="'+(a.mode==='percent'?'is-active':'')+'" data-mode="percent">百分比</button></div></div>'
@@ -940,7 +941,7 @@ a:hover { text-decoration: underline; }
     block.querySelector('.as-unit').textContent = a.mode==='fixed'?'元':'（0～1）';
     var sm=block.querySelector('.as-summary'); sm.classList.toggle('is-invalid', bad);
     sm.querySelector('.as-final').textContent=money(fin);
-    sm.querySelector('.as-save').textContent= bad?'折後 ≤ $0':'省 '+money(a.orig-fin);
+    sm.querySelector('.as-save').textContent= bad?'折後 ≤ $0':'省 '+money(sellOf(a)-fin);
     var st=effStatus(a), tag=block.querySelector('.as-eff'); tag.className='as-eff '+st.c; tag.textContent=st.t;
   }
   function refreshSave(){

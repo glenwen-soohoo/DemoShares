@@ -351,8 +351,10 @@
     'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509190336361.jpg',
     'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg'
   ];
+  // orig＝原價(Price)；sell＝目前售價(DiscPrice??Price，有特價才帶、省略＝同原價)；now＝加購價(SellPrice，從售價往下算)
+  // 刪除線顯示「售價」(sell??orig)、不是原價（10/06 定案）。首筆帶特價示範「從特價再折」。
   const ADDONS=[
-    {img:IMG[0], temp:'常溫', name:'【冷壓初榨苦茶油】小農直送', spec:'250ml', orig:420, now:360},
+    {img:IMG[0], temp:'常溫', name:'【冷壓初榨苦茶油】小農直送', spec:'250ml', orig:420, sell:390, now:360},
     {img:IMG[1], temp:'冷藏', name:'【放牧土雞蛋】農場晃晃',     spec:'10 入', orig:150, now:120},
     {img:IMG[2], temp:'常溫', name:'【有機黑芝麻粉】',           spec:'300g',  orig:280, now:240},
     {img:IMG[3], temp:'常溫', name:'【綜合堅果禮盒】',           spec:'500g',  orig:520, now:450, out:true},
@@ -376,7 +378,7 @@
       +`<img class="addon-thumb" src="${it.img}" alt="">`
       +`<div class="addon-body"><div class="addon-name">${it.name}<span class="addon-temp">${it.temp}</span></div><div class="addon-spec">商品規格：${it.spec}</div></div>`
       +action
-      +`<div class="addon-price"><span class="orig">${money(it.orig)}</span><span class="now">${money(it.now)}</span></div></label>`;
+      +`<div class="addon-price"><span class="orig">${money(it.sell ?? it.orig)}</span><span class="now">${money(it.now)}</span></div></label>`;
   }
   function render(){
     const items=ADDONS.slice(0, state.total)
