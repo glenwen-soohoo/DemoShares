@@ -23,7 +23,7 @@
     重新送驗    開一筆新紀錄，ResendOfId 指回原紀錄（demo 叫 resendOf）
     手動圖檔    產品編輯頁手動上傳的無毒農檢驗報告圖檔跟檢驗紀錄比誰晚放上去，誰晚顯示誰；刪除後留白（ProductTestReportRemind.ManualUpdateTime 待新建）
     上架後鎖    檢驗項目與結果上架後不能改（itemsLocked），日期不能清空
-    畫面名稱    D 版不叫上下架：分頁「顯示產品頁」「前台未顯示紀錄」；按鈕「儲存並上傳產品頁」（切上架）、「儲存」（切下架，WithdrawType＝直接下架）在獨立的「完成檢驗」欄  ⚠ 只是顯示名稱，enum 跟 API 的值仍是上架、下架
+    畫面名稱    D 版不叫上下架：分頁「顯示產品頁」「前台未顯示紀錄」；按鈕「儲存並上傳產品頁」（切上架）、「儲存」（切下架，WithdrawType＝直接下架）在獨立的「完成檢驗」欄；上架中的「前台不顯示」（切下架，WithdrawType＝手動下架）、下架的「重新顯示於前台」（切上架）也在這欄  ⚠ 只是顯示名稱，enum 跟 API 的值仍是上架、下架
     照片欄      「附檔照片」：按「新增」上傳；縮圖滑過右上角叉叉直接刪（DeletePhoto）
     C 版對照    admin-inspection-records-c.html（同規則、舊叫法）
   這一頁打的真實 API：
@@ -1330,8 +1330,9 @@ window.INSP = (function () {
     if (target === '待檢驗') return v === 'cancelled' ? '恢復送驗' : '改回待檢驗';
     if (target === '擱置') return '暫停送驗';
     // 2026-10-06 Glen：「上架／下架」會跟產品本身上下架搞混，驗完的兩顆改叫「儲存並上傳產品頁」「儲存」
-    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '儲存並上傳產品頁';
-    if (target === '下架') return v === 'live' ? '手動下架' : '儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
+    // 上架中撤下、下架後再放回，也不叫上下架（2026-10-06 Glen）
+    if (target === '上架') return v === 'withdrawn' ? '重新顯示於前台' : '儲存並上傳產品頁';
+    if (target === '下架') return v === 'live' ? '前台不顯示' : '儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
@@ -1350,7 +1351,7 @@ window.INSP = (function () {
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
   // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
-  function withdrawText(r) { return r.withdrawnAt + ' ' + ({ '直接下架': '儲存，未上傳產品頁' }[r.withdrawKind] || r.withdrawKind || '下架'); }
+  function withdrawText(r) { return r.withdrawnAt + ' ' + ({ '直接下架': '儲存，未上傳產品頁', '手動下架': '設為前台不顯示' }[r.withdrawKind] || r.withdrawKind || '下架'); }
   function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && ((target !== '上架' && target !== '下架') || !missingForComplete(r).length); }
 
   // 不合格信收件人：照對到商品的分類分組；條碼沒綁任何商品就各產線都寄（2026-10-06 Glen）
@@ -1781,7 +1782,7 @@ function Page() {
     if (t === '上架') {
       INSP.update(r.no, { status: t, publishedAt: INSP.today(), publishedTs: Date.now() });
       const ps = INSP.productsOf(r);
-      message.success(ps.length ? '已儲存並上傳到 ' + ps.length + ' 個產品頁，報告到期日設為 ' + r.expDate : '已儲存；此條碼沒有綁商品，前台不會顯示');
+      message.success(from === 'withdrawn' ? (ps.length ? '已重新顯示於 ' + ps.length + ' 個產品頁' : '已重新顯示；此條碼沒有綁商品，前台不會顯示') : ps.length ? '已儲存並上傳到 ' + ps.length + ' 個產品頁，報告到期日設為 ' + r.expDate : '已儲存；此條碼沒有綁商品，前台不會顯示');
       if (INSP.hasFail(r)) {
         const groups = INSP.receiversFor(r);
         const to = Object.keys(groups).map((k) => k + '：' + groups[k].join('、'));
@@ -1790,7 +1791,7 @@ function Page() {
       }
       return;
     }
-    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: from === 'live' ? '手動下架' : '直接下架' }); message.info(from === 'live' ? '已下架，前台不再顯示這份報告' : '已儲存，這份報告不會放上產品頁'); return; }
+    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: from === 'live' ? '手動下架' : '直接下架' }); message.info(from === 'live' ? '已設為前台不顯示' : '已儲存，這份報告不會放上產品頁'); return; }
     INSP.update(r.no, { status: t });
     if (t === '檢驗中' && from !== 'pending') message.info('已改回檢驗中，前台不再顯示這份報告，可以修改欄位');
     else if (t === '擱置') message.info('已暫停送驗');
@@ -1849,7 +1850,7 @@ function Page() {
               : <Button key={t} size="small" onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>)}
           </Space>))}</div>);
       } },
-    // 驗完的兩顆（儲存並上傳產品頁／儲存）獨立一欄；上架中的手動下架、下架的重新上架也在這裡
+    // 驗完的兩顆（儲存並上傳產品頁／儲存）獨立一欄；上架中的「前台不顯示」、下架的「重新顯示於前台」也在這裡
     { title: '完成檢驗', key: 'publish', width: 160, render: (_, r) => {
         const v = INSP.viewState(r), btns = INSP.publishButtons(r), miss = (v === 'pending' || v === 'testing') ? INSP.missingForComplete(r) : [];
         if (!btns.length) return null;

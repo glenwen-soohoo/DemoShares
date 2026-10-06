@@ -715,8 +715,9 @@ window.INSP = (function () {
     if (target === '待檢驗') return v === 'cancelled' ? '恢復送驗' : '改回待檢驗';
     if (target === '擱置') return '暫停送驗';
     // 2026-10-06 Glen：「上架／下架」會跟產品本身上下架搞混，驗完的兩顆改叫「儲存並上傳產品頁」「儲存」
-    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '儲存並上傳產品頁';
-    if (target === '下架') return v === 'live' ? '手動下架' : '儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
+    // 上架中撤下、下架後再放回，也不叫上下架（2026-10-06 Glen）
+    if (target === '上架') return v === 'withdrawn' ? '重新顯示於前台' : '儲存並上傳產品頁';
+    if (target === '下架') return v === 'live' ? '前台不顯示' : '儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
@@ -735,7 +736,7 @@ window.INSP = (function () {
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
   // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
-  function withdrawText(r) { return r.withdrawnAt + ' ' + ({ '直接下架': '儲存，未上傳產品頁' }[r.withdrawKind] || r.withdrawKind || '下架'); }
+  function withdrawText(r) { return r.withdrawnAt + ' ' + ({ '直接下架': '儲存，未上傳產品頁', '手動下架': '設為前台不顯示' }[r.withdrawKind] || r.withdrawKind || '下架'); }
   function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && ((target !== '上架' && target !== '下架') || !missingForComplete(r).length); }
 
   // 不合格信收件人：照對到商品的分類分組；條碼沒綁任何商品就各產線都寄（2026-10-06 Glen）
@@ -1036,7 +1037,7 @@ function EditDrawer({ no, onClose, onOpen }) {
       }
       return;
     }
-    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: view === 'live' ? '手動下架' : '直接下架' }); message.info(view === 'live' ? '已下架' : '已儲存，不會放上產品頁'); return; }
+    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: view === 'live' ? '手動下架' : '直接下架' }); message.info(view === 'live' ? '已設為前台不顯示' : '已儲存，不會放上產品頁'); return; }
     INSP.update(r.no, { status: t });
     if (t === '檢驗中' && view !== 'pending') message.info('已改回檢驗中，前台不再顯示');
     else if (t === '擱置') message.info('已暫停送驗');
