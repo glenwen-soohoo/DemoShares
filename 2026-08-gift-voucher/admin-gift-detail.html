@@ -941,14 +941,15 @@ a:hover { text-decoration: underline; }
   .gv-sum-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 2px; }
   .gv-sum-num { font-size: 18px; font-weight: 600; color: var(--gox-text); font-variant-numeric: tabular-nums; }
   .gv-sum-num.is-green { color: var(--gox-green); }
-  .gv-sched { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--gox-border); border-radius: 4px; margin-bottom: 16px; }
+  /* 這一塊是「可以操作的東西」，底下整片是「說明文字」。
+     只靠一條細框在白底上分不出來，所以上底色 ＋ 給它自己的小標題。 */
+  .gv-sched { padding: 12px 16px; border: 1px solid var(--gox-border); border-radius: 4px; margin-bottom: 16px; background: #fafafa; }
+  .gv-sched-label { font-size: 12px; color: var(--gox-text-muted); margin-bottom: 8px; }
+  .gv-sched-row { display: flex; align-items: center; gap: 12px; }
   /* 底色與邊框照這一頁既有的 danger 組（.gox-tag.is-danger / .row-error） */
   .gv-sched.is-off { border-color: #ffccc7; background: #fff1f0; }
   .gv-sched-txt { flex: 1; font-size: 14px; line-height: 1.6; color: var(--gox-text); }
   .gv-sched-sub { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
-  .gv-sched-confirm { margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--gox-danger); border-radius: 4px; background: #fff1f0; font-size: 13px; line-height: 1.7; color: var(--gox-text); }
-  .gv-sched-confirm ul { margin: 8px 0 12px; padding-left: 20px; }
-  .gv-sched-btns { display: flex; justify-content: flex-end; gap: 8px; }
   /* 按鈕旁的暫停標記：不打開彈窗也看得出排程停著。
      配色沿用既有的 .gox-tag.is-danger，這裡只蓋掉 .is-hidden 的優先序。 */
   .gv-sched-tag.is-hidden { display: none; }
@@ -1120,7 +1121,7 @@ a:hover { text-decoration: underline; }
   <h2 style="font-size:16px;">禮物券模板<span style="color:var(--gox-text-muted);font-size:12px;font-weight:normal;margin-left:8px;" id="gv-tcount"></span></h2>
   <div class="gv-head-actions">
     <span class="gox-tag is-danger gv-sched-tag is-hidden" id="gv-sched-tag">排程暫停中</span>
-    <button type="button" class="gox-btn gox-btn-default" id="gv-btn-rule" style="display:none;">查看生日券發放規則</button>
+    <button type="button" class="gox-btn gox-btn-default" id="gv-btn-rule" style="display:none;">生日券發放排程</button>
     <button type="button" class="gox-btn gox-btn-primary" id="gv-btn-issue">建立新券模板</button>
   </div>
 </div>
@@ -1286,25 +1287,16 @@ a:hover { text-decoration: underline; }
 
 <div class="gox-modal-overlay is-hidden" id="gv-rule-modal">
   <div class="gox-modal-box">
-    <div class="gox-card-title">生日券發放規則</div>
+    <div class="gox-card-title">生日券發放排程</div>
     <div class="gox-card-body">
       <div class="gv-sched" id="gv-sched-box">
-        <div class="gv-sched-txt">
-          <span id="gv-sched-state"></span>
-          <span class="gv-sched-sub" id="gv-sched-sub"></span>
-        </div>
-        <span class="gox-switch is-on" id="gv-sched-sw"></span>
-      </div>
-
-      <div class="gv-sched-confirm is-hidden" id="gv-sched-confirm">
-        確定暫停生日券排程？
-        <ul>
-          <li>下一批（本週三）起不再發新券，手上已經發出去的券不受影響。</li>
-          <li>暫停期間滿一歲的寶寶會在重新開啟後補發，但<b>超過補發期限的那些就永久錯過</b>，停越久漏越多。</li>
-        </ul>
-        <div class="gv-sched-btns">
-          <button type="button" class="gox-btn gox-btn-default" id="gv-sched-no">取消</button>
-          <button type="button" class="gox-btn gox-btn-danger" id="gv-sched-yes">確定暫停</button>
+        <div class="gv-sched-label">排程狀態</div>
+        <div class="gv-sched-row">
+          <div class="gv-sched-txt">
+            <span id="gv-sched-state"></span>
+            <span class="gv-sched-sub" id="gv-sched-sub"></span>
+          </div>
+          <span class="gox-switch is-on" id="gv-sched-sw"></span>
         </div>
       </div>
 
@@ -1313,10 +1305,8 @@ a:hover { text-decoration: underline; }
         <ul><li>每週三上午自動執行，不需要人工操作</li><li><b>不會每次都建一個新的券</b>，生日禮固定用列表上這一個券持續發放，每張發出去的券依發券日各自算到期日</li></ul>
         <h4>發給誰</h4>
         <ul>
-          <li>當週滿一歲的寶寶（週一到週日）</li>
-          <li>之前錯過的也會補發：只要還沒發過、而且登記時間沒有太晚，都會在下一批補上</li>
-          <li>寶寶超過一歲之後才登記的不發</li>
-          <li>每個寶寶一生只發一次</li>
+          <li>每個寶寶一生只發一次，會於一歲生日時發送，過期不補發</li>
+          <li>每次排程會判斷在<b>上週一到本週日（共 14 天）</b>內滿一歲、且未發過生日券的寶寶進行發放。（即本週二晚上登記、上週一滿一歲的仍可收到生日券，但週三排程後就只會發給本週一後滿一歲之寶寶）</li>
           <li>雙胞胎各發一張；一張訂單只能用一張生日禮券，兩張要同單使用請客人聯繫客服</li>
         </ul>
         <h4>效期</h4>
@@ -1332,7 +1322,7 @@ a:hover { text-decoration: underline; }
         <ul>
           <li>用上面的開關暫停，下一批起不再發新券</li>
           <li>已經發出去的券不受影響，照各自的到期日繼續用</li>
-          <li>重新開啟後，暫停期間還在補發期限內的寶寶會在下一批補上</li>
+          <li>重新開啟後，因為每一批都抓兩週，<b>會補到前一週滿一歲的寶寶</b>；再更早的就不補了</li>
         </ul>
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:20px;">
@@ -1357,8 +1347,8 @@ a:hover { text-decoration: underline; }
       active: true, ended: false, sms: { sent: smsSent, failed: smsFail },
       // 排程開關。對到 PresentVoucherType 要新增的 IsAutoIssueEnabled：
       // 排程本來就是用券代碼去撈券模板，閘門掛在這一層才是它自己讀得到的東西。
-      // pausedBy / pausedAt 只有關掉時才有值。
-      sched: { on: true, pausedBy: '', pausedAt: '' } };
+      // pausedAt 只有關掉時才有值。
+      sched: { on: true, pausedAt: '' } };
   }
 
   function ymd(d) {
@@ -1567,10 +1557,10 @@ a:hover { text-decoration: underline; }
   }
 
   // 券的狀態（已結束）掛在券名旁邊，不要塞進日期欄或操作欄。
-  // 排程券不掛「自動發放」標籤，那件事由「查看生日券發放規則」按鈕負責。
+  // 排程券不掛「自動發放」標籤，那件事由「生日券發放排程」按鈕負責。
   // 原本「每週三自動」放在日期欄、「已結束」放在有效期限欄、「自動」放在操作欄，
   // 三個欄位都因此變成「有時是值、有時是狀態」，篩選與排序都會壞掉。
-  // 排程細節（週期、補發、簡訊）一律只在「查看生日券發放規則」彈窗裡講。
+  // 排程細節（週期、補發、簡訊）一律只在「生日券發放排程」彈窗裡講。
   // 可兌換起日 ＝ 券種的 StartTime。語意是「這一天之前客人兌換不到」，
   // 管的是兌換端，不是發券端：日期還沒到的券照樣發得出去，前台也照常看得到，
   // 只是兌換按鈕變成「尚未到達兌換時間」按不下去。不是把券藏起來。
@@ -1887,10 +1877,9 @@ a:hover { text-decoration: underline; }
   });
 
 
-  /* 生日券排程開關。掛在禮物層（g.sched），對到後端是排程自己的欄位，
-     不是券模板的 Display／IsRedeemable——那兩個管的是客人換不換得到。
-     ⚠ BabyBirthdayPresentBatch.cs:102 現在是拿 type.Display 決定要不要發券，
-       要改成讀這個開關，見 _交接對照.md L-1。 */
+  /* 生日券排程開關。對到券模板要新增的 IsAutoIssueEnabled，
+     不是 IsRedeemable——那個管的是客人換不換得到，BabyBirthdayPresentBatch
+     已經刻意不讀它。見 _交接對照.md L-1。 */
   // 這份禮物的排程券模板（生日禮只會有一個）
   var schedType = g.types.filter(function (x) { return x.recurring; })[0];
 
@@ -1899,9 +1888,11 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-sched-box').classList.toggle('is-off', !on);
     document.getElementById('gv-sched-sw').classList.toggle('is-on', on);
     document.getElementById('gv-sched-state').textContent = on ? '排程進行中' : '排程暫停中';
-    document.getElementById('gv-sched-sub').textContent = on
-      ? '每週三上午自動發券'
-      : (schedType.sched.pausedBy ? ('由 ' + schedType.sched.pausedBy + ' 於 ' + schedType.sched.pausedAt + ' 暫停') : '不再發新券');
+    // 開著的時候沒有補充說明：週期寫在底下的「什麼時候發」，這裡再寫一次是重複。
+    // 關著才有話要講，而且只講會影響客人的兩件事：舊券還能用、暫停期間的不補發。
+    document.getElementById('gv-sched-sub').innerHTML = on ? '' :
+      ('於 ' + schedType.sched.pausedAt + ' 暫停發放，已發出去的券不影響使用<br>' +
+       '重啟後只補到前一週滿一歲的寶寶，更早的不補');
     document.getElementById('gv-sched-tag').classList.toggle('is-hidden', on);
   }
 
@@ -1909,33 +1900,13 @@ a:hover { text-decoration: underline; }
     document.getElementById('gv-btn-rule').style.display = '';
     paintSched();
 
-    var schedConfirm = document.getElementById('gv-sched-confirm');
     document.getElementById('gv-sched-sw').addEventListener('gox:switch', function (e) {
-      if (e.detail.on) {
-        // 開回來不必確認，恢復發券沒有不可逆的後果
-        schedConfirm.classList.add('is-hidden');
-        schedType.sched.on = true;
-        schedType.sched.pausedBy = '';
-        schedType.sched.pausedAt = '';
-        paintSched();
-        window.gox.toast('生日券排程已開啟，下一批照常發券');
-      } else {
-        // 關掉要確認：按錯的話要到下週三沒發券才會有人發現
-        e.target.classList.add('is-on');
-        schedConfirm.classList.remove('is-hidden');
-      }
-    });
-    document.getElementById('gv-sched-no').addEventListener('click', function () {
-      schedConfirm.classList.add('is-hidden');
+      schedType.sched.on = e.detail.on;
+      schedType.sched.pausedAt = e.detail.on ? '' : ymd(new Date()).replace(/-/g, '/');
       paintSched();
-    });
-    document.getElementById('gv-sched-yes').addEventListener('click', function () {
-      schedConfirm.classList.add('is-hidden');
-      schedType.sched.on = false;
-      schedType.sched.pausedBy = '王小美';
-      schedType.sched.pausedAt = ymd(new Date()).replace(/-/g, '/');
-      paintSched();
-      window.gox.toast('生日券排程已暫停，不再發新券');
+      window.gox.toast(e.detail.on
+        ? '生日券排程已開啟，下一批照常發券'
+        : '生日券排程已暫停，不再發新券');
     });
   }
 
