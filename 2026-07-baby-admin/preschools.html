@@ -781,6 +781,7 @@ a:hover { text-decoration: underline; }
   .baby-ck { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #eee; border-radius:4px; margin-bottom:5px; }
   .baby-ck:hover { border-color:#b7d8ae; }
   .baby-grp { margin:10px 0 4px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .grp-arrow { font-size:9px; width:12px; display:inline-block; color:var(--gox-text-muted); }
   .baby-age { display:flex; gap:12px; flex-wrap:wrap; }
   .baby-age label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--gox-text-sub); }
   .baby-age input { width:88px; }
@@ -904,7 +905,7 @@ a:hover { text-decoration: underline; }
       <select class="gox-select" id="batch-count" style="width:80px;"><option>1</option><option>2</option><option selected>3</option><option>6</option></select> 個月</div>
     <div class="gox-hint" style="margin-bottom:10px;">若某院所在選定月份期間已有開過需求，則無法再開（下方該列不可勾選）。<br>勾選後人數預設帶入上月、可直接改</div>
     <div style="font-weight:500;margin:8px 0 6px;">要開的院所</div>
-    <div id="batch-list" style="max-height:320px;overflow:auto;"></div>
+    <div id="batch-list" style="max-height:460px;overflow:auto;"></div>
     <div class="gox-modal-actions">
       <button class="gox-btn gox-btn-default" data-gox-close>取消</button>
       <button class="gox-btn gox-btn-primary" id="batch-submit">建立</button>
@@ -997,6 +998,11 @@ a:hover { text-decoration: underline; }
   'use strict';
   const MONTHS = ['2026-09','2026-08','2026-07','2026-06','2026-05'];
   const TYPES = ['一般捐款','安心蔬果','愛心稻田','圓夢計畫','聖誕傳情','豆漿鮮奶','工程公益修繕','快篩試劑','寶寶粥'];
+  // 專案啟用狀態對齊 project-settings.html 的「啟用專案」；未啟用專案在批次需求不可開（灰色＋標示）
+  const DISABLED_TYPES = ['聖誕傳情','快篩試劑','寶寶粥'];
+  // 專案顯示順序：由專案管理（project-settings）拖曳排序寫進 localStorage，批次開需求與專案篩選都照這個順序
+  function projectOrder(){ let o; try{ o=JSON.parse(localStorage.getItem('baby_project_order')||'null'); }catch(e){} return Array.isArray(o)?o:TYPES; }
+  function orderedTypes(){ const ord=projectOrder(); return TYPES.slice().sort((a,b)=>{ const ia=ord.indexOf(a), ib=ord.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); }); }
   const PT = { '一般捐款':'#232a34|#eef1f5|#232a34','安心蔬果':'#274d13|#f3f8ee|#274d13','愛心稻田':'#4a3d0d|#f8f4e6|#4a3d0d','圓夢計畫':'#382a6b|#f5f1fb|#382a6b',
     '聖誕傳情':'#6e2449|#fbf0f5|#6e2449','豆漿鮮奶':'#5a4110|#faf3e8|#5a4110','工程公益修繕':'#1f3a5e|#eef4fb|#1f3a5e',
     '快篩試劑':'#174a50|#eef7f7|#174a50','寶寶粥':'#74380f|#fbf0e8|#74380f' };
@@ -1058,7 +1064,7 @@ a:hover { text-decoration: underline; }
   const fltMonth=document.querySelector('#flt-month');
   function fillSel(sel,arr,fmt){ sel.innerHTML=arr.map(x=>`<option value="${x}">${fmt?fmt(x):x}</option>`).join(''); }
   // 篩選下拉：專案類型
-  document.querySelector('#flt-type').insertAdjacentHTML('beforeend', TYPES.map(t=>`<option>${t}</option>`).join(''));
+  document.querySelector('#flt-type').insertAdjacentHTML('beforeend', orderedTypes().map(t=>`<option>${t}</option>`).join(''));
   // 詳情/新增 專案下拉
   fillSel(document.querySelector('#d-type'), TYPES); fillSel(document.querySelector('#ap-type'), TYPES);
 
@@ -1184,17 +1190,25 @@ a:hover { text-decoration: underline; }
       +`<span style="display:inline-flex;align-items:flex-end;gap:8px;"><span style="display:inline-flex;gap:3px;">`
       +`<span class="bage-h">未滿3</span><span class="bage-h">3–6</span><span class="bage-h">6–12</span><span class="bage-h">12–18</span></span>`
       +`<span style="min-width:62px;text-align:right;font-size:11px;color:var(--gox-text-muted);">每月箱數</span></span></div>`;
-    document.querySelector('#batch-list').innerHTML = headHTML + Object.entries(groups).map(([type,arr])=>`
-      <div class="baby-grp">${ptag(type)} <label style="font-weight:400;font-size:13px;"><input type="checkbox" class="bg-ck" data-type="${type}"> 整批</label></div>
-      ${arr.map(([id,p])=>{ const conflict=targets.some(m=>p.months[m]); const checked=!conflict;
-        return `<div class="baby-brow" data-pid="${id}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 10px;border:1px solid #eee;border-radius:4px;margin-bottom:5px;${conflict?'opacity:.5;':''}">
-        <label style="display:flex;align-items:center;gap:6px;min-width:150px;flex:1;"><input type="checkbox" class="bp-ck" data-type="${type}" value="${id}" ${checked?'checked':''} ${conflict?'disabled':''}> ${p.name}${conflict?' <span class="gox-hint">（選定月份已開過）</span>':''}</label>
+    document.querySelector('#batch-list').innerHTML = headHTML + orderedTypes().filter(t=>groups[t]).map(type=>{
+      const arr=groups[type]; const off=DISABLED_TYPES.includes(type);
+      return `
+      <div class="baby-grp" style="${off?'opacity:.55;':''}">
+        <span class="grp-toggle" data-type="${type}" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;user-select:none;"><span class="grp-arrow">${off?'▶':'▼'}</span>${ptag(type)}</span>
+        ${off ? `<span class="gox-hint" style="font-weight:400;">本專案未啟用</span>`
+              : `<label style="font-weight:400;font-size:13px;"><input type="checkbox" class="bg-ck" data-type="${type}"> 整批</label>`}
+      </div>
+      <div class="baby-grp-body" data-type="${type}"${off?' style="display:none;"':''}>
+      ${arr.map(([id,p])=>{ const conflict=targets.some(m=>p.months[m]); const locked=off||conflict; const checked=!locked;
+        return `<div class="baby-brow" data-pid="${id}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 10px;border:1px solid #eee;border-radius:4px;margin-bottom:5px;${locked?'opacity:.5;':''}">
+        <label style="display:flex;align-items:center;gap:6px;min-width:150px;flex:1;"><input type="checkbox" class="bp-ck" data-type="${type}" value="${id}" ${checked?'checked':''} ${locked?'disabled':''}> ${p.name}${(conflict&&!off)?' <span class="gox-hint">（選定月份已開過）</span>':''}</label>
         <span class="brow-fields" data-pid="${id}" style="display:${checked?'inline-flex':'none'};align-items:center;gap:8px;">
           <span style="display:inline-flex;gap:3px;">${ageInputs(id,p)}</span>
           <span class="brow-demand" data-pid="${id}" style="font-size:12px;color:#389e0d;min-width:62px;text-align:right;">每月 ${calcDemandBox(p.ages)} 箱</span>
         </span>
       </div>`; }).join('')}
-    `).join('');
+      </div>
+    `; }).join('');
     Object.keys(groups).forEach(syncGroup);
   }
   function openBatch(){
@@ -1203,7 +1217,7 @@ a:hover { text-decoration: underline; }
     fillSel(document.querySelector('#batch-start'), opts, fmtMonth);
     // 預設落在第一個「還有院所可開」的月份（當月常常已全部開過），當月仍保留在選單可選
     const n=+document.querySelector('#batch-count').value||1;
-    const coop=Object.values(PRES).filter(p=>p.coop);
+    const coop=Object.values(PRES).filter(p=>p.coop && !DISABLED_TYPES.includes(p.type));
     const firstOpenable=opts.find(start=>{ const t=Array.from({length:n},(_,i)=>addMonth(start,i));
       return coop.some(p=>!t.some(m=>p.months[m])); }) || curMonth;
     document.querySelector('#batch-start').value = firstOpenable;
@@ -1244,6 +1258,14 @@ a:hover { text-decoration: underline; }
     const bg=e.target.closest('.bg-ck');
     if(bg){ document.querySelectorAll(`.bp-ck[data-type="${bg.dataset.type}"]:not(:disabled)`).forEach(c=>{ c.checked=bg.checked;
       const f=c.closest('.baby-brow').querySelector('.brow-fields'); if(f) f.style.display=bg.checked?'inline-flex':'none'; }); bg.indeterminate=false; }
+  });
+  // 批次：各專案群組收合（點專案標籤那塊展開/收起）
+  document.addEventListener('click',(e)=>{
+    const t=e.target.closest('.grp-toggle'); if(!t) return;
+    const body=document.querySelector(`.baby-grp-body[data-type="${t.dataset.type}"]`); if(!body) return;
+    const collapsed=body.style.display==='none';
+    body.style.display=collapsed?'':'none';
+    const a=t.querySelector('.grp-arrow'); if(a) a.textContent=collapsed?'▼':'▶';
   });
   document.querySelector('#batch-submit').addEventListener('click',()=>{
     const targets=batchTargets();

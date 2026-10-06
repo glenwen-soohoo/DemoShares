@@ -703,15 +703,28 @@ a:hover { text-decoration: underline; }
 <style>
   .ptag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; border:1px solid; white-space:nowrap; }
   .baby-age { display:flex; gap:12px; flex-wrap:wrap; }
+  /* 排序模式：平時隱藏排序欄，進入排序模式才顯示拖曳把手 */
+  .sort-col { display:none; }
+  #s-table.is-sorting .sort-col { display:table-cell; }
+  #s-table.is-sorting tbody tr { cursor:grab; }
+  #s-table.is-sorting tbody tr:hover td { background:#f3f8ee; }
+  /* 放開會落到的位置：粗分隔線（上緣或下緣） */
+  #s-table.is-sorting tr.drop-before td { box-shadow: inset 0 3px 0 0 var(--gox-green); }
+  #s-table.is-sorting tr.drop-after  td { box-shadow: inset 0 -3px 0 0 var(--gox-green); }
 </style>
 
 <div class="gox-list-head">
   <h2 style="margin:0;font-size:18px;">專案管理 <span style="margin-left:8px;font-size:13px;font-weight:400;color:var(--gox-text-muted);">共 <span id="s-count">0</span> 個專案</span></h2>
-  <div style="display:flex;gap:8px;"><button class="gox-btn gox-btn-primary" id="btn-add">＋ 新增專案</button></div>
+  <div style="display:flex;gap:8px;">
+    <button class="gox-btn gox-btn-default" id="btn-sort">編輯排序</button>
+    <button class="gox-btn gox-btn-primary" id="btn-add">＋ 新增專案</button>
+    <button class="gox-btn gox-btn-primary" id="btn-sort-save" hidden>儲存排序</button>
+    <button class="gox-btn gox-btn-default" id="btn-sort-cancel" hidden>取消</button>
+  </div>
 </div>
 
 <p style="color:var(--gox-text-sub);font-size:13px;margin:0 0 12px;">
-  每個專案選一個對應商品規格，單價與單位就跟著規格帶出；再設定金流、勸募字號與是否啟用。<b>停用的專案不會出現在育幼院管理的專案下拉</b>，避免一次性/歷史專案一直干擾選擇。
+  每個專案選一個對應商品規格，單價與單位就跟著規格帶出；再設定金流、勸募字號與是否啟用。<b>停用的專案不會出現在育幼院管理的專案下拉</b>，避免一次性/歷史專案一直干擾選擇。按「編輯排序」可拖曳調整專案順序、按儲存生效，育幼院的批次開需求與專案篩選會照這個順序顯示。
 </p>
 
 <!-- 🆕 待新建（整張表）：現況「沒有」專案設定的後台 CRUD 畫面或資料表。
@@ -723,9 +736,9 @@ a:hover { text-decoration: underline; }
          故此欄真實後台排在下單系統／商品模型定案之後，現在只示意目標互動。
        · 「單位」改唯讀、跟著所選規格帶出（同單價），不在專案管理各自編輯；單價/單位/換算都是商品規格的屬性。 -->
 <div class="gox-card"><div class="gox-card-body is-table-padding">
-  <table class="gox-table">
+  <table class="gox-table" id="s-table">
     <thead><tr>
-      <th>專案類型</th><th>對應商品規格 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-right">單價</th><th>單位</th><th>金流</th><th>勸募字號</th><th class="cell-center">啟用專案</th><th class="cell-ops">操作</th>
+      <th class="sort-col" style="width:44px;text-align:center;">排序</th><th>專案類型</th><th>對應商品規格 <span class="gox-tag" style="font-weight:600;">示意</span></th><th class="cell-right">單價</th><th>單位</th><th>金流</th><th>勸募字號</th><th class="cell-center">啟用專案</th><th class="cell-ops">操作</th>
     </tr></thead>
     <tbody id="s-tbody"></tbody>
   </table>
@@ -780,7 +793,8 @@ a:hover { text-decoration: underline; }
   document.querySelector('#a-spec').addEventListener('change',e=>{ document.querySelector('#a-unit').value=e.target.selectedOptions[0].dataset.unit||''; });
 
   function render(){ document.querySelector('#s-count').textContent=ACTS.length;
-    document.querySelector('#s-tbody').innerHTML=ACTS.map((a,i)=>`<tr style="${a.open?'':'opacity:.55;'}">
+    document.querySelector('#s-tbody').innerHTML=ACTS.map((a,i)=>`<tr draggable="${sortMode}" data-row="${i}" style="${a.open?'':'opacity:.55;'}">
+      <td class="sort-col cell-center" style="width:44px;color:var(--gox-text-muted);cursor:grab;font-size:15px;" title="拖曳調整順序">⠿</td>
       <td>${ptag(a.name)}</td><td style="color:var(--gox-text-muted);">${a.spec}</td><td class="cell-right">${a.price?'$'+a.price.toLocaleString():'—'}</td>
       <td>${a.unit}</td><td style="font-size:12px;">${a.gw||'—'}</td><td style="font-size:12px;">${a.license}</td>
       <td class="cell-center"><span class="gox-switch ${a.open?'is-on':''}" data-open="${i}"></span></td>
@@ -809,7 +823,37 @@ a:hover { text-decoration: underline; }
       open:document.querySelector('#a-open').classList.contains('is-on') };
     if(idx<0){ ACTS.push(data); } else { Object.assign(ACTS[idx], data); }
     window.gox.closeModal('#modal-act'); render(); window.gox.toast(idx<0?'已新增專案':'已儲存專案設定'); });
-  render();
+
+  // ─ 排序：按「編輯排序」才進入排序模式，拖曳列調整順序，按「儲存排序」才寫進 localStorage ─
+  //   育幼院的批次開需求與專案篩選會讀同一份順序 ─
+  const ORDER_KEY='baby_project_order';
+  let sortMode=false, orderSnapshot=null, dragFrom=-1;
+  function saveOrder(){ try{ localStorage.setItem(ORDER_KEY, JSON.stringify(ACTS.map(a=>a.name))); }catch(e){} }
+  function applySavedOrder(){ let ord; try{ ord=JSON.parse(localStorage.getItem(ORDER_KEY)||'null'); }catch(e){} if(!Array.isArray(ord))return;
+    ACTS.sort((a,b)=>{ const ia=ord.indexOf(a.name), ib=ord.indexOf(b.name); return (ia<0?99:ia)-(ib<0?99:ib); }); }
+  function setSortMode(on){ sortMode=on;
+    document.querySelector('#s-table').classList.toggle('is-sorting', on);
+    document.querySelector('#btn-sort').hidden=on; document.querySelector('#btn-add').hidden=on;
+    document.querySelector('#btn-sort-save').hidden=!on; document.querySelector('#btn-sort-cancel').hidden=!on;
+    render(); }
+  document.querySelector('#btn-sort').addEventListener('click',()=>{ orderSnapshot=ACTS.map(a=>a.name); setSortMode(true); window.gox.toast('排序模式：拖曳列調整順序，完成後按「儲存排序」'); });
+  document.querySelector('#btn-sort-save').addEventListener('click',()=>{ saveOrder(); setSortMode(false); window.gox.toast('已儲存專案順序（育幼院批次與篩選將同步）'); });
+  document.querySelector('#btn-sort-cancel').addEventListener('click',()=>{ if(Array.isArray(orderSnapshot)){ const snap=orderSnapshot; ACTS.sort((a,b)=>snap.indexOf(a.name)-snap.indexOf(b.name)); } setSortMode(false); window.gox.toast('已取消，順序未變更'); });
+
+  let dropPos=-1;
+  const tb=document.querySelector('#s-tbody');
+  function clearInd(){ tb.querySelectorAll('tr.drop-before,tr.drop-after').forEach(r=>r.classList.remove('drop-before','drop-after')); }
+  tb.addEventListener('dragstart',e=>{ if(!sortMode)return; const tr=e.target.closest('tr[data-row]'); if(!tr)return; dragFrom=+tr.dataset.row; dropPos=-1; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(dragFrom));}catch(_){} tr.style.opacity='.4'; });
+  tb.addEventListener('dragend',e=>{ const tr=e.target.closest('tr[data-row]'); if(tr) tr.style.opacity=''; clearInd(); dragFrom=-1; dropPos=-1; });
+  tb.addEventListener('dragover',e=>{ if(!sortMode||dragFrom<0)return; e.preventDefault(); e.dataTransfer.dropEffect='move';
+    const tr=e.target.closest('tr[data-row]'); if(!tr)return;
+    const ri=+tr.dataset.row, rect=tr.getBoundingClientRect(), before=e.clientY < rect.top+rect.height/2;
+    dropPos=before?ri:ri+1; clearInd(); tr.classList.add(before?'drop-before':'drop-after'); });
+  tb.addEventListener('drop',e=>{ if(!sortMode||dragFrom<0||dropPos<0){clearInd();return;} e.preventDefault();
+    const item=ACTS[dragFrom]; ACTS.splice(dragFrom,1); let pos=dropPos; if(pos>dragFrom)pos--; ACTS.splice(pos,0,item);
+    dragFrom=-1; dropPos=-1; clearInd(); render(); });
+
+  applySavedOrder(); render();
 })();
 </script>
 
