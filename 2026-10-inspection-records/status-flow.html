@@ -66,7 +66,7 @@
       <text x="400" y="24" font-size="13" fill="#888">分頁：上架中</text>
       <text x="400" y="348" font-size="13" fill="#888">分頁：下架/過期</text>
       <text x="700" y="24" font-size="13" fill="#888">分頁：下架/過期（系統算出來）</text>
-      <text x="80" y="492" font-size="13" fill="#888">分頁：取消</text>
+      <text x="80" y="492" font-size="13" fill="#888">分頁：擱置</text>
 
       <!-- 檢驗中分頁（待檢驗＋檢驗中） -->
       <rect x="40" y="36" width="240" height="300" rx="8" fill="#f6f8fa" stroke="#e0e4e6"/>
@@ -98,9 +98,9 @@
       <text x="810" y="154" font-size="16" font-weight="700" text-anchor="middle" fill="#595757">已過期</text>
       <text x="810" y="174" font-size="12" text-anchor="middle" fill="#888">過了有效日期</text>
 
-      <!-- 取消 -->
+      <!-- 擱置 -->
       <rect x="80" y="416" width="160" height="56" rx="6" fill="#fff" stroke="#595757" stroke-width="1.5"/>
-      <text x="160" y="450" font-size="17" font-weight="700" text-anchor="middle" fill="#1a1a1a">取消</text>
+      <text x="160" y="450" font-size="17" font-weight="700" text-anchor="middle" fill="#1a1a1a">擱置</text>
 
       <!-- 檢驗中分頁 → 上架中 -->
       <path d="M282 92 L396 76" stroke="#4ba83b" stroke-width="2" fill="none" marker-end="url(#ahg)"/>
@@ -123,11 +123,11 @@
       <path d="M602 76 L696 148" stroke="#888" stroke-width="1.5" stroke-dasharray="6 4" fill="none" marker-end="url(#ahm)"/>
       <text x="648" y="52" font-size="12" text-anchor="middle" fill="#888">系統自動</text>
 
-      <!-- 檢驗中分頁 ⇄ 取消 -->
+      <!-- 檢驗中分頁 ⇄ 擱置 -->
       <path d="M136 338 L136 412" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
-      <text x="128" y="380" font-size="13" text-anchor="end" fill="#595757">取消檢驗</text>
+      <text x="128" y="380" font-size="13" text-anchor="end" fill="#595757">暫停送驗</text>
       <path d="M184 414 L184 340" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
-      <text x="192" y="380" font-size="13" fill="#595757">恢復檢驗</text>
+      <text x="192" y="380" font-size="13" fill="#595757">恢復送驗</text>
 
       <!-- 改回檢驗中：上架中、下架、被取代、過期都可以 -->
       <path d="M810 186 L810 500 L300 500 L300 320 L284 320" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
@@ -148,12 +148,12 @@
     <table>
       <thead><tr><th>現在是</th><th>第 1 行</th><th>第 2 行</th><th>第 3 行</th><th>欄位能不能改</th></tr></thead>
       <tbody>
-        <tr><td class="k">待檢驗</td><td>開始檢驗</td><td>檢驗完上架、直接下架</td><td>取消檢驗、刪除</td><td>可以</td></tr>
-        <tr><td class="k">檢驗中</td><td>改回待檢驗</td><td>檢驗完上架、直接下架</td><td>取消檢驗、刪除</td><td>可以</td></tr>
+        <tr><td class="k">待檢驗</td><td>開始檢驗</td><td>檢驗完上架、直接下架</td><td>暫停送驗、刪除</td><td>可以</td></tr>
+        <tr><td class="k">檢驗中</td><td>改回待檢驗</td><td>檢驗完上架、直接下架</td><td>暫停送驗、刪除</td><td>可以</td></tr>
         <tr><td class="k">上架中</td><td>改回檢驗中</td><td>手動下架</td><td>重新送驗</td><td>日期、品名、保存方式、數量可以改（前台跟著變；必填日期不能清空）；條碼建立後不能改；<b>檢驗項目與結果不能改</b>，要改先改回檢驗中</td></tr>
         <tr><td class="k">下架</td><td>改回檢驗中</td><td>重新上架</td><td>重新送驗</td><td>不能（先改回檢驗中）</td></tr>
         <tr><td class="k">已被取代、已過期</td><td>改回檢驗中</td><td class="muted">—</td><td>重新送驗</td><td>不能（先改回檢驗中）</td></tr>
-        <tr><td class="k">取消</td><td>恢復檢驗</td><td class="muted">—</td><td>刪除</td><td>不能</td></tr>
+        <tr><td class="k">擱置</td><td>恢復送驗</td><td class="muted">—</td><td>刪除</td><td>不能</td></tr>
       </tbody>
     </table>
   </div>
@@ -165,11 +165,11 @@
       <li><b>上架</b>：寫入上架日（就是報告上的報告日期）、把有效日期寫回商品的報告到期日、有不合格就寄信給營運。重新上架也一樣，會再寄一次。寄信規則見 <a href="notification-rules.html">通知信規則</a></li>
       <li><b>上架後檢驗項目與結果就鎖住</b>，要改先改回檢驗中再改，改完重新上架（所以不會有「上架後才改成不合格」）</li>
       <li><b>下架</b>有兩種叫法，存的都是「下架」：檢驗中按的是「直接下架」（驗完不放前台），上架中按的是「手動下架」（上架到一半撤下）。下架不寄信，到期日不回滾</li>
-      <li><b>取消</b>是「還沒驗完就不驗了」，只有待檢驗、檢驗中能取消；<b>下架</b>是「驗完了、但不放前台」</li>
+      <li><b>擱置</b>是「還沒驗完、先不驗」，只有待檢驗、檢驗中能暫停送驗，之後可以恢復送驗；<b>下架</b>是「驗完了、但不放前台」</li>
       <li><b>前台</b>每個商品只顯示一份：<b>檢驗日期最新</b>的那份（同一天比紀錄編號）。最新那份過期就不顯示，也不退回顯示較舊的</li>
       <li><b>新的蓋掉舊的</b>：檢驗紀錄上架、產品編輯頁手動上傳圖檔，誰比較晚放上去就顯示誰；被圖蓋掉的紀錄在「下架/過期」寫「被產品編輯頁手動上傳檔案覆蓋」。營運刪掉圖檔就留白，不會改回舊紀錄。見 <a href="admin-product-edit.html">產品編輯頁</a></li>
       <li><b>已被取代、已過期</b>不用按，系統自動判斷：同一條碼對到的商品都有更新的一份上架，就算被取代</li>
-      <li><b>刪除</b>：放在「取消檢驗」旁邊，只有沒上架過的（待檢驗、檢驗中、取消）能刪。是軟刪除：列表不再顯示，資料留著查得到</li>
+      <li><b>刪除</b>：放在「暫停送驗」旁邊，只有沒上架過的（待檢驗、檢驗中、擱置）能刪。是軟刪除：列表不再顯示，資料留著查得到</li>
       <li><b>重新送驗</b>：開一筆新紀錄（新編號、待檢驗），帶入同條碼、品名、保存方式、數量、選過的項目；結果、照片、日期重來。原紀錄不動</li>
     </ul>
   </div>

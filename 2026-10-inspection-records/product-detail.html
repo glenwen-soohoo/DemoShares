@@ -343,7 +343,7 @@ img { vertical-align: middle; }
 <script>
 /* 檢驗紀錄 demo 共用資料層：後台頁與前台頁共用同一份 localStorage，後台改了前台會跟著變 */
 window.INSP = (function () {
-  var KEY = 'gb-inspection-demo-v11';  // C 版（狀態合一）；A 版（-a.html）用 v2，兩版資料互不干擾
+  var KEY = 'gb-inspection-demo-v12';  // C 版（狀態合一）；A 版（-a.html）用 v2，兩版資料互不干擾
 
   var ITEMS = ['大腸桿菌群', '沙門氏菌', '李斯特菌', '腸桿菌科', '金黃色葡萄球菌'];
   var RESULTS = ['陰性', '不合格'];
@@ -357,7 +357,7 @@ window.INSP = (function () {
   var STORAGES = ['冷凍', '冷藏', '常溫'];
   // 狀態只有一個（2026-10-05 C 版：檢驗狀態與處理狀態合併）。驗完就上架，沒有另外的「已完成」
   // 下架＝手動下架（上架到一半提早撤下，或驗完直接不上架），會存；被取代、過期不存，從「上架」算出來
-  var STATUS = ['待檢驗', '檢驗中', '上架', '下架', '取消'];
+  var STATUS = ['待檢驗', '檢驗中', '上架', '下架', '擱置'];
 
   var PRODUCTS = [
     { id: 28417, name: '阿婆手工肉圓 6 顆裝', spec: '6 顆／包', type: '冷凍專區', price: 360 },
@@ -462,7 +462,7 @@ window.INSP = (function () {
         items: items(A('陰性'), B('陰性'), L('陰性'), null), mfg: D(-5), exp: D(30) }), 2),
       mk(C(-2, 1), '高麗菜豬肉水餃30入', '高麗菜豬肉手工水餃', { storage: '冷凍', qty: '1包', recv: D(-4), insp: D(-2), st: '檢驗中', // 填齊、有不合格，上架時會寄信
         items: items(A('陰性'), B('不合格'), L('陰性'), null), mfg: D(-10), exp: D(170) }),
-      mk(C(-30, 1), '玉荷包禮盒3斤', '屏東玉荷包禮盒', { storage: '冷藏', qty: '1盒', recv: D(-30), insp: D(-30), st: '取消',   // 取消分頁
+      mk(C(-30, 1), '玉荷包禮盒3斤', '屏東玉荷包禮盒', { storage: '冷藏', qty: '1盒', recv: D(-30), insp: D(-30), st: '擱置',   // 擱置分頁
         items: items(A(), B(), null, null), mfg: '', exp: '' }),
       // ── 上架中分頁 ──
       withPhotos(mk(C(-3, 1), '阿婆肉圓(6入)', '阿婆手工肉圓', { storage: '冷凍', qty: '1包', recv: D(-5), insp: D(-3), st: '上架', done: D(-2), // 一條碼對 2 個商品、2 張照片
@@ -913,23 +913,23 @@ window.INSP = (function () {
     return { newer: '被新報告取代', manual: '被產品編輯頁手動上傳檔案覆蓋', both: '被新報告取代、被產品編輯頁手動上傳檔案覆蓋' }[supersededBy(r)] || '';
   }
 
-  // 畫面上的狀態：待檢驗／檢驗中／上架中／下架（手動）／被取代／過期／取消。被取代、過期只會從「上架」算出來
+  // 畫面上的狀態：待檢驗／檢驗中／上架中／下架（手動）／被取代／過期／擱置。被取代、過期只會從「上架」算出來
   function viewState(r) {
     if (r.status === '下架') return 'withdrawn';
     if (r.status === '待檢驗') return 'pending';
     if (r.status === '檢驗中') return 'testing';
-    if (r.status === '取消') return 'cancelled';
+    if (r.status === '擱置') return 'cancelled';
     if (isExpired(r)) return 'expired';
     if (isSuperseded(r)) return 'superseded';
     return 'live';
   }
-  // 下架、被取代、過期、取消：所有欄位不可修改；要改先改回檢驗中（取消是恢復成待檢驗）
+  // 下架、被取代、過期、擱置：所有欄位不可修改；要改先改回檢驗中（擱置是恢復成待檢驗）
   function isLocked(r) { var v = viewState(r); return v === 'withdrawn' || v === 'expired' || v === 'superseded' || v === 'cancelled'; }
   // 每個狀態可以切去哪裡（2026-10-05 C 版）
   function allowedNext(r) {
     switch (viewState(r)) {
-      case 'pending': return ['檢驗中', '上架', '下架', '取消'];
-      case 'testing': return ['上架', '下架', '待檢驗', '取消'];
+      case 'pending': return ['檢驗中', '上架', '下架', '擱置'];
+      case 'testing': return ['上架', '下架', '待檢驗', '擱置'];
       case 'live': return ['下架', '檢驗中'];
       case 'withdrawn': return ['上架', '檢驗中'];
       case 'cancelled': return ['待檢驗'];
@@ -940,24 +940,24 @@ window.INSP = (function () {
   function canResend(r) { return ['live', 'withdrawn', 'superseded', 'expired'].indexOf(viewState(r)) >= 0; }
 
   // 狀態文字與按鈕文字（電腦版、手機版共用）
-  function statusText(r) { return { pending: '待檢驗', testing: '檢驗中', live: '上架中', withdrawn: '已下架', superseded: '已被取代', expired: '已過期', cancelled: '已取消' }[viewState(r)]; }
+  function statusText(r) { return { pending: '待檢驗', testing: '檢驗中', live: '上架中', withdrawn: '已下架', superseded: '已被取代', expired: '已過期', cancelled: '已擱置' }[viewState(r)]; }
   function actionLabel(r, target) {
     var v = viewState(r);
     if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
-    if (target === '待檢驗') return v === 'cancelled' ? '恢復檢驗' : '改回待檢驗';
-    if (target === '取消') return '取消檢驗';
+    if (target === '待檢驗') return v === 'cancelled' ? '恢復送驗' : '改回待檢驗';
+    if (target === '擱置') return '暫停送驗';
     if (target === '上架') return v === 'withdrawn' ? '重新上架' : '檢驗完上架';
     if (target === '下架') return v === 'live' ? '手動下架' : '直接下架';   // 上架中撤下／驗完不上架
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
-  // 刪除（2026-10-06 Glen：軟刪除，按鈕放取消檢驗旁邊）：只有沒上架過的待檢驗、檢驗中、取消可以刪；上架過的報告出現過在前台，不給刪
+  // 刪除（2026-10-06 Glen：軟刪除，按鈕放暫停送驗旁邊）：只有沒上架過的待檢驗、檢驗中、擱置可以刪；上架過的報告出現過在前台，不給刪
   // 軟刪除＝資料留著、標 deleted，列表與所有畫面都看不到；紀錄編號照樣算進當天流水號（不會重號）
   function canDelete(r) { var v = viewState(r); return v === 'pending' || v === 'testing' || v === 'cancelled'; }
   function softDelete(no) { return update(no, { deleted: true, deletedAt: today() }); }
   function buttonRows(r) {
     var next = allowedNext(r);
-    var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['取消']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
+    var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['擱置']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
     if (canResend(r)) rows[2].push('resend');
     if (canDelete(r)) rows[2].push('delete');
     return rows.filter(function (g) { return g.length; });
