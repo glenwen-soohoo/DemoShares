@@ -2,40 +2,16 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 檢驗紀錄頁（電腦版）｜D 版（2026-10-06）
-  真相來源：D:\GreenBox\fruit_web origin/dev（5518003cc，2026-10-06 再對；引用的檔案從 07f0c120a 起都沒變，行號有效。DEV-3977 分支要先更新到這個版本以後）
-  對應正式站（待新建，照 Gift/Index.cshtml 的整頁 React 掛法）：
-    controller : Areas/GoX/Controllers/InspectionRecordController.cs（待新建）
-    view       : Areas/GoX/Views/InspectionRecord/Index.cshtml（待新建，空 div #admin-inspection-record）
-    react      : react-component-export/exports/admin-inspection-record.tsx（待新建）
-    參考既有   : Areas/GoX/Views/Gift/Index.cshtml:21,24 ＋ exports/admin-gift-list.tsx
-    權限       : CheckLogin.CheckPermission（Areas/GoX/Controllers/ProductController.cs:93），fun_id 沿用 3033 產品管理（照 GiftController.cs:25）
-  這一頁的真實欄位名：
-    條碼對商品  dbo.ProductDetailBarcode.Barcode / ProductId / ProductDetailId
-    報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1618
-    樣品照片    dbo.Picture（相簿管理 fun_id 3035），關聯表 InspectionRecordPhoto 待新建
-    條碼辨識    前端自己做（正式站前端沒有）：掃描線解碼＋切格 html5-qrcode，要加 html5-qrcode 套件  ⚠ 後端 ZXing.Net 只用來產生條碼（Fruit.csproj:146）
-    檢驗紀錄    表 InspectionRecord 待新建，欄位提案見 _交接對照.md B 區  ⚠ 不要叫 Batch
-    狀態        Status 只存 待檢驗/檢驗中/上架/下架/擱置（驗完就上架，沒有「已完成」；下架是手動的）（C 版：檢驗狀態與處理狀態合一，只剩這一欄）
-                ⚠ 被取代、過期是算出來的，不要存（規則見 _交接對照.md〈算出來的狀態〉）
-    上架時間    PublishTime（demo 叫 publishedAt）
-    下架        WithdrawTime＋WithdrawType（0 手動下架／1 直接下架；demo 叫 withdrawnAt／withdrawKind）  ⚠ 下架當下就記，不要用有沒有上架時間去推
-    重新送驗    開一筆新紀錄，ResendOfId 指回原紀錄（demo 叫 resendOf）
-    手動圖檔    產品編輯頁手動上傳的無毒農檢驗報告圖檔跟檢驗紀錄比誰晚放上去，誰晚顯示誰；刪除後留白（ProductTestReportRemind.ManualUpdateTime 待新建）
-    上架後鎖    檢驗項目與結果上架後不能改（itemsLocked），日期不能清空
-    畫面名稱    D 版不叫上下架：分頁「顯示產品頁」「前台未顯示紀錄」；按鈕「儲存並上傳產品頁」（切上架）、「儲存」（切下架，WithdrawType＝直接下架）在獨立的「完成檢驗」欄  ⚠ 只是顯示名稱，enum 跟 API 的值仍是上架、下架
-    照片欄      「附檔照片」：按「新增」上傳；縮圖滑過右上角叉叉直接刪（DeletePhoto）
-    C 版對照    admin-inspection-records-c.html（同規則、舊叫法）
-  這一頁打的真實 API：
-    demo 沒打 API（資料在瀏覽器）。要新建的 /GoX/InspectionRecord/LookupBarcode、Create、Update、SetStatus、Resend、UploadPhotos、DeletePhoto
-    不合格信收件人  ScheduleController.cs:5580-5591（寫死，要抽成共用）
-  完整名稱對照見同資料夾 _交接對照.md
+  DemoShares 交接對照 | 檢驗紀錄頁（手機版）｜C 版（2026-10-06 保留對照）
+  ⚠ D 版是 admin-inspection-mobile.html：分頁改「顯示產品頁」「前台未顯示紀錄」、驗完的兩顆改「儲存並上傳產品頁」「儲存」並獨立一欄、照片欄改「附檔照片」。開發照哪一版等 Glen 定
+  狀態規則、資料、API 兩版相同，只差畫面上的名稱與欄位排法；資料跟 D 版共用（同一個 localStorage）
+  對應正式站、真實欄位名、要新建的 API：見 admin-inspection-mobile.html 檔頭與同資料夾 _交接對照.md
 -->
 
 <meta charset="UTF-8">
-<title>檢驗紀錄 — 後台 demo</title>
+<title>檢驗紀錄（手機版） — 後台 demo</title>
 <link rel="icon" href="data:,">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
 /* ───── GoX Admin / base.css ─────
    後台殼共用 reset + 全域字型 + CSS 變數 token。
@@ -114,609 +90,9 @@ a:hover { text-decoration: underline; }
   font-size: var(--gox-font-size-base);
 }
 
-/* ───── GoX Admin / header.css ─────
-   固定在頂端的淺綠 header：
-     左：無毒農 logo（小張）
-     中：breadcrumb（B2B管理 > 訂單管理）
-     右：使用者快捷區（登出、通知；可選） */
-
-.gox-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: var(--gox-header-h);
-  background: var(--gox-header-bg);
-  border-bottom: 1px solid var(--gox-header-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  gap: 20px;
-  font-family: var(--gox-font-family);
-}
-
-.gox-header .gox-logo {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.gox-header .gox-logo img {
-  height: 28px;
-  width: auto;
-  max-width: 120px;
-  display: block;
-}
-
-/* ── breadcrumb ── */
-.gox-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--gox-text-sub);
-  font-size: 15px;
-  flex: 1;
-  min-width: 0;
-}
-.gox-breadcrumb a {
-  color: var(--gox-green);
-  text-decoration: none;
-}
-.gox-breadcrumb a:hover { text-decoration: underline; }
-.gox-breadcrumb .sep {
-  color: var(--gox-text-muted);
-  font-size: 12px;
-}
-.gox-breadcrumb strong {
-  color: #000;
-  font-weight: 700;
-}
-
-/* ── 右側使用者快捷區（可選）── */
-.gox-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-  font-size: var(--gox-font-size-sm);
-}
-.gox-header-right .gox-user {
-  color: var(--gox-text);
-}
-.gox-header-right .gox-icon-btn {
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  color: var(--gox-text-sub);
-  padding: 4px 8px;
-  font-family: inherit;
-  font-size: inherit;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: var(--gox-radius);
-  white-space: nowrap;
-}
-.gox-header-right .gox-user { white-space: nowrap; }
-.gox-header-right .gox-icon-btn:hover {
-  background: rgba(0, 0, 0, .05);
-  color: var(--gox-text);
-}
-
-/* ───── GoX Admin / sidebar.css ─────
-   左側深灰固定側欄。支援：
-     - 一級項目（可帶 badge 紅點）
-     - 可摺疊群組（▶ / ▼）
-     - 二級項目（active 高亮）
-     - disabled 樣式 */
-
-.gox-sidebar {
-  width: var(--gox-sider-w);
-  flex-shrink: 0;
-  background: var(--gox-sider-bg);
-  color: var(--gox-sider-text);
-  padding: 8px 0;
-  font-size: var(--gox-font-size-sm);
-  overflow-y: auto;
-  position: sticky;
-  top: var(--gox-header-h);
-  height: calc(100vh - var(--gox-header-h));
-  font-family: var(--gox-font-family);
-}
-
-/* ── 一級項目 / 群組標題 ── */
-.gox-sidebar .gox-menu-item,
-.gox-sidebar .gox-menu-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  color: var(--gox-sider-text);
-  background: transparent;
-  border: 0;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-size: var(--gox-font-size-sm);
-  font-family: inherit;
-  line-height: 1.5;
-  user-select: none;
-}
-.gox-sidebar .gox-menu-item:hover,
-.gox-sidebar .gox-menu-title:hover {
-  background: var(--gox-sider-sub-bg);
-  color: var(--gox-sider-active-text);
-}
-
-/* disabled（demo 未開放的入口） */
-.gox-sidebar .gox-menu-item.is-disabled {
-  cursor: default;
-  color: #888;
-}
-.gox-sidebar .gox-menu-item.is-disabled:hover {
-  background: transparent;
-  color: #888;
-}
-
-/* 一級項目 active（無子項目、可直接點的頁面，例如「獨立平台」）
-   字色用 !important 壓過腳本給一級項的 inline color:inherit，對齊二級 active 的 bisque */
-.gox-sidebar .gox-menu-item.is-active {
-  background: var(--gox-sider-active-bg);
-  color: var(--gox-sider-active-text) !important;
-  font-weight: 600;
-}
-
-/* 箭頭（▶ / ▼） */
-.gox-sidebar .gox-arrow {
-  display: inline-block;
-  width: 12px;
-  font-size: 9px;
-  flex-shrink: 0;
-  transition: transform .15s;
-}
-
-/* badge 紅點 */
-.gox-sidebar .gox-badge {
-  margin-left: auto;
-  background: var(--gox-danger);
-  color: #fff;
-  border-radius: 10px;
-  padding: 0 6px;
-  font-size: 11px;
-  min-width: 16px;
-  text-align: center;
-  line-height: 16px;
-}
-
-/* ── 摺疊群組 ── */
-.gox-sidebar .gox-menu-group.is-open .gox-menu-title {
-  background: var(--gox-sider-sub-bg);
-  color: var(--gox-sider-active-text);
-}
-.gox-sidebar .gox-menu-children {
-  background: var(--gox-sider-sub-bg);
-}
-
-/* 二級項目 */
-.gox-sidebar .gox-menu-child {
-  display: block;
-  padding: 8px 14px 8px 32px;
-  color: var(--gox-sider-sub-text);
-  text-decoration: none;
-  font-size: var(--gox-font-size-sm);
-}
-.gox-sidebar .gox-menu-child:hover {
-  background: #252530;
-  color: var(--gox-sider-active-text);
-  text-decoration: none;
-}
-.gox-sidebar .gox-menu-child.is-active {
-  background: var(--gox-sider-active-bg);
-  color: var(--gox-sider-active-text);
-  font-weight: 600;
-}
-
-/* ───── GoX Admin / content.css ─────
-   內容區共用元件：
-     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
-   全部用 :root 變數，不直接寫 hex。 */
-
-/* ── 主體佈局：header 下方的 sidebar + content ── */
-.gox-body {
-  display: flex;
-  min-height: calc(100vh - var(--gox-header-h));
-}
-.gox-content {
-  flex: 1;
-  min-width: 0;          /* 讓子層 table overflow 正常 */
-  padding: 16px;
-  overflow-x: auto;
-  background: var(--gox-content-bg);
-}
-
-/* ─────────────────────────────────────────────────
-   Toolbox：工具型頁面的主要工作區容器
-   預設 960px 限寬置中（表單、設定、編輯頁讀起來舒服）
-   修飾詞依內容寬度需求調整
-   ─────────────────────────────────────────────────
-   何時用：
-     - 系統設定、個人資料、單筆編輯、單一表單
-     - 內容上下流式排列、欄位不多
-   何時不用：
-     - 列表頁（要滿寬度顯示表格）
-     - 看板、儀表板（多欄並列）
-     - 包含寬表格的編輯頁（會被切掉）
-   範例：
-     <main class="gox-content">
-       <div class="gox-toolbox">  ← 用這個
-         <h2>系統設定</h2>
-         <div class="gox-card">…</div>
-       </div>
-     </main>
-*/
-.gox-toolbox {
-  max-width: 960px;
-  margin: 0 auto;
-  width: 100%;
-}
-.gox-toolbox.is-narrow { max-width: 720px; }   /* 表單少欄位、登入頁、設定密碼 */
-.gox-toolbox.is-wide   { max-width: 1200px; }  /* 多欄表單、含中型表格 */
-.gox-toolbox.is-fluid  { max-width: none; }    /* 內容太擠時退回滿寬 */
-
-/* ─────────────────────────────────────────────────
-   Card：後台主要的「白卡片」容器
-   ───────────────────────────────────────────────── */
-.gox-card {
-  background: var(--gox-card-bg);
-  border: 1px solid var(--gox-card-border);
-  border-radius: var(--gox-radius-lg);
-  margin-bottom: 16px;
-  overflow: hidden;
-}
-.gox-card-title {
-  margin: 0;
-  padding: 12px 16px;
-  background: var(--gox-card-bg);
-  border-bottom: 1px solid var(--gox-card-border);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--gox-text);
-}
-.gox-card-title.is-green {            /* 綠色強調標題（如「贈品設定」） */
-  background: var(--gox-green);
-  color: #fff;
-  border-bottom: 0;
-}
-.gox-card-body { padding: 16px; }
-.gox-card-body.is-table-padding { padding: 0; }     /* table 自己有 padding 時用 */
-
-/* 卡片頂端列：左標題 / 右操作按鈕 */
-.gox-list-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* ─────────────────────────────────────────────────
-   Button
-   ───────────────────────────────────────────────── */
-.gox-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 16px;
-  border-radius: var(--gox-radius);
-  font-size: var(--gox-font-size-base);
-  font-family: inherit;
-  cursor: pointer;
-  border: 1px solid transparent;
-  line-height: 1.5;
-  transition: background .15s, border-color .15s, color .15s;
-  white-space: nowrap;
-}
-.gox-btn:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
-
-/* 主操作 — 品牌綠 */
-.gox-btn-primary {
-  background: var(--gox-green);
-  color: #fff;
-  border-color: var(--gox-green);
-}
-.gox-btn-primary:hover:not(:disabled) { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
-
-/* 次操作 — 白底邊框 */
-.gox-btn-default {
-  background: #fff;
-  color: var(--gox-text);
-  border-color: #ccc;
-}
-.gox-btn-default:hover:not(:disabled) { background: #f5f5f5; border-color: var(--gox-green); color: var(--gox-green); }
-
-/* 危險 */
-.gox-btn-danger {
-  background: #fff;
-  color: var(--gox-danger);
-  border-color: var(--gox-danger);
-}
-.gox-btn-danger:hover:not(:disabled) { background: var(--gox-danger); color: #fff; }
-
-/* 列表內小按鈕（檢視 / 編輯 / 刪除） */
-.gox-btn-op {
-  display: inline-block;
-  margin-right: 4px;
-  padding: 4px 10px;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: var(--gox-radius);
-  font-size: var(--gox-font-size-xs);
-  color: var(--gox-text);
-  cursor: pointer;
-  font-family: inherit;
-  text-decoration: none;
-}
-.gox-btn-op:hover { background: #f5f5f5; text-decoration: none; }
-
-/* ─────────────────────────────────────────────────
-   Form
-   ───────────────────────────────────────────────── */
-.gox-form-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-.gox-form-row > label {
-  min-width: 110px;
-  color: var(--gox-text);
-  font-weight: 500;
-}
-.gox-input,
-.gox-select,
-.gox-textarea {
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: var(--gox-radius);
-  font-size: var(--gox-font-size-base);
-  font-family: inherit;
-  background: #fff;
-  color: var(--gox-text);
-  line-height: 1.5;
-  min-height: 32px;
-  box-sizing: border-box;
-}
-.gox-input:focus,
-.gox-select:focus,
-.gox-textarea:focus {
-  outline: 2px solid var(--gox-green);
-  outline-offset: -1px;
-  border-color: var(--gox-green);
-}
-.gox-input:disabled,
-.gox-select:disabled,
-.gox-textarea:disabled {
-  background: #f5f5f5;
-  color: #999;
-  cursor: not-allowed;
-}
-.gox-textarea { min-height: 80px; resize: vertical; }
-
-.gox-radio-group, .gox-checkbox-group {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.gox-hint {
-  color: var(--gox-text-muted);
-  font-size: var(--gox-font-size-xs);
-}
-
-/* ─────────────────────────────────────────────────
-   Table
-   ───────────────────────────────────────────────── */
-.gox-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--gox-font-size-sm);
-  background: #fff;
-}
-.gox-table th {
-  background: #fafafa;
-  border-bottom: 1px solid var(--gox-card-border);
-  padding: 10px 8px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--gox-text-sub);
-  white-space: nowrap;
-}
-.gox-table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
-}
-.gox-table tr:hover td { background: #fafafa; }
-.gox-table .cell-center { text-align: center; }
-.gox-table .cell-right { text-align: right; }
-.gox-table .cell-ops { white-space: nowrap; }
-.gox-table .row-error td { background: #fff1f0; }
-.gox-table .row-error:hover td { background: #ffe0de; }
-
-/* ─────────────────────────────────────────────────
-   Tab（頁籤）
-   ───────────────────────────────────────────────── */
-.gox-tab-group {
-  display: inline-flex;
-  border: 1px solid #ccc;
-  border-radius: var(--gox-radius);
-  overflow: hidden;
-}
-.gox-tab-btn {
-  padding: 6px 20px;
-  background: #fff;
-  border: 0;
-  cursor: pointer;
-  font-size: var(--gox-font-size-base);
-  font-family: inherit;
-  border-right: 1px solid #ccc;
-  color: var(--gox-text);
-}
-.gox-tab-btn:last-child { border-right: 0; }
-.gox-tab-btn.is-active {
-  background: var(--gox-info);
-  color: #fff;
-}
-
-/* ─────────────────────────────────────────────────
-   Modal
-   ───────────────────────────────────────────────── */
-.gox-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, .4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.gox-modal-overlay.is-hidden { display: none; }
-[hidden] { display: none !important; }
-.gox-modal-box {
-  background: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  min-width: 480px;
-  max-width: 720px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
-}
-.gox-modal-box h4 { margin: 0 0 16px; font-size: 16px; }
-.gox-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-/* ─────────────────────────────────────────────────
-   Switch / Tag
-   ───────────────────────────────────────────────── */
-.gox-switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 22px;
-  border-radius: 11px;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  background: #d1d5db;
-  cursor: pointer;
-  transition: background .18s ease;
-  vertical-align: middle;
-}
-.gox-switch.is-on { background: var(--gox-green); }
-.gox-switch.is-disabled { opacity: .5; cursor: not-allowed; }
-.gox-switch::after {
-  content: '';
-  position: absolute;
-  top: 2px; left: 2px;
-  width: 18px; height: 18px;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
-  transition: transform .18s ease;
-}
-.gox-switch.is-on::after { transform: translateX(18px); }
-
-.gox-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: var(--gox-radius);
-  font-size: var(--gox-font-size-xs);
-  font-weight: 600;
-  background: #f0f0f0;
-  color: var(--gox-text-sub);
-  border: 1px solid #e0e0e0;
-}
-.gox-tag.is-success { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
-.gox-tag.is-info    { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
-.gox-tag.is-warning { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
-.gox-tag.is-danger  { background: #fff1f0; color: var(--gox-danger); border-color: #ffccc7; }
-
-/* 溫層快速 tag（兩專案都會用） */
-.gox-tag.is-frozen  { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
-.gox-tag.is-ambient { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
-
-/* ─────────────────────────────────────────────────
-   Icon button（鉛筆 / 確認 / 取消）
-   ───────────────────────────────────────────────── */
-.gox-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--gox-radius);
-  cursor: pointer;
-  color: var(--gox-text-sub);
-  font-size: 12px;
-  font-family: inherit;
-  transition: all .15s;
-}
-.gox-icon-btn:hover {
-  background: #f0f4f8;
-  color: var(--gox-info);
-  border-color: #bcd4ea;
-}
-.gox-icon-btn.is-confirm { background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
-.gox-icon-btn.is-confirm:hover { background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
-.gox-icon-btn.is-cancel  { background: #fff; color: #999; border-color: #ccc; }
-.gox-icon-btn.is-cancel:hover  { background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
-
-/* ─────────────────────────────────────────────────
-   通用工具 class
-   ───────────────────────────────────────────────── */
-/* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
-.is-hidden { display: none; }
-
 </style>
 </head>
 <body>
-<div class="gox-page">
-<header class="gox-header">
-  <a href="#" class="gox-logo">
-    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農">
-  </a>
-  <nav class="gox-breadcrumb">
-    <span>商品管理</span>
-    <span class="sep">&gt;</span>
-    <strong>檢驗紀錄</strong>
-  </nav>
-  <div class="gox-header-right">
-    <span class="gox-user">Glen Wen</span>
-    <button type="button" class="gox-icon-btn">登出</button>
-  </div>
-</header>
-
-<div class="gox-body">
-<aside class="gox-sidebar">
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>商品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">商品列表</a><a href="#" class="gox-menu-child ">單品檢驗設定</a><a href="admin-inspection-records.html" class="gox-menu-child is-active">檢驗紀錄</a></div></div>
-  <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>訂單管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">訂單列表</a></div></div>
-</aside>
-
-<main class="gox-content">
 <script>
 var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this.parsedData=[];for(var b=[],d=0,e=this.data.length;e>d;d++){var f=this.data.charCodeAt(d);f>65536?(b[0]=240|(1835008&f)>>>18,b[1]=128|(258048&f)>>>12,b[2]=128|(4032&f)>>>6,b[3]=128|63&f):f>2048?(b[0]=224|(61440&f)>>>12,b[1]=128|(4032&f)>>>6,b[2]=128|63&f):f>128?(b[0]=192|(1984&f)>>>6,b[1]=128|63&f):b[0]=f,this.parsedData=this.parsedData.concat(b)}this.parsedData.length!=this.data.length&&(this.parsedData.unshift(191),this.parsedData.unshift(187),this.parsedData.unshift(239))}function b(a,b){this.typeNumber=a,this.errorCorrectLevel=b,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function i(a,b){if(void 0==a.length)throw new Error(a.length+"/"+b);for(var c=0;c<a.length&&0==a[c];)c++;this.num=new Array(a.length-c+b);for(var d=0;d<a.length-c;d++)this.num[d]=a[d+c]}function j(a,b){this.totalCount=a,this.dataCount=b}function k(){this.buffer=[],this.length=0}function m(){return"undefined"!=typeof CanvasRenderingContext2D}function n(){var a=!1,b=navigator.userAgent;return/android/i.test(b)&&(a=!0,aMat=b.toString().match(/android ([0-9]\.[0-9])/i),aMat&&aMat[1]&&(a=parseFloat(aMat[1]))),a}function r(a,b){for(var c=1,e=s(a),f=0,g=l.length;g>=f;f++){var h=0;switch(b){case d.L:h=l[f][0];break;case d.M:h=l[f][1];break;case d.Q:h=l[f][2];break;case d.H:h=l[f][3]}if(h>=e)break;c++}if(c>l.length)throw new Error("Too long data");return c}function s(a){var b=encodeURI(a).toString().replace(/\%[0-9a-fA-F]{2}/g,"a");return b.length+(b.length!=a?3:0)}a.prototype={getLength:function(){return this.parsedData.length},write:function(a){for(var b=0,c=this.parsedData.length;c>b;b++)a.put(this.parsedData[b],8)}},b.prototype={addData:function(b){var c=new a(b);this.dataList.push(c),this.dataCache=null},isDark:function(a,b){if(0>a||this.moduleCount<=a||0>b||this.moduleCount<=b)throw new Error(a+","+b);return this.modules[a][b]},getModuleCount:function(){return this.moduleCount},make:function(){this.makeImpl(!1,this.getBestMaskPattern())},makeImpl:function(a,c){this.moduleCount=4*this.typeNumber+17,this.modules=new Array(this.moduleCount);for(var d=0;d<this.moduleCount;d++){this.modules[d]=new Array(this.moduleCount);for(var e=0;e<this.moduleCount;e++)this.modules[d][e]=null}this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(a,c),this.typeNumber>=7&&this.setupTypeNumber(a),null==this.dataCache&&(this.dataCache=b.createData(this.typeNumber,this.errorCorrectLevel,this.dataList)),this.mapData(this.dataCache,c)},setupPositionProbePattern:function(a,b){for(var c=-1;7>=c;c++)if(!(-1>=a+c||this.moduleCount<=a+c))for(var d=-1;7>=d;d++)-1>=b+d||this.moduleCount<=b+d||(this.modules[a+c][b+d]=c>=0&&6>=c&&(0==d||6==d)||d>=0&&6>=d&&(0==c||6==c)||c>=2&&4>=c&&d>=2&&4>=d?!0:!1)},getBestMaskPattern:function(){for(var a=0,b=0,c=0;8>c;c++){this.makeImpl(!0,c);var d=f.getLostPoint(this);(0==c||a>d)&&(a=d,b=c)}return b},createMovieClip:function(a,b,c){var d=a.createEmptyMovieClip(b,c),e=1;this.make();for(var f=0;f<this.modules.length;f++)for(var g=f*e,h=0;h<this.modules[f].length;h++){var i=h*e,j=this.modules[f][h];j&&(d.beginFill(0,100),d.moveTo(i,g),d.lineTo(i+e,g),d.lineTo(i+e,g+e),d.lineTo(i,g+e),d.endFill())}return d},setupTimingPattern:function(){for(var a=8;a<this.moduleCount-8;a++)null==this.modules[a][6]&&(this.modules[a][6]=0==a%2);for(var b=8;b<this.moduleCount-8;b++)null==this.modules[6][b]&&(this.modules[6][b]=0==b%2)},setupPositionAdjustPattern:function(){for(var a=f.getPatternPosition(this.typeNumber),b=0;b<a.length;b++)for(var c=0;c<a.length;c++){var d=a[b],e=a[c];if(null==this.modules[d][e])for(var g=-2;2>=g;g++)for(var h=-2;2>=h;h++)this.modules[d+g][e+h]=-2==g||2==g||-2==h||2==h||0==g&&0==h?!0:!1}},setupTypeNumber:function(a){for(var b=f.getBCHTypeNumber(this.typeNumber),c=0;18>c;c++){var d=!a&&1==(1&b>>c);this.modules[Math.floor(c/3)][c%3+this.moduleCount-8-3]=d}for(var c=0;18>c;c++){var d=!a&&1==(1&b>>c);this.modules[c%3+this.moduleCount-8-3][Math.floor(c/3)]=d}},setupTypeInfo:function(a,b){for(var c=this.errorCorrectLevel<<3|b,d=f.getBCHTypeInfo(c),e=0;15>e;e++){var g=!a&&1==(1&d>>e);6>e?this.modules[e][8]=g:8>e?this.modules[e+1][8]=g:this.modules[this.moduleCount-15+e][8]=g}for(var e=0;15>e;e++){var g=!a&&1==(1&d>>e);8>e?this.modules[8][this.moduleCount-e-1]=g:9>e?this.modules[8][15-e-1+1]=g:this.modules[8][15-e-1]=g}this.modules[this.moduleCount-8][8]=!a},mapData:function(a,b){for(var c=-1,d=this.moduleCount-1,e=7,g=0,h=this.moduleCount-1;h>0;h-=2)for(6==h&&h--;;){for(var i=0;2>i;i++)if(null==this.modules[d][h-i]){var j=!1;g<a.length&&(j=1==(1&a[g]>>>e));var k=f.getMask(b,d,h-i);k&&(j=!j),this.modules[d][h-i]=j,e--,-1==e&&(g++,e=7)}if(d+=c,0>d||this.moduleCount<=d){d-=c,c=-c;break}}}},b.PAD0=236,b.PAD1=17,b.createData=function(a,c,d){for(var e=j.getRSBlocks(a,c),g=new k,h=0;h<d.length;h++){var i=d[h];g.put(i.mode,4),g.put(i.getLength(),f.getLengthInBits(i.mode,a)),i.write(g)}for(var l=0,h=0;h<e.length;h++)l+=e[h].dataCount;if(g.getLengthInBits()>8*l)throw new Error("code length overflow. ("+g.getLengthInBits()+">"+8*l+")");for(g.getLengthInBits()+4<=8*l&&g.put(0,4);0!=g.getLengthInBits()%8;)g.putBit(!1);for(;;){if(g.getLengthInBits()>=8*l)break;if(g.put(b.PAD0,8),g.getLengthInBits()>=8*l)break;g.put(b.PAD1,8)}return b.createBytes(g,e)},b.createBytes=function(a,b){for(var c=0,d=0,e=0,g=new Array(b.length),h=new Array(b.length),j=0;j<b.length;j++){var k=b[j].dataCount,l=b[j].totalCount-k;d=Math.max(d,k),e=Math.max(e,l),g[j]=new Array(k);for(var m=0;m<g[j].length;m++)g[j][m]=255&a.buffer[m+c];c+=k;var n=f.getErrorCorrectPolynomial(l),o=new i(g[j],n.getLength()-1),p=o.mod(n);h[j]=new Array(n.getLength()-1);for(var m=0;m<h[j].length;m++){var q=m+p.getLength()-h[j].length;h[j][m]=q>=0?p.get(q):0}}for(var r=0,m=0;m<b.length;m++)r+=b[m].totalCount;for(var s=new Array(r),t=0,m=0;d>m;m++)for(var j=0;j<b.length;j++)m<g[j].length&&(s[t++]=g[j][m]);for(var m=0;e>m;m++)for(var j=0;j<b.length;j++)m<h[j].length&&(s[t++]=h[j][m]);return s};for(var c={MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8},d={L:1,M:0,Q:3,H:2},e={PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7},f={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(a){for(var b=a<<10;f.getBCHDigit(b)-f.getBCHDigit(f.G15)>=0;)b^=f.G15<<f.getBCHDigit(b)-f.getBCHDigit(f.G15);return(a<<10|b)^f.G15_MASK},getBCHTypeNumber:function(a){for(var b=a<<12;f.getBCHDigit(b)-f.getBCHDigit(f.G18)>=0;)b^=f.G18<<f.getBCHDigit(b)-f.getBCHDigit(f.G18);return a<<12|b},getBCHDigit:function(a){for(var b=0;0!=a;)b++,a>>>=1;return b},getPatternPosition:function(a){return f.PATTERN_POSITION_TABLE[a-1]},getMask:function(a,b,c){switch(a){case e.PATTERN000:return 0==(b+c)%2;case e.PATTERN001:return 0==b%2;case e.PATTERN010:return 0==c%3;case e.PATTERN011:return 0==(b+c)%3;case e.PATTERN100:return 0==(Math.floor(b/2)+Math.floor(c/3))%2;case e.PATTERN101:return 0==b*c%2+b*c%3;case e.PATTERN110:return 0==(b*c%2+b*c%3)%2;case e.PATTERN111:return 0==(b*c%3+(b+c)%2)%2;default:throw new Error("bad maskPattern:"+a)}},getErrorCorrectPolynomial:function(a){for(var b=new i([1],0),c=0;a>c;c++)b=b.multiply(new i([1,g.gexp(c)],0));return b},getLengthInBits:function(a,b){if(b>=1&&10>b)switch(a){case c.MODE_NUMBER:return 10;case c.MODE_ALPHA_NUM:return 9;case c.MODE_8BIT_BYTE:return 8;case c.MODE_KANJI:return 8;default:throw new Error("mode:"+a)}else if(27>b)switch(a){case c.MODE_NUMBER:return 12;case c.MODE_ALPHA_NUM:return 11;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 10;default:throw new Error("mode:"+a)}else{if(!(41>b))throw new Error("type:"+b);switch(a){case c.MODE_NUMBER:return 14;case c.MODE_ALPHA_NUM:return 13;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 12;default:throw new Error("mode:"+a)}}},getLostPoint:function(a){for(var b=a.getModuleCount(),c=0,d=0;b>d;d++)for(var e=0;b>e;e++){for(var f=0,g=a.isDark(d,e),h=-1;1>=h;h++)if(!(0>d+h||d+h>=b))for(var i=-1;1>=i;i++)0>e+i||e+i>=b||(0!=h||0!=i)&&g==a.isDark(d+h,e+i)&&f++;f>5&&(c+=3+f-5)}for(var d=0;b-1>d;d++)for(var e=0;b-1>e;e++){var j=0;a.isDark(d,e)&&j++,a.isDark(d+1,e)&&j++,a.isDark(d,e+1)&&j++,a.isDark(d+1,e+1)&&j++,(0==j||4==j)&&(c+=3)}for(var d=0;b>d;d++)for(var e=0;b-6>e;e++)a.isDark(d,e)&&!a.isDark(d,e+1)&&a.isDark(d,e+2)&&a.isDark(d,e+3)&&a.isDark(d,e+4)&&!a.isDark(d,e+5)&&a.isDark(d,e+6)&&(c+=40);for(var e=0;b>e;e++)for(var d=0;b-6>d;d++)a.isDark(d,e)&&!a.isDark(d+1,e)&&a.isDark(d+2,e)&&a.isDark(d+3,e)&&a.isDark(d+4,e)&&!a.isDark(d+5,e)&&a.isDark(d+6,e)&&(c+=40);for(var k=0,e=0;b>e;e++)for(var d=0;b>d;d++)a.isDark(d,e)&&k++;var l=Math.abs(100*k/b/b-50)/5;return c+=10*l}},g={glog:function(a){if(1>a)throw new Error("glog("+a+")");return g.LOG_TABLE[a]},gexp:function(a){for(;0>a;)a+=255;for(;a>=256;)a-=255;return g.EXP_TABLE[a]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)},h=0;8>h;h++)g.EXP_TABLE[h]=1<<h;for(var h=8;256>h;h++)g.EXP_TABLE[h]=g.EXP_TABLE[h-4]^g.EXP_TABLE[h-5]^g.EXP_TABLE[h-6]^g.EXP_TABLE[h-8];for(var h=0;255>h;h++)g.LOG_TABLE[g.EXP_TABLE[h]]=h;i.prototype={get:function(a){return this.num[a]},getLength:function(){return this.num.length},multiply:function(a){for(var b=new Array(this.getLength()+a.getLength()-1),c=0;c<this.getLength();c++)for(var d=0;d<a.getLength();d++)b[c+d]^=g.gexp(g.glog(this.get(c))+g.glog(a.get(d)));return new i(b,0)},mod:function(a){if(this.getLength()-a.getLength()<0)return this;for(var b=g.glog(this.get(0))-g.glog(a.get(0)),c=new Array(this.getLength()),d=0;d<this.getLength();d++)c[d]=this.get(d);for(var d=0;d<a.getLength();d++)c[d]^=g.gexp(g.glog(a.get(d))+b);return new i(c,0).mod(a)}},j.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],j.getRSBlocks=function(a,b){var c=j.getRsBlockTable(a,b);if(void 0==c)throw new Error("bad rs block @ typeNumber:"+a+"/errorCorrectLevel:"+b);for(var d=c.length/3,e=[],f=0;d>f;f++)for(var g=c[3*f+0],h=c[3*f+1],i=c[3*f+2],k=0;g>k;k++)e.push(new j(h,i));return e},j.getRsBlockTable=function(a,b){switch(b){case d.L:return j.RS_BLOCK_TABLE[4*(a-1)+0];case d.M:return j.RS_BLOCK_TABLE[4*(a-1)+1];case d.Q:return j.RS_BLOCK_TABLE[4*(a-1)+2];case d.H:return j.RS_BLOCK_TABLE[4*(a-1)+3];default:return void 0}},k.prototype={get:function(a){var b=Math.floor(a/8);return 1==(1&this.buffer[b]>>>7-a%8)},put:function(a,b){for(var c=0;b>c;c++)this.putBit(1==(1&a>>>b-c-1))},getLengthInBits:function(){return this.length},putBit:function(a){var b=Math.floor(this.length/8);this.buffer.length<=b&&this.buffer.push(0),a&&(this.buffer[b]|=128>>>this.length%8),this.length++}};var l=[[17,14,11,7],[32,26,20,14],[53,42,32,24],[78,62,46,34],[106,84,60,44],[134,106,74,58],[154,122,86,64],[192,152,108,84],[230,180,130,98],[271,213,151,119],[321,251,177,137],[367,287,203,155],[425,331,241,177],[458,362,258,194],[520,412,292,220],[586,450,322,250],[644,504,364,280],[718,560,394,310],[792,624,442,338],[858,666,482,382],[929,711,509,403],[1003,779,565,439],[1091,857,611,461],[1171,911,661,511],[1273,997,715,535],[1367,1059,751,593],[1465,1125,805,625],[1528,1190,868,658],[1628,1264,908,698],[1732,1370,982,742],[1840,1452,1030,790],[1952,1538,1112,842],[2068,1628,1168,898],[2188,1722,1228,958],[2303,1809,1283,983],[2431,1911,1351,1051],[2563,1989,1423,1093],[2699,2099,1499,1139],[2809,2213,1579,1219],[2953,2331,1663,1273]],o=function(){var a=function(a,b){this._el=a,this._htOption=b};return a.prototype.draw=function(a){function g(a,b){var c=document.createElementNS("http://www.w3.org/2000/svg",a);for(var d in b)b.hasOwnProperty(d)&&c.setAttribute(d,b[d]);return c}var b=this._htOption,c=this._el,d=a.getModuleCount();Math.floor(b.width/d),Math.floor(b.height/d),this.clear();var h=g("svg",{viewBox:"0 0 "+String(d)+" "+String(d),width:"100%",height:"100%",fill:b.colorLight});h.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns:xlink","http://www.w3.org/1999/xlink"),c.appendChild(h),h.appendChild(g("rect",{fill:b.colorDark,width:"1",height:"1",id:"template"}));for(var i=0;d>i;i++)for(var j=0;d>j;j++)if(a.isDark(i,j)){var k=g("use",{x:String(i),y:String(j)});k.setAttributeNS("http://www.w3.org/1999/xlink","href","#template"),h.appendChild(k)}},a.prototype.clear=function(){for(;this._el.hasChildNodes();)this._el.removeChild(this._el.lastChild)},a}(),p="svg"===document.documentElement.tagName.toLowerCase(),q=p?o:m()?function(){function a(){this._elImage.src=this._elCanvas.toDataURL("image/png"),this._elImage.style.display="block",this._elCanvas.style.display="none"}function d(a,b){var c=this;if(c._fFail=b,c._fSuccess=a,null===c._bSupportDataURI){var d=document.createElement("img"),e=function(){c._bSupportDataURI=!1,c._fFail&&_fFail.call(c)},f=function(){c._bSupportDataURI=!0,c._fSuccess&&c._fSuccess.call(c)};return d.onabort=e,d.onerror=e,d.onload=f,d.src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",void 0}c._bSupportDataURI===!0&&c._fSuccess?c._fSuccess.call(c):c._bSupportDataURI===!1&&c._fFail&&c._fFail.call(c)}if(this._android&&this._android<=2.1){var b=1/window.devicePixelRatio,c=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(a,d,e,f,g,h,i,j){if("nodeName"in a&&/img/i.test(a.nodeName))for(var l=arguments.length-1;l>=1;l--)arguments[l]=arguments[l]*b;else"undefined"==typeof j&&(arguments[1]*=b,arguments[2]*=b,arguments[3]*=b,arguments[4]*=b);c.apply(this,arguments)}}var e=function(a,b){this._bIsPainted=!1,this._android=n(),this._htOption=b,this._elCanvas=document.createElement("canvas"),this._elCanvas.width=b.width,this._elCanvas.height=b.height,a.appendChild(this._elCanvas),this._el=a,this._oContext=this._elCanvas.getContext("2d"),this._bIsPainted=!1,this._elImage=document.createElement("img"),this._elImage.style.display="none",this._el.appendChild(this._elImage),this._bSupportDataURI=null};return e.prototype.draw=function(a){var b=this._elImage,c=this._oContext,d=this._htOption,e=a.getModuleCount(),f=d.width/e,g=d.height/e,h=Math.round(f),i=Math.round(g);b.style.display="none",this.clear();for(var j=0;e>j;j++)for(var k=0;e>k;k++){var l=a.isDark(j,k),m=k*f,n=j*g;c.strokeStyle=l?d.colorDark:d.colorLight,c.lineWidth=1,c.fillStyle=l?d.colorDark:d.colorLight,c.fillRect(m,n,f,g),c.strokeRect(Math.floor(m)+.5,Math.floor(n)+.5,h,i),c.strokeRect(Math.ceil(m)-.5,Math.ceil(n)-.5,h,i)}this._bIsPainted=!0},e.prototype.makeImage=function(){this._bIsPainted&&d.call(this,a)},e.prototype.isPainted=function(){return this._bIsPainted},e.prototype.clear=function(){this._oContext.clearRect(0,0,this._elCanvas.width,this._elCanvas.height),this._bIsPainted=!1},e.prototype.round=function(a){return a?Math.floor(1e3*a)/1e3:a},e}():function(){var a=function(a,b){this._el=a,this._htOption=b};return a.prototype.draw=function(a){for(var b=this._htOption,c=this._el,d=a.getModuleCount(),e=Math.floor(b.width/d),f=Math.floor(b.height/d),g=['<table style="border:0;border-collapse:collapse;">'],h=0;d>h;h++){g.push("<tr>");for(var i=0;d>i;i++)g.push('<td style="border:0;border-collapse:collapse;padding:0;margin:0;width:'+e+"px;height:"+f+"px;background-color:"+(a.isDark(h,i)?b.colorDark:b.colorLight)+';"></td>');g.push("</tr>")}g.push("</table>"),c.innerHTML=g.join("");var j=c.childNodes[0],k=(b.width-j.offsetWidth)/2,l=(b.height-j.offsetHeight)/2;k>0&&l>0&&(j.style.margin=l+"px "+k+"px")},a.prototype.clear=function(){this._el.innerHTML=""},a}();QRCode=function(a,b){if(this._htOption={width:256,height:256,typeNumber:4,colorDark:"#000000",colorLight:"#ffffff",correctLevel:d.H},"string"==typeof b&&(b={text:b}),b)for(var c in b)this._htOption[c]=b[c];"string"==typeof a&&(a=document.getElementById(a)),this._android=n(),this._el=a,this._oQRCode=null,this._oDrawing=new q(this._el,this._htOption),this._htOption.text&&this.makeCode(this._htOption.text)},QRCode.prototype.makeCode=function(a){this._oQRCode=new b(r(a,this._htOption.correctLevel),this._htOption.correctLevel),this._oQRCode.addData(a),this._oQRCode.make(),this._el.title=a,this._oDrawing.draw(this._oQRCode),this.makeImage()},QRCode.prototype.makeImage=function(){"function"==typeof this._oDrawing.makeImage&&(!this._android||this._android>=3)&&this._oDrawing.makeImage()},QRCode.prototype.clear=function(){this._oDrawing.clear()},QRCode.CorrectLevel=d}();
 </script>
@@ -1329,9 +705,8 @@ window.INSP = (function () {
     if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
     if (target === '待檢驗') return v === 'cancelled' ? '恢復送驗' : '改回待檢驗';
     if (target === '擱置') return '暫停送驗';
-    // 2026-10-06 Glen：「上架／下架」會跟產品本身上下架搞混，驗完的兩顆改叫「儲存並上傳產品頁」「儲存」
-    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '儲存並上傳產品頁';
-    if (target === '下架') return v === 'live' ? '手動下架' : '儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
+    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '檢驗完上架';
+    if (target === '下架') return v === 'live' ? '手動下架' : '直接下架';   // 上架中撤下／驗完不上架
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
@@ -1339,18 +714,16 @@ window.INSP = (function () {
   // 軟刪除＝資料留著、標 deleted，列表與所有畫面都看不到；紀錄編號照樣算進當天流水號（不會重號）
   function canDelete(r) { var v = viewState(r); return v === 'pending' || v === 'testing' || v === 'cancelled'; }
   function softDelete(no) { return update(no, { deleted: true, deletedAt: today() }); }
-  // splitPublish：電腦版把上架、下架兩顆拆到獨立的「完成檢驗」欄（publishButtons），切換狀態欄只剩其他兩行
-  function publishButtons(r) { var next = allowedNext(r); return ['上架', '下架'].filter(function (t) { return next.indexOf(t) >= 0; }); }
-  function buttonRows(r, splitPublish) {
+  function buttonRows(r) {
     var next = allowedNext(r);
-    var rows = [['檢驗中', '待檢驗'], splitPublish ? [] : ['上架', '下架'], ['擱置']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
+    var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['擱置']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
     if (canResend(r)) rows[2].push('resend');
     if (canDelete(r)) rows[2].push('delete');
     return rows.filter(function (g) { return g.length; });
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
   // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
-  function withdrawText(r) { return r.withdrawnAt + ' ' + ({ '直接下架': '儲存，未上傳產品頁' }[r.withdrawKind] || r.withdrawKind || '下架'); }
+  function withdrawText(r) { return r.withdrawnAt + ' ' + (r.withdrawKind || '下架'); }
   function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && ((target !== '上架' && target !== '下架') || !missingForComplete(r).length); }
 
   // 不合格信收件人：照對到商品的分類分組；條碼沒綁任何商品就各產線都寄（2026-10-06 Glen）
@@ -1368,7 +741,7 @@ window.INSP = (function () {
     // 軟刪除的不給畫面
     records: function () { return state.records.filter(function (r) { return !r.deleted; }); }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, publishButtons: publishButtons, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, manualOf: manualOf, hasManualImgs: hasManualImgs, setManual: setManual, setManualExp: setManualExp, clearManual: clearManual, currentFor: currentFor, frontSelfFor: frontSelfFor, supersededText: supersededText, itemsLocked: itemsLocked, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
@@ -1376,109 +749,93 @@ window.INSP = (function () {
 
 </script>
 <style>
-  .insp-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px; flex-wrap:wrap; }
-  .insp-head h2 { margin:0; font-size:18px; }
-  .insp-head .count { margin-left:8px; font-size:13px; font-weight:400; color:var(--gox-text-muted); }
-  .insp-filters { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
-  .insp-filters .lbl { font-size:13px; color:var(--gox-text-sub); margin-right:8px; }
-  .insp-items { display:flex; flex-direction:column; gap:4px; }
-  .insp-prods { font-size:12px; line-height:1.6; }
-  .insp-prods a { color:var(--gox-green); }
-  .insp-prods .none { color:var(--gox-danger); }
-  .insp-show-row { padding:8px 0; border-bottom:1px solid var(--gox-card-border); }
-  .insp-show-row:last-child { border-bottom:0; }
-
-  .insp-muted { font-size:12px; color:var(--gox-text-muted); }
-  .insp-qr { display:flex; flex-direction:column; align-items:center; gap:12px; padding:8px 0; }
-  .insp-qr .url { font-size:12px; color:var(--gox-text-muted); word-break:break-all; text-align:center; }
-  .insp-scan video { width:100% !important; border-radius:6px; background:#000; }
-  .insp-lookup-name { font-size:16px; font-weight:500; }
-  .insp-photos { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-  .insp-photos img { width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--gox-card-border); cursor:pointer; }
-  .insp-photo { position:relative; width:40px; height:40px; }
-  .insp-photo-del { position:absolute; top:-8px; right:-8px; width:16px; height:16px; border-radius:9999px; border:0; background:#333; color:#fff; font-size:12px; line-height:16px; padding:0; cursor:pointer; display:none; }
-  .insp-photo:hover .insp-photo-del { display:block; }
-  .insp-thumbs { display:flex; gap:8px; flex-wrap:wrap; }
-  .insp-thumb-wrap { width:72px; }
-  .insp-thumb-cap { margin-top:4px; font-size:11px; line-height:1.4; color:var(--gox-text-muted); text-align:center; word-break:break-all; }
-  .insp-bad { color:var(--gox-danger); }
-  .insp-thumb { position:relative; width:72px; height:72px; }
-  .insp-thumb img { width:100%; height:100%; object-fit:cover; border-radius:4px; border:1px solid var(--gox-card-border); }
-  .insp-thumb button { position:absolute; top:-8px; right:-8px; width:20px; height:20px; border-radius:9999px; border:0; background:#333; color:#fff; font-size:12px; line-height:20px; cursor:pointer; padding:0; }
-  .insp-thumb-add { width:72px; height:72px; border:1px solid var(--gox-card-border); border-radius:4px; background:#fafafa; color:var(--gox-text-sub); cursor:pointer; font-family:inherit; font-size:13px; }
-  .insp-stack { display:flex; flex-direction:column; gap:4px; }
-  .insp-stack-row { display:flex; align-items:center; gap:8px; }
-  .insp-stack-row > b { flex:0 0 32px; font-size:12px; font-weight:400; color:var(--gox-text-muted); }
-  .insp-stack-row .ant-picker { flex:1; }
+  body { background:#c9ccce; margin:0; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; padding:24px 0; box-sizing:border-box; }
+  .m-frame { width:390px; height:min(812px, calc(100vh - 48px)); background:var(--gox-content-bg); border-radius:28px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.22); position:relative; display:flex; flex-direction:column; }
+  .m-status { flex:0 0 34px; display:flex; align-items:center; justify-content:space-between; padding:0 24px; background:var(--gox-header-bg); font-size:13px; font-weight:700; color:var(--gox-text); }
+  .m-status-icons { display:flex; align-items:flex-end; gap:4px; }
+  .m-status-icons i { display:block; width:4px; background:var(--gox-text); border-radius:1px; }
+  .m-status-icons b { margin-left:4px; width:22px; height:11px; border:1.5px solid var(--gox-text); border-radius:2px; position:relative; }
+  .m-status-icons b::after { content:''; position:absolute; left:1px; top:1px; bottom:1px; width:70%; background:var(--gox-text); border-radius:1px; }
+  .m-scroll { flex:1 1 auto; overflow-y:auto; }
+  .m-status-btns { display:flex; gap:8px; margin-top:8px; }
+  .m-status-btns .ant-btn { flex:1; }
+  /* 面板從手機底部拉出，但不蓋掉最上面的狀態列 */
+  .m-frame .ant-drawer-bottom > .ant-drawer-content-wrapper { max-height:calc(100% - 34px); }
+  .m-header { flex:0 0 48px; z-index:20; height:48px; display:flex; align-items:center; gap:8px; padding:0 12px; background:var(--gox-header-bg); border-bottom:1px solid var(--gox-header-border); }
+  .m-header img { height:24px; }
+  .m-header h1 { flex:1; margin:0; font-size:16px; font-weight:700; color:var(--gox-text); }
+  .m-header a { font-size:13px; color:var(--gox-green); text-decoration:none; }
+  .m-tabs { position:sticky; top:0; z-index:19; background:#fff; padding:0 12px; border-bottom:1px solid var(--gox-card-border); }
+  .m-tabs .ant-tabs-nav { margin:0; }
+  .m-search { padding:12px 12px 4px; }
+  .m-list { padding:8px 12px 16px; display:flex; flex-direction:column; gap:8px; }
+  .m-card { background:#fff; border:1px solid var(--gox-card-border); border-radius:6px; padding:12px; display:flex; gap:12px; cursor:pointer; }
+  .m-card:active { background:#fafafa; }
+  .m-card-thumb { flex:0 0 56px; height:56px; border-radius:4px; background:#f4f4f4; overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--gox-text-muted); font-size:12px; }
+  .m-card-thumb img { width:100%; height:100%; object-fit:cover; }
+  .m-card-main { flex:1; min-width:0; }
+  .m-card-name { font-size:15px; font-weight:700; color:var(--gox-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .m-card-sub { font-size:12px; color:var(--gox-text-muted); margin-top:2px; }
+  .m-card-tags { margin-top:8px; display:flex; flex-wrap:wrap; gap:4px; }
+  .m-card-tags .ant-tag { margin:0; }
+  .m-empty { text-align:center; color:var(--gox-text-muted); padding:48px 16px; font-size:14px; }
+  .m-cta { flex:0 0 auto; z-index:30; background:#fff; border-top:1px solid var(--gox-card-border); padding:12px 16px 20px; }
+  .m-field { margin-bottom:16px; }
+  .m-field > label { display:block; font-size:13px; color:var(--gox-text-sub); margin-bottom:4px; }
+  .m-row2 { display:flex; gap:8px; }
+  .m-row2 > * { flex:1; min-width:0; }
   .insp-opt { display:inline-flex; align-items:center; gap:4px; }
   .insp-dot { flex:0 0 8px; width:8px; height:8px; border-radius:9999px; }
   .insp-none { color:var(--gox-text-muted); }
   .insp-mark { flex:0 0 12px; width:12px; text-align:center; font-weight:700; font-size:12px; line-height:1; }
-  .insp-item-row { display:flex; align-items:center; gap:4px; }
-  .insp-item-row > b { flex:0 0 16px; font-size:12px; font-weight:400; color:var(--gox-text-muted); }
-  .insp-ps { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
-  .insp-maplist { margin:4px 0 0; padding-left:20px; font-size:13px; }
-  .devpanel { position:fixed; bottom:16px; left:16px; z-index:9999; width:240px; background:#2b2f33; color:#e8eaed; border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.25); font-size:13px; overflow:hidden; }
-  .devpanel-hd { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#1f2225; font-weight:700; }
-  .devpanel-hd button { background:none; border:0; color:#e8eaed; font-size:16px; line-height:1; cursor:pointer; padding:0 4px; }
-  .devpanel-bd { padding:12px; display:flex; flex-direction:column; gap:12px; }
-  .devpanel.collapsed .devpanel-bd { display:none; }
-  .devpanel .ttl { color:#9aa0a6; font-size:12px; margin-bottom:4px; }
-  .devseg { display:flex; gap:4px; }
-  .devseg button, .devlist button { padding:4px 0; background:#3a3f44; color:#e8eaed; border:1px solid #4a5057; border-radius:4px; cursor:pointer; font-family:inherit; font-size:12px; }
-  .devseg button { flex:1; }
-  .devseg button.on { background:#4ba83b; border-color:#4ba83b; color:#fff; }
-  .devlist { display:flex; flex-direction:column; gap:4px; }
-  .devlist button { text-align:left; padding:4px 8px; }
-  .devpanel a { color:#7fd36a; }
-  .devnote { margin:0; color:#9aa0a6; font-size:11px; line-height:1.5; }
-  @media (max-width: 768px) { .devpanel { display:none; } }
+  .m-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .m-item b { flex:0 0 20px; font-size:13px; color:var(--gox-text-sub); font-weight:500; }
+  .m-item .ant-select { flex:1; min-width:0; }
+  .m-section { font-size:14px; font-weight:700; color:var(--gox-text); margin:20px 0 12px; padding-top:16px; border-top:1px solid var(--gox-card-border); }
+  .m-section:first-child { margin-top:0; padding-top:0; border-top:0; }
+  .m-thumbs { display:flex; gap:8px; flex-wrap:wrap; }
+  .m-thumb-wrap { width:88px; }
+  .m-thumb { position:relative; width:88px; height:88px; }
+  .m-thumb-cap { margin-top:4px; font-size:11px; line-height:1.4; color:var(--gox-text-muted); text-align:center; word-break:break-all; }
+  .m-thumb-cap.is-bad { color:var(--gox-danger); }
+  .m-thumb img { width:100%; height:100%; object-fit:cover; border-radius:4px; border:1px solid var(--gox-card-border); }
+  .m-thumb button { position:absolute; top:-8px; right:-8px; width:24px; height:24px; border-radius:9999px; border:0; background:#333; color:#fff; font-size:14px; line-height:24px; padding:0; }
+  .m-thumb-add { width:88px; height:88px; border:1px solid var(--gox-card-border); border-radius:4px; background:#fafafa; color:var(--gox-text-sub); font-family:inherit; font-size:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+  .m-thumb-add span { font-size:24px; line-height:1; }
+  .m-scan video { width:100% !important; border-radius:6px; background:#000; }
+  .m-maplist { margin:4px 0 0; padding-left:20px; }
+  .m-muted { font-size:12px; color:var(--gox-text-muted); }
+  .m-drawer-foot { display:flex; gap:8px; }
+  .m-drawer-foot .ant-btn { flex:1; height:44px; }
+  .m-dev { position:fixed; left:16px; bottom:16px; z-index:2000; font-size:12px; font-family:'Noto Sans TC',sans-serif; }
+  .m-dev > button { background:#2b2f33; color:#e8eaed; border:0; border-radius:9999px; padding:4px 12px; font-family:inherit; font-size:12px; }
+  .m-dev-bd { margin-bottom:8px; width:232px; background:#2b2f33; color:#e8eaed; border-radius:6px; padding:12px; box-shadow:0 6px 20px rgba(0,0,0,.25); display:flex; flex-direction:column; gap:8px; }
+  .m-dev-bd .ttl { color:#9aa0a6; }
+  .m-dev-bd .seg { display:flex; gap:4px; }
+  .m-dev-bd .seg button, .m-dev-bd .lst button { flex:1; padding:4px 8px; background:#3a3f44; color:#e8eaed; border:1px solid #4a5057; border-radius:4px; font-family:inherit; font-size:12px; text-align:left; }
+  .m-dev-bd .seg button.on { background:#4ba83b; border-color:#4ba83b; }
+  .m-dev-bd .lst { display:flex; flex-direction:column; gap:4px; }
+  .m-dev-bd p { margin:0; color:#9aa0a6; font-size:11px; line-height:1.5; }
+  /* 真的用手機打開：拿掉外框與假狀態列，滿版 */
+  @media (max-width: 480px) {
+    body { background:var(--gox-content-bg); padding:0; margin:0; display:block; }
+    .m-frame { width:100vw; max-width:100%; height:100vh; height:100dvh; border-radius:0; box-shadow:none; }
+    .m-status { display:none; }
+    .m-frame .ant-drawer-bottom > .ant-drawer-content-wrapper { max-height:100%; }
+    .m-dev { bottom:92px; left:12px; z-index:25; }
+  }
 </style>
 
-<div id="gox-app"></div>
-
-<div class="devpanel" id="devpanel">
-  <div class="devpanel-hd"><span>開發預覽面板</span><button id="devToggle" type="button">－</button></div>
-  <div class="devpanel-bd">
-    <div>
-      <div class="ttl">資料情境</div>
-      <div class="devseg" id="devScenario">
-        <button type="button" data-s="empty">空列表</button>
-        <button type="button" data-s="normal">一般</button>
-        <button type="button" data-s="many">大量</button>
-      </div>
-    </div>
-    <div>
-      <div class="ttl">模擬掃到條碼</div>
-      <div class="devlist" id="devScan">
-        <button type="button" data-b="4717208310256">肉圓（對到 2 個商品）</button>
-        <button type="button" data-b="4719865002376">鮮蝦餛飩（1 個商品）</button>
-        <button type="button" data-b="4715631907722">紅藜麥蛋捲（沒綁商品）</button>
-        <button type="button" data-b="4700000000012">查無此條碼</button>
-      </div>
-    </div>
-    <div><a href="product-detail.html" target="_blank">開前台商品頁 ↗</a></div>
-    <p class="devnote">資料存在這台瀏覽器，後台改了前台會跟著變。此面板僅供預覽，正式頁不會有。</p>
-  </div>
-</div>
-
-<script>
-(function () {
-  var p = document.getElementById('devpanel');
-  document.getElementById('devToggle').onclick = function () { p.classList.toggle('collapsed'); this.textContent = p.classList.contains('collapsed') ? '＋' : '－'; };
-  function mark() { document.querySelectorAll('#devScenario button').forEach(function (b) { b.classList.toggle('on', b.dataset.s === INSP.scenario()); }); }
-  document.querySelectorAll('#devScenario button').forEach(function (b) { b.onclick = function () { INSP.setScenario(b.dataset.s); mark(); }; });
-  document.querySelectorAll('#devScan button').forEach(function (b) { b.onclick = function () { window.dispatchEvent(new CustomEvent('insp-simscan', { detail: b.dataset.b })); }; });
-  mark();
-})();
-</script>
+<div id="m-app"></div>
 
 <script type="text/babel">
-const { ConfigProvider, App: AntApp, Table, Button, Input, Select, DatePicker, Tabs, Modal, Alert, Tag, Space, Segmented } = antd;
+const { ConfigProvider, App: AntApp, Button, Input, Select, DatePicker, Tabs, Drawer, Alert, Tag, Segmented, Space } = antd;
 const theme = {
   token: { colorPrimary: '#4ba83b', colorError: '#dc4e43', colorInfo: '#2c98f0', colorSuccess: '#52c41a', colorWarning: '#fbbf24',
-    borderRadius: 4, fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體', sans-serif", fontSize: 14 }
+    borderRadius: 4, fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體', sans-serif", fontSize: 14, controlHeight: 40 }
 };
+const frameEl = () => document.getElementById('m-frame') || document.body;
+const inFrame = { getContainer: frameEl, rootStyle: { position: 'absolute' } };
 const D = (s) => (s ? dayjs(s) : null);
 const S = (d) => (d ? d.format('YYYY-MM-DD') : '');
 // 下拉不用叉叉清除：「不選／未填」直接放成第一個選項
@@ -1496,93 +853,37 @@ const RESULT_OPTIONS = [{ value: '', label: <span className="insp-opt insp-none"
 
 function useRecords() {
   const [, force] = React.useState(0);
-  React.useEffect(() => {
-    const f = () => force((n) => n + 1);
-    window.addEventListener('insp-change', f);
-    window.addEventListener('storage', f);
-    return () => { window.removeEventListener('insp-change', f); window.removeEventListener('storage', f); };
-  }, []);
+  React.useEffect(() => { const f = () => force((n) => n + 1); window.addEventListener('insp-change', f); return () => window.removeEventListener('insp-change', f); }, []);
   return INSP.records();
 }
 
-function QrBox({ url }) {
-  const ref = React.useRef(null);
-  React.useEffect(() => {
-    if (!ref.current) return;
-    ref.current.innerHTML = '';
-    new QRCode(ref.current, { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
-  }, [url]);
-  return <div ref={ref} />;
+const TABS = [['testing', '檢驗中'], ['live', '上架中'], ['off', '下架/過期'], ['cancelled', '擱置']];
+const inTab = (r, t) => {
+  const v = INSP.viewState(r);
+  if (t === 'testing') return v === 'pending' || v === 'testing';
+  if (t === 'off') return v === 'withdrawn' || v === 'expired' || v === 'superseded';
+  return v === t;
+};
+
+async function pickPhotos(files) {
+  const out = [];
+  for (const f of Array.from(files || []).filter((x) => x.type.startsWith('image/'))) { try { out.push(await INSP.compressImage(f)); } catch (e) { } }
+  return out;
 }
 
-function usePhotoPicker() {
-  const { message } = AntApp.useApp();
-  return async (files) => {
-    const list = Array.from(files || []).filter((f) => f.type.startsWith('image/'));
-    const out = [];
-    for (const f of list) { try { out.push(await INSP.compressImage(f)); } catch (e) { message.error('有一張照片讀不到：' + f.name); } }
-    return out;
-  };
+// 照片下方顯示這張照片偵測到的國際條碼；跟紀錄的條碼不一樣就標紅
+function PhotoCaption({ p, expect }) {
+  const bad = p.barcode && expect && p.barcode !== expect;
+  return <div className={'m-thumb-cap' + (bad ? ' is-bad' : '')}>{p.detecting ? '辨識條碼中' : p.barcode ? (bad ? '條碼不符 ' : '') + p.barcode : '沒有條碼'}</div>;
 }
 
-function PhotoCell({ r, locked }) {
-  const { message } = AntApp.useApp();
-  const pick = usePhotoPicker();
+function PhotoPicker({ value, onChange, onRemove, expect }) {
   const ref = React.useRef(null);
-  const [preview, setPreview] = React.useState(null);
-  const photos = INSP.photosOf(r);
-  const onFiles = async (e) => {
-    const srcs = await pick(e.target.files); e.target.value = '';
-    if (!srcs.length) return;
-    const items = [];
-    for (const src of srcs) items.push({ src, barcode: await INSP.detectBarcode(src) });
-    if (!INSP.addPhotos(r.no, items)) { message.error('瀏覽器儲存空間不夠，照片沒有存進去（demo 限制，正式版存在圖庫）'); return; }
-    const bad = items.filter((x) => x.barcode && x.barcode !== r.barcode).length;
-    if (bad) message.warning('已新增 ' + items.length + ' 張，其中 ' + bad + ' 張的條碼跟這筆紀錄不一樣');
-    else message.success('已新增 ' + items.length + ' 張照片到圖庫');
-  };
+  const onFiles = async (e) => { const srcs = await pickPhotos(e.target.files); e.target.value = ''; if (srcs.length) onChange(srcs); };
   return (
-    <div className="insp-photos">
-      {/* 滑到縮圖上，右上角浮出叉叉，點了直接刪（2026-10-06 Glen） */}
-      {photos.slice(0, 3).map((p, i) => (<div className="insp-photo" key={i}><img src={p.src} onClick={() => setPreview(i)} />
-        {!locked && <button type="button" className="insp-photo-del" aria-label="刪除這張" onClick={() => { INSP.removePhoto(r.no, i); message.success('已刪除 1 張照片'); }}>×</button>}</div>))}
-      {photos.length > 3 && <span className="insp-muted">+{photos.length - 3}</span>}
-      {!locked && <Button size="small" onClick={() => ref.current.click()}>新增</Button>}
-      <input ref={ref} type="file" accept="image/*" multiple hidden onChange={onFiles} />
-      <Modal open={preview !== null} onCancel={() => setPreview(null)} footer={null} width={640} title={r.name + '・樣品照片'}>
-        {preview !== null && photos[preview] && (<div>
-          <img src={photos[preview].src} style={{ width: '100%' }} />
-          <Space style={{ marginTop: 12, justifyContent: 'space-between', width: '100%' }}>
-            <span className="insp-muted">{photos[preview].file || ''}　{photos[preview].at} 上傳・第 {preview + 1}／{photos.length} 張
-              <span className={photos[preview].barcode && photos[preview].barcode !== r.barcode ? 'insp-bad' : ''}>　照片條碼：{photos[preview].barcode ? (photos[preview].barcode !== r.barcode ? '不符 ' : '') + photos[preview].barcode : '沒有'}</span></span>
-            <Space>
-              <Button disabled={preview === 0} onClick={() => setPreview(preview - 1)}>上一張</Button>
-              <Button disabled={preview === photos.length - 1} onClick={() => setPreview(preview + 1)}>下一張</Button>
-              {!locked && <Button danger onClick={() => { INSP.removePhoto(r.no, preview); setPreview(null); }}>刪除這張</Button>}
-            </Space>
-          </Space>
-        </div>)}
-      </Modal>
-    </div>
-  );
-}
-
-// value 每項 { src, barcode, detecting }；onAdd 收新照片（由呼叫端負責偵測條碼）
-function PhotoPickerField({ value, onAdd, onRemove, expect }) {
-  const pick = usePhotoPicker();
-  const ref = React.useRef(null);
-  const onFiles = async (e) => { const srcs = await pick(e.target.files); e.target.value = ''; if (srcs.length) onAdd(srcs); };
-  return (
-    <div>
-      <div className="insp-thumbs">
-        {value.map((p, i) => {
-          const bad = p.barcode && expect && p.barcode !== expect;
-          return (<div className="insp-thumb-wrap" key={i}><div className="insp-thumb"><img src={p.src} />
-            <button type="button" onClick={() => onRemove(i)}>×</button></div>
-            <div className={'insp-thumb-cap' + (bad ? ' insp-bad' : '')}>{p.detecting ? '辨識條碼中' : p.barcode ? (bad ? '條碼不符 ' : '') + p.barcode : '沒有條碼'}</div></div>);
-        })}
-        <button type="button" className="insp-thumb-add" onClick={() => ref.current.click()}>＋ 照片</button>
-      </div>
+    <div className="m-thumbs">
+      {value.map((p, i) => (<div className="m-thumb-wrap" key={i}><div className="m-thumb"><img src={p.src} />{onRemove && <button type="button" onClick={() => onRemove(i)}>×</button>}</div><PhotoCaption p={p} expect={expect} /></div>))}
+      {onChange && <button type="button" className="m-thumb-add" onClick={() => ref.current.click()}><span>＋</span>拍照</button>}
       <input ref={ref} type="file" accept="image/*" capture="environment" multiple hidden onChange={onFiles} />
     </div>
   );
@@ -1622,441 +923,266 @@ function useBarcodeScan(onCode) {
   return { elId, on, err, reading, start, stop, pickFile, fileInput: <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} /> };
 }
 
-function CreateModal({ open, onClose, initialBarcode }) {
+function CreateDrawer({ open, onClose, initialBarcode }) {
   const { message } = AntApp.useApp();
+  const [photos, setPhotos] = React.useState([]);
   const [barcode, setBarcode] = React.useState('');
   const [result, setResult] = React.useState(null);
   const [name, setName] = React.useState('');
-  const [photos, setPhotos] = React.useState([]);
   const barcodeRef = React.useRef('');
-  const doLookup = (code) => {
-    const c = (code || '').trim();
-    if (!c) { message.warning('請輸入或掃描條碼'); return; }
-    const r = INSP.lookup(c);
-    barcodeRef.current = c; setBarcode(c); setResult(r); setName(r.name);
-  };
-  // 每張照片都偵測條碼；條碼欄還空著就自動帶入第一個偵測到的
+  const lookup = (code) => { const c = (code || '').trim(); if (!c) return; const r = INSP.lookup(c); barcodeRef.current = c; setBarcode(c); setResult(r); setName(r.name); };
+  const cam = useBarcodeScan(lookup);
+  // 每張照片拍完都偵測條碼；條碼欄還空著就自動帶入第一個偵測到的
   const addPhotos = async (srcs) => {
     setPhotos((ps) => ps.concat(srcs.map((src) => ({ src, barcode: '', detecting: true }))));
     for (const src of srcs) {
       const code = await INSP.detectBarcode(src);
       setPhotos((ps) => ps.map((x) => (x.src === src ? { src, barcode: code, detecting: false } : x)));
-      if (code && !barcodeRef.current) doLookup(code);
+      if (code && !barcodeRef.current) lookup(code);
     }
   };
-  const scan = useBarcodeScan((c) => doLookup(c));
-  const stopCam = scan.stop;
   const detecting = photos.some((x) => x.detecting);
   React.useEffect(() => {
-    if (open) { barcodeRef.current = ''; setBarcode(initialBarcode || ''); setResult(null); setName(''); setPhotos([]); if (initialBarcode) doLookup(initialBarcode); }
-    else stopCam();
+    if (open) { setPhotos([]); barcodeRef.current = ''; setBarcode(initialBarcode || ''); setResult(null); setName(''); if (initialBarcode) lookup(initialBarcode); }
+    else cam.stop();
   }, [open, initialBarcode]);
 
   const submit = () => {
     if (detecting) { message.warning('照片還在辨識條碼，請稍等'); return; }
+    if (!result) { message.warning('請先掃描或輸入國際條碼'); return; }
     if (!name.trim()) { message.warning('請輸入產品名稱'); return; }
     const r = INSP.create(barcode, name.trim(), photos.map((x) => ({ src: x.src, barcode: x.barcode })));
-    if (r.photoFailed) message.warning('已建立紀錄 ' + r.no + '，但瀏覽器空間不夠，照片沒存進去');
-    else message.success('已建立紀錄 ' + r.no + (photos.length ? '，照片 ' + photos.length + ' 張已存進圖庫' : ''));
+    if (r.photoFailed) message.warning('已建立 ' + r.no + '，但手機空間不夠，照片沒存進去');
+    else message.success('已建立 ' + r.no + (photos.length ? '，照片 ' + photos.length + ' 張已存進圖庫' : ''));
     onClose();
   };
 
   return (
-    <Modal title="掃描新增紀錄" open={open} onCancel={() => { stopCam(); onClose(); }} destroyOnClose
-      footer={[<Button key="c" onClick={() => { stopCam(); onClose(); }}>取消</Button>,
-               <Button key="ok" type="primary" disabled={!result} onClick={submit}>建立紀錄</Button>]}>
-      <Space direction="vertical" size={12} style={{ width: '100%' }}>
-        <div><div className="insp-muted" style={{ marginBottom: 4 }}>樣品照片（每張都會自動找國際條碼，找到就帶入下方）</div>
-          <PhotoPickerField value={photos} expect={barcode.length === 13 ? barcode : ''} onAdd={addPhotos} onRemove={(i) => setPhotos(photos.filter((_, j) => j !== i))} /></div>
-        <div className="insp-muted">國際條碼</div>
-        {scan.on
-          ? <div className="insp-scan"><div id={scan.elId} /><Button block onClick={scan.stop} style={{ marginTop: 8 }}>停止掃描</Button></div>
-          : <div><Space.Compact block>
-              <Button style={{ width: '50%' }} onClick={scan.start}>開相機掃條碼</Button>
-              <Button style={{ width: '50%' }} loading={scan.reading} onClick={scan.pickFile}>選圖片辨識</Button>
-            </Space.Compact><div className="insp-muted" style={{ marginTop: 4 }}>這兩個只讀條碼，不存照片</div></div>}
-        {scan.fileInput}
-        {scan.err && <Alert type="info" showIcon message={scan.err} />}
-        <Space.Compact style={{ width: '100%' }}>
-          <Input placeholder="或手動輸入 13 碼國際條碼" value={barcode} maxLength={13} inputMode="numeric"
-            onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setBarcode(v); if (v.length === 13) doLookup(v); }} onPressEnter={() => doLookup(barcode)} />
-          <Button type="primary" onClick={() => doLookup(barcode)}>查詢</Button>
-        </Space.Compact>
-        {result && result.found && result.products.length > 0 && (
-          <Alert type="success" message={<div>
-            <div>條碼 {barcode}，報告會顯示在以下 {result.products.length} 個商品頁：</div>
-            <ul className="insp-maplist">{result.products.map((p) => <li key={p.id}>{p.name}（{p.spec}）</li>)}</ul>
-          </div>} />
-        )}
-        {result && result.found && result.products.length === 0 && (
-          <Alert type="warning" showIcon message="這個條碼沒有綁任何官網商品，報告不會出現在前台" description="仍可建立紀錄；之後在商品後台綁上這個條碼，報告就會自動掛上去。" />
-        )}
-        {result && !result.found && <Alert type="info" showIcon message={'查無條碼 ' + barcode + '，請手動輸入產品名稱'} />}
-        {result && (
-          <div>
-            <div className="insp-muted" style={{ marginBottom: 4 }}>產品名稱</div>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="產品名稱" />
-          </div>
-        )}
-      </Space>
-    </Modal>
+    <Drawer {...inFrame} title="新增檢驗紀錄" placement="bottom" height="100%" open={open} onClose={onClose} destroyOnClose
+      footer={<div className="m-drawer-foot"><Button onClick={onClose}>取消</Button><Button type="primary" onClick={submit}>建立紀錄</Button></div>}>
+      <div className="m-section">1. 樣品照片</div>
+      <PhotoPicker value={photos} expect={barcode.length === 13 ? barcode : ''} onChange={addPhotos} onRemove={(i) => setPhotos(photos.filter((_, j) => j !== i))} />
+      <div className="m-muted" style={{ marginTop: 8 }}>每張照片都會自動找國際條碼，找到就帶入下方。</div>
+
+      <div className="m-section">2. 國際條碼</div>
+      {cam.on
+        ? <div className="m-scan"><div id={cam.elId} /><Button block onClick={cam.stop} style={{ marginTop: 8 }}>停止掃描</Button></div>
+        : <div><Space.Compact block>
+            <Button style={{ width: '50%' }} onClick={cam.start}>開相機掃條碼</Button>
+            <Button style={{ width: '50%' }} loading={cam.reading} onClick={cam.pickFile}>選圖片辨識</Button>
+          </Space.Compact><div className="m-muted" style={{ marginTop: 4 }}>這兩個只讀條碼，不存照片</div></div>}
+      {cam.fileInput}
+      {cam.err && <Alert style={{ marginTop: 8 }} type="info" showIcon message={cam.err} />}
+      <Space.Compact style={{ width: '100%', marginTop: 8 }}>
+        <Input placeholder="或手動輸入 13 碼" value={barcode} maxLength={13} inputMode="numeric"
+          onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setBarcode(v); setResult(null); if (v.length === 13) lookup(v); }} />
+        <Button type="primary" onClick={() => lookup(barcode)}>查詢</Button>
+      </Space.Compact>
+      {result && result.found && result.products.length > 0 && (
+        <Alert style={{ marginTop: 8 }} type="success" message={<div>報告會顯示在 {result.products.length} 個商品頁：
+          <ul className="m-maplist">{result.products.map((p) => <li key={p.id}>{p.name}</li>)}</ul></div>} />
+      )}
+      {result && result.found && result.products.length === 0 && <Alert style={{ marginTop: 8 }} type="warning" showIcon message="這個條碼沒有綁官網商品，報告不會出現在前台" />}
+      {result && !result.found && <Alert style={{ marginTop: 8 }} type="info" showIcon message="查無此條碼，請手動輸入產品名稱" />}
+
+      {result && (<>
+        <div className="m-section">3. 產品名稱</div>
+        <Input value={name} onChange={(e) => setName(e.target.value)} />
+      </>)}
+    </Drawer>
   );
 }
 
-// 每個對應商品前台現在顯示什麼（唯讀）。要人工覆蓋到商品編輯頁上傳圖檔
-function ProductShowRow({ p }) {
-  const c = INSP.currentFor(p.id);
-  const text = {
-    record: () => '前台顯示 ' + c.record.no,
-    manual: () => '前台顯示產品編輯頁手動上傳的圖檔',
-    expired: () => '前台不顯示（現在這份已過期）',
-    cleared: () => '前台留白（產品編輯頁手動上傳的圖檔已刪除）',
-    none: () => '前台沒有自主把關報告',
-  }[c.state]();
+function EditDrawer({ no, onClose, onOpen }) {
+  const { message, notification, modal } = AntApp.useApp();
+  const records = useRecords();
+  const r = records.find((x) => x.no === no);
+  if (!r) return null;
+  // 上架的紀錄要維持填齊，清空必填欄位會被擋下
+  const up = (patch) => {
+    const miss = INSP.editBreaks(r, patch);
+    if (miss.length) { message.error('上架中的紀錄要維持填齊，要清空請先改回檢驗中'); return; }
+    INSP.update(r.no, patch);
+  };
+  const setItem = (idx, key, val) => {
+    const items = r.items.map((x, i) => (i === idx ? { ...x, [key]: val || '' } : x));
+    if (key === 'item' && !val) items[idx].result = '';
+    up({ items });
+  };
+  const locked = INSP.isLocked(r), allowed = INSP.allowedNext(r), view = INSP.viewState(r);
+  // C 版：待檢驗 ⇄ 檢驗中 →（欄位填齊）上架 ⇄ 下架；驗完也可以直接下架；還沒驗完的可暫停送驗；被取代、過期只能改回檢驗中
+  const changeStatus = (t) => {
+    if (allowed.indexOf(t) < 0) return;
+    if (!INSP.canSwitch(r, t)) { message.error('還不能' + t + '，請先填：' + INSP.missingForComplete(r).join('、')); return; }
+    if (t === '上架') {
+      INSP.update(r.no, { status: t, publishedAt: INSP.today(), publishedTs: Date.now() });
+      const ps = INSP.productsOf(r);
+      message.success(ps.length ? '已上架到 ' + ps.length + ' 個商品頁' : '已上架；此條碼沒綁商品，前台不會顯示');
+      if (INSP.hasFail(r)) {
+        const g = INSP.receiversFor(r);
+        notification.warning({ message: '已寄出不合格通知', placement: 'top', getContainer: frameEl, description: <div>{INSP.failItems(r).join('、')}不合格<br />{Object.keys(g).map((k) => <div key={k}>{k}：{g[k].join('、')}</div>)}</div> });
+      }
+      return;
+    }
+    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: INSP.actionLabel(r, t) }); message.info('已下架'); return; }
+    INSP.update(r.no, { status: t });
+    if (t === '檢驗中' && view !== 'pending') message.info('已改回檢驗中，前台不再顯示');
+    else if (t === '擱置') message.info('已暫停送驗');
+    else message.info('已改為' + t);
+  };
+  const resend = () => { const n = INSP.resend(r.no); message.success('已開新紀錄 ' + n.no); onOpen(n.no); };
+  const askDelete = () => modal.confirm({
+    title: '刪除這筆檢驗紀錄？', okText: '刪除', okButtonProps: { danger: true }, cancelText: '取消', getContainer: frameEl,
+    content: '刪除後列表不再顯示。資料會留著（軟刪除），之後要查還查得到。',
+    onOk: () => { INSP.softDelete(r.no); message.success('已刪除 ' + r.no); onClose(); },
+  });
+  const photos = INSP.photosOf(r);
+  const addPhotos = async (srcs) => {
+    const items = [];
+    for (const src of srcs) items.push({ src, barcode: await INSP.detectBarcode(src) });
+    if (!INSP.addPhotos(r.no, items)) { message.error('手機空間不夠，照片沒存進去'); return; }
+    const bad = items.filter((x) => x.barcode && x.barcode !== r.barcode).length;
+    if (bad) message.warning('已上傳 ' + items.length + ' 張，其中 ' + bad + ' 張的條碼跟這筆紀錄不一樣');
+    else message.success('已上傳 ' + items.length + ' 張到圖庫');
+  };
+
   return (
-    <div className="insp-show-row">
-      <div><a href={'product-detail.html?pid=' + p.id} target="_blank">{p.name}</a>（{p.spec}）</div>
-      <div className="insp-muted">{text}　<a href={'admin-product-edit.html?pid=' + p.id} target="_blank">產品編輯頁</a></div>
+    <Drawer {...inFrame} title={r.name} placement="bottom" height="92%" open onClose={onClose}
+      extra={<span className="m-muted">{r.no}</span>}>
+      <div className="m-section">狀態</div>
+      <Space size={4} wrap>
+        <Tag color={view === 'live' ? 'success' : 'default'}>{INSP.statusText(r)}</Tag>
+        {INSP.hasFail(r) && <Tag color="error">含不合格</Tag>}
+      </Space>
+      {view === 'withdrawn' && <div className="m-muted" style={{ marginTop: 4 }}>{INSP.withdrawText(r)}</div>}
+      {view === 'superseded' && <div className="m-muted" style={{ marginTop: 4 }}>{INSP.supersededText(r)}</div>}
+      {view === 'expired' && <div className="m-muted" style={{ marginTop: 4 }}>已過有效日期</div>}
+      {view === 'live' && <div className="m-muted" style={{ marginTop: 4 }}>{r.publishedAt} 上架</div>}
+      {r.resendOf && <div className="m-muted" style={{ marginTop: 4 }}>重新送驗（原 {r.resendOf}）</div>}
+      {INSP.buttonRows(r).map((row, i) => (<div className="m-status-btns" key={i}>
+        {row.map((t) => t === 'resend'
+          ? <Button key={t} onClick={resend}>重新送驗</Button>
+          : t === 'delete' ? <Button key={t} danger type="text" onClick={askDelete}>刪除</Button>
+          : <Button key={t} type={t === '上架' ? 'primary' : 'default'} danger={t === '下架'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(t)}>{INSP.actionLabel(r, t)}</Button>)}
+      </div>))}
+      {(view === 'pending' || view === 'testing') && INSP.missingForComplete(r).length > 0 && <div className="m-muted" style={{ marginTop: 4 }}>未填寫完畢</div>}
+
+      <div className="m-section">樣品照片</div>
+      {locked ? <PhotoPicker value={photos} expect={r.barcode} />
+        : <PhotoPicker value={photos} expect={r.barcode} onChange={addPhotos} onRemove={(i) => INSP.removePhoto(r.no, i)} />}
+
+      <div className="m-section">檢驗項目與結果</div>
+      {r.items.map((x, i) => (
+        <div className="m-item" key={i}><b>{'ABCD'[i]}</b>
+          <Select disabled={INSP.itemsLocked(r)} value={x.item} options={ITEM_OPTIONS} onChange={(v) => setItem(i, 'item', v)} />
+          <Select style={{ flex: '0 0 112px' }} disabled={INSP.itemsLocked(r) || !x.item} value={x.result} status={x.result === '不合格' ? 'error' : undefined}
+            options={RESULT_OPTIONS} onChange={(v) => setItem(i, 'result', v)} />
+        </div>
+      ))}
+
+      <div className="m-section">樣品資料</div>
+      <div className="m-field"><label>產品名稱</label><Input disabled={locked} defaultValue={r.name} onBlur={(e) => e.target.value !== r.name && up({ name: e.target.value })} /></div>
+      <div className="m-field m-row2">
+        <div><label className="m-muted">保存方式</label><Select disabled={locked} style={{ width: '100%' }} value={r.storage} options={INSP.STORAGES.map((v) => ({ value: v, label: v }))} onChange={(v) => up({ storage: v })} /></div>
+        <div><label className="m-muted">數量</label><Input disabled={locked} defaultValue={r.qty} onBlur={(e) => up({ qty: e.target.value })} /></div>
+      </div>
+      <div className="m-field m-row2">
+        <div><label className="m-muted">製作日期</label><DatePicker placeholder="未填" disabled={locked} inputReadOnly style={{ width: '100%' }} value={D(r.mfgDate)} onChange={(d) => up({ mfgDate: S(d) })} /></div>
+        <div><label className="m-muted">有效日期</label><DatePicker placeholder="未填" disabled={locked} inputReadOnly style={{ width: '100%' }} value={D(r.expDate)} onChange={(d) => up({ expDate: S(d) })} /></div>
+      </div>
+      <div className="m-field m-row2">
+        <div><label className="m-muted">收樣日期</label><DatePicker placeholder="未填" disabled={locked} inputReadOnly style={{ width: '100%' }} value={D(r.receivedDate)} onChange={(d) => up({ receivedDate: S(d) })} /></div>
+        <div><label className="m-muted">檢驗日期</label><DatePicker placeholder="未填" disabled={locked} inputReadOnly style={{ width: '100%' }} value={D(r.inspectDate)} onChange={(d) => up({ inspectDate: S(d) })} /></div>
+      </div>
+      <div className="m-field"><label>國際條碼</label><div>{r.barcode}</div>
+        <div className="m-muted">{INSP.productsOf(r).length ? '對應：' + INSP.productsOf(r).map((p) => p.name).join('、') : '沒綁官網商品'}</div></div>
+    </Drawer>
+  );
+}
+
+function Card({ r, onOpen }) {
+  const photos = INSP.photosOf(r);
+  return (
+    <div className="m-card" onClick={onOpen}>
+      <div className="m-card-thumb">{photos.length ? <img src={photos[0].src} /> : '無照片'}</div>
+      <div className="m-card-main">
+        <div className="m-card-name">{r.name}</div>
+        <div className="m-card-sub">{r.no}・檢驗 {r.inspectDate}</div>
+        <div className="m-card-tags">
+          <Tag color={INSP.viewState(r) === 'live' ? 'success' : 'default'}>{INSP.statusText(r)}</Tag>
+          {INSP.hasFail(r) && <Tag color="error">含不合格</Tag>}
+          {!r.expDate && (r.status === '待檢驗' || r.status === '檢驗中') && <Tag color="warning">未填有效日期</Tag>}
+          {photos.length > 0 && <Tag>照片 {photos.length}</Tag>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DevPanel() {
+  const [open, setOpen] = React.useState(false);
+  const [, force] = React.useState(0);
+  if (!open) return <div className="m-dev"><button type="button" onClick={() => setOpen(true)}>預覽面板</button></div>;
+  return (
+    <div className="m-dev">
+      <div className="m-dev-bd">
+        <div className="ttl">資料情境</div>
+        <div className="seg">{[['empty', '空列表'], ['normal', '一般'], ['many', '大量']].map(([k, l]) =>
+          <button key={k} type="button" className={INSP.scenario() === k ? 'on' : ''} onClick={() => { INSP.setScenario(k); force((n) => n + 1); }}>{l}</button>)}</div>
+        <div className="ttl">模擬掃到條碼</div>
+        <div className="lst">
+          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('insp-simscan', { detail: '4717208310256' }))}>肉圓（對到 2 個商品）</button>
+          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('insp-simscan', { detail: '4715631907722' }))}>紅藜麥蛋捲（沒綁商品）</button>
+        </div>
+        <p>跟電腦版共用這台瀏覽器的資料。此面板僅供預覽，正式頁不會有。</p>
+      </div>
+      <button type="button" onClick={() => setOpen(false)}>收合</button>
     </div>
   );
 }
 
 function Page() {
-  const { message, notification, modal } = AntApp.useApp();
   const records = useRecords();
   const [tab, setTab] = React.useState('testing');
   const [kw, setKw] = React.useState('');
   const [createOpen, setCreateOpen] = React.useState(false);
-  const [simBarcode, setSimBarcode] = React.useState('');
-  const [qrOpen, setQrOpen] = React.useState(false);
-  const [prodNo, setProdNo] = React.useState(null);
-  const prodRec = prodNo ? records.find((x) => x.no === prodNo) : null;
-  const prodList = prodRec ? INSP.productsOf(prodRec) : [];
-
+  const [sim, setSim] = React.useState('');
+  const [editNo, setEditNo] = React.useState(null);
   React.useEffect(() => {
     if (new URLSearchParams(location.search).get('mode') === 'create') setCreateOpen(true);
-    const f = (e) => { setSimBarcode(e.detail); setCreateOpen(true); };
+    const f = (e) => { setSim(e.detail); setCreateOpen(true); };
     window.addEventListener('insp-simscan', f);
     return () => window.removeEventListener('insp-simscan', f);
   }, []);
-
-  // 固定用 GitHub Pages 網址，本機開 demo 時手機掃了也打得開
-  const createUrl = 'https://glenwen-soohoo.github.io/DemoShares/2026-10-inspection-records/admin-inspection-mobile.html?mode=create';
-
-  // 上架的紀錄要維持填齊，清空必填欄位會被擋下
-  const edit = (r, patch) => {
-    const miss = INSP.editBreaks(r, patch);
-    if (miss.length) { message.error('上架中的紀錄要維持填齊（' + miss.join('、') + '），要清空請先改回檢驗中'); return false; }
-    INSP.update(r.no, patch);
-    return true;
-  };
-
-  const setItem = (r, idx, key, val) => {
-    const items = r.items.map((x, i) => (i === idx ? { ...x, [key]: val || '' } : x));
-    if (key === 'item' && !val) items[idx].result = '';
-    edit(r, { items });
-  };
-
-  const changeExp = (r, v) => {
-    if (edit(r, { expDate: v }) && r.status === '上架' && v) message.success('已更新 ' + INSP.productsOf(r).length + ' 個商品的報告到期日為 ' + v);
-  };
-
-  const askDelete = (r) => modal.confirm({
-    title: '刪除這筆檢驗紀錄？', okText: '刪除', okButtonProps: { danger: true }, cancelText: '取消',
-    content: r.no + '（' + r.name + '）刪除後列表不再顯示。資料會留著（軟刪除），之後要查還查得到。',
-    onOk: () => { INSP.softDelete(r.no); message.success('已刪除 ' + r.no); },
-  });
-
-  const resend = (r) => {
-    const n = INSP.resend(r.no);
-    setTab('testing');
-    message.success('已開新紀錄 ' + n.no + '（待檢驗），原本這份不變');
-  };
-
-  // 狀態切換（C 版 2026-10-05）：待檢驗 ⇄ 檢驗中 →（欄位填齊）上架 ⇄ 下架；驗完也可以不上架直接下架；還沒驗完的可暫停送驗
-  const changeStatus = (r, t) => {
-    if (INSP.allowedNext(r).indexOf(t) < 0) return;
-    if (!INSP.canSwitch(r, t)) { message.error('還不能' + INSP.actionLabel(r, t) + '，請先填：' + INSP.missingForComplete(r).join('、')); return; }
-    const from = INSP.viewState(r);
-    if (t === '上架') {
-      INSP.update(r.no, { status: t, publishedAt: INSP.today(), publishedTs: Date.now() });
-      const ps = INSP.productsOf(r);
-      message.success(ps.length ? '已儲存並上傳到 ' + ps.length + ' 個產品頁，報告到期日設為 ' + r.expDate : '已儲存；此條碼沒有綁商品，前台不會顯示');
-      if (INSP.hasFail(r)) {
-        const groups = INSP.receiversFor(r);
-        const to = Object.keys(groups).map((k) => k + '：' + groups[k].join('、'));
-        notification.warning({ message: '已寄出不合格通知', duration: 6,
-          description: <div>{r.name}（{r.no}）{INSP.failItems(r).join('、')}不合格<br />{INSP.productsOf(r).length ? '' : <div>條碼沒有綁商品，各產線都寄：</div>}{to.map((x) => <div key={x}>{x}</div>)}</div> });
-      }
-      return;
-    }
-    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: from === 'live' ? '手動下架' : '直接下架' }); message.info(from === 'live' ? '已下架，前台不再顯示這份報告' : '已儲存，這份報告不會放上產品頁'); return; }
-    INSP.update(r.no, { status: t });
-    if (t === '檢驗中' && from !== 'pending') message.info('已改回檢驗中，前台不再顯示這份報告，可以修改欄位');
-    else if (t === '擱置') message.info('已暫停送驗');
-    else message.info('已改為' + t);
-  };
-
-  // 2026-10-06 Glen：分頁不叫上架中、下架/過期，避免跟產品本身上下架搞混
-  const TABS = [['testing', '檢驗中'], ['live', '顯示產品頁'], ['off', '前台未顯示紀錄'], ['cancelled', '擱置']];
-  const inTab = (r, t) => {
-    const v = INSP.viewState(r);
-    if (t === 'testing') return v === 'pending' || v === 'testing';
-    if (t === 'off') return v === 'withdrawn' || v === 'expired' || v === 'superseded';
-    return v === t;
-  };
-  const matchKw = (r) => !kw || (r.no + r.barcode + r.name).includes(kw.trim());
-  const countOf = (t) => records.filter((r) => inTab(r, t) && matchKw(r)).length;
-  const data = records.filter((r) => inTab(r, tab) && matchKw(r));
-  const tabItems = TABS.map(([k, l]) => ({ key: k, label: l + '（' + countOf(k) + '）' }));
-  const emptyText = { testing: '沒有檢驗中的紀錄', live: '沒有顯示在產品頁的紀錄', off: '沒有前台未顯示的紀錄', cancelled: '沒有擱置的紀錄' }[tab];
-
-  const DATES = [['mfgDate', '製作'], ['expDate', '有效'], ['receivedDate', '收樣'], ['inspectDate', '檢驗']];
-  const setDate = (r, key, v) => (key === 'expDate' ? changeExp(r, v) : edit(r, { [key]: v }));
-
-  const columns = [
-    { title: '紀錄編號', dataIndex: 'no', width: 116, fixed: 'left' },
-    { title: '產品名稱', key: 'name', width: 180, fixed: 'left',
-      render: (_, r) => (<div><Input size="small" disabled={INSP.isLocked(r)} defaultValue={r.name} key={r.no + r.name} onBlur={(e) => e.target.value !== r.name && edit(r, { name: e.target.value })} />
-        <div className="insp-muted" style={{ marginTop: 4 }}>{r.barcode}</div>
-        <Button size="small" type="link" style={{ padding: 0, height: 'auto' }} onClick={() => setProdNo(r.no)}>查看對應產品</Button></div>) },
-    { title: '保存／數量', key: 'storage', width: 110, render: (_, r) => (<div className="insp-stack">
-        <Select size="small" disabled={INSP.isLocked(r)} value={r.storage} options={INSP.STORAGES.map((x) => ({ value: x, label: x }))} onChange={(v) => edit(r, { storage: v })} />
-        <Input size="small" disabled={INSP.isLocked(r)} defaultValue={r.qty} key={r.no + r.qty} onBlur={(e) => edit(r, { qty: e.target.value })} /></div>) },
-    { title: '日期', key: 'dates', width: 200, render: (_, r) => (<div className="insp-stack">
-        {DATES.map(([k, l]) => (<div className="insp-stack-row" key={k}><b>{l}</b>
-          <DatePicker placeholder="未填" size="small" disabled={INSP.isLocked(r)} value={D(r[k])} onChange={(d) => setDate(r, k, S(d))} /></div>))}</div>) },
-    { title: '檢驗項目／結果', key: 'items', width: 300, render: (_, r) => (<div className="insp-stack">
-        {r.items.map((x, idx) => (<div className="insp-item-row" key={idx}><b>{'ABCD'[idx]}</b>
-          <Select size="small" style={{ flex: 1, minWidth: 0 }} disabled={INSP.itemsLocked(r)} value={x.item} options={ITEM_OPTIONS} onChange={(v) => setItem(r, idx, 'item', v)} />
-          <Select size="small" style={{ flex: '0 0 104px' }} disabled={INSP.itemsLocked(r) || !x.item} value={x.result}
-            status={x.result === '不合格' ? 'error' : undefined} options={RESULT_OPTIONS} onChange={(v) => setItem(r, idx, 'result', v)} /></div>))}</div>) },
-    // 分頁就是狀態，這欄只放切換按鈕；檢驗中分頁有兩種，才標出待檢驗或檢驗中
-    { title: '切換狀態', key: 'ps', width: 190, render: (_, r) => {
-        const v = INSP.viewState(r);
-        return (<div className="insp-ps">
-          {(v === 'pending' || v === 'testing') && <span className="insp-muted">{INSP.statusText(r)}</span>}
-          {INSP.hasFail(r) && <Tag color="error">含不合格</Tag>}
-          {r.resendOf && <span className="insp-muted">重新送驗（原 {r.resendOf}）</span>}
-          {v === 'live' && <span className="insp-muted">{r.publishedAt} 上架</span>}
-          {v === 'withdrawn' && <span className="insp-muted">{INSP.withdrawText(r)}</span>}
-          {v === 'superseded' && <span className="insp-muted">{INSP.supersededText(r)}</span>}
-          {v === 'expired' && <span className="insp-muted">已過有效日期</span>}
-          {INSP.buttonRows(r, true).map((row, i) => (<Space key={i} size={4}>
-            {row.map((t) => t === 'resend'
-              ? <Button key={t} size="small" onClick={() => resend(r)}>重新送驗</Button>
-              : t === 'delete' ? <Button key={t} size="small" danger type="text" onClick={() => askDelete(r)}>刪除</Button>
-              : <Button key={t} size="small" onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>)}
-          </Space>))}</div>);
-      } },
-    // 驗完的兩顆（儲存並上傳產品頁／儲存）獨立一欄；上架中的手動下架、下架的重新上架也在這裡
-    { title: '完成檢驗', key: 'publish', width: 160, render: (_, r) => {
-        const v = INSP.viewState(r), btns = INSP.publishButtons(r), miss = (v === 'pending' || v === 'testing') ? INSP.missingForComplete(r) : [];
-        if (!btns.length) return null;
-        return (<div className="insp-ps">
-          {btns.map((t) => <Button key={t} size="small" type={t === '上架' ? 'primary' : 'default'} danger={t === '下架' && v === 'live'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>)}
-          {miss.length > 0 && <span className="insp-muted">未填寫完畢</span>}</div>);
-      } },
-    { title: '附檔照片', key: 'photos', width: 180, render: (_, r) => <PhotoCell r={r} locked={INSP.isLocked(r)} /> },
-  ];
-
+  const match = (r) => !kw || (r.no + r.barcode + r.name).includes(kw.trim());
+  const count = (t) => records.filter((r) => inTab(r, t) && match(r)).length;
+  const list = records.filter((r) => inTab(r, tab) && match(r));
+  const empty = { testing: '沒有檢驗中的紀錄', live: '沒有上架中的紀錄', off: '沒有下架或過期的紀錄', cancelled: '沒有擱置的紀錄' }[tab];
   return (
-    <div>
-      <div className="insp-head">
-        <h2>檢驗紀錄</h2>
-        <Space>
-          <Button onClick={() => setQrOpen(true)}>用手機開啟</Button>
-          <Button type="primary" onClick={() => { setSimBarcode(''); setCreateOpen(true); }}>＋ 掃描新增紀錄</Button>
-        </Space>
+    <>
+    <div className="m-frame" id="m-frame">
+      <div className="m-status"><span>9:41</span><span className="m-status-icons"><i style={{ height: 4 }} /><i style={{ height: 7 }} /><i style={{ height: 10 }} /><b /></span></div>
+      <div className="m-header"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農" /><h1>檢驗紀錄</h1><a href="admin-inspection-records.html">電腦版</a></div>
+      <div className="m-scroll">
+      <div className="m-tabs"><Tabs activeKey={tab} onChange={setTab} items={TABS.map(([k, l]) => ({ key: k, label: l + ' ' + count(k) }))} /></div>
+      <div className="m-search"><Input.Search allowClear placeholder="紀錄編號、條碼、產品名稱" onSearch={setKw} onChange={(e) => !e.target.value && setKw('')} /></div>
+      <div className="m-list">
+        {list.length ? list.map((r) => <Card key={r.no} r={r} onOpen={() => setEditNo(r.no)} />)
+          : <div className="m-empty">{records.length ? (kw ? '沒有符合搜尋的紀錄' : empty) : '還沒有檢驗紀錄，按下方按鈕新增'}</div>}
       </div>
-      <div className="gox-card" style={{ padding: 16 }}>
-        <Tabs activeKey={tab} onChange={setTab} items={tabItems} style={{ marginTop: -8 }} />
-        <div className="insp-filters">
-          <Input.Search allowClear placeholder="紀錄編號、條碼、產品名稱" style={{ width: 240 }} onSearch={setKw} onChange={(e) => !e.target.value && setKw('')} />
-        </div>
-        <Table rowKey="no" size="small" columns={columns} dataSource={data} scroll={{ x: 1500 }} pagination={{ pageSize: 20, hideOnSinglePage: true }}
-          locale={{ emptyText: records.length ? (kw ? '沒有符合搜尋條件的紀錄' : emptyText) : '尚無檢驗紀錄，點右上角「掃描新增紀錄」開始' }} />
       </div>
-      <CreateModal open={createOpen} initialBarcode={simBarcode} onClose={() => { setCreateOpen(false); setSimBarcode(''); }} />
-      <Modal title={prodRec ? '對應產品｜' + prodRec.name : ''} open={!!prodRec} onCancel={() => setProdNo(null)} footer={null} width={520}>
-        {prodRec && (<div>
-          <div className="insp-muted" style={{ marginBottom: 8 }}>國際條碼 {prodRec.barcode}</div>
-          {prodList.length
-            ? <div className="insp-prods" style={{ fontSize: 14 }}>{prodList.map((p) => <ProductShowRow key={p.id} p={p} />)}</div>
-            : <div className="insp-prods" style={{ fontSize: 14 }}><span className="none">這個條碼沒有綁任何官網商品，報告不會出現在前台</span></div>}
-        </div>)}
-      </Modal>
-      <Modal title="用手機開啟新增紀錄" open={qrOpen} onCancel={() => setQrOpen(false)} footer={null} width={360}>
-        <div className="insp-qr">
-          <QrBox url={createUrl} />
-          <div>手機登入後台後掃這個 QR code，會打開手機版檢驗紀錄，直接進入新增畫面</div>
-          <div className="url">{createUrl}</div>
-        </div>
-      </Modal>
+      <div className="m-cta"><Button type="primary" block style={{ height: 48, fontSize: 16 }} onClick={() => { setSim(''); setCreateOpen(true); }}>＋ 新增檢驗紀錄</Button></div>
+      <CreateDrawer open={createOpen} initialBarcode={sim} onClose={() => { setCreateOpen(false); setSim(''); }} />
+      {editNo && <EditDrawer key={editNo} no={editNo} onClose={() => setEditNo(null)} onOpen={setEditNo} />}
     </div>
+    <DevPanel />
+    </>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('gox-app')).render(
-  <ConfigProvider theme={theme}><AntApp><Page /></AntApp></ConfigProvider>
-);
+ReactDOM.createRoot(document.getElementById('m-app')).render(<ConfigProvider theme={theme}><AntApp message={{ getContainer: frameEl, top: 48 }} notification={{ getContainer: frameEl }}><Page /></AntApp></ConfigProvider>);
 </script>
 
-</main>
-</div>
-</div>
-<script>
-/* ───── GoX Admin / gox-interactions.js ─────
-   後台殼共用的「元件級互動」。
-   由 build_prototype.py 自動內聯到輸出 HTML，呼叫者寫對 class 就會動。
-
-   覆蓋範圍（你不用為這些再寫 JS）：
-     - .gox-switch         click  → toggle .is-on
-     - .gox-tab-btn        click  → 同 .gox-tab-group 內切 .is-active
-     - .gox-menu-title     click  → toggle 父 .gox-menu-group .is-open + 箭頭
-     - [data-gox-open]     click  → 顯示 #target modal（移除 .is-hidden）
-     - [data-gox-close]    click  → 隱藏所屬 .gox-modal-overlay
-     - .gox-modal-overlay  click  → 點背景關（除非有 data-gox-no-overlay-close）
-     - .gox-icon-btn.is-confirm/.is-cancel click → 觸發 [data-gox-target] 的 confirm/cancel CustomEvent
-     - .gox-menu-child     click  → 同 .gox-sidebar 內切 .is-active
-
-   不覆蓋（你要自己寫）：
-     - 篩選 / 排序 / 搜尋
-     - 狀態機（pending → confirmed → done 之類）
-     - 跨元件聯動
-     - 表單送出 / 假 API 回傳
-   ➜ 在 content_html 裡寫 <script>，用 DOMContentLoaded 包起來。
-*/
-(function () {
-  'use strict';
-
-  function on(el, ev, fn) { el.addEventListener(ev, fn); }
-  function delegate(root, ev, selector, fn) {
-    on(root, ev, (e) => {
-      const t = e.target.closest(selector);
-      if (t && root.contains(t)) fn(e, t);
-    });
-  }
-
-  function init() {
-    const root = document;
-
-    // ── Switch ─────────────────────────────────
-    delegate(root, 'click', '.gox-switch', (e, el) => {
-      if (el.classList.contains('is-disabled')) return;
-      el.classList.toggle('is-on');
-      el.dispatchEvent(new CustomEvent('gox:switch', {
-        bubbles: true,
-        detail: { on: el.classList.contains('is-on') },
-      }));
-    });
-
-    // ── Tab group ───────────────────────────────
-    delegate(root, 'click', '.gox-tab-group .gox-tab-btn', (e, btn) => {
-      const group = btn.closest('.gox-tab-group');
-      group.querySelectorAll('.gox-tab-btn').forEach((b) => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
-      const key = btn.dataset.tab;
-      group.dispatchEvent(new CustomEvent('gox:tab', {
-        bubbles: true,
-        detail: { tab: key, btn },
-      }));
-      // 若有 data-tab，自動切 [data-tab-panel] 顯示
-      if (key) {
-        const scope = btn.closest('[data-tab-scope]') || document;
-        scope.querySelectorAll('[data-tab-panel]').forEach((p) => {
-          p.hidden = p.dataset.tabPanel !== key;
-        });
-      }
-    });
-
-    // ── Sidebar menu group 摺疊 ──────────────────
-    delegate(root, 'click', '.gox-menu-title', (e, btn) => {
-      const group = btn.closest('.gox-menu-group');
-      if (!group) return;
-      group.classList.toggle('is-open');
-      const arrow = btn.querySelector('.gox-arrow');
-      if (arrow) arrow.textContent = group.classList.contains('is-open') ? '▼' : '▶';
-    });
-
-    // ── Sidebar menu child active ────────────────
-    delegate(root, 'click', '.gox-sidebar .gox-menu-child', (e, link) => {
-      // 不阻止預設行為（讓 href 還能跳）；但若是 href="#" 純 demo，做 active 切換
-      if (link.getAttribute('href') === '#') e.preventDefault();
-      const side = link.closest('.gox-sidebar');
-      side.querySelectorAll('.gox-menu-child.is-active').forEach((a) => a.classList.remove('is-active'));
-      link.classList.add('is-active');
-    });
-
-    // ── Modal open ──────────────────────────────
-    delegate(root, 'click', '[data-gox-open]', (e, btn) => {
-      const sel = btn.dataset.goxOpen;
-      const target = sel && document.querySelector(sel);
-      if (target) target.classList.remove('is-hidden');
-    });
-
-    // ── Modal close（按鈕） ─────────────────────
-    delegate(root, 'click', '[data-gox-close]', (e, btn) => {
-      const modal = btn.closest('.gox-modal-overlay');
-      if (modal) modal.classList.add('is-hidden');
-    });
-
-    // ── Modal close（點背景） ───────────────────
-    delegate(root, 'click', '.gox-modal-overlay', (e, overlay) => {
-      if (overlay.dataset.goxNoOverlayClose !== undefined) return;
-      if (e.target === overlay) overlay.classList.add('is-hidden');
-    });
-
-    // ── ESC 關 modal ────────────────────────────
-    on(document, 'keydown', (e) => {
-      if (e.key !== 'Escape') return;
-      const opens = document.querySelectorAll('.gox-modal-overlay:not(.is-hidden)');
-      opens.forEach((m) => {
-        if (m.dataset.goxNoOverlayClose === undefined) m.classList.add('is-hidden');
-      });
-    });
-
-    // ── Icon button confirm / cancel ─────────────
-    delegate(root, 'click', '.gox-icon-btn.is-confirm, .gox-icon-btn.is-cancel', (e, btn) => {
-      const kind = btn.classList.contains('is-confirm') ? 'confirm' : 'cancel';
-      const targetSel = btn.dataset.goxTarget;
-      const target = targetSel ? document.querySelector(targetSel) : btn.closest('[data-gox-editable]');
-      if (target) {
-        target.dispatchEvent(new CustomEvent('gox:' + kind, { bubbles: true }));
-      }
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-  // 暴露給頁面級腳本使用（如「按下查詢」這種頁面級互動）
-  window.gox = window.gox || {};
-  window.gox.openModal  = (sel) => { const t = document.querySelector(sel); if (t) t.classList.remove('is-hidden'); };
-  window.gox.closeModal = (sel) => { const t = document.querySelector(sel); if (t) t.classList.add('is-hidden'); };
-  window.gox.toast = (msg) => {
-    // 簡易 toast（自動消失）
-    let host = document.querySelector('#gox-toast-host');
-    if (!host) {
-      host = document.createElement('div');
-      host.id = 'gox-toast-host';
-      host.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
-      document.body.appendChild(host);
-    }
-    const t = document.createElement('div');
-    t.className = 'gox-toast';
-    t.textContent = msg;
-    t.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.2);';
-    host.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1800);
-    setTimeout(() => t.remove(), 2200);
-  };
-})();
-
-</script>
 <script>
 /**
  * @license React

@@ -2,34 +2,10 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 檢驗紀錄頁（電腦版）｜D 版（2026-10-06）
-  真相來源：D:\GreenBox\fruit_web origin/dev（5518003cc，2026-10-06 再對；引用的檔案從 07f0c120a 起都沒變，行號有效。DEV-3977 分支要先更新到這個版本以後）
-  對應正式站（待新建，照 Gift/Index.cshtml 的整頁 React 掛法）：
-    controller : Areas/GoX/Controllers/InspectionRecordController.cs（待新建）
-    view       : Areas/GoX/Views/InspectionRecord/Index.cshtml（待新建，空 div #admin-inspection-record）
-    react      : react-component-export/exports/admin-inspection-record.tsx（待新建）
-    參考既有   : Areas/GoX/Views/Gift/Index.cshtml:21,24 ＋ exports/admin-gift-list.tsx
-    權限       : CheckLogin.CheckPermission（Areas/GoX/Controllers/ProductController.cs:93），fun_id 沿用 3033 產品管理（照 GiftController.cs:25）
-  這一頁的真實欄位名：
-    條碼對商品  dbo.ProductDetailBarcode.Barcode / ProductId / ProductDetailId
-    報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1618
-    樣品照片    dbo.Picture（相簿管理 fun_id 3035），關聯表 InspectionRecordPhoto 待新建
-    條碼辨識    前端自己做（正式站前端沒有）：掃描線解碼＋切格 html5-qrcode，要加 html5-qrcode 套件  ⚠ 後端 ZXing.Net 只用來產生條碼（Fruit.csproj:146）
-    檢驗紀錄    表 InspectionRecord 待新建，欄位提案見 _交接對照.md B 區  ⚠ 不要叫 Batch
-    狀態        Status 只存 待檢驗/檢驗中/上架/下架/擱置（驗完就上架，沒有「已完成」；下架是手動的）（C 版：檢驗狀態與處理狀態合一，只剩這一欄）
-                ⚠ 被取代、過期是算出來的，不要存（規則見 _交接對照.md〈算出來的狀態〉）
-    上架時間    PublishTime（demo 叫 publishedAt）
-    下架        WithdrawTime＋WithdrawType（0 手動下架／1 直接下架；demo 叫 withdrawnAt／withdrawKind）  ⚠ 下架當下就記，不要用有沒有上架時間去推
-    重新送驗    開一筆新紀錄，ResendOfId 指回原紀錄（demo 叫 resendOf）
-    手動圖檔    產品編輯頁手動上傳的無毒農檢驗報告圖檔跟檢驗紀錄比誰晚放上去，誰晚顯示誰；刪除後留白（ProductTestReportRemind.ManualUpdateTime 待新建）
-    上架後鎖    檢驗項目與結果上架後不能改（itemsLocked），日期不能清空
-    畫面名稱    D 版不叫上下架：分頁「顯示產品頁」「前台未顯示紀錄」；按鈕「儲存並上傳產品頁」（切上架）、「儲存」（切下架，WithdrawType＝直接下架）在獨立的「完成檢驗」欄  ⚠ 只是顯示名稱，enum 跟 API 的值仍是上架、下架
-    照片欄      「附檔照片」：按「新增」上傳；縮圖滑過右上角叉叉直接刪（DeletePhoto）
-    C 版對照    admin-inspection-records-c.html（同規則、舊叫法）
-  這一頁打的真實 API：
-    demo 沒打 API（資料在瀏覽器）。要新建的 /GoX/InspectionRecord/LookupBarcode、Create、Update、SetStatus、Resend、UploadPhotos、DeletePhoto
-    不合格信收件人  ScheduleController.cs:5580-5591（寫死，要抽成共用）
-  完整名稱對照見同資料夾 _交接對照.md
+  DemoShares 交接對照 | 檢驗紀錄頁（電腦版）｜C 版（2026-10-06 保留對照）
+  ⚠ D 版是 admin-inspection-records.html：分頁改「顯示產品頁」「前台未顯示紀錄」、驗完的兩顆改「儲存並上傳產品頁」「儲存」並獨立一欄、照片欄改「附檔照片」。開發照哪一版等 Glen 定
+  狀態規則、資料、API 兩版相同，只差畫面上的名稱與欄位排法；資料跟 D 版共用（同一個 localStorage）
+  對應正式站、真實欄位名、要新建的 API：見 admin-inspection-records.html 檔頭與同資料夾 _交接對照.md
 -->
 
 <meta charset="UTF-8">
@@ -1329,9 +1305,8 @@ window.INSP = (function () {
     if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
     if (target === '待檢驗') return v === 'cancelled' ? '恢復送驗' : '改回待檢驗';
     if (target === '擱置') return '暫停送驗';
-    // 2026-10-06 Glen：「上架／下架」會跟產品本身上下架搞混，驗完的兩顆改叫「儲存並上傳產品頁」「儲存」
-    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '儲存並上傳產品頁';
-    if (target === '下架') return v === 'live' ? '手動下架' : '儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
+    if (target === '上架') return v === 'withdrawn' ? '重新上架' : '檢驗完上架';
+    if (target === '下架') return v === 'live' ? '手動下架' : '直接下架';   // 上架中撤下／驗完不上架
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
@@ -1339,18 +1314,16 @@ window.INSP = (function () {
   // 軟刪除＝資料留著、標 deleted，列表與所有畫面都看不到；紀錄編號照樣算進當天流水號（不會重號）
   function canDelete(r) { var v = viewState(r); return v === 'pending' || v === 'testing' || v === 'cancelled'; }
   function softDelete(no) { return update(no, { deleted: true, deletedAt: today() }); }
-  // splitPublish：電腦版把上架、下架兩顆拆到獨立的「完成檢驗」欄（publishButtons），切換狀態欄只剩其他兩行
-  function publishButtons(r) { var next = allowedNext(r); return ['上架', '下架'].filter(function (t) { return next.indexOf(t) >= 0; }); }
-  function buttonRows(r, splitPublish) {
+  function buttonRows(r) {
     var next = allowedNext(r);
-    var rows = [['檢驗中', '待檢驗'], splitPublish ? [] : ['上架', '下架'], ['擱置']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
+    var rows = [['檢驗中', '待檢驗'], ['上架', '下架'], ['擱置']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
     if (canResend(r)) rows[2].push('resend');
     if (canDelete(r)) rows[2].push('delete');
     return rows.filter(function (g) { return g.length; });
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
   // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
-  function withdrawText(r) { return r.withdrawnAt + ' ' + ({ '直接下架': '儲存，未上傳產品頁' }[r.withdrawKind] || r.withdrawKind || '下架'); }
+  function withdrawText(r) { return r.withdrawnAt + ' ' + (r.withdrawKind || '下架'); }
   function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && ((target !== '上架' && target !== '下架') || !missingForComplete(r).length); }
 
   // 不合格信收件人：照對到商品的分類分組；條碼沒綁任何商品就各產線都寄（2026-10-06 Glen）
@@ -1368,7 +1341,7 @@ window.INSP = (function () {
     // 軟刪除的不給畫面
     records: function () { return state.records.filter(function (r) { return !r.deleted; }); }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, publishButtons: publishButtons, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, manualOf: manualOf, hasManualImgs: hasManualImgs, setManual: setManual, setManualExp: setManualExp, clearManual: clearManual, currentFor: currentFor, frontSelfFor: frontSelfFor, supersededText: supersededText, itemsLocked: itemsLocked, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
@@ -1395,9 +1368,6 @@ window.INSP = (function () {
   .insp-lookup-name { font-size:16px; font-weight:500; }
   .insp-photos { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
   .insp-photos img { width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--gox-card-border); cursor:pointer; }
-  .insp-photo { position:relative; width:40px; height:40px; }
-  .insp-photo-del { position:absolute; top:-8px; right:-8px; width:16px; height:16px; border-radius:9999px; border:0; background:#333; color:#fff; font-size:12px; line-height:16px; padding:0; cursor:pointer; display:none; }
-  .insp-photo:hover .insp-photo-del { display:block; }
   .insp-thumbs { display:flex; gap:8px; flex-wrap:wrap; }
   .insp-thumb-wrap { width:72px; }
   .insp-thumb-cap { margin-top:4px; font-size:11px; line-height:1.4; color:var(--gox-text-muted); text-align:center; word-break:break-all; }
@@ -1538,16 +1508,14 @@ function PhotoCell({ r, locked }) {
     for (const src of srcs) items.push({ src, barcode: await INSP.detectBarcode(src) });
     if (!INSP.addPhotos(r.no, items)) { message.error('瀏覽器儲存空間不夠，照片沒有存進去（demo 限制，正式版存在圖庫）'); return; }
     const bad = items.filter((x) => x.barcode && x.barcode !== r.barcode).length;
-    if (bad) message.warning('已新增 ' + items.length + ' 張，其中 ' + bad + ' 張的條碼跟這筆紀錄不一樣');
-    else message.success('已新增 ' + items.length + ' 張照片到圖庫');
+    if (bad) message.warning('已上傳 ' + items.length + ' 張，其中 ' + bad + ' 張的條碼跟這筆紀錄不一樣');
+    else message.success('已上傳 ' + items.length + ' 張照片到圖庫');
   };
   return (
     <div className="insp-photos">
-      {/* 滑到縮圖上，右上角浮出叉叉，點了直接刪（2026-10-06 Glen） */}
-      {photos.slice(0, 3).map((p, i) => (<div className="insp-photo" key={i}><img src={p.src} onClick={() => setPreview(i)} />
-        {!locked && <button type="button" className="insp-photo-del" aria-label="刪除這張" onClick={() => { INSP.removePhoto(r.no, i); message.success('已刪除 1 張照片'); }}>×</button>}</div>))}
+      {photos.slice(0, 3).map((p, i) => <img key={i} src={p.src} onClick={() => setPreview(i)} />)}
       {photos.length > 3 && <span className="insp-muted">+{photos.length - 3}</span>}
-      {!locked && <Button size="small" onClick={() => ref.current.click()}>新增</Button>}
+      {!locked && <Button size="small" onClick={() => ref.current.click()}>上傳</Button>}
       <input ref={ref} type="file" accept="image/*" multiple hidden onChange={onFiles} />
       <Modal open={preview !== null} onCancel={() => setPreview(null)} footer={null} width={640} title={r.name + '・樣品照片'}>
         {preview !== null && photos[preview] && (<div>
@@ -1776,12 +1744,12 @@ function Page() {
   // 狀態切換（C 版 2026-10-05）：待檢驗 ⇄ 檢驗中 →（欄位填齊）上架 ⇄ 下架；驗完也可以不上架直接下架；還沒驗完的可暫停送驗
   const changeStatus = (r, t) => {
     if (INSP.allowedNext(r).indexOf(t) < 0) return;
-    if (!INSP.canSwitch(r, t)) { message.error('還不能' + INSP.actionLabel(r, t) + '，請先填：' + INSP.missingForComplete(r).join('、')); return; }
+    if (!INSP.canSwitch(r, t)) { message.error('還不能' + t + '，請先填：' + INSP.missingForComplete(r).join('、')); return; }
     const from = INSP.viewState(r);
     if (t === '上架') {
       INSP.update(r.no, { status: t, publishedAt: INSP.today(), publishedTs: Date.now() });
       const ps = INSP.productsOf(r);
-      message.success(ps.length ? '已儲存並上傳到 ' + ps.length + ' 個產品頁，報告到期日設為 ' + r.expDate : '已儲存；此條碼沒有綁商品，前台不會顯示');
+      message.success(ps.length ? '已上架到 ' + ps.length + ' 個商品頁，報告到期日設為 ' + r.expDate : '已上架；此條碼沒有綁商品，前台不會顯示');
       if (INSP.hasFail(r)) {
         const groups = INSP.receiversFor(r);
         const to = Object.keys(groups).map((k) => k + '：' + groups[k].join('、'));
@@ -1790,15 +1758,14 @@ function Page() {
       }
       return;
     }
-    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: from === 'live' ? '手動下架' : '直接下架' }); message.info(from === 'live' ? '已下架，前台不再顯示這份報告' : '已儲存，這份報告不會放上產品頁'); return; }
+    if (t === '下架') { INSP.update(r.no, { status: t, withdrawnAt: INSP.today(), withdrawKind: INSP.actionLabel(r, t) }); message.info(from === 'live' ? '已下架，前台不再顯示這份報告' : '已下架，這份報告不會放上前台'); return; }
     INSP.update(r.no, { status: t });
     if (t === '檢驗中' && from !== 'pending') message.info('已改回檢驗中，前台不再顯示這份報告，可以修改欄位');
     else if (t === '擱置') message.info('已暫停送驗');
     else message.info('已改為' + t);
   };
 
-  // 2026-10-06 Glen：分頁不叫上架中、下架/過期，避免跟產品本身上下架搞混
-  const TABS = [['testing', '檢驗中'], ['live', '顯示產品頁'], ['off', '前台未顯示紀錄'], ['cancelled', '擱置']];
+  const TABS = [['testing', '檢驗中'], ['live', '上架中'], ['off', '下架/過期'], ['cancelled', '擱置']];
   const inTab = (r, t) => {
     const v = INSP.viewState(r);
     if (t === 'testing') return v === 'pending' || v === 'testing';
@@ -1809,7 +1776,7 @@ function Page() {
   const countOf = (t) => records.filter((r) => inTab(r, t) && matchKw(r)).length;
   const data = records.filter((r) => inTab(r, tab) && matchKw(r));
   const tabItems = TABS.map(([k, l]) => ({ key: k, label: l + '（' + countOf(k) + '）' }));
-  const emptyText = { testing: '沒有檢驗中的紀錄', live: '沒有顯示在產品頁的紀錄', off: '沒有前台未顯示的紀錄', cancelled: '沒有擱置的紀錄' }[tab];
+  const emptyText = { testing: '沒有檢驗中的紀錄', live: '沒有上架中的紀錄', off: '沒有下架或過期的紀錄', cancelled: '沒有擱置的紀錄' }[tab];
 
   const DATES = [['mfgDate', '製作'], ['expDate', '有效'], ['receivedDate', '收樣'], ['inspectDate', '檢驗']];
   const setDate = (r, key, v) => (key === 'expDate' ? changeExp(r, v) : edit(r, { [key]: v }));
@@ -1832,8 +1799,8 @@ function Page() {
           <Select size="small" style={{ flex: '0 0 104px' }} disabled={INSP.itemsLocked(r) || !x.item} value={x.result}
             status={x.result === '不合格' ? 'error' : undefined} options={RESULT_OPTIONS} onChange={(v) => setItem(r, idx, 'result', v)} /></div>))}</div>) },
     // 分頁就是狀態，這欄只放切換按鈕；檢驗中分頁有兩種，才標出待檢驗或檢驗中
-    { title: '切換狀態', key: 'ps', width: 190, render: (_, r) => {
-        const v = INSP.viewState(r);
+    { title: '切換狀態', key: 'ps', width: 210, render: (_, r) => {
+        const v = INSP.viewState(r), miss = (v === 'pending' || v === 'testing') ? INSP.missingForComplete(r) : [];
         return (<div className="insp-ps">
           {(v === 'pending' || v === 'testing') && <span className="insp-muted">{INSP.statusText(r)}</span>}
           {INSP.hasFail(r) && <Tag color="error">含不合格</Tag>}
@@ -1842,22 +1809,15 @@ function Page() {
           {v === 'withdrawn' && <span className="insp-muted">{INSP.withdrawText(r)}</span>}
           {v === 'superseded' && <span className="insp-muted">{INSP.supersededText(r)}</span>}
           {v === 'expired' && <span className="insp-muted">已過有效日期</span>}
-          {INSP.buttonRows(r, true).map((row, i) => (<Space key={i} size={4}>
+          {INSP.buttonRows(r).map((row, i) => (<Space key={i} size={4}>
             {row.map((t) => t === 'resend'
               ? <Button key={t} size="small" onClick={() => resend(r)}>重新送驗</Button>
               : t === 'delete' ? <Button key={t} size="small" danger type="text" onClick={() => askDelete(r)}>刪除</Button>
-              : <Button key={t} size="small" onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>)}
-          </Space>))}</div>);
-      } },
-    // 驗完的兩顆（儲存並上傳產品頁／儲存）獨立一欄；上架中的手動下架、下架的重新上架也在這裡
-    { title: '完成檢驗', key: 'publish', width: 160, render: (_, r) => {
-        const v = INSP.viewState(r), btns = INSP.publishButtons(r), miss = (v === 'pending' || v === 'testing') ? INSP.missingForComplete(r) : [];
-        if (!btns.length) return null;
-        return (<div className="insp-ps">
-          {btns.map((t) => <Button key={t} size="small" type={t === '上架' ? 'primary' : 'default'} danger={t === '下架' && v === 'live'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>)}
+              : <Button key={t} size="small" type={t === '上架' ? 'primary' : 'default'} danger={t === '下架'} disabled={!INSP.canSwitch(r, t)} onClick={() => changeStatus(r, t)}>{INSP.actionLabel(r, t)}</Button>)}
+          </Space>))}
           {miss.length > 0 && <span className="insp-muted">未填寫完畢</span>}</div>);
       } },
-    { title: '附檔照片', key: 'photos', width: 180, render: (_, r) => <PhotoCell r={r} locked={INSP.isLocked(r)} /> },
+    { title: '照片', key: 'photos', width: 180, render: (_, r) => <PhotoCell r={r} locked={INSP.isLocked(r)} /> },
   ];
 
   return (
