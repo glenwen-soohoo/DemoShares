@@ -4,7 +4,7 @@
 <!--
   DemoShares 交接對照 | 檢驗紀錄狀態切換說明
   說明頁，不對應正式站任何畫面（正式站不用做這頁）
-  狀態的真實欄位名、enum、要新建的 SetStatus／Resend：見同資料夾 _交接對照.md〈算出來的狀態〉與 B 區
+  狀態的真實欄位名、enum、要新建的 SetStatus：見同資料夾 _交接對照.md〈算出來的狀態〉與 B 區
   規則全文：開發文件 03〈狀態〉
 -->
 
@@ -41,11 +41,11 @@
 <div class="wrap">
   <a class="back" href="index.html">‹ 回 demo 目錄</a>
   <h1>檢驗紀錄｜狀態怎麼切換</h1>
-  <p class="sub">C 版，2026-10-06 更新。開發文件見 03〈狀態〉；寄信看 <a href="notification-rules.html">通知信規則</a></p>
+  <p class="sub">E 版，2026-10-06 更新。開發文件見 03〈狀態〉；寄信看 <a href="notification-rules.html">通知信規則</a></p>
 
   <h2>流程圖</h2>
   <div class="card">
-    <svg class="flow" viewBox="0 0 960 560" role="img" aria-label="檢驗紀錄狀態流程圖">
+    <svg class="flow" viewBox="0 0 960 520" role="img" aria-label="檢驗紀錄狀態流程圖">
       <defs>
         <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="#595757"/>
@@ -53,107 +53,69 @@
         <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="#4ba83b"/>
         </marker>
-        <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#dc4e43"/>
-        </marker>
-        <marker id="ahm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#888"/>
-        </marker>
       </defs>
 
       <!-- 分頁標籤 -->
-      <text x="40" y="24" font-size="13" fill="#888">分頁：檢驗中</text>
-      <text x="400" y="24" font-size="13" fill="#888">分頁：顯示產品頁</text>
-      <text x="400" y="348" font-size="13" fill="#888">分頁：前台未顯示紀錄</text>
-      <text x="700" y="24" font-size="13" fill="#888">分頁：前台未顯示紀錄（系統算出來）</text>
-      <text x="80" y="492" font-size="13" fill="#888">分頁：擱置</text>
+      <text x="40" y="28" font-size="13" fill="#888">分頁：檢驗區</text>
+      <text x="560" y="28" font-size="13" fill="#888">分頁：完成區（整列唯讀）</text>
+      <text x="292" y="476" font-size="13" fill="#888">分頁：暫停區</text>
 
-      <!-- 檢驗中分頁（待檢驗＋檢驗中） -->
-      <rect x="40" y="36" width="240" height="300" rx="8" fill="#f6f8fa" stroke="#e0e4e6"/>
-      <rect x="80" y="64" width="160" height="56" rx="6" fill="#fff" stroke="#595757" stroke-width="1.5"/>
-      <text x="160" y="90" font-size="17" font-weight="700" text-anchor="middle" fill="#1a1a1a">待檢驗</text>
-      <text x="160" y="110" font-size="12" text-anchor="middle" fill="#888">新建紀錄從這裡開始</text>
-      <rect x="80" y="232" width="160" height="56" rx="6" fill="#fff" stroke="#595757" stroke-width="1.5"/>
-      <text x="160" y="266" font-size="17" font-weight="700" text-anchor="middle" fill="#1a1a1a">檢驗中</text>
-      <path d="M136 122 L136 228" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
-      <text x="128" y="180" font-size="13" text-anchor="end" fill="#595757">開始檢驗</text>
-      <path d="M184 230 L184 124" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
-      <text x="192" y="180" font-size="13" fill="#595757">改回待檢驗</text>
+      <!-- 檢驗區：三個狀態互切 -->
+      <rect x="40" y="40" width="280" height="320" rx="8" fill="#f6f8fa" stroke="#e0e4e6"/>
+      <rect x="80" y="64" width="200" height="56" rx="6" fill="#D7F4DA" stroke="#c2dfc4" stroke-width="1.5"/>
+      <text x="180" y="98" font-size="17" font-weight="700" text-anchor="middle" fill="#3d8c30">待檢驗</text>
+      <rect x="80" y="152" width="200" height="56" rx="6" fill="#4ba83b" stroke="#4ba83b" stroke-width="1.5"/>
+      <text x="180" y="186" font-size="17" font-weight="700" text-anchor="middle" fill="#fff">檢驗中</text>
+      <rect x="80" y="240" width="200" height="56" rx="6" fill="#fbbf24" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="180" y="274" font-size="17" font-weight="700" text-anchor="middle" fill="#333">複驗中</text>
+      <text x="180" y="332" font-size="12" text-anchor="middle" fill="#888">三個狀態在「狀態」欄點一下就切換</text>
 
-      <!-- 上架中 -->
-      <rect x="400" y="40" width="200" height="72" rx="6" fill="#fff" stroke="#4ba83b" stroke-width="2.5"/>
-      <text x="500" y="72" font-size="18" font-weight="700" text-anchor="middle" fill="#4ba83b">上架中</text>
-      <text x="500" y="94" font-size="12" text-anchor="middle" fill="#595757">前台只顯示這一種</text>
+      <!-- 完成區 -->
+      <rect x="560" y="40" width="360" height="320" rx="8" fill="#f6f8fa" stroke="#e0e4e6"/>
+      <rect x="600" y="72" width="280" height="88" rx="6" fill="#fff" stroke="#4ba83b" stroke-width="2.5"/>
+      <text x="740" y="102" font-size="17" font-weight="700" text-anchor="middle" fill="#4ba83b">上傳&amp;儲存</text>
+      <text x="740" y="124" font-size="12" text-anchor="middle" fill="#595757">放上產品頁；是最新、沒過期、沒被手動圖檔</text>
+      <text x="740" y="142" font-size="12" text-anchor="middle" fill="#595757">蓋掉的，才標「顯示於前台」</text>
+      <rect x="600" y="208" width="280" height="64" rx="6" fill="#fff" stroke="#595757" stroke-width="1.5"/>
+      <text x="740" y="236" font-size="17" font-weight="700" text-anchor="middle" fill="#1a1a1a">僅存檢驗報告</text>
+      <text x="740" y="258" font-size="12" text-anchor="middle" fill="#595757">只留紀錄，不放前台</text>
+      <text x="740" y="320" font-size="12" text-anchor="middle" fill="#888">欄位全部灰底不能改，要改先移至檢驗區</text>
 
-      <!-- 下架（手動） -->
-      <rect x="400" y="256" width="200" height="72" rx="6" fill="#fff" stroke="#dc4e43" stroke-width="1.5"/>
-      <text x="500" y="288" font-size="18" font-weight="700" text-anchor="middle" fill="#dc4e43">下架</text>
-      <text x="500" y="310" font-size="12" text-anchor="middle" fill="#595757">手動的，會存</text>
+      <!-- 確認完成 -->
+      <text x="440" y="72" font-size="12" text-anchor="middle" fill="#888">確認完成（欄位要填齊）</text>
+      <path d="M322 112 L596 112" stroke="#4ba83b" stroke-width="2" fill="none" marker-end="url(#ahg)"/>
+      <text x="440" y="104" font-size="13" font-weight="700" text-anchor="middle" fill="#4ba83b">上傳&amp;儲存</text>
+      <path d="M322 240 L596 240" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
+      <text x="440" y="232" font-size="13" font-weight="700" text-anchor="middle" fill="#595757">僅儲存</text>
 
-      <!-- 被取代、過期（算出來） -->
-      <rect x="700" y="40" width="220" height="56" rx="6" fill="#fff" stroke="#888" stroke-width="1.5" stroke-dasharray="6 4"/>
-      <text x="810" y="66" font-size="16" font-weight="700" text-anchor="middle" fill="#595757">已被取代</text>
-      <text x="810" y="86" font-size="12" text-anchor="middle" fill="#888">同商品有更新的一份上架</text>
-      <rect x="700" y="128" width="220" height="56" rx="6" fill="#fff" stroke="#888" stroke-width="1.5" stroke-dasharray="6 4"/>
-      <text x="810" y="154" font-size="16" font-weight="700" text-anchor="middle" fill="#595757">已過期</text>
-      <text x="810" y="174" font-size="12" text-anchor="middle" fill="#888">過了有效日期</text>
+      <!-- 完成區 → 檢驗區（複驗中） -->
+      <path d="M740 362 L740 400 L300 400 L300 268 L284 268" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
+      <text x="520" y="392" font-size="13" text-anchor="middle" fill="#595757">重新送驗：移至檢驗區（變複驗中，前台不再顯示）</text>
 
-      <!-- 擱置 -->
-      <rect x="80" y="416" width="160" height="56" rx="6" fill="#fff" stroke="#595757" stroke-width="1.5"/>
-      <text x="160" y="450" font-size="17" font-weight="700" text-anchor="middle" fill="#1a1a1a">擱置</text>
-
-      <!-- 檢驗中分頁 → 上架中 -->
-      <path d="M282 92 L396 76" stroke="#4ba83b" stroke-width="2" fill="none" marker-end="url(#ahg)"/>
-      <text x="286" y="66" font-size="12" font-weight="700" fill="#4ba83b">儲存並上傳產品頁</text>
-      <text x="300" y="104" font-size="12" fill="#888">欄位要填齊</text>
-
-      <!-- 檢驗中分頁 → 下架 -->
-      <path d="M282 270 L396 284" stroke="#dc4e43" stroke-width="1.5" fill="none" marker-end="url(#ahr)"/>
-      <text x="300" y="258" font-size="13" font-weight="700" fill="#dc4e43">儲存</text>
-      <text x="300" y="302" font-size="12" fill="#888">欄位要填齊</text>
-
-      <!-- 上架中 ⇄ 下架 -->
-      <path d="M476 114 L476 252" stroke="#dc4e43" stroke-width="1.5" fill="none" marker-end="url(#ahr)"/>
-      <text x="468" y="190" font-size="13" text-anchor="end" fill="#dc4e43">前台不顯示</text>
-      <path d="M524 254 L524 116" stroke="#4ba83b" stroke-width="1.5" fill="none" marker-end="url(#ahg)"/>
-      <text x="532" y="190" font-size="13" fill="#4ba83b">重新顯示於前台</text>
-
-      <!-- 上架中 → 被取代、過期（自動） -->
-      <path d="M602 60 L696 64" stroke="#888" stroke-width="1.5" stroke-dasharray="6 4" fill="none" marker-end="url(#ahm)"/>
-      <path d="M602 76 L696 148" stroke="#888" stroke-width="1.5" stroke-dasharray="6 4" fill="none" marker-end="url(#ahm)"/>
-      <text x="648" y="52" font-size="12" text-anchor="middle" fill="#888">系統自動</text>
-
-      <!-- 檢驗中分頁 ⇄ 擱置 -->
-      <path d="M136 338 L136 412" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
-      <text x="128" y="380" font-size="13" text-anchor="end" fill="#595757">暫停送驗</text>
-      <path d="M184 414 L184 340" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
-      <text x="192" y="380" font-size="13" fill="#595757">恢復送驗</text>
-
-      <!-- 改回檢驗中：上架中、下架、被取代、過期都可以 -->
-      <path d="M810 186 L810 500 L300 500 L300 320 L284 320" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
-      <path d="M500 330 L500 500" stroke="#595757" stroke-width="1.5" fill="none"/>
-      <path d="M602 100 L624 100 L624 500" stroke="#595757" stroke-width="1.5" fill="none"/>
-      <text x="560" y="524" font-size="13" text-anchor="middle" fill="#595757">改回檢驗中（上架中、下架、被取代、過期都可以；要改內容時用）</text>
+      <!-- 檢驗區 ⇄ 暫停區 -->
+      <rect x="80" y="444" width="200" height="56" rx="6" fill="#fff" stroke="#595757" stroke-width="1.5"/>
+      <text x="180" y="478" font-size="17" font-weight="700" text-anchor="middle" fill="#1a1a1a">擱置</text>
+      <path d="M136 362 L136 440" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
+      <text x="128" y="416" font-size="13" text-anchor="end" fill="#595757">移至暫停區</text>
+      <path d="M224 442 L224 364" stroke="#595757" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
+      <text x="232" y="428" font-size="13" fill="#595757">恢復至檢驗區（回待檢驗）</text>
     </svg>
     <div class="legend">
-      <span><i class="lg" style="border:2.5px solid #4ba83b"></i>前台看得到</span>
-      <span><i class="lg" style="border:1.5px solid #595757"></i>存的狀態</span>
-      <span><i class="lg" style="border:1.5px dashed #888"></i>系統算出來，不是存的</span>
-      <span class="muted">另外：上架中、下架、被取代、過期都有「重新送驗」，會開一筆新紀錄（待檢驗），原本這筆不動</span>
+      <span><i class="lg" style="border:2.5px solid #4ba83b"></i>會放上前台</span>
+      <span><i class="lg" style="background:#D7F4DA"></i>待檢驗</span>
+      <span><i class="lg" style="background:#4ba83b"></i>檢驗中</span>
+      <span><i class="lg" style="background:#fbbf24"></i>複驗中</span>
     </div>
   </div>
 
-  <h2>每個狀態有哪些按鈕</h2>
+  <h2>每個分頁有哪些欄位和按鈕</h2>
   <div class="tbl-scroll">
     <table>
-      <thead><tr><th>現在是</th><th>切換狀態 第 1 行</th><th>完成檢驗（獨立一欄）</th><th>切換狀態 第 2 行</th><th>欄位能不能改</th></tr></thead>
+      <thead><tr><th>分頁</th><th>裡面有</th><th>欄位與按鈕</th><th>能不能改</th></tr></thead>
       <tbody>
-        <tr><td class="k">待檢驗</td><td>開始檢驗</td><td>儲存並上傳產品頁、儲存</td><td>暫停送驗、刪除</td><td>可以</td></tr>
-        <tr><td class="k">檢驗中</td><td>改回待檢驗</td><td>儲存並上傳產品頁、儲存</td><td>暫停送驗、刪除</td><td>可以</td></tr>
-        <tr><td class="k">上架中</td><td>改回檢驗中</td><td>前台不顯示</td><td>重新送驗</td><td>日期、品名、保存方式、數量可以改（前台跟著變；必填日期不能清空）；條碼建立後不能改；<b>檢驗項目與結果不能改</b>，要改先改回檢驗中</td></tr>
-        <tr><td class="k">下架</td><td>改回檢驗中</td><td>重新顯示於前台</td><td>重新送驗</td><td>不能（先改回檢驗中）</td></tr>
-        <tr><td class="k">已被取代、已過期</td><td>改回檢驗中</td><td class="muted">—</td><td>重新送驗</td><td>不能（先改回檢驗中）</td></tr>
-        <tr><td class="k">擱置</td><td>恢復送驗</td><td class="muted">—</td><td>刪除</td><td>不能</td></tr>
+        <tr><td class="k">檢驗區</td><td>待檢驗、檢驗中、複驗中</td><td>狀態（三選一）、確認完成（僅儲存、上傳&amp;儲存）、異常（移至暫停區、刪除）、商品照（新增、縮圖叉叉刪除）。搜尋旁邊多四顆「狀態」篩選按鈕（全部、待檢驗、檢驗中、複驗中）</td><td>可以</td></tr>
+        <tr><td class="k">完成區</td><td>按過僅儲存或上傳&amp;儲存的（被新報告取代、過期的也在這裡，不另外分）</td><td>確認完成（寫當初按的是「上傳&amp;儲存」還是「僅存檢驗報告」；前台現在顯示這份就多一個「顯示於前台」標籤）、重新送驗（移至檢驗區）。沒有狀態欄、商品照欄</td><td>全部不能改，要改先移至檢驗區</td></tr>
+        <tr><td class="k">暫停區</td><td>擱置</td><td>異常（恢復至檢驗區、刪除）。沒有商品照欄</td><td>不能</td></tr>
       </tbody>
     </table>
   </div>
@@ -161,16 +123,16 @@
   <h2>規則</h2>
   <div class="card">
     <ul>
-      <li><b>欄位要填齊</b>才能「儲存並上傳產品頁」或「儲存」：製作、有效、收樣、檢驗四個日期都要有，選了的檢驗項目都要有結果。沒填齊時按鈕反灰，下面寫「未填寫完畢」</li>
-      <li><b>上架</b>：寫入上架日（就是報告上的報告日期）、把有效日期寫回商品的報告到期日、有不合格就寄信給營運。重新顯示於前台也一樣，會再寄一次。寄信規則見 <a href="notification-rules.html">通知信規則</a></li>
-      <li><b>上架後檢驗項目與結果就鎖住</b>，要改先改回檢驗中再改，改完重新上架（所以不會有「上架後才改成不合格」）</li>
-      <li><b>下架</b>有兩種按法，存的都是「下架」：檢驗中按的是「儲存」（驗完不放產品頁，下架方式記為直接下架），上架中按的是「前台不顯示」（上架到一半撤下，下架方式記為手動下架）；下架後要放回去按「重新顯示於前台」。按鈕不叫上架、下架，是怕跟產品本身上下架搞混（2026-10-06）。下架不寄信，到期日不回滾</li>
-      <li><b>擱置</b>是「還沒驗完、先不驗」，只有待檢驗、檢驗中能暫停送驗，之後可以恢復送驗；<b>下架</b>是「驗完了、但不放前台」</li>
+      <li><b>欄位要填齊</b>才能確認完成：製作、有效、收樣、檢驗四個日期都要有，選了的檢驗項目都要有結果。沒填齊時兩顆按鈕反灰，下面寫「未填寫完畢」</li>
+      <li><b>上傳&amp;儲存</b>：寫入上架日（就是報告上的報告日期）、把有效日期寫回商品的報告到期日、有不合格就寄信給營運。移至檢驗區後再上傳&amp;儲存一次，會再寄一次。寄信規則見 <a href="notification-rules.html">通知信規則</a></li>
+      <li><b>僅儲存</b>：驗完、留紀錄，但不放前台，不寄信</li>
+      <li><b>完成區只留底</b>：所有欄位灰底不能改。要改按「移至檢驗區」，紀錄回到檢驗區變<b>複驗中</b>，前台馬上不再顯示這份；改完再確認完成</li>
+      <li><b>複驗中</b>：從完成區移回來的就是複驗中；檢驗區裡也可以手動點成複驗中。能做的事跟檢驗中一樣</li>
+      <li><b>暫停區</b>是「還沒驗完、先不驗」，檢驗區的紀錄可以移過去，之後恢復至檢驗區（回到待檢驗）。完成區的不能直接移到暫停區</li>
       <li><b>前台</b>每個商品只顯示一份：<b>檢驗日期最新</b>的那份（同一天比紀錄編號）。最新那份過期就不顯示，也不退回顯示較舊的</li>
-      <li><b>新的蓋掉舊的</b>：檢驗紀錄上架、產品編輯頁手動上傳圖檔，誰比較晚放上去就顯示誰；被圖蓋掉的紀錄在「前台未顯示紀錄」寫「被產品編輯頁手動上傳檔案覆蓋」。營運刪掉圖檔就留白，不會改回舊紀錄。見 <a href="admin-product-edit.html">產品編輯頁</a></li>
-      <li><b>已被取代、已過期</b>不用按，系統自動判斷：同一條碼對到的商品都有更新的一份上架，就算被取代</li>
-      <li><b>刪除</b>：放在「暫停送驗」旁邊，只有沒上架過的（待檢驗、檢驗中、擱置）能刪。是軟刪除：列表不再顯示，資料留著查得到</li>
-      <li><b>重新送驗</b>：開一筆新紀錄（新編號、待檢驗），帶入同條碼、品名、保存方式、數量、選過的項目；結果、照片、日期重來。原紀錄不動</li>
+      <li><b>新的蓋掉舊的</b>：檢驗紀錄上傳&amp;儲存、產品編輯頁手動上傳圖檔，誰比較晚放上去就顯示誰。被蓋掉的紀錄在完成區只是少了「顯示於前台」標籤，不另外寫原因。營運刪掉圖檔就留白，不會改回舊紀錄。見 <a href="admin-product-edit.html">產品編輯頁</a></li>
+      <li><b>刪除</b>：只有<b>從來沒確認完成過</b>的能刪（在檢驗區、暫停區）。進過完成區的，就算移回檢驗區變複驗中也不能刪，因為可能出現過在前台。是軟刪除：列表不再顯示，資料留著查得到</li>
+      <li><b>重新送驗</b>就是移至檢驗區，同一筆紀錄、同一個編號。E 版沒有「開一筆新紀錄重驗」</li>
     </ul>
   </div>
 </div>

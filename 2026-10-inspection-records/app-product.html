@@ -117,7 +117,7 @@
 <script>
 /* 檢驗紀錄 demo 共用資料層：後台頁與前台頁共用同一份 localStorage，後台改了前台會跟著變 */
 window.INSP = (function () {
-  var KEY = 'gb-inspection-demo-v12';  // C 版（狀態合一）；A 版（-a.html）用 v2，兩版資料互不干擾
+  var KEY = 'gb-inspection-demo-v13';  // E 版（多了複驗中）；C、D 版（-c、-d.html）用 v12，A 版用 v2，各版資料互不干擾
 
   var ITEMS = ['大腸桿菌群', '沙門氏菌', '李斯特菌', '腸桿菌科', '金黃色葡萄球菌'];
   var RESULTS = ['陰性', '不合格'];
@@ -131,7 +131,8 @@ window.INSP = (function () {
   var STORAGES = ['冷凍', '冷藏', '常溫'];
   // 狀態只有一個（2026-10-05 C 版：檢驗狀態與處理狀態合併）。驗完就上架，沒有另外的「已完成」
   // 下架＝手動下架（上架到一半提早撤下，或驗完直接不上架），會存；被取代、過期不存，從「上架」算出來
-  var STATUS = ['待檢驗', '檢驗中', '上架', '下架', '擱置'];
+  // E 版（2026-10-06）多一個「複驗中」：完成區的紀錄按「移至檢驗區」回到檢驗區就是複驗中，檢驗區也可以手動切
+  var STATUS = ['待檢驗', '檢驗中', '上架', '下架', '擱置', '複驗中'];
 
   var PRODUCTS = [
     { id: 28417, name: '阿婆手工肉圓 6 顆裝', spec: '6 顆／包', type: '冷凍專區', price: 360 },
@@ -610,7 +611,7 @@ window.INSP = (function () {
     if (patch.items) return ['檢驗項目與結果（上架後不能改）'];
     return missingForComplete(Object.assign({}, r, patch));
   }
-  // 檢驗項目與結果：上架後就鎖住，要改先改回檢驗中（2026-10-06 Glen）
+  // 檢驗項目與結果：確認完成後就鎖住，要改先移至檢驗區（2026-10-06 Glen）；E 版 isLocked 已經包含上架
   function itemsLocked(r) { return isLocked(r) || r.status === '上架'; }
 
   function isExpired(r) { return !!r.expDate && r.expDate < today(); }
@@ -692,56 +693,67 @@ window.INSP = (function () {
     if (r.status === '下架') return 'withdrawn';
     if (r.status === '待檢驗') return 'pending';
     if (r.status === '檢驗中') return 'testing';
+    if (r.status === '複驗中') return 'retest';
     if (r.status === '擱置') return 'cancelled';
     if (isExpired(r)) return 'expired';
     if (isSuperseded(r)) return 'superseded';
     return 'live';
   }
-  // 下架、被取代、過期、擱置：所有欄位不可修改；要改先改回檢驗中（擱置是恢復成待檢驗）
-  function isLocked(r) { var v = viewState(r); return v === 'withdrawn' || v === 'expired' || v === 'superseded' || v === 'cancelled'; }
+  // 完成區（上架中、下架、被取代、過期）與暫停區：所有欄位不可修改；要改先移至檢驗區（暫停區是恢復至檢驗區）
+  // E 版起上架中也整列鎖住（2026-10-06 Glen：完成區只留底）
+  function isLocked(r) { var v = viewState(r); return v !== 'pending' && v !== 'testing' && v !== 'retest'; }
+  // 檢驗區三種狀態
+  function inInspect(r) { var v = viewState(r); return v === 'pending' || v === 'testing' || v === 'retest'; }
+  function isDone(r) { var v = viewState(r); return v === 'live' || v === 'withdrawn' || v === 'superseded' || v === 'expired'; }
   // 每個狀態可以切去哪裡（2026-10-05 C 版）
   function allowedNext(r) {
     switch (viewState(r)) {
-      case 'pending': return ['檢驗中', '上架', '下架', '擱置'];
-      case 'testing': return ['上架', '下架', '待檢驗', '擱置'];
-      case 'live': return ['下架', '檢驗中'];
-      case 'withdrawn': return ['上架', '檢驗中'];
+      // E 版：檢驗區三種狀態互切；完成區只能移至檢驗區（變複驗中），沒有前台不顯示、重新顯示
+      case 'pending': return ['檢驗中', '複驗中', '上架', '下架', '擱置'];
+      case 'testing': return ['待檢驗', '複驗中', '上架', '下架', '擱置'];
+      case 'retest': return ['待檢驗', '檢驗中', '上架', '下架', '擱置'];
       case 'cancelled': return ['待檢驗'];
-      default: return ['檢驗中'];                       // 被取代、過期
+      default: return ['複驗中'];                       // 上架中、下架、被取代、過期
     }
   }
   // 驗完的紀錄（上架中、下架、被取代、過期）才能重新送驗
   function canResend(r) { return ['live', 'withdrawn', 'superseded', 'expired'].indexOf(viewState(r)) >= 0; }
 
   // 狀態文字與按鈕文字（電腦版、手機版共用）
-  function statusText(r) { return { pending: '待檢驗', testing: '檢驗中', live: '上架中', withdrawn: '已下架', superseded: '已被取代', expired: '已過期', cancelled: '已擱置' }[viewState(r)]; }
+  function statusText(r) { return { pending: '待檢驗', testing: '檢驗中', retest: '複驗中', live: '已完成', withdrawn: '已完成', superseded: '已完成', expired: '已完成', cancelled: '暫停中' }[viewState(r)]; }
   function actionLabel(r, target) {
     var v = viewState(r);
-    if (target === '檢驗中') return v === 'pending' ? '開始檢驗' : '改回檢驗中';
-    if (target === '待檢驗') return v === 'cancelled' ? '恢復送驗' : '改回待檢驗';
-    if (target === '擱置') return '暫停送驗';
-    // 2026-10-06 Glen：「上架／下架」會跟產品本身上下架搞混，驗完的兩顆改叫「儲存並上傳產品頁」「儲存」
+    // E 版按鈕名（2026-10-06 Glen）
+    if (target === '檢驗中') return '檢驗中';
+    if (target === '複驗中') return isDone(r) ? '移至檢驗區' : '複驗中';
+    if (target === '待檢驗') return v === 'cancelled' ? '恢復至檢驗區' : '待檢驗';
+    if (target === '擱置') return '移至暫停區';
     // 上架中撤下、下架後再放回，也不叫上下架（2026-10-06 Glen）
-    if (target === '上架') return v === 'withdrawn' ? '重新顯示於前台' : '儲存並上傳產品頁';
-    if (target === '下架') return v === 'live' ? '前台不顯示' : '儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
+    if (target === '上架') return '上傳&儲存';
+    if (target === '下架') return '僅儲存';   // 上架中撤下／驗完不上架（存的下架方式仍是「直接下架」）
     return target;
   }
   // 按鈕排成三行，每行只放這筆紀錄現在有的按鈕；'resend' 代表重新送驗
-  // 刪除（2026-10-06 Glen：軟刪除，按鈕放暫停送驗旁邊）：只有沒上架過的待檢驗、檢驗中、擱置可以刪；上架過的報告出現過在前台，不給刪
+  // 刪除（2026-10-06 Glen：軟刪除，按鈕在異常欄）：只有從沒確認完成過的可以刪；確認完成過的可能出現過在前台，不給刪
   // 軟刪除＝資料留著、標 deleted，列表與所有畫面都看不到；紀錄編號照樣算進當天流水號（不會重號）
-  function canDelete(r) { var v = viewState(r); return v === 'pending' || v === 'testing' || v === 'cancelled'; }
+  // 判斷看「有沒有完成過」，不看現在的狀態：從完成區移回來的複驗中不能刪
+  function canDelete(r) { return (inInspect(r) || viewState(r) === 'cancelled') && !r.publishedAt && !r.withdrawnAt; }
   function softDelete(no) { return update(no, { deleted: true, deletedAt: today() }); }
-  // splitPublish：電腦版把上架、下架兩顆拆到獨立的「完成檢驗」欄（publishButtons），切換狀態欄只剩其他兩行
+  // 手機版用；splitPublish、publishButtons 是 D 版電腦版留下的，E 版電腦版各分頁自己排欄位
   function publishButtons(r) { var next = allowedNext(r); return ['上架', '下架'].filter(function (t) { return next.indexOf(t) >= 0; }); }
   function buttonRows(r, splitPublish) {
     var next = allowedNext(r);
-    var rows = [['檢驗中', '待檢驗'], splitPublish ? [] : ['上架', '下架'], ['擱置']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
-    if (canResend(r)) rows[2].push('resend');
+    // E 版沒有「重新送驗開新紀錄」：完成區改成移至檢驗區（同一筆變複驗中）
+    var rows = [['待檢驗', '檢驗中', '複驗中'], splitPublish ? [] : ['下架', '上架'], ['擱置']].map(function (g) { return g.filter(function (t) { return next.indexOf(t) >= 0; }); });
     if (canDelete(r)) rows[2].push('delete');
     return rows.filter(function (g) { return g.length; });
   }
   // 這顆按鈕現在能不能按：上架、下架都代表驗完了，欄位要填齊
   // 下架的原因文字：從上架中撤下的是手動下架，從檢驗中直接下架的是直接下架（下架當下就記下來）
+  // 完成區「確認完成」欄：當初按的是哪一顆（存的狀態是上架就是上傳&儲存，下架就是只存報告）
+  function doneText(r) { return r.status === '上架' ? '上傳&儲存' : '僅存檢驗報告'; }
+  // 前台現在真的顯示這一份（至少一個商品）
+  function shownOnFront(r) { return productsOf(r).some(function (p) { var s = shownForProduct(p.id); return !!s && s.no === r.no; }); }
   function withdrawText(r) { return r.withdrawnAt + ' ' + ({ '直接下架': '儲存，未上傳產品頁', '手動下架': '設為前台不顯示' }[r.withdrawKind] || r.withdrawKind || '下架'); }
   function canSwitch(r, target) { return allowedNext(r).indexOf(target) >= 0 && ((target !== '上架' && target !== '下架') || !missingForComplete(r).length); }
 
@@ -760,7 +772,7 @@ window.INSP = (function () {
     // 軟刪除的不給畫面
     records: function () { return state.records.filter(function (r) { return !r.deleted; }); }, scenario: function () { return state.scenario; },
     setScenario: setScenario, create: create, update: update, resend: resend, editBreaks: editBreaks, lookup: lookup, productsOf: productsOf, product: product,
-    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, publishButtons: publishButtons, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
+    isExpired: isExpired, hasFail: hasFail, failItems: failItems, missingForComplete: missingForComplete, viewState: viewState, isLocked: isLocked, allowedNext: allowedNext, canResend: canResend, canDelete: canDelete, softDelete: softDelete, buttonRows: buttonRows, inInspect: inInspect, isDone: isDone, doneText: doneText, shownOnFront: shownOnFront, publishButtons: publishButtons, withdrawText: withdrawText, statusText: statusText, actionLabel: actionLabel, canSwitch: canSwitch,
     latestForProduct: latestForProduct, shownForProduct: shownForProduct, manualOf: manualOf, hasManualImgs: hasManualImgs, setManual: setManual, setManualExp: setManualExp, clearManual: clearManual, currentFor: currentFor, frontSelfFor: frontSelfFor, supersededText: supersededText, itemsLocked: itemsLocked, isSuperseded: isSuperseded, receiversFor: receiversFor,
     today: today, compressImage: compressImage, detectBarcode: detectBarcode, startLiveScan: startLiveScan, detectFromFile: detectFromFile, photosOf: photosOf, addPhotos: addPhotos, removePhoto: removePhoto
   };
