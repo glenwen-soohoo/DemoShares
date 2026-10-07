@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 檢驗紀錄頁（電腦版）｜E 版（2026-10-06）
-  真相來源：D:\GreenBox\fruit_web origin/dev（5518003cc，2026-10-06 再對；引用的檔案從 07f0c120a 起都沒變，行號有效。DEV-3977 分支要先更新到這個版本以後）
+  真相來源：D:\GreenBox\fruit_web origin/dev（1127fd9a2，2026-10-07 再對；ScheduleController、GoX ProductController、ProductModel、Edit18 行號已重對。DEV-3977 分支要先更新到這個版本以後）
   對應正式站（待新建，照 Gift/Index.cshtml 的整頁 React 掛法）：
     controller : Areas/GoX/Controllers/InspectionRecordController.cs（待新建）
     view       : Areas/GoX/Views/InspectionRecord/Index.cshtml（待新建，空 div #admin-inspection-record）
@@ -12,7 +12,7 @@
     權限       : CheckLogin.CheckPermission（Areas/GoX/Controllers/ProductController.cs:93），fun_id 沿用 3033 產品管理（照 GiftController.cs:25）
   這一頁的真實欄位名：
     條碼對商品  dbo.ProductDetailBarcode.Barcode / ProductId / ProductDetailId
-    報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1618
+    報告到期日  dbo.ProductTestReportRemind.RemindDateTime（ReportType=0）  ⚠ 寫法照 ProductModel.cs:1619
     樣品照片    dbo.Picture（相簿管理 fun_id 3035），關聯表 InspectionRecordPhoto 待新建
     條碼辨識    前端自己做（正式站前端沒有）：掃描線解碼＋切格 html5-qrcode，要加 html5-qrcode 套件  ⚠ 後端 ZXing.Net 只用來產生條碼（Fruit.csproj:146）
     檢驗紀錄    表 InspectionRecord 待新建，欄位提案見 _交接對照.md B 區  ⚠ 不要叫 Batch
@@ -31,7 +31,7 @@
     舊版對照    -c、-d.html 封存，不是開發依據
   這一頁打的真實 API：
     demo 沒打 API（資料在瀏覽器）。要新建的 /GoX/InspectionRecord/LookupBarcode、Create、Update、SetStatus、UploadPhotos、DeletePhoto、Delete（E 版不需要 Resend）
-    不合格信收件人  ScheduleController.cs:5580-5591（寫死，要抽成共用）
+    不合格信收件人  ScheduleController.cs:5643-5654（寫死，要抽成共用）
   完整名稱對照見同資料夾 _交接對照.md
 -->
 
@@ -741,9 +741,9 @@ window.INSP = (function () {
     '金黃色葡萄球菌': ['100.0 CFU/g (mL)', '10.0 CFU/g (mL)']
   };
   var STORAGES = ['冷凍', '冷藏', '常溫'];
-  // 狀態只有一個（2026-10-05 C 版：檢驗狀態與處理狀態合併）。驗完就上架，沒有另外的「已完成」
-  // 下架＝手動下架（上架到一半提早撤下，或驗完直接不上架），會存；被取代、過期不存，從「上架」算出來
-  // E 版（2026-10-06）多一個「複驗中」：完成區的紀錄按「移至檢驗區」回到檢驗區就是複驗中，檢驗區也可以手動切
+  // 狀態只有一個（2026-10-05 C 版：檢驗狀態與處理狀態合併）。畫面上上架叫「上傳&儲存」、下架叫「僅儲存」
+  // 上架、下架都是確認完成（到完成區）；被取代、過期不存，從「上架」算出來
+  // E 版（2026-10-06）多一個「複驗中」：只能在檢驗區手動切；移至檢驗區、恢復至檢驗區都回待檢驗
   var STATUS = ['待檢驗', '檢驗中', '上架', '下架', '擱置', '複驗中'];
 
   var PRODUCTS = [
