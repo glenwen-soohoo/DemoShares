@@ -660,23 +660,9 @@
       const row=del.closest('.cartItem-area');
       const nx=row.nextElementSibling;
       if(nx&&nx.classList.contains('coa')){
-        // 刪主商品≠刪加購品：加購品是獨立可販售商品，不依附主商品。
-        // 已加購品轉成購物車「獨立品項列」保留（demo 簡化，維持現顯示價）；只有主商品列與「尚未加購」清單隨主商品移除。
-        [...nx.querySelectorAll('.coa-added')].forEach(a=>{
-          const g=s=>a.querySelector(s);
-          const priceEl=g('.field-price .n')||g('.field-price');
-          const sec=document.createElement('section');
-          sec.className='col-xs-12 order-field-basc cartItem-area';
-          sec.innerHTML=
-            '<div class="base-field field-pd col-xs-4"><div class="col-xs-4 p-0"><img src="'+g('.coa-thumb').src+'" alt=""></div>'+
-            '<div class="col-xs-8 pd-descs"><div class="pd-title">'+g('.nm').innerHTML+'</div><div class="pd-spec">'+g('.sub').textContent+'</div></div></div>'+
-            '<div class="base-field field-order-time col-xs-2">'+(g('.field-order-time')?g('.field-order-time').textContent:'—')+'</div>'+
-            '<div class="base-field field-price col-xs-1">'+priceEl.textContent+'</div>'+
-            '<div class="base-field field-amt col-xs-2">'+(g('.field-amt')?g('.field-amt').innerHTML:'<select><option>1</option></select>')+'</div>'+
-            '<div class="base-field field-pd-total col-xs-2">'+(g('.field-pd-total')?g('.field-pd-total').textContent:priceEl.textContent)+'</div>'+
-            '<div class="base-field field-delete col-xs-1"><a href="javascript:void(0)"><i class="fa fa-trash" style="font-size:22px;"></i></a></div>';
-          nx.parentNode.insertBefore(sec, nx);
-        });
+        // 刪主商品＝連同其加購品一起清除（✅ 2026-10-07 主人定案）。
+        // v2：加購規格「前台隱藏、不單獨零售」，主商品沒了，加購品沒有可獨立販售的身分，留著無意義→整組清掉。
+        // （主商品列、其「已加購」子列、「尚未加購」選項清單一起移除。）
         nx.remove();
       }
       row.remove(); recalc(); return;

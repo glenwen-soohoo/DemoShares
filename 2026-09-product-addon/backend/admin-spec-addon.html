@@ -19,8 +19,14 @@
     預計出貨日 ship→OrdersTime ⚠出貨日不是下單時間 / 開始結束販售 start,end→StartTime,EndTime
     自動延後區間 delay→Delay / 上架 display→Display / 是否貨到付款 cod
     滿額可購買 isMin,minPrice→MinimumPrice / 限購 limit→Limit
+  禮物券(DEV-3963)／國際條碼(DEV-3869) 現況欄位（已上線，工程直接對）：
+    規格型別 kind：normal 一般 / gift 贈品(IsGift) / present 禮物規格(IsPresentItem)
+    禮物上架 presentActive→PresentItem.IsActive（＝可否兌換，禮物規格的「上架」綁這個不是 Display）
+    禮物原價 presentPrice→PresentDisplayPrice（刪除線價、可留空沿用、有銷量照改，實收 0）
+    國際條碼 barcodes[{code,qty}]→（BarcodeSettings，EAN-13 13碼＋數量，須存在庫存表）
+    分頁 tab：all 全部規格 / onshelf 上架中 / offshelf 下架中 / special 贈品與禮物（上下架分頁只收一般規格）
   本頁「加購」新增部分（正式站還沒有，待新建；Q6 定案＝只勾選＋跳轉，不內嵌加購設定）：
-    作為產品頁加購品 勾選欄 addon → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）。勾選後此規格前台隱藏（ProductDetail.hide）、且與滿額/限購、特殊品類互斥
+    作為產品頁加購品 勾選欄 addon → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）。勾選後此規格前台隱藏（ProductDetail.hide）、且與滿額/限購、特殊品類、設為贈品(IsGift)互斥
     前往加購設定   跳轉鈕 → admin-addon-setting.html（路徑一）；加購價與掛載主商品都在那頁管理（同一份資料）
     （v2：加購品＝獨立新規格、加購價是規格自己的價，無折扣機制；下列欄位＝路徑一的設定，列此供對名、本頁不內嵌）：
     加購價         → 加購規格自己的 Price（DiscPrice??Price），營運直接填
@@ -732,7 +738,13 @@ a:hover { text-decoration: underline; }
              productDetailSettings/ProductDetailSettings.tsx
      ── ConfigProvider 只帶 locale，沒帶 theme，所以 antd 走預設藍 #1677ff
      ── Tailwind class 一一對應：bg-[#28A745] / rounded-t-lg / grid-cols-10 …
-     ── 新增的只有：第三顆分頁「贈品與禮物」、規格限制裡的「設為禮物」
+     ── 2026-10-07 比照禮物券(DEV-3963)＋國際條碼(DEV-3869)上線版更新：
+        · 分頁改 4 個：全部規格／上架中／下架中／贈品與禮物（上下架分頁只收一般規格、排除贈品禮物）
+        · 三色卡片：一般綠／贈品藍(IsGift)／禮物橘(IsPresentItem)
+        · 禮物規格列：綠框「禮物規格」標籤取代「設為贈品」勾選＋三行說明；上架綁 IsPresentActive(可否兌換)；
+          產品原價改編刪除線價(presentPrice，可留空、有銷量照改)；不給複製／刪除
+        · 每列尾端新增「國際條碼」黃底區塊（收合摘要＋展開增刪，13 碼 EAN-13）
+     ── 本頁加購（demo 專屬、正式站未有）：規格限制尾端「作為產品頁加購品」勾選，勾後緊接「前往加購設定」跳轉鈕（只一般規格可設）
      ══════════════════════════════════════════════════════════════ */
 
   .ps {
@@ -888,19 +900,39 @@ a:hover { text-decoration: underline; }
   .ps-toast { background: #fff; color: rgba(0,0,0,.88); padding: 9px 12px; border-radius: 8px; font-size: 14px; box-shadow: 0 6px 16px rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12); }
 
   /* ── 加購品：規格限制尾端多一個「作為產品頁加購品」勾選欄（同既有 checkbox 樣式）。
-        Q6 定案：路徑二不內嵌加購設定，勾選後只出現一個「前往加購設定」跳轉鈕，
-        加購價／掛載主商品一律到路徑一的加購設定頁管理（同一份資料）。 ── */
-  .addon-jump { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap;
-                border: 1px solid #86efac; background: #f0fdf4; border-radius: 8px; padding: 12px 16px; }
-  .addon-jump-txt { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #166534; font-weight: 600; }
-  .addon-jump-dot { width: 7px; height: 7px; border-radius: 9999px; background: #16a34a; flex: none; }
+        Q6 定案：路徑二不內嵌加購設定；勾選後緊接著出現一個「前往加購設定」跳轉鈕
+        （放在選項後面、不另加提示文字），加購價／掛載主商品都到路徑一的加購設定頁管理。 ── */
   .addon-jump-btn { height: 32px; padding: 4px 15px; border: 1px solid #16a34a; border-radius: 6px;
                     background: #16a34a; color: #fff; font-size: 14px; display: inline-flex; align-items: center; gap: 4px;
                     white-space: nowrap; text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s; }
   .addon-jump-btn:hover { background: #15803d; border-color: #15803d; color: #fff; text-decoration: none; }
   .addon-jump-btn svg { width: 14px; height: 14px; }
-  /* 勾「作為產品頁加購品」後的狀態提示（前台隱藏＋互斥停用） */
-  .addon-hide-note { width: 100%; margin-top: 6px; font-size: 12px; color: #8a6d1f; background: #fff8e6; border: 1px solid #f0d58a; border-radius: 4px; padding: 5px 10px; line-height: 1.5; }
+
+  /* 禮物規格：規格限制區以綠框標籤取代「設為贈品」勾選，附三行說明（DEV-3963） */
+  .present-badge-wrap { display: flex; flex-direction: column; gap: 4px; margin-right: 16px; margin-bottom: 24px; }
+  .present-badge-wrap .gift-badge { align-self: flex-start; }
+  .present-note { font-size: 12px; color: #6b7280; line-height: 1.6; }
+
+  /* 國際條碼（DEV-3869）：黃底卡片、收合摘要 + 展開增刪 */
+  .bc { margin-top: 12px; border: 1px solid #fde68a; background: #fffbeb; border-radius: 8px; padding: 8px 12px; }
+  .bc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .bc-title { display: inline-flex; align-items: center; gap: 5px; color: #f97316; font-weight: 700; font-size: 13px; white-space: nowrap; }
+  .bc-title .bc-pin { width: 14px; height: 14px; }
+  .bc-summary { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
+  .bc-tag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #86efac; background: #f0fdf4; color: #15803d; }
+  .bc-tag.is-bad { border-color: #fecaca; background: #fef2f2; color: #dc2626; }
+  .bc-empty { font-size: 12px; color: #9ca3af; }
+  .bc-toggle { height: 28px; padding: 2px 12px; border: 1px solid #d9d9d9; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; color: rgba(0,0,0,.88); white-space: nowrap; }
+  .bc-toggle:hover { border-color: #f97316; color: #f97316; }
+  .bc-body { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .bc-rows { display: flex; flex-direction: column; gap: 6px; }
+  .bc-row { display: flex; align-items: center; gap: 8px; }
+  .bc-row .ipt { height: 30px; }
+  .bc-qty { max-width: 90px; }
+  .bc-del { border: 0; background: transparent; color: #999; cursor: pointer; font-size: 14px; line-height: 1; padding: 4px; }
+  .bc-del:hover { color: var(--gox-danger); }
+  .bc-add { align-self: flex-start; height: 30px; padding: 2px 12px; border: 1px dashed #d9d9d9; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; color: rgba(0,0,0,.65); }
+  .bc-add:hover { border-color: #f97316; color: #f97316; }
 </style>
 
 <div class="ps">
@@ -911,8 +943,10 @@ a:hover { text-decoration: underline; }
       <div class="s">如規格有銷量則無法刪除</div>
     </div>
     <div class="ps-tabs" id="ps-tabs">
-      <button type="button" class="ps-tab is-on" data-tab="onshelf">隱藏下架</button>
-      <button type="button" class="ps-tab" data-tab="all">顯示全部</button>
+      <button type="button" class="ps-tab" data-tab="all">全部規格</button>
+      <button type="button" class="ps-tab is-on" data-tab="onshelf">上架中</button>
+      <button type="button" class="ps-tab" data-tab="offshelf">下架中</button>
+      <button type="button" class="ps-tab" data-tab="special">贈品與禮物</button>
     </div>
   </div>
 
@@ -941,40 +975,65 @@ a:hover { text-decoration: underline; }
   var UNITS = ['請選擇', '台斤', '盒', '組', '包', '箱', '罐', '個', '公斤', '顆', '尾'];
   var LIVE = ['請選擇直播場次', '1042 (2026/08/01 20:00)', '1043 (2026/08/08 20:00)', '1044 (2026/08/15 20:00)'];
 
+  // kind：normal 一般（綠卡）／gift 贈品（藍卡，IsGift）／present 禮物規格（橘卡，IsPresentItem）
+  // barcodes：國際條碼（DEV-3869）每筆 { code, qty, valid }
   var SPECS = [
-    { id: 176018, sort: 1, detail: '3 台斤', amount: 3, unit: '台斤', price: 480, disc: 420,
+    { id: 176018, sort: 1, kind: 'normal', detail: '3 台斤', amount: 3, unit: '台斤', price: 480, disc: 420,
       stock: 120, sold: 0, cost: 260, freight: 0,
       ship: '2026-08-12', shipEnd: '2026-08-20', start: '2026-07-01T00:00', end: '2026-12-31T23:59',
       delay: 0, shipSpec: '常溫紙箱／單箱可裝 2 組',
-      display: true, store: false, special: false, cod: true, sub: false,
+      display: true, bonus: false, store: false, special: false, cod: true, sub: false,
       isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '',
+      barcodes: [{ code: '4710011401234', qty: 1, valid: true }],
       addon: false, aMode: 'fixed', aVal: 50, aStart: '2026-09-01', aEnd: '2026-09-30', aMains: [] },
 
-    { id: 99753, sort: 2, detail: '單瓶 500ml', amount: 1, unit: '個', price: 399, disc: 0,
+    { id: 99753, sort: 2, kind: 'normal', detail: '單瓶 500ml', amount: 1, unit: '個', price: 399, disc: 0,
       stock: 200, sold: 0, cost: 180, freight: 0,
       ship: '2026-08-12', shipEnd: '2026-08-20', start: '2026-07-01T00:00', end: '2026-12-31T23:59',
       delay: 0, shipSpec: '常溫',
-      display: true, store: false, special: false, cod: true, sub: false,
+      display: true, bonus: false, store: false, special: false, cod: true, sub: false,
       isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '',
+      barcodes: [],
       addon: true, aMode: 'fixed', aVal: 50, aStart: '2026-09-01', aEnd: '2026-09-30',
       aMains: [{ id: 40894, name: '台灣蜜棗禮盒 3斤裝', on: true }, { id: 55210, name: '日曬紅龍果原箱', on: true }, { id: 61120, name: '冬季草莓禮盒（已下架）', on: false }] },
 
-    { id: 101509, sort: 3, detail: '濾掛咖啡 10入', amount: 1, unit: '盒', price: 299, disc: 0,
+    { id: 101509, sort: 3, kind: 'normal', detail: '濾掛咖啡 10入', amount: 1, unit: '盒', price: 299, disc: 0,
       stock: 150, sold: 12, cost: 120, freight: 0,
       ship: '2026-08-12', shipEnd: '2026-08-20', start: '2026-07-01T00:00', end: '2026-12-31T23:59',
       delay: 0, shipSpec: '常溫',
-      display: true, store: false, special: false, cod: true, sub: false,
+      display: false, bonus: false, store: false, special: false, cod: true, sub: false,
       isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '',
+      barcodes: [{ code: '4710011409876', qty: 10, valid: true }],
       addon: true, aMode: 'percent', aVal: 8, aStart: '', aEnd: '',
       aMains: [{ id: 40894, name: '台灣蜜棗禮盒 3斤裝', on: true }] },
 
-    { id: 176022, sort: 4, detail: '10 台斤', amount: 10, unit: '台斤', price: 1400, disc: 1280,
+    { id: 176022, sort: 4, kind: 'normal', detail: '10 台斤', amount: 10, unit: '台斤', price: 1400, disc: 1280,
       stock: 45, sold: 0, cost: 760, freight: 0,
       ship: '2026-08-12', shipEnd: '2026-08-20', start: '2026-07-01T00:00', end: '2026-12-31T23:59',
       delay: 0, shipSpec: '常溫紙箱',
-      display: true, store: false, special: false, cod: true, sub: false,
+      display: true, bonus: false, store: false, special: false, cod: true, sub: false,
       isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '',
-      addon: false, aMode: 'fixed', aVal: 50, aStart: '2026-09-01', aEnd: '2026-09-30', aMains: [] }
+      barcodes: [],
+      addon: false, aMode: 'fixed', aVal: 50, aStart: '2026-09-01', aEnd: '2026-09-30', aMains: [] },
+
+    { id: 176044, sort: 5, kind: 'gift', detail: '隨貨贈 試吃包', amount: 1, unit: '包', price: 0, disc: 0,
+      stock: 500, sold: 0, cost: 8, freight: 0,
+      ship: '2026-08-12', shipEnd: '2026-08-20', start: '2026-07-01T00:00', end: '2026-12-31T23:59',
+      delay: 0, shipSpec: '常溫',
+      display: true, bonus: true, store: false, special: false, cod: false, sub: false,
+      isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '',
+      barcodes: [],
+      addon: false, aMode: 'fixed', aVal: 0, aStart: '', aEnd: '', aMains: [] },
+
+    { id: 176051, sort: 6, kind: 'present', detail: '禮物券專用 嚴選禮盒', amount: 1, unit: '盒', price: 680, disc: 0,
+      presentPrice: '', presentActive: true,
+      stock: 80, sold: 6, cost: 300, freight: 0,
+      ship: '2026-08-12', shipEnd: '2026-08-20', start: '2026-07-01T00:00', end: '2026-12-31T23:59',
+      delay: 0, shipSpec: '常溫',
+      display: true, bonus: false, store: false, special: false, cod: false, sub: false,
+      isMin: false, minPrice: '', limit: '', autoRep: '', weeklyRep: '', live: 0, code: '',
+      barcodes: [],
+      addon: false, aMode: 'fixed', aVal: 0, aStart: '', aEnd: '', aMains: [] }
   ];
 
   var tab = 'onshelf';
@@ -989,8 +1048,15 @@ a:hover { text-decoration: underline; }
     $('ps-toast-host').appendChild(el);
     setTimeout(function () { el.remove(); }, 3000);
   }
+  // 禮物／贈品＝特殊規格，不混進上下架分頁（價格/限制欄位是鎖住的）
+  function isSpecial(s) { return s.kind === 'gift' || s.kind === 'present'; }
+  // 上架判斷：禮物規格看「可否兌換」(presentActive＝PresentItem.IsActive)，其餘看 Display
+  function isOnShelf(s) { return s.kind === 'present' ? !!s.presentActive : !!s.display; }
   function visible(s) {
-    if (tab === 'onshelf') return s.display;   // 這一頁只隱藏「下架」
+    if (tab === 'all') return true;                          // 全部規格
+    if (tab === 'special') return isSpecial(s);              // 贈品與禮物
+    if (tab === 'onshelf') return !isSpecial(s) && isOnShelf(s);   // 上架中（只收一般規格）
+    if (tab === 'offshelf') return !isSpecial(s) && !isOnShelf(s); // 下架中（只收一般規格）
     return true;
   }
 
@@ -1024,20 +1090,49 @@ a:hover { text-decoration: underline; }
       + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '>' + esc(label) + '</span></label></div>';
   }
 
-  // Q6 定案：路徑二不內嵌加購設定，勾「作為產品頁加購品」後只出現前往加購設定的跳轉鈕。
+  // Q6 定案：路徑二不內嵌加購設定，勾「作為產品頁加購品」後、緊接著在選項後面出現「前往加購設定」跳轉鈕。
   // 加購價／庫存／販售期間與掛載主商品都集中在路徑一的加購設定頁（admin-addon-setting.html）(v2)。
-  function addonJumpHtml(s, i) {
-    return '<div class="addon-jump">'
-      + '<div class="addon-jump-txt"><span class="addon-jump-dot"></span>此規格已設為產品頁加購品，加購價與掛載主商品請至「加購設定」頁管理（同一份資料）</div>'
-      + '<a class="addon-jump-btn" href="admin-addon-setting.html">前往加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a>'
+  function addonJumpBtn() {
+    return '<div class="fi" style="margin-bottom:24px;"><a class="addon-jump-btn" href="admin-addon-setting.html">前往加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a></div>';
+  }
+
+  // 國際條碼（DEV-3869）：黃底卡片、預設收合只秀摘要 Tag（{條碼} x{數量}，通過驗證綠、否則紅），
+  // 右側「設定／編輯」展開成每筆「條碼(13碼)＋數量＋刪除」＋「新增條碼」。demo 的展開／增刪為真（純 DOM）。
+  var BC_PIN = '<svg class="bc-pin" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3v2l-1 1v3.5l3 3V15h-5v5l-1 1-1-1v-5H6v-2.5l3-3V6L8 5V3h8z"/></svg>';
+  function barcodeRowHtml(b) {
+    b = b || { code: '', qty: 1 };
+    return '<div class="bc-row">'
+      + '<input type="text" class="ipt" maxlength="13" placeholder="輸入 13 碼國際條碼" value="' + esc(b.code) + '">'
+      + '<input type="number" class="ipt bc-qty" min="1" placeholder="數量" value="' + esc(b.qty) + '">'
+      + '<button type="button" class="bc-del" title="刪除條碼">&#10005;</button>'
+      + '</div>';
+  }
+  function barcodeHtml(s, i) {
+    var list = s.barcodes || [];
+    var sum = list.length
+      ? list.map(function (b) { return '<span class="bc-tag' + (b.valid ? '' : ' is-bad') + '">' + esc(b.code) + ' x' + esc(b.qty) + '</span>'; }).join('')
+      : '<span class="bc-empty">尚未設定</span>';
+    var btnTxt = list.length ? '編輯' : '設定';
+    var rows = list.map(function (b) { return barcodeRowHtml(b); }).join('');
+    return '<div class="bc" data-bc="' + i + '">'
+      + '<div class="bc-head">'
+      +   '<div class="bc-title">' + BC_PIN + '國際條碼</div>'
+      +   '<div class="bc-summary">' + sum + '</div>'
+      +   '<button type="button" class="bc-toggle" data-bctoggle="' + i + '">' + btnTxt + '</button>'
+      + '</div>'
+      + '<div class="bc-body" hidden>'
+      +   '<div class="bc-rows">' + rows + '</div>'
+      +   '<button type="button" class="bc-add" data-bcadd="' + i + '">＋ 新增條碼</button>'
+      + '</div>'
       + '</div>';
   }
 
   function rowHtml(s, i) {
-    var lock = false;                      // 加購 demo 不鎖欄位（贈品／禮物是另一支功能）
-    var lockPrice = false;
+    var isGift = s.kind === 'gift';        // 贈品（IsGift，藍卡）
+    var isPresent = s.kind === 'present';  // 禮物規格（IsPresentItem，橘卡）
+    var lock = isGift || isPresent;        // 贈品／禮物：價格與規格限制欄位鎖住
     var soldLock = s.sold > 0;             // 現況：有銷量的規格，原價／優惠價變唯讀文字
-    var cls = 'ps-row';
+    var cls = 'ps-row' + (isGift ? ' is-bonus' : isPresent ? ' is-gift' : '');
 
     var h = '<div class="' + cls + '" data-row="' + i + '"><div class="ps-inner">';
 
@@ -1055,9 +1150,15 @@ a:hover { text-decoration: underline; }
     h += item('規格描述', false, txt(i, 'detail', s.detail), 'col2');
     h += item('規格量', true, num(i, 'amount', s.amount));
     h += item('單位', true, sel(i, 'unit', s.unit, UNITS));
-    h += item('產品原價', true, soldLock
-        ? '<div class="ro">' + esc(s.price) + '</div>'
-        : num(i, 'price', s.price, lockPrice));
+    // 產品原價：禮物規格改編「刪除線價」(presentPrice)、可留空沿用、有銷量照樣能改（不影響成交金額，DEV-3963）；
+    //           一般規格有銷量時變唯讀文字；贈品鎖住。
+    if (isPresent) {
+      h += item('產品原價', false, '<input type="number" class="ipt" placeholder="留空沿用產品原價" value="' + esc(s.presentPrice) + '" data-i="' + i + '" data-k="presentPrice">');
+    } else {
+      h += item('產品原價', true, soldLock
+          ? '<div class="ro">' + esc(s.price) + '</div>'
+          : num(i, 'price', s.price, isGift));
+    }
     h += item('產品優惠價', false, soldLock
         ? '<div class="ro">' + esc(s.disc) + '</div>'
         : num(i, 'disc', s.disc, lock));
@@ -1080,14 +1181,26 @@ a:hover { text-decoration: underline; }
     /* 第三層 */
     h += '<div class="tier3">';
     h += '<div><div class="tier3-h">規格限制</div><div class="cons-wrap">';
-    // v2：勾「作為產品頁加購品」後，與「滿額可購買/限購」及「特殊品類(訂閱制/特殊商品)」互斥——這些灰掉不可設；
-    //     反向：特殊品類已勾時「作為產品頁加購品」不可勾。其餘（上架/貨到付款/VIP首購/含運/販售起訖/庫存）維持可設。
+
+    // 禮物規格：用綠框「禮物規格」標籤取代「設為贈品」勾選，附三行說明（DEV-3963）。
+    if (isPresent) {
+      h += '<div class="present-badge-wrap">'
+         + '<span class="gift-badge">禮物規格</span>'
+         + '<div class="present-note">上架＝可不可以被兌換<br>前台一律不顯示<br>產品原價＝刪除線價，實收 0 元</div>'
+         + '</div>';
+    }
+
+    // v2：勾「作為產品頁加購品」後，與「設為贈品」「滿額可購買/限購」「特殊品類(訂閱制/特殊商品)」互斥——這些灰掉不可設；
+    //     反向：設為贈品／特殊品類已勾時「作為產品頁加購品」不可勾。其餘（上架/貨到付款/VIP首購/含運/販售起訖/庫存）維持可設。
     var isSpecialCat = s.sub || s.special;   // 特殊品類（訂閱制／特殊商品）
-    var minLock = lock || s.addon;           // 滿額/限購：加購品時 disable
-    var catLock = lock || s.addon;           // 特殊品類 toggle：加購品時 disable
-    var addonLock = isSpecialCat;            // 特殊品類已勾 → 不可設為加購品（反向互斥）
-    h += chk(i, 'display', '上架', s.display);
-    h += chk(i, 'bonus', '設為贈品', s.bonus);
+    var minLock = lock || s.addon;           // 滿額/限購：加購品／贈品／禮物時 disable
+    var catLock = lock || s.addon;           // 特殊品類 toggle：加購品／贈品／禮物時 disable
+    var addonLock = isSpecialCat || s.bonus; // 特殊品類／設為贈品已勾 → 不可設為加購品（反向互斥）
+    // 上架：禮物規格這一顆綁 presentActive（＝可否兌換，DEV-3963）；其餘綁 display。
+    if (isPresent) h += chk(i, 'presentActive', '上架', s.presentActive);
+    else h += chk(i, 'display', '上架', s.display);
+    // 設為贈品：禮物規格不出現這顆（已被上方標籤取代）；一般規格已設為加購品時 disable（與加購品互斥）。
+    if (!isPresent) h += chk(i, 'bonus', '設為贈品', s.bonus, s.addon);
     h += chk(i, 'store', '是否為遠雄產品', s.store, lock);
     h += chk(i, 'special', '是否特殊商品', s.special, catLock);
     h += chk(i, 'cod', '是否貨到付款', s.cod, lock);
@@ -1098,9 +1211,12 @@ a:hover { text-decoration: underline; }
     h += '<div class="unit">元可購買，限購數量</div>';
     h += '<div class="fi" style="margin-bottom:24px;">' + num(i, 'limit', s.limit, minLock, 'maxw56') + '</div>';
     h += '</div>';
-    // 加購入口：群組尾端。勾「作為產品頁加購品」＝此規格登記為加購品（IsAddOn）、前台隱藏（僅作加購品）。
-    h += chk(i, 'addon', '作為產品頁加購品', s.addon, addonLock);
-    if (s.addon) h += '<div class="addon-hide-note">勾選後，此規格將於前台隱藏（僅作加購品）；「滿額可購買／限購」與「訂閱制／特殊商品」已停用（互斥）</div>';
+    // 加購入口：群組尾端，只有「一般規格」可設為加購品（贈品／禮物不適用）。
+    // 勾「作為產品頁加購品」＝此規格登記為加購品（IsAddOn）、前台隱藏；勾選後緊接著在選項後面出現「前往加購設定」跳轉鈕（不另加提示文字）。
+    if (!isGift && !isPresent) {
+      h += chk(i, 'addon', '作為產品頁加購品', s.addon, addonLock);
+      if (s.addon) h += addonJumpBtn();
+    }
     h += '</div></div>';
 
     h += '<div class="repl">';
@@ -1112,9 +1228,6 @@ a:hover { text-decoration: underline; }
     h += '</div>';
     h += '</div>';
 
-    /* 勾選「作為產品頁加購品」後，不內嵌加購設定，改出現前往加購設定的跳轉鈕（Q6 定案） */
-    if (s.addon) h += addonJumpHtml(s, i);
-
     /* 第四層：直播設定（有規格 ID 才顯示） */
     h += '<div class="live">';
     h += '<span class="star">*</span>直播場次 <i class="info" title="請先於直播喊標功能設定FB場次完成再進行產次的產品標號設定"><svg viewBox="64 64 896 896"><path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"/><path d="M464 336a48 48 0 1096 0 48 48 0 10-96 0zm72 112h-48c-4.4 0-8 3.6-8 8v272c0 4.4 3.6 8 8 8h48c4.4 0 8-3.6 8-8V456c0-4.4-3.6-8-8-8z"/></svg></i>';
@@ -1124,15 +1237,17 @@ a:hover { text-decoration: underline; }
     h += '<button type="button" class="btn btn-primary ms5" data-savecode="' + i + '">儲存標號</button>';
     h += '</div>';
 
+    /* 第五層：國際條碼（DEV-3869），每一列都顯示，預設收合、只秀摘要 */
+    h += barcodeHtml(s, i);
+
     h += '</div>'; /* /ps-mid */
 
     /* 右：⊕ 複製 / ⊖ 刪除（有銷量不給刪）
-       禮物規格不給複製：GiftItem.ProductDetailId 是 1:1 unique，
-       複出來的規格會帶著 IsGiftItem = true 卻沒有對應的禮物，
-       變成前台買不到、後台也沒人管的孤兒規格。 */
+       禮物規格（IsPresentItem）不給複製也不給刪（DEV-3963）：PresentItem.ProductDetailId 是 1:1 unique，
+       複/刪出來的規格會失去對應的禮物券兌換關係、變成孤兒。贈品則照常可複製／刪除。 */
     h += '<div class="ps-side">';
-    if (!s.gift) h += '<button type="button" class="circ" data-dup="' + i + '" title="複製規格">&#43;</button>';
-    if (s.sold <= 0) h += '<button type="button" class="circ circ-minus" data-del="' + i + '" title="刪除規格">&#8722;</button>';
+    if (!isPresent) h += '<button type="button" class="circ" data-dup="' + i + '" title="複製規格">&#43;</button>';
+    if (s.sold <= 0 && !isPresent) h += '<button type="button" class="circ circ-minus" data-del="' + i + '" title="刪除規格">&#8722;</button>';
     h += '</div>';
 
     h += '</div></div>';
@@ -1180,10 +1295,33 @@ a:hover { text-decoration: underline; }
   });
 
   $('ps-list').addEventListener('click', function (e) {
+    // 國際條碼：展開／收合（純 DOM，不重繪以保留輸入）
+    var bcT = e.target.closest('[data-bctoggle]');
+    if (bcT) {
+      var bcBox = bcT.closest('.bc');
+      var body = bcBox.querySelector('.bc-body');
+      var open = body.hasAttribute('hidden');
+      if (open) { body.removeAttribute('hidden'); bcT.textContent = '收合'; }
+      else { body.setAttribute('hidden', ''); bcT.textContent = bcBox.querySelector('.bc-row') ? '編輯' : '設定'; }
+      return;
+    }
+    // 國際條碼：新增一列
+    var bcA = e.target.closest('[data-bcadd]');
+    if (bcA) {
+      var rows = bcA.closest('.bc-body').querySelector('.bc-rows');
+      var tmp = document.createElement('div');
+      tmp.innerHTML = barcodeRowHtml(null);
+      rows.appendChild(tmp.firstChild);
+      return;
+    }
+    // 國際條碼：刪除一列
+    var bcD = e.target.closest('.bc-del');
+    if (bcD) { bcD.closest('.bc-row').remove(); return; }
+
     var dup = e.target.closest('[data-dup]');
     if (dup) {
       var i = Number(dup.getAttribute('data-dup'));
-      if (SPECS[i].gift) { toast('禮物規格不可複製'); return; }
+      if (SPECS[i].kind === 'present') { toast('禮物規格不可複製'); return; }
       var copy = JSON.parse(JSON.stringify(SPECS[i]));
       copy.id = Math.max.apply(null, SPECS.map(function (x) { return x.id; })) + 1;
       copy.sort = SPECS.length + 1;
