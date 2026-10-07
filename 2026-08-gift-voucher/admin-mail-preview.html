@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<!--
+  禮物券：系統會寄出的信與簡訊 — demo
+  ─────────────────────────────────────────────────────────────────────
+  這一頁不是後台功能，是「所有要寄出去的文字」的目錄，給營運與工程對文案用。
+  參考 B2B demo 的 NotificationsPreviewPage 做法：左邊目錄、右邊一封信。
+
+  ⚠ 收件對象分三種，不要混在一起寄：
+      IT     排程自己壞掉（例外、設定錯誤），內容是堆疊，營運看不懂也處理不了
+      營運   要有人去改設定才會解除的狀況（發券總量快用完／已發滿）
+      客人   生日禮簡訊
+
+  ⚠ 現行只有 M-01 做了（EmailHelper.SendGroupErrorEmail，收件人寫死 it@soohoobook.com）
+    與 M-05（SMSModel.SendSMS）。M-02～M-04 都是新增，而且不能沿用 SendGroupErrorEmail：
+    那支的主旨是 "[Production] 類別 發生錯誤 : 例外名稱"、內文帶堆疊、收件人是 IT，
+    營運收到也不知道要去調哪個欄位。要走 MessageApiClient.SendMailSync 自己組。
+
+  規格見同資料夾 _交接對照.md 的 L-3。
+-->
+<meta charset="UTF-8">
+<title>系統信件與簡訊 — 禮物券 demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  /* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--gox-content-bg); color: var(--gox-text);
+  font-family: var(--gox-font-family); font-size: var(--gox-font-size-base); line-height: 1.6;
+}
+
+/* ── 頂列 ── */
+.mp-top {
+  height: var(--gox-header-h); display: flex; align-items: center; gap: 12px;
+  padding: 0 20px; background: var(--gox-header-bg); border-bottom: 1px solid var(--gox-header-border);
+}
+.mp-top h1 { margin: 0; font-size: 16px; font-weight: 700; }
+.mp-top .hint { font-size: 12px; color: var(--gox-text-sub); }
+.mp-back {
+  background: #fff; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius);
+  padding: 4px 12px; font-size: 13px; font-family: inherit; color: var(--gox-text);
+  cursor: pointer; text-decoration: none;
+}
+.mp-back:hover { border-color: var(--gox-green); color: var(--gox-green); }
+
+/* ── 兩欄 ── */
+.mp-wrap { display: flex; align-items: flex-start; min-height: calc(100vh - var(--gox-header-h)); }
+.mp-side {
+  width: 288px; flex: none; background: #fff; border-right: 1px solid var(--gox-card-border);
+  padding: 12px 0; min-height: calc(100vh - var(--gox-header-h));
+}
+.mp-grp { font-size: 12px; color: var(--gox-text-muted); padding: 12px 16px 4px; }
+.mp-item {
+  display: block; width: 100%; text-align: left; background: none; border: 0;
+  border-left: 3px solid transparent; padding: 8px 16px; cursor: pointer;
+  font-family: inherit; font-size: 13px; color: var(--gox-text); line-height: 1.5;
+}
+.mp-item:hover { background: #f6f8f6; }
+.mp-item.is-on { background: #f1f8ef; border-left-color: var(--gox-green); font-weight: 700; }
+.mp-code {
+  display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: var(--gox-radius);
+  background: #eef4fb; color: #2c6fb0; border: 1px solid #cfe2f5; margin-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.mp-item-sub { display: block; font-size: 12px; color: var(--gox-text-muted); font-weight: normal; margin-top: 2px; }
+
+.mp-main { flex: 1; padding: 24px; min-width: 0; }
+.mp-card { max-width: 680px; margin: 0 auto; }
+.mp-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* 狀態標：這封信現在有沒有、寄給誰 */
+.mp-tag { font-size: 11px; padding: 1px 8px; border-radius: var(--gox-radius); border: 1px solid; font-weight: normal; }
+.mp-tag.is-todo { background: #fffbe6; color: #d4b106; border-color: #ffe58f; }
+.mp-tag.is-done { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+.mp-tag.is-it   { background: #f5f5f5; color: var(--gox-text-sub); border-color: #d9d9d9; }
+
+.mp-box { background: #fff; border: 1px solid var(--gox-card-border); border-radius: var(--gox-radius-lg); padding: 20px; }
+
+/* 預覽用 meta（不是信的內容） */
+.mp-meta { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+.mp-meta th, .mp-meta td { border: 1px solid var(--gox-card-border); padding: 6px 12px; text-align: left; vertical-align: top; }
+.mp-meta th { background: #fafafa; width: 92px; font-weight: normal; color: var(--gox-text-sub); white-space: nowrap; }
+
+/* 信件本體 */
+.mp-mail { padding: 4px 8px; }
+.mp-mail-head {
+  color: var(--gox-green); font-weight: 700; font-size: 18px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--gox-green); margin-bottom: 16px;
+}
+.mp-mail p { margin: 0 0 12px; }
+.mp-mail ul { margin: 0 0 12px; padding-left: 20px; }
+.mp-mail li { margin-bottom: 4px; }
+.mp-mail table.fig { border-collapse: collapse; margin: 0 0 12px; font-size: 13px; }
+.mp-mail table.fig th, .mp-mail table.fig td { border: 1px solid #e6e6e6; padding: 6px 12px; text-align: left; }
+.mp-mail table.fig th { background: #fafafa; font-weight: normal; color: var(--gox-text-sub); }
+.mp-mail table.fig td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mp-mail .act { background: #f1f8ef; border-left: 3px solid var(--gox-green); padding: 10px 12px; margin: 0 0 12px; }
+.mp-mail .warn { color: var(--gox-danger); font-weight: 700; }
+.mp-mail-foot { margin-top: 24px; padding-top: 14px; border-top: 1px solid #eee; color: #999; font-size: 12px; }
+
+/* 簡訊用手機框，跟 email 區分開 */
+.mp-sms { max-width: 360px; border: 1px solid var(--gox-card-border); border-radius: 12px; padding: 16px; background: #fafafa; }
+.mp-sms .bubble { background: #fff; border: 1px solid #e6e6e6; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
+.mp-sms .len { font-size: 12px; color: var(--gox-text-muted); margin-top: 8px; }
+
+/* 施工備註：這一段是給工程看的，不在信裡 */
+.mp-note { margin-top: 16px; font-size: 13px; color: var(--gox-text-sub); line-height: 1.8; }
+.mp-note h3 { font-size: 13px; color: var(--gox-text); margin: 0 0 6px; }
+.mp-note code { background: #f5f5f5; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+.mp-note ul { margin: 0; padding-left: 20px; }
+
+@media (max-width: 860px) {
+  .mp-wrap { flex-direction: column; }
+  .mp-side { width: 100%; min-height: 0; border-right: 0; border-bottom: 1px solid var(--gox-card-border); }
+  .mp-main { padding: 16px; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="mp-top">
+  <a class="mp-back" href="index.html">回目錄</a>
+  <h1>系統信件與簡訊</h1>
+  <span class="hint">只看文案，不會真的寄出</span>
+</div>
+
+<div class="mp-wrap">
+  <nav class="mp-side" id="mp-side"></nav>
+  <main class="mp-main">
+    <div class="mp-card">
+      <div class="mp-title" id="mp-title"></div>
+      <div class="mp-box" id="mp-box"></div>
+      <div class="mp-note" id="mp-note"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 收件對象分三種。分開的理由不是美觀：IT 那封的內文是堆疊追蹤，
+  // 營運收到處理不了；營運那幾封要講「去哪改哪個欄位」，IT 收到也不會去改。
+  var MAILS = [
+    {
+      grp: '排程壞掉（寄 IT）',
+      code: 'M-01', key: 'type-missing', state: 'done', who: 'it',
+      label: '找不到生日券模板',
+      sub: '券代碼被改掉或還沒建',
+      to: 'it@soohoobook.com',
+      subject: '[Production] HuashanCRM.Models.MemberBabies.BabyBirthdayPresentBatch 發生錯誤 : InvalidOperationException',
+      raw: true,
+      body:
+        '環境 : Production (fruitweb)<br>' +
+        '錯誤類型 : InvalidOperationException<br>' +
+        '錯誤類別 : HuashanCRM.Models.MemberBabies.BabyBirthdayPresentBatch<br>' +
+        '錯誤方法 : Run<br>' +
+        '備註 : 粥寶生日禮排程找不到券種，本週沒有任何寶寶收到生日券<br><br>' +
+        '堆疊追蹤 : System.InvalidOperationException: 券種 BD-BABY 不存在，這一批不發。請確認後台「禮物券管理」底下的生日禮券種是否建立，且券代碼與程式常數完全一致（大小寫、連字號）。<br>' +
+        '&nbsp;&nbsp;&nbsp;at HuashanCRM.Models.MemberBabies.BabyBirthdayPresentBatch.Run()',
+      note:
+        '<h3>現況</h3><ul>' +
+        '<li>已實作：<code>EmailHelper.SendGroupErrorEmail(ex, "粥寶生日禮排程找不到券種⋯")</code></li>' +
+        '<li>收件人寫死在 <code>EmailHelper.itAddressAll</code>，只有 <code>it@soohoobook.com</code></li>' +
+        '<li>格式是通用例外信，主旨與內文都由 <code>SendGroupErrorEmail</code> 組，這一支只能決定「備註」那一行</li>' +
+        '<li>本機與個人 sandbox 不寄（<code>OfficialSiteNames</code> 白名單）</li>' +
+        '</ul><h3>要注意</h3><ul>' +
+        '<li>這個情境<b>營運也該知道</b>（券模板是營運建的），但這封信營運看不懂。建議同一個情境另外寄一封 M-02 格式的給營運</li>' +
+        '</ul>'
+    },
+    {
+      grp: '要有人改設定（寄營運）',
+      code: 'M-02', key: 'cap-full', state: 'todo', who: 'ops',
+      label: '發券總量已發滿，本週沒發出券',
+      sub: '當週所有寶寶都領不到',
+      to: '營運群組（粥寶寶）',
+      subject: '【無毒農】粥寶生日禮：發券總量已發滿，本週 12 位寶寶沒收到券',
+      body:
+        '<p>2026/10/07（三）的生日券排程執行完畢，但<span class="warn">沒有發出任何一張券</span>。</p>' +
+        '<table class="fig">' +
+        '<tr><th>券模板</th><td>寶寶生日禮（BD-BABY）</td></tr>' +
+        '<tr><th>發券總量</th><td class="num">170 張</td></tr>' +
+        '<tr><th>已發出</th><td class="num">170 張</td></tr>' +
+        '<tr><th>剩餘可發</th><td class="num">0 張</td></tr>' +
+        '<tr><th>本週受影響</th><td class="num">12 位寶寶</td></tr>' +
+        '</table>' +
+        '<p class="act"><b>請到後台把「發券總量」調高</b>：禮物券管理 ⇒ 禮物明細 ⇒ 寶寶生日禮 ⇒ 編輯 ⇒ 發券總量。</p>' +
+        '<p><span class="warn">請在下週三排程執行前處理完</span>。生日券每批只撈「上週一到本週日」滿一歲的寶寶，這 12 位到下週三就會滾出範圍，之後補不回來。</p>',
+      note:
+        '<h3>這封是新增的</h3><ul>' +
+        '<li><b>不要沿用 <code>SendGroupErrorEmail</code></b>：那支寄給 IT、主旨是例外格式、內文帶堆疊。營運收到不會知道要去調哪個欄位</li>' +
+        '<li>走 <code>MessageApiClient.SendMailSync</code> 自己組主旨與內文，收件人是營運群組</li>' +
+        '<li>觸發點：<code>BabyBirthdayPresentBatch</code> 的整批前置檢查，跟「券種不存在」同一個位置，比對 <code>CountIssued &gt;= IssueCap</code></li>' +
+        '<li>整批跳過，不要讓每個寶寶各失敗一次（現況是逐筆失敗，整批仍回 HTTP 200，外面看不出異常）</li>' +
+        '<li>「本週受影響 N 位」要真的算出來再寄，寫「若干位」營運沒有急迫感</li>' +
+        '</ul>'
+    },
+    {
+      grp: '要有人改設定（寄營運）',
+      code: 'M-03', key: 'cap-low', state: 'todo', who: 'ops',
+      label: '發券總量快用完',
+      sub: '剩餘不到兩批的量，提早一週提醒',
+      to: '營運群組（粥寶寶）',
+      subject: '【無毒農】粥寶生日禮：發券總量只剩 20 張，約再兩批就會發完',
+      body:
+        '<p>2026/10/07（三）的生日券排程已正常發出 12 張券。目前剩餘額度偏低，提前通知：</p>' +
+        '<table class="fig">' +
+        '<tr><th>券模板</th><td>寶寶生日禮（BD-BABY）</td></tr>' +
+        '<tr><th>發券總量</th><td class="num">190 張</td></tr>' +
+        '<tr><th>已發出</th><td class="num">170 張</td></tr>' +
+        '<tr><th>剩餘可發</th><td class="num">20 張</td></tr>' +
+        '<tr><th>下批預估</th><td class="num">12 張</td></tr>' +
+        '<tr><th>預估還能撐</th><td class="num">約 2 批</td></tr>' +
+        '</table>' +
+        '<p class="act"><b>請到後台把「發券總量」調高</b>：禮物券管理 ⇒ 禮物明細 ⇒ 寶寶生日禮 ⇒ 編輯 ⇒ 發券總量。</p>' +
+        '<p>額度歸零之後，當週滿一歲的寶寶就領不到券，而且只有一週可以補救。</p>' +
+        '<p>另外，目前庫存 <b>84 包</b>、有效未使用券 <b>13 張</b>，庫存充足。</p>',
+      note:
+        '<h3>觸發條件</h3><ul>' +
+        '<li>每批跑完之後算一次。那一刻距離下一次排程正好 7 天，是能爭取到的最長反應時間</li>' +
+        '<li><code>remaining &lt; estimate * 2</code>（剩餘不到兩批的量）。這就是「下批預估量 ≥ 剩餘的 50%」，換個方向寫</li>' +
+        '<li><code>estimate = max(下週滿一歲且未發過的人數, 最近 4 批實際發量的平均)</code>。直接用查出來的人數會<b>低估</b>，因為「生日那週、週三之後才登記」的人現在還不在資料庫裡，而他們正是下一批要接住的那群</li>' +
+        '<li>沒設發券總量就整段跳過；剩餘為 0 走 M-02，不走這封</li>' +
+        '<li>每週寄到有人調高為止。這是要改設定才會解除的狀態，寄一次就安靜等於沒寄</li>' +
+        '</ul><h3>庫存那一行</h3><ul>' +
+        '<li>庫存不會擋發券（<code>Issue()</code> 只回 <code>StockWarning</code>），但「有效未使用券 &gt; 庫存」代表客人會換不到東西</li>' +
+        '<li>兩個數字 <code>Issue()</code> 每次都已經算好，順手帶進同一封，營運只要讀一封</li>' +
+        '<li>庫存不足時這一行改成紅字並寫出差額</li>' +
+        '</ul>'
+    },
+    {
+      grp: '要有人改設定（寄營運）',
+      code: 'M-04', key: 'batch-failures', state: 'todo', who: 'ops',
+      label: '有寶寶發券失敗',
+      sub: '不是額度問題的個別失敗',
+      to: '營運群組（粥寶寶）＋ it@soohoobook.com',
+      subject: '【無毒農】粥寶生日禮：2026/10/07 這批有 2 位寶寶發券失敗',
+      body:
+        '<p>2026/10/07（三）的生日券排程已執行完畢，<b>12 位中有 2 位沒有發成功</b>。</p>' +
+        '<table class="fig">' +
+        '<tr><th>符合資格</th><td class="num">12 位</td></tr>' +
+        '<tr><th>發券成功</th><td class="num">10 位</td></tr>' +
+        '<tr><th>發券失敗</th><td class="num">2 位</td></tr>' +
+        '<tr><th>簡訊送出</th><td class="num">9 封</td></tr>' +
+        '</table>' +
+        '<p>失敗明細：</p>' +
+        '<ul>' +
+        '<li>寶寶 4821（會員 260419）：發券處理中，請稍候再試</li>' +
+        '<li>寶寶 4833（會員 261077）：發券處理中，請稍候再試</li>' +
+        '</ul>' +
+        '<p><span class="warn">這兩位只剩下週三一次機會</span>。下週三的排程會再撈到他們，若仍然失敗就永久領不到，請工程確認原因。</p>',
+      note:
+        '<h3>為什麼要寄</h3><ul>' +
+        '<li>現況逐筆失敗只寫進 <code>result.Failures</code>，而那個欄位只存在於沒有人會讀的 HTTP 回應內容裡</li>' +
+        '<li>排程器看到 200 就當成功，<b>失敗完全不會被發現</b></li>' +
+        '<li>加了 14 天窗口之後，失敗的人只剩下一批可以重來，不像以前會被無上限回補接住</li>' +
+        '</ul><h3>要注意</h3><ul>' +
+        '<li><b>失敗 0 筆就不要寄</b>。每週寄一封「一切正常」會讓人停止閱讀，真的出事那封也會被略過</li>' +
+        '<li>這封兩邊都要收：營運要知道哪些客人受影響，IT 要查原因</li>' +
+        '<li>簡訊沒送出的（號碼不是手機格式）<b>不算失敗</b>，券有發就好，不要列進明細嚇人</li>' +
+        '</ul>'
+    },
+    {
+      grp: '寄給客人',
+      code: 'M-05', key: 'sms', state: 'done', who: 'customer',
+      label: '生日禮簡訊',
+      sub: '與發券同一批送出',
+      sms: true,
+      to: '會員帳號（手機號碼）',
+      subject: '（簡訊沒有主旨）',
+      body:
+        '【無毒農粥寶寶】恭喜寶貝即將滿一歲囉！粥寶寶準備了專屬生日驚喜，已發送至您的會員中心，可免費兌換寶寶生日禮物一份。立即點擊兌換：g.greenbox.tw/tQnzY',
+      note:
+        '<h3>現況</h3><ul>' +
+        '<li>已實作：<code>SMSModel.SendSMS</code>（Every8d 主用、三竹備援，自動寫 SendSMS log）</li>' +
+        '<li>文案是常數 <code>BabyBirthdayRules.SmsContent</code>，全部收件人共用，不做個人化</li>' +
+        '<li>號碼取 <code>Volunteers.Account</code>，<b>不是 <code>Volunteers.Phone</code></b>（Phone 全站 0 筆有值，取錯會靜默全跳過）</li>' +
+        '<li>一位媽媽只收一封，雙胞胎不會收到兩封</li>' +
+        '<li>帳號不是手機格式的收不到簡訊，但<b>券照發</b></li>' +
+        '</ul><h3>行銷還沒拍板的兩件事</h3><ul>' +
+        '<li><b>83 字會送出兩則、照兩則計費</b>（中文簡訊一則 70 字）</li>' +
+        '<li>「即將滿一歲」與補發情境對不上：同一批會同時包含還沒滿一歲的、當天已滿一歲的、以及上週錯過補發的。把「即將」拿掉就能涵蓋三種人</li>' +
+        '</ul>'
+    }
+  ];
+
+  var WHO = { it: 'IT', ops: '營運', customer: '客人' };
+
+  // ── 左側目錄 ──
+  var side = document.getElementById('mp-side');
+  var html = '', lastGrp = '';
+  MAILS.forEach(function (m, i) {
+    if (m.grp !== lastGrp) { html += '<div class="mp-grp">' + m.grp + '</div>'; lastGrp = m.grp; }
+    html += '<button type="button" class="mp-item" data-i="' + i + '">' +
+              '<span class="mp-code">' + m.code + '</span>' + m.label +
+              '<span class="mp-item-sub">' + m.sub + '</span>' +
+            '</button>';
+  });
+  side.innerHTML = html;
+
+  // ── 右側內容 ──
+  function render(i) {
+    var m = MAILS[i];
+
+    [].forEach.call(side.querySelectorAll('.mp-item'), function (b) {
+      b.classList.toggle('is-on', Number(b.getAttribute('data-i')) === i);
+    });
+
+    document.getElementById('mp-title').innerHTML =
+      '<span class="mp-code">' + m.code + '</span>' + m.label +
+      '<span class="mp-tag is-' + (m.state === 'done' ? 'done' : 'todo') + '">' +
+        (m.state === 'done' ? '已實作' : '待新增') + '</span>' +
+      '<span class="mp-tag is-it">寄給 ' + WHO[m.who] + '</span>';
+
+    var meta = '<table class="mp-meta">' +
+      '<tr><th>收件對象</th><td>' + m.to + '</td></tr>' +
+      '<tr><th>主旨</th><td>' + m.subject + '</td></tr></table>';
+
+    var inner;
+    if (m.sms) {
+      // 簡訊用手機氣泡，跟 email 的綠抬頭分開，免得被當成信去排版
+      inner = '<div class="mp-sms"><div class="bubble">' + m.body + '</div>' +
+              '<div class="len">共 ' + m.body.length + ' 字，中文簡訊一則 70 字，這則會送出 ' +
+              Math.ceil(m.body.length / 70) + ' 則</div></div>';
+    } else if (m.raw) {
+      // 通用例外信：沒有綠抬頭與頁尾，照 SendGroupErrorEmail 實際送出的樣子
+      inner = '<div class="mp-mail"><p>' + m.body + '</p></div>';
+    } else {
+      inner = '<div class="mp-mail">' +
+                '<div class="mp-mail-head">無毒農</div>' + m.body +
+                '<div class="mp-mail-foot">此為系統自動發送的通知信，請勿直接回覆。</div>' +
+              '</div>';
+    }
+
+    document.getElementById('mp-box').innerHTML = meta + inner;
+    document.getElementById('mp-note').innerHTML = m.note;
+  }
+
+  side.addEventListener('click', function (e) {
+    var b = e.target.closest('.mp-item');
+    if (b) render(Number(b.getAttribute('data-i')));
+  });
+  render(0);
+})();
+</script>
+</body>
+</html>

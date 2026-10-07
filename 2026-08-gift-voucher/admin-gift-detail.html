@@ -51,7 +51,9 @@
       ⚠ 所以這個開關的語意**不是 Display**：券沒有被隱藏，是「能不能兌換」。
         欄位名建議改 IsRedeemable，不要留 Display——照字面實作的人會去改前台
         的顯示與否，那是錯的。分支還沒併 dev，migration 一起改成本最低。
-      發券要不要停：靠「發券總量」發滿，或單純不再操作發券，不另設開關。
+      發券要不要停：人工券靠「發券總量」發滿或不再操作；排程券有自己的開關
+      （`IsAutoIssueEnabled`，見 _交接對照.md L-1）。⚠ 發券總量不是排程的停用開關：
+      發滿之後排程是逐筆失敗、整批仍回 HTTP 200，外面看不出來，見 L-3。
       連帶：BabyBirthdayPresentBatch 已經改成刻意不讀 Display（那是兌換端的閘門），
       但也因此沒有任何暫停排程的辦法，現行註解寫的是「發滿總量或刪掉券模板」。
       本規格要加一個真的開關，見 _交接對照.md L-1。
@@ -709,6 +711,33 @@ a:hover { text-decoration: underline; }
 /* 顯示 / 隱藏切換用。以前每個產出頁都自己再宣告一次，收進來統一提供。 */
 .is-hidden { display: none; }
 
+
+  /* 開發者面板（只在 demo 用，正式頁面不會有）。放左下角 */
+  #devbar {
+    position: fixed; left: 16px; bottom: 16px; z-index: 10001;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  }
+  #devbar .toggle {
+    background: #1a1a1a; color: #fff; border: 0; border-radius: 999px;
+    font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    font-family: inherit;
+  }
+  #devbar .box {
+    display: none; background: #fff; border: 1px solid #d5d9de; border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 16px; width: 280px; margin-bottom: 8px;
+  }
+  #devbar.is-open .box { display: block; }
+  #devbar h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  #devbar .cap { font-size: 12px; color: #8a939e; margin: 0 0 12px; line-height: 1.6; }
+  #devbar .grp-t { font-size: 13px; font-weight: 600; color: #55606e; margin-bottom: 6px; }
+  #devbar .pid-list { display: flex; flex-direction: column; gap: 6px; }
+  #devbar .pid-list button {
+    text-align: left; border: 1px solid #d5d9de; border-radius: 6px; background: #fff;
+    padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 13px; color: #1a1a1a;
+  }
+  #devbar .pid-list button:hover { border-color: #1a1a1a; }
+  #devbar .pid-list button.is-on { border-color: #1a1a1a; background: #f3f4f6; }
+  #devbar .pid-list span { display: block; font-size: 12px; color: #8a939e; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -948,6 +977,8 @@ a:hover { text-decoration: underline; }
   .gv-sched-row { display: flex; align-items: center; gap: 12px; }
   /* 底色與邊框照這一頁既有的 danger 組（.gox-tag.is-danger / .row-error） */
   .gv-sched.is-off { border-color: #ffccc7; background: #fff1f0; }
+  /* 額度快用完：用這一頁既有的 warning 組（.gox-tag.is-warning） */
+  .gv-sched.is-warn { border-color: #ffe58f; background: #fffbe6; }
   .gv-sched-txt { flex: 1; font-size: 14px; line-height: 1.6; color: var(--gox-text); }
   .gv-sched-sub { display: block; font-size: 12px; color: var(--gox-text-muted); margin-top: 4px; }
   /* 按鈕旁的暫停標記：不打開彈窗也看得出排程停著。
@@ -1240,6 +1271,20 @@ a:hover { text-decoration: underline; }
   </div>
 </div>
 
+
+<div id="devbar">
+  <div class="box">
+    <h4>開發者面板</h4>
+    <p class="cap">切換生日券模板的發券總量，看「生日券發放排程」彈窗的三種狀態。</p>
+    <div class="grp-t">發券總量</div>
+    <div class="pid-list" id="dev-caps">
+      <button type="button" data-cap="0" class="is-on">不限<span>正典的設定，狀態只有進行中／暫停中</span></button>
+      <button type="button" data-cap="190">190 張<span>剩 20 張，下一批要 12 張 ⇒ 快用完</span></button>
+      <button type="button" data-cap="170">170 張<span>已發 170 張 ⇒ 發不出券</span></button>
+    </div>
+  </div>
+  <button type="button" class="toggle">開發者面板</button>
+</div>
 
 <div class="gox-modal-overlay is-hidden" id="gv-del-modal">
   <div class="gox-modal-box">
@@ -1883,17 +1928,48 @@ a:hover { text-decoration: underline; }
   // 這份禮物的排程券模板（生日禮只會有一個）
   var schedType = g.types.filter(function (x) { return x.recurring; })[0];
 
+  // 發券總量發滿了就發不出券，而且是逐筆失敗、排程回 200，外面看起來一切正常。
+  // 開關開著不代表券發得出去，所以這個狀態要跟暫停一樣讓人看見。
+  // NEXT_COHORT 是「下一批預估會發幾張」，正式站要由後端算（下週滿一歲、還沒發過的人數，
+  // 並取最近幾批實際發量的較大者當保底，因為晚登記的人現在還不在資料庫裡）。
+  var NEXT_COHORT = 12;
+
+  function capLeft() {
+    return schedType.cap ? Math.max(0, schedType.cap - schedType.issued) : null;
+  }
+  // 警示門檻：剩餘不到兩批的量。等價於「下一批預估量 ≥ 剩餘的 50%」，
+  // 用「剩幾批」講是因為營運要判斷的是「還撐得過幾個週三」。
+  function capRunwayShort() {
+    var left = capLeft();
+    return left !== null && left > 0 && left < NEXT_COHORT * 2;
+  }
+
   function paintSched() {
     var on = schedType.sched.on;
-    document.getElementById('gv-sched-box').classList.toggle('is-off', !on);
+    var left = capLeft();
+    var full = on && left === 0;
+    var warn = on && !full && capRunwayShort();
+
+    var box = document.getElementById('gv-sched-box');
+    box.classList.toggle('is-off', !on || full);
+    box.classList.toggle('is-warn', warn);
     document.getElementById('gv-sched-sw').classList.toggle('is-on', on);
-    document.getElementById('gv-sched-state').textContent = on ? '排程進行中' : '排程暫停中';
-    // 開著的時候沒有補充說明：週期寫在底下的「什麼時候發」，這裡再寫一次是重複。
-    // 關著才有話要講，而且只講會影響客人的兩件事：舊券還能用、暫停期間的不補發。
-    document.getElementById('gv-sched-sub').innerHTML = on ? '' :
-      ('於 ' + schedType.sched.pausedAt + ' 暫停發放，已發出去的券不影響使用<br>' +
-       '重啟後只補到前一週滿一歲的寶寶，更早的不補');
-    document.getElementById('gv-sched-tag').classList.toggle('is-hidden', on);
+    document.getElementById('gv-sched-state').textContent =
+      !on ? '排程暫停中' : (full ? '排程進行中，但發不出券' : '排程進行中');
+    // 開著、額度也夠的時候沒有補充說明：週期寫在底下的「什麼時候發」，這裡再寫一次是重複。
+    document.getElementById('gv-sched-sub').innerHTML =
+      !on ? ('於 ' + schedType.sched.pausedAt + ' 暫停發放，已發出去的券不影響使用<br>' +
+             '重啟後只補到前一週滿一歲的寶寶，更早的不補')
+      : full ? ('發券總量 ' + schedType.cap + ' 張已經發完，這週起滿一歲的寶寶領不到<br>' +
+                '把發券總量調高才會繼續發')
+      : warn ? ('發券總量只剩 ' + left + ' 張，下一批預計要發 ' + NEXT_COHORT + ' 張<br>' +
+                '發完之後滿一歲的寶寶就領不到，請提早調高')
+      : '';
+    var tag = document.getElementById('gv-sched-tag');
+    tag.textContent = full ? '發券總量已發滿' : (warn ? '發券總量快用完' : '排程暫停中');
+    tag.classList.toggle('is-warning', warn);
+    tag.classList.toggle('is-danger', !warn);
+    tag.classList.toggle('is-hidden', on && !full && !warn);
   }
 
   if (g.hasAutoRule) {
@@ -1909,6 +1985,26 @@ a:hover { text-decoration: underline; }
         : '生日券排程已暫停，不再發新券');
     });
   }
+
+  // 開發者面板：切換發券總量，演額度的三種狀態
+  (function () {
+    var devBar = document.getElementById('devbar');
+    if (!devBar || !schedType) return;
+    devBar.querySelector('.toggle').addEventListener('click', function () {
+      devBar.classList.toggle('is-open');
+    });
+    devBar.querySelector('#dev-caps').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-cap]');
+      if (!b) return;
+      var v = Number(b.getAttribute('data-cap'));
+      schedType.cap = v || null;
+      [].forEach.call(this.querySelectorAll('button'), function (x) {
+        x.classList.toggle('is-on', x === b);
+      });
+      paintSched();
+      renderTypes();
+    });
+  })();
 
   function openRuleModal() {
     // 簡訊統計是排程的執行結果，放這裡而不是列表欄位裡
