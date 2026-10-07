@@ -12,10 +12,10 @@
   註：demo 的彈窗版型依主人提供的「線上舊版彈窗」截圖 1:1 還原（每規格帶數量下拉），與 react-component-export 未上線重構版不同；class qv-* 為 demo 自取。
   這一頁的加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
     加購品名   name ← Product.Name      規格 detail＋amt＋module（fullDetailDescription）
-    原價 Price   折後價 SellPrice ＝ DiscPrice ?? Price（DTO DiscountPrice ← DiscPrice）；折扣沿用 PromoteCode
+    參考原價 Price（v2 選配，刪除線用）   加購價 SellPrice ＝ DiscPrice ?? Price＝加購規格自己的售價（v2 直接填、不折扣）
     溫層 temperatureType   封面圖 coverImg   剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
-  新功能（正式站尚無・提案命名・待新建）：
-    加購品主檔 ProductAddOn、配對 ProductAddOnMapping（§3-3）；APP 取清單 GET app/products/{productId}/addOns（§6-4）
+  新功能（v2＝加購品本身是一個獨立 ProductDetail，正式站尚無、待新建）：
+    加購品＝獨立 ProductDetail（v2 無 ProductAddOn 折扣主檔）、配對 ProductAddOnMapping（主商品↔加購規格 AddOnProductDetailId，§3-3）；APP 取清單 GET app/products/{productId}/addOns（§6-4）
   完整名稱對照見同資料夾 _交接對照.md
 -->
 <meta charset="UTF-8">
@@ -150,13 +150,13 @@
 
         <!-- 加價購區塊（在加入菜籃上方・窄版・風格同結帳頁） -->
         <!-- 整個 .coa 區塊為新功能，正式站尚無；class coa-* 為 demo 自取（無既有真名）。
-             data-price ＝ 加購折後價 SellPrice（折扣沿用 PromoteCode）；.o ← Price、.n ← SellPrice；
+             data-price ＝ 加購價 SellPrice（v2 加購規格自己的售價、直接填）；.o ← Price（選配參考原價）、.n ← SellPrice；
              .nm ← name、.sub ← fullDetailDescription、.coa-temp ← temperatureType；
-             加購品本身是 ProductDetail，主商品與它的配對 ＝ ProductAddOnMapping（待新建） -->
+             加購品本身＝一筆獨立 ProductDetail，主商品與它的配對 ＝ ProductAddOnMapping（主商品↔加購規格 ProductDetailId，待新建） -->
         <div class="coa" id="addon">
           <div class="coa-prompt" id="addonToggle">優惠加購商品<span class="arrow">▾</span></div>
           <div class="coa-list" id="addonList" hidden>
-            <label class="coa-pk" data-price="360"><!-- data-price ＝ SellPrice（折後價） -->
+            <label class="coa-pk" data-price="360"><!-- data-price ＝ SellPrice（加購價，v2 加購規格自己的售價） -->
               <input type="checkbox">
               <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
               <div class="body">

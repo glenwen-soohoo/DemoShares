@@ -14,14 +14,14 @@
     這一頁的加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
       加購品名     name            ← 實體 Product.Name
       規格描述     detail＋amt＋module  顯示組成 fullDetailDescription
-      原價         Price
-      加購折後價   SellPrice ＝ DiscPrice ?? Price（DTO DiscountPrice ← 實體 DiscPrice）；加購折扣沿用 PromoteCode
+      參考原價     Price（v2 選配，刪除線用；省略＝只顯示加購價）
+      加購價       SellPrice ＝ DiscPrice ?? Price＝加購規格自己的售價（v2 營運直接填、不折扣）
       溫層         temperatureType
       封面圖       coverImg
-      剩餘數量     Stock ＝ OriginAmt − SoldAmt（clamp≥0）⚠ 不是原始庫存 OriginAmt
-    新功能（正式站尚無，命名為提案・待新建）：
-      加購品主檔         ProductAddOn（新表，§3-3）
-      主商品－加購品配對  ProductAddOnMapping（新表，§3-3）
+      剩餘數量     Stock ＝ OriginAmt − SoldAmt（clamp≥0）⚠ 加購規格自己的剩餘，不是原始庫存 OriginAmt
+    新功能（v2＝加購品本身是一個獨立 ProductDetail，正式站尚無、待新建）：
+      加購品本身         一個獨立 ProductDetail（自己的 Id/價/庫存）＝v2 無 ProductAddOn 折扣主檔
+      主商品－加購品配對  ProductAddOnMapping（主商品 ProductId ↔ 加購規格 AddOnProductDetailId，§3-3）
       APP 詳情頁取加購清單  GET app/products/{productId}/addOns（新 endpoint，§6-4）；web 端沿用 ItemDetail 的 Model/ViewBag 帶出
     加入菜籃 API：POST /Cart/AddToShoppingCartByModule（CartController.cs:269）
     完整名稱對照見同資料夾 _交接對照.md
@@ -257,7 +257,8 @@
           <div class="col-xs-12">&nbsp;</div>
         </div>
 
-        <!-- 規格：2 欄 -->
+        <!-- 規格：2 欄（此清單只列本商品的一般銷售規格；v2 加購規格＝ProductDetail.hide 前台隱藏，
+             不會出現在任何商品的一般規格清單，只在主商品的「加價購商品」區出現） -->
         <div class="spec-frame col-xs-12">
           <div class="col-xs-6 p-0"><button class="spec-btn active" type="button">1 盒（優選 5 斤裝）</button></div>
           <div class="col-xs-6 p-0"><button class="spec-btn" type="button">1 盒（經濟 10 斤裝）</button></div>
@@ -291,9 +292,9 @@
     <!-- 整個 .addon 區塊為新功能，正式站尚無對應 markup；工程於 ItemDetail.cshtml 新增。
          class 均為 demo 自取（新功能無既有真名），不須改名；資料對應：
            .addon-name  ← name（Product.Name）   .addon-spec ← fullDetailDescription
-           .addon-price .orig ← Price            .addon-price .now ← SellPrice（折扣沿用 PromoteCode）
+           .addon-price .orig ← Price（v2 選配參考原價）  .addon-price .now ← SellPrice＝加購規格自己的售價（v2 直接填、不折扣）
            .addon-temp ← temperatureType         .addon-thumb ← coverImg
-           每項加購品本身仍是一筆 ProductDetail；主商品與它的配對 ＝ ProductAddOnMapping（待新建） -->
+           每項加購品本身＝一筆獨立 ProductDetail；主商品與它的配對 ＝ ProductAddOnMapping（主商品↔加購規格 ProductDetailId，待新建） -->
     <div class="col-xs-12 p-0">
       <section class="addon" id="addon">
         <div class="addon-head">加價購商品（<span id="addonCount">0</span>）<span class="note">勾選後與主商品一併結帳，每項限購 3 件</span></div>
@@ -351,17 +352,17 @@
     'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509190336361.jpg',
     'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608250221461.jpg'
   ];
-  // orig＝原價(Price)；sell＝目前售價(DiscPrice??Price，有特價才帶、省略＝同原價)；now＝加購價(SellPrice，從售價往下算)
-  // 刪除線顯示「售價」(sell??orig)、不是原價（10/06 定案）。首筆帶特價示範「從特價再折」。
+  // v2：now＝加購價（加購規格自己的售價，直接顯示、非倍率/折扣算）；refOrig＝選配參考原價（刪除線，省略＝只顯示加購價）。
+  // 示範「有參考原價（顯示刪除線）」與「無參考原價（只顯示加購價）」兩種（土雞蛋、糙米無 refOrig）。
   const ADDONS=[
-    {img:IMG[0], temp:'常溫', name:'【冷壓初榨苦茶油】小農直送', spec:'250ml', orig:420, sell:390, now:360},
-    {img:IMG[1], temp:'冷藏', name:'【放牧土雞蛋】農場晃晃',     spec:'10 入', orig:150, now:120},
-    {img:IMG[2], temp:'常溫', name:'【有機黑芝麻粉】',           spec:'300g',  orig:280, now:240},
-    {img:IMG[3], temp:'常溫', name:'【綜合堅果禮盒】',           spec:'500g',  orig:520, now:450, out:true},
-    {img:IMG[4], temp:'常溫', name:'【台灣龍眼蜂蜜】',           spec:'700g',  orig:680, now:580},
-    {img:IMG[1], temp:'冷凍', name:'【急凍藍莓】',               spec:'500g',  orig:320, now:260},
-    {img:IMG[2], temp:'常溫', name:'【有機糙米】',               spec:'2kg',   orig:240, now:199},
-    {img:IMG[0], temp:'冷藏', name:'【鮮榨柳橙原汁】',           spec:'960ml', orig:260, now:210}
+    {img:IMG[0], temp:'常溫', name:'【冷壓初榨苦茶油】小農直送', spec:'250ml', refOrig:420, now:360},
+    {img:IMG[1], temp:'冷藏', name:'【放牧土雞蛋】農場晃晃',     spec:'10 入', now:120},
+    {img:IMG[2], temp:'常溫', name:'【有機黑芝麻粉】',           spec:'300g',  refOrig:280, now:240},
+    {img:IMG[3], temp:'常溫', name:'【綜合堅果禮盒】',           spec:'500g',  refOrig:520, now:450, out:true},
+    {img:IMG[4], temp:'常溫', name:'【台灣龍眼蜂蜜】',           spec:'700g',  refOrig:680, now:580},
+    {img:IMG[1], temp:'冷凍', name:'【急凍藍莓】',               spec:'500g',  refOrig:320, now:260},
+    {img:IMG[2], temp:'常溫', name:'【有機糙米】',               spec:'2kg',   now:199},
+    {img:IMG[0], temp:'冷藏', name:'【鮮榨柳橙原汁】',           spec:'960ml', refOrig:260, now:210}
   ];
   const list=document.getElementById('addonList');
   const moreBtn=document.getElementById('addonMore');
@@ -378,7 +379,7 @@
       +`<img class="addon-thumb" src="${it.img}" alt="">`
       +`<div class="addon-body"><div class="addon-name">${it.name}<span class="addon-temp">${it.temp}</span></div><div class="addon-spec">商品規格：${it.spec}</div></div>`
       +action
-      +`<div class="addon-price"><span class="orig">${money(it.sell ?? it.orig)}</span><span class="now">${money(it.now)}</span></div></label>`;
+      +`<div class="addon-price">${it.refOrig!=null ? '<span class="orig">'+money(it.refOrig)+'</span>' : ''}<span class="now">${money(it.now)}</span></div></label>`;
   }
   function render(){
     const items=ADDONS.slice(0, state.total)

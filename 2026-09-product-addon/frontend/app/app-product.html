@@ -13,9 +13,9 @@
     詳情頁取清單  GET app/products/{productId}/addOns
     （既有 POST app/extraProducts ＝ Product_Api src/Web/EndPoints/Product.cs:102，只服務「產線加購品」，勿混用）
   加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
-    名 name ← Product.Name；規格 fullDetailDescription；原價 Price（data-price ＝ 折後價 SellPrice ＝ DiscPrice ?? Price，折扣沿用 PromoteCode）；
+    名 name ← Product.Name；規格 fullDetailDescription；參考原價 Price（v2 選配）；加購價（data-price ＝ SellPrice ＝ DiscPrice ?? Price＝加購規格自己的售價，v2 直接填、不折扣）；
     溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
-  新資料表：ProductAddOn（主檔）、ProductAddOnMapping（配對）（§3-3，待新建）
+  新資料（v2）：加購品＝獨立 ProductDetail（無 ProductAddOn 折扣主檔）、ProductAddOnMapping（主商品↔加購規格 AddOnProductDetailId）（§3-3，待新建）
   完整名稱對照見同資料夾 _交接對照.md
 -->
 <meta charset="UTF-8">
@@ -162,13 +162,13 @@
         </div>
 
         <!-- 加價購卡（選購入口・§5-1 窄版） -->
-        <!-- 新功能・RN 端尚無此卡（待新建）。addon-* 為 demo 自取；data-price ＝ 折後價 SellPrice（折扣沿用 PromoteCode）；
+        <!-- 新功能・RN 端尚無此卡（待新建）。addon-* 為 demo 自取；data-price ＝ 加購價 SellPrice（v2 加購規格自己的售價、直接填）；
              .addon-name ← name、.addon-spec ← fullDetailDescription、.addon-temp ← temperatureType、.addon-thumb ← coverImg；
-             .o ← Price、.n ← SellPrice。清單來源 GET app/products/{productId}/addOns（待新建） -->
+             .o ← Price（選配參考原價）、.n ← SellPrice。清單來源 GET app/products/{productId}/addOns（待新建） -->
         <div class="card">
           <div class="addon-hd"><span class="t">加價購商品</span></div>
           <div class="addon-list" id="addonList">
-            <label class="addon-row" data-price="360"><!-- data-price ＝ SellPrice（折後價） -->
+            <label class="addon-row" data-price="360"><!-- data-price ＝ SellPrice（加購價，v2 加購規格自己的售價） -->
               <input type="checkbox" class="addon-ck">
               <img class="addon-thumb" src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
               <div class="addon-info">

@@ -6,7 +6,7 @@
   真相來源（demo 對齊的 commit；行號會隨後續推進漂移，請以錨點 id／函式名為準）：
     fruit_web              D:\GreenBox\fruit_web              分支 dev（commit d18f11e2a）
     React-Component-Export D:\GreenBox\react-component-export 分支 dev（commit 2221a6f）
-  對應正式站（既有規格編輯頁；Q6 定案 10/05＝規格頁只放勾選＋跳轉鈕、折扣/掛載設定在路徑一 admin-addon-setting）：
+  對應正式站（既有規格編輯頁；Q6 定案 10/05＝規格頁只放勾選＋跳轉鈕、加購設定/掛載在路徑一 admin-addon-setting）：
     掛載點     HuashanCRM/Areas/GoX/Views/Product/Edit18.cshtml:365  <div id="product-detail-settings">
     bundle載入 Edit18.cshtml:33  product-detail-settings.js（:607 註解「antd 規格欄位」）
     驗證       window.productDetailsValidateFields()
@@ -19,12 +19,12 @@
     預計出貨日 ship→OrdersTime ⚠出貨日不是下單時間 / 開始結束販售 start,end→StartTime,EndTime
     自動延後區間 delay→Delay / 上架 display→Display / 是否貨到付款 cod
     滿額可購買 isMin,minPrice→MinimumPrice / 限購 limit→Limit
-  本頁「加購」新增部分（正式站還沒有，待新建；Q6 定案＝只勾選＋跳轉，不內嵌折扣）：
-    可作為加購品   勾選欄 addon  → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）
-    前往加購設定   跳轉鈕 → admin-addon-setting.html（路徑一）；折扣與掛載主商品都在那頁管理（同一份資料）
-    （下列折扣/掛載欄位＝路徑一的設定，列此供對名；本頁已不內嵌）：
-    加購折扣       → 沿用 PromoteCode（固定金額 or 0.XX 倍率；生效起訖）
-    掛載主商品     → ProductAddOnMapping（ProductId / ProductAddOnId / IsOnShelf）
+  本頁「加購」新增部分（正式站還沒有，待新建；Q6 定案＝只勾選＋跳轉，不內嵌加購設定）：
+    作為產品頁加購品 勾選欄 addon → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）。勾選後此規格前台隱藏（ProductDetail.hide）、且與滿額/限購、特殊品類互斥
+    前往加購設定   跳轉鈕 → admin-addon-setting.html（路徑一）；加購價與掛載主商品都在那頁管理（同一份資料）
+    （v2：加購品＝獨立新規格、加購價是規格自己的價，無折扣機制；下列欄位＝路徑一的設定，列此供對名、本頁不內嵌）：
+    加購價         → 加購規格自己的 Price（DiscPrice??Price），營運直接填
+    掛載主商品     → ProductAddOnMapping（ProductId / AddOnProductDetailId / IsOnShelf）
   完整名稱對照見同資料夾 _交接對照.md
 -->
 <meta charset="UTF-8">
@@ -887,9 +887,9 @@ a:hover { text-decoration: underline; }
   .ps-toast-host { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 1010; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
   .ps-toast { background: #fff; color: rgba(0,0,0,.88); padding: 9px 12px; border-radius: 8px; font-size: 14px; box-shadow: 0 6px 16px rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12); }
 
-  /* ── 加購品：規格限制尾端多一個「可作為加購品」勾選欄（同既有 checkbox 樣式）。
-        Q6 定案：路徑二不內嵌折扣，勾選後只出現一個「前往加購設定」跳轉鈕，
-        折扣／掛載主商品一律到路徑一的加購設定頁管理（同一份資料）。 ── */
+  /* ── 加購品：規格限制尾端多一個「作為產品頁加購品」勾選欄（同既有 checkbox 樣式）。
+        Q6 定案：路徑二不內嵌加購設定，勾選後只出現一個「前往加購設定」跳轉鈕，
+        加購價／掛載主商品一律到路徑一的加購設定頁管理（同一份資料）。 ── */
   .addon-jump { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap;
                 border: 1px solid #86efac; background: #f0fdf4; border-radius: 8px; padding: 12px 16px; }
   .addon-jump-txt { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #166534; font-weight: 600; }
@@ -899,6 +899,8 @@ a:hover { text-decoration: underline; }
                     white-space: nowrap; text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s; }
   .addon-jump-btn:hover { background: #15803d; border-color: #15803d; color: #fff; text-decoration: none; }
   .addon-jump-btn svg { width: 14px; height: 14px; }
+  /* 勾「作為產品頁加購品」後的狀態提示（前台隱藏＋互斥停用） */
+  .addon-hide-note { width: 100%; margin-top: 6px; font-size: 12px; color: #8a6d1f; background: #fff8e6; border: 1px solid #f0d58a; border-radius: 4px; padding: 5px 10px; line-height: 1.5; }
 </style>
 
 <div class="ps">
@@ -1022,11 +1024,11 @@ a:hover { text-decoration: underline; }
       + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '>' + esc(label) + '</span></label></div>';
   }
 
-  // Q6 定案：路徑二不內嵌折扣，勾「可作為加購品」後只出現前往加購設定的跳轉鈕。
-  // 折扣（折抵方式／數值／生效起訖）與掛載主商品都集中在路徑一的加購設定頁（admin-addon-setting.html）。
+  // Q6 定案：路徑二不內嵌加購設定，勾「作為產品頁加購品」後只出現前往加購設定的跳轉鈕。
+  // 加購價／庫存／販售期間與掛載主商品都集中在路徑一的加購設定頁（admin-addon-setting.html）(v2)。
   function addonJumpHtml(s, i) {
     return '<div class="addon-jump">'
-      + '<div class="addon-jump-txt"><span class="addon-jump-dot"></span>此規格已設為加購品，折扣與掛載主商品請至「加購設定」頁管理（同一份資料）</div>'
+      + '<div class="addon-jump-txt"><span class="addon-jump-dot"></span>此規格已設為產品頁加購品，加購價與掛載主商品請至「加購設定」頁管理（同一份資料）</div>'
       + '<a class="addon-jump-btn" href="admin-addon-setting.html">前往加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a>'
       + '</div>';
   }
@@ -1078,21 +1080,27 @@ a:hover { text-decoration: underline; }
     /* 第三層 */
     h += '<div class="tier3">';
     h += '<div><div class="tier3-h">規格限制</div><div class="cons-wrap">';
+    // v2：勾「作為產品頁加購品」後，與「滿額可購買/限購」及「特殊品類(訂閱制/特殊商品)」互斥——這些灰掉不可設；
+    //     反向：特殊品類已勾時「作為產品頁加購品」不可勾。其餘（上架/貨到付款/VIP首購/含運/販售起訖/庫存）維持可設。
+    var isSpecialCat = s.sub || s.special;   // 特殊品類（訂閱制／特殊商品）
+    var minLock = lock || s.addon;           // 滿額/限購：加購品時 disable
+    var catLock = lock || s.addon;           // 特殊品類 toggle：加購品時 disable
+    var addonLock = isSpecialCat;            // 特殊品類已勾 → 不可設為加購品（反向互斥）
     h += chk(i, 'display', '上架', s.display);
     h += chk(i, 'bonus', '設為贈品', s.bonus);
     h += chk(i, 'store', '是否為遠雄產品', s.store, lock);
-    h += chk(i, 'special', '是否特殊商品', s.special, lock);
+    h += chk(i, 'special', '是否特殊商品', s.special, catLock);
     h += chk(i, 'cod', '是否貨到付款', s.cod, lock);
-    h += chk(i, 'sub', '是否為訂閱制商品', s.sub, lock);
+    h += chk(i, 'sub', '是否為訂閱制商品', s.sub, catLock);
     h += '<div class="cons-inline">';
-    h += chk(i, 'isMin', '滿', s.isMin, lock);
-    h += '<div class="fi w24" style="margin-bottom:24px;">' + num(i, 'minPrice', s.minPrice, lock) + '</div>';
+    h += chk(i, 'isMin', '滿', s.isMin, minLock);
+    h += '<div class="fi w24" style="margin-bottom:24px;">' + num(i, 'minPrice', s.minPrice, minLock) + '</div>';
     h += '<div class="unit">元可購買，限購數量</div>';
-    h += '<div class="fi" style="margin-bottom:24px;">' + num(i, 'limit', s.limit, lock, 'maxw56') + '</div>';
+    h += '<div class="fi" style="margin-bottom:24px;">' + num(i, 'limit', s.limit, minLock, 'maxw56') + '</div>';
     h += '</div>';
-    // 加購入口：比照既有規格限制項，群組尾端新增（與其他 checkbox 同一套 antd 樣式）
-    // 'addon'（可作為加購品）＝待新建欄位，建議 IsAddOn；勾選即把此規格登記成 ProductAddOn
-    h += chk(i, 'addon', '可作為加購品', s.addon);
+    // 加購入口：群組尾端。勾「作為產品頁加購品」＝此規格登記為加購品（IsAddOn）、前台隱藏（僅作加購品）。
+    h += chk(i, 'addon', '作為產品頁加購品', s.addon, addonLock);
+    if (s.addon) h += '<div class="addon-hide-note">勾選後，此規格將於前台隱藏（僅作加購品）；「滿額可購買／限購」與「訂閱制／特殊商品」已停用（互斥）</div>';
     h += '</div></div>';
 
     h += '<div class="repl">';
@@ -1104,7 +1112,7 @@ a:hover { text-decoration: underline; }
     h += '</div>';
     h += '</div>';
 
-    /* 勾選「可作為加購品」後，不內嵌折扣，改出現前往加購設定的跳轉鈕（Q6 定案） */
+    /* 勾選「作為產品頁加購品」後，不內嵌加購設定，改出現前往加購設定的跳轉鈕（Q6 定案） */
     if (s.addon) h += addonJumpHtml(s, i);
 
     /* 第四層：直播設定（有規格 ID 才顯示） */

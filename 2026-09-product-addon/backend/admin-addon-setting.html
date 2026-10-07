@@ -3,24 +3,23 @@
 <head>
 <!--
   DemoShares 交接對照 | 產品頁加購設定・編輯頁（admin-addon-setting.html・路徑一）
-  ⚠ 全新機制：正式站無此頁，待新建。本頁＝設定一個加購品的折扣、兩層上下架、以及掛載哪些主商品。
-  名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\需求規格.md §3-3
+  ⚠ 全新機制（v2・加購品＝獨立新規格）：正式站無此頁，待新建。本頁＝編一個加購品（＝一個 ProductDetail）的加購價／庫存／販售期間、兩層上下架、以及掛載哪些主商品。
+  名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\v2_新開規格_設計方案.md、工程交接文件.md §4/§5
   對應正式站：
     view       : 待新建
     controller : 待新建（寫入走 Product_Api(EF) 或 GoX＝待工程定案）
     route      : 待新建
-  這一頁的真實欄位名（建議命名；折扣沿用既有機制）：
-    加購品主檔          ProductAddOn（PK 對 demo ADDONS 的鍵，如 99753）
-    產品優惠價 disc     既有 ProductDetail.DiscPrice（DTO DiscountPrice），唯讀顯示
-    剩餘數量 stock      OriginAmt − SoldAmt      ⚠ 不是原始庫存量
-    折抵方式 mode       fixed=固定金額 / percent=百分比 → 沿用 PromoteCode
-    折抵值 val          PromoteCode 折抵量（百分比存 0.XX 倍率）
-    生效期間 s / e      折扣起訖 → PromoteCode 的起訖（≠ 販售時間 StartTime/EndTime）
-    上架（data-up）     ProductAddOn 上下架        ← 兩層狀態的外層
+  這一頁的真實欄位名（v2＝加購品本身是一個獨立 ProductDetail，建議命名）：
+    加購品本身          一個獨立 ProductDetail（ADDONS 的鍵如 99753＝加購規格 ProductDetailId）＝v2 無 ProductAddOn 折扣主檔
+    加購價 price        加購規格自己的 Price（有特價 DiscPrice??Price）；營運直接填、非折扣算（v2）
+    參考原價 refOrig    選配的刪除線對照價（省略＝不顯示）
+    剩餘數量 stock      OriginAmt − SoldAmt      ⚠ 加購規格自己的剩餘庫存，不是原始庫存量
+    販售期間 sellStart/sellEnd  加購規格自己的 StartTime/EndTime（v2 併 Q2/Q7）
+    上架（data-up）     ProductDetail.Display      ← 外層＝加購規格自己的上架（不上架哪都不顯示）
     上架（data-toggle） ProductAddOnMapping.IsOnShelf（配對層，鍵＝addonId-mainId）← 內層
-    移除配對 data-rm    刪 ProductAddOnMapping 一列
+    移除配對 data-rm    刪 ProductAddOnMapping 一列（只刪配對、不刪加購規格本身）
     異溫層掛載          出貨會拆單（既有拆單機制，判溫層不同）
-  這一頁打的真實 API：待新建（讀設定 / 儲存配對與折扣 / 刪除加購設定）
+  這一頁打的真實 API：待新建（讀設定 / 儲存加購規格與配對 / 刪除）
   本頁「修改規格」連到 admin-spec-addon.html（路徑二・規格內嵌）。
   本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-up/data-toggle/data-rm/data-add）為自由命名，勿照抄進 codebase。
   完整名稱對照見同資料夾 _交接對照.md
@@ -744,7 +743,7 @@ a:hover { text-decoration: underline; }
   .as-summary .spec{ font-size:12.5px; color:var(--gox-text-sub); }
   .as-summary .calc{ margin-left:auto; font-size:13px; color:var(--gox-text-sub); font-variant-numeric:tabular-nums; }
   .as-summary .calc s{ color:var(--gox-text-muted); }
-  .as-summary .calc .as-final{ color:var(--gox-text); font-weight:700; font-size:15px; }   /* 後台不強調折購感：折後用深色 */
+  .as-summary .calc .as-final{ color:var(--gox-text); font-weight:700; font-size:15px; }   /* 後台不強調折購感：加購價用深色 */
   .as-summary .calc .as-save{ color:var(--gox-text-muted); margin-left:4px; }               /* 省 X 用灰字 */
   .as-summary.is-invalid{ background:#fff1f0; border-color:#ffccc7; }
   .as-summary.is-invalid .as-final,.as-summary.is-invalid .as-save{ color:var(--gox-danger); }
@@ -844,11 +843,13 @@ a:hover { text-decoration: underline; }
   var TODAY='2026-09-16';
   var money=function(n){ return '$'+Math.round(n).toLocaleString('en-US'); };
   var esc=function(s){ return String(s); };
+  // v2：加購品本身是一個獨立 ProductDetail。price＝加購價（規格自己的售價，營運直接填）；refOrig＝選配的參考原價(刪除線，省略＝不顯示)；
+  //      up＝外層上架(ProductDetail.Display)；stock＝加購規格自己的剩餘庫存；sellStart/sellEnd＝加購規格自己的販售期間。
   var ADDONS={
-    99753:{prod:'316 不鏽鋼保溫瓶', spec:'單瓶 500ml', temp:'常溫', orig:399, mode:'fixed', val:50, s:'2026-09-01', e:'2026-09-30', up:true, qty:1, unit:'瓶', disc:379, stock:128, ship:'2026-08-12', sellStart:'2026-07-01', sellEnd:'2026-12-31'},
-    101509:{prod:'手沖濾掛咖啡', spec:'10 入袋裝', temp:'常溫', orig:299, mode:'percent', val:0.8, s:'', e:'', up:true, qty:10, unit:'入', disc:'', stock:64, ship:'2026-09-01', sellStart:'2026-09-01', sellEnd:'2026-12-31'},
-    36007:{prod:'冷壓初榨苦茶油', spec:'250ml 玻璃瓶', temp:'冷藏', orig:420, mode:'fixed', val:60, s:'2026-10-01', e:'2026-10-31', up:true, qty:1, unit:'瓶', disc:399, stock:8, ship:'2026-09-10', sellStart:'2026-09-01', sellEnd:'2026-12-31'},
-    24011:{prod:'有機黑芝麻粉', spec:'300g 罐裝', temp:'冷凍', orig:280, mode:'fixed', val:40, s:'2026-08-01', e:'2026-08-31', up:false, qty:1, unit:'罐', disc:'', stock:0, ship:'2026-07-15', sellStart:'2026-07-01', sellEnd:'2026-08-31'}
+    99753:{prod:'316 不鏽鋼保溫瓶', spec:'單瓶 500ml', temp:'常溫', price:349, refOrig:399, up:true, qty:1, unit:'瓶', stock:128, ship:'2026-08-12', sellStart:'2026-07-01', sellEnd:'2026-12-31'},
+    101509:{prod:'手沖濾掛咖啡', spec:'10 入袋裝', temp:'常溫', price:199, up:true, qty:10, unit:'入', stock:64, ship:'2026-09-01', sellStart:'2026-09-01', sellEnd:'2026-12-31'},
+    36007:{prod:'冷壓初榨苦茶油', spec:'250ml 玻璃瓶', temp:'冷藏', price:360, up:true, qty:1, unit:'瓶', stock:8, ship:'2026-09-10', sellStart:'2026-09-01', sellEnd:'2026-12-31'},
+    24011:{prod:'有機黑芝麻粉', spec:'300g 罐裝', temp:'冷凍', price:240, up:false, qty:1, unit:'罐', stock:0, ship:'2026-07-15', sellStart:'2026-07-01', sellEnd:'2026-08-31'}
   };
   var MAINS={ 40894:{name:'台灣蜜棗禮盒 3斤裝', temp:'常溫'}, 55210:{name:'日曬紅龍果原箱', temp:'冷藏'}, 61120:{name:'冬季草莓禮盒（已下架）', temp:'冷藏'}, 47788:{name:'當季鮮採蔬菜箱', temp:'常溫'} };
   // pairs：配對（待新建 ProductAddOnMapping）。a→ProductAddOnId、m→ProductId、on→IsOnShelf(配對層上下架，兩層狀態的內層)
@@ -856,15 +857,14 @@ a:hover { text-decoration: underline; }
               {a:101509,m:40894,on:true},{a:36007,m:40894,on:true} ];
   var view={type:'addon', id:99753};
 
-  function sellOf(a){ return (a.disc!==''&&a.disc!=null)?a.disc:a.orig; }                      // 目前售價 DiscPrice??Price（有特價用特價）
-  function finalOf(a){ var s=sellOf(a); return a.mode==='fixed'?s-a.val:Math.round(s*a.val); }  // 加購折扣從「售價」往下算（10/06 定案，非原價）
+  // v2：加購價＝加購規格自己的 price，營運直接填，無折扣/倍率計算。
   function mainsOf(aid){ return pairs.filter(function(p){return p.a==aid;}); }
   function addonsOf(mid){ return pairs.filter(function(p){return p.m==mid;}); }
-  function effStatus(a){
-    var s=(a.s&&a.s!=='不指定')?a.s:'', e=(a.e&&a.e!=='不指定')?a.e:'';
-    if(s && TODAY<s) return {t:'尚未生效', c:'wait'};
-    if(e && TODAY>e) return {t:'已失效', c:'expired'};
-    return {t:'套用中', c:'active'};
+  function effStatus(a){   // 依加購規格自己的販售期間判狀態（v2 併 Q2/Q7）
+    var s=a.sellStart||'', e=a.sellEnd||'';
+    if(s && TODAY<s) return {t:'未開賣', c:'wait'};
+    if(e && TODAY>e) return {t:'已停售', c:'expired'};
+    return {t:'販售中', c:'active'};
   }
   function tempCls(t){ return t==='常溫'?'normal':t==='冷藏'?'cold':'frozen'; }
   function tempTag(t, mm){ if(!t) return ''; return '<span class="tt '+tempCls(t)+(mm?' is-mismatch':'')+'"'+(mm?' title="加購品與主商品溫層不同，出貨會拆成不同溫層的包裹"':'')+'>'+t+(mm?'<span class="tt-x">(異溫層)</span>':'')+'</span>'; }
@@ -872,17 +872,15 @@ a:hover { text-decoration: underline; }
     return '<button class="as-switch" data-to-'+kind+'="'+id+'" title="改為編輯此'+label+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16H3v4M17 8h4V4M4 20l6-6M20 4l-6 6"/></svg>改編此'+label+'</button>';
   }
 
-  // 加購品 item block（兩視角共用）。isSubject＝加購品視角的主體（右側放上下架）；否則放改編/啟用/移除
+  // 加購品 item block（兩視角共用・v2）。加購品＝一個獨立規格：編它自己的 加購價／庫存／販售期間。
+  // isSubject＝加購品視角的主體（右側放外層上架 ProductDetail.Display）；否則放改編/配對層上下架/移除。
   function addonBlock(aid, pair, isSubject){
-    var a=ADDONS[aid], fin=finalOf(a), bad=fin<=0, st=effStatus(a), unit=a.mode==='fixed'?'元':'（0～1）';
-    var discTxt = (a.disc!=='' && a.disc!=null) ? money(a.disc) : '未設定';
-    // 規格資訊：只在加購品視角、放進綠底框、加分隔線（不重覆已顯示的規格描述與原價）
+    var a=ADDONS[aid], bad=(Number(a.price)||0)<=0, st=effStatus(a);
+    var refTxt = (a.refOrig!=null) ? '<s>'+money(a.refOrig)+'</s> ' : '';   // 選配參考原價（刪除線）
+    // 規格資訊：只在加購品視角、放進綠底框（加購價/庫存/販售在下方 grid 可編，這裡放其餘唯讀規格資訊）
     var specrow = isSubject ? '<div class="as-specrow">'
       + '<span class="i"><span>規格量</span><b>'+a.qty+' '+a.unit+'</b></span>'
-      + '<span class="i"><span>產品優惠價</span><b>'+discTxt+'</b></span>'
-      + '<span class="i"><span>剩餘數量</span><b>'+a.stock+'</b></span>'
       + '<span class="i"><span>預計出貨日</span><b>'+(a.ship||'—')+'</b></span>'
-      + '<span class="i"><span>販售期間</span><b>'+(a.sellStart||'—')+' ～ '+(a.sellEnd||'—')+'</b></span>'
       + '<a class="as-spec-edit" href="admin-spec-addon.html">修改規格</a>'
       + '</div>' : '';
     var acts = isSubject
@@ -894,12 +892,12 @@ a:hover { text-decoration: underline; }
     var mismatch = !isSubject && MAINS[pair.m].temp!==a.temp;
     return '<div class="as-ib'+(off?' is-off':'')+(isSubject?' is-bare':'')+'" data-addon="'+aid+'">'
       + '<div class="as-ib-head"><div class="as-summary'+(bad?' is-invalid':'')+'"><span class="as-badge">規格ID '+aid+'</span><span class="nm">'+esc(a.prod)+'</span>'+tempTag(a.temp, mismatch)+'<span class="spec">'+esc(a.spec)+'</span>'
-      + '<span class="calc">售價 <s>'+money(sellOf(a))+'</s> → 折後 <b class="as-final">'+money(fin)+'</b><span class="as-save">'+(bad?'折後 ≤ $0':'省 '+money(sellOf(a)-fin))+'</span></span>'+specrow+'</div>'
+      + '<span class="calc">加購價 '+refTxt+'<b class="as-final">'+money(a.price)+'</b><span class="as-save">'+(bad?'加購價需 &gt; $0':'')+'</span></span>'+specrow+'</div>'
       + '<div class="as-acts">'+acts+'</div></div>'
       + '<div class="as-grid">'
-        + '<div class="as-field"><span>折抵方式</span><div class="as-seg" data-seg><button class="'+(a.mode==='fixed'?'is-active':'')+'" data-mode="fixed">固定金額</button><button class="'+(a.mode==='percent'?'is-active':'')+'" data-mode="percent">百分比</button></div></div>'
-        + '<div class="as-field"><span>折扣數值</span><div class="as-valwrap"><input class="gox-input as-val" value="'+a.val+'"><span class="as-unit">'+unit+'</span></div></div>'
-        + '<div class="as-field" style="grid-column:span 2;"><span>生效期間 <span class="as-eff '+st.c+'">'+st.t+'</span></span><div class="as-daterange"><input type="date" class="gox-input as-s" value="'+(a.s||'')+'"><span class="as-sep">→</span><input type="date" class="gox-input as-e" value="'+(a.e||'')+'"></div></div>'
+        + '<div class="as-field"><span>加購價</span><div class="as-valwrap"><input type="number" class="gox-input as-price" value="'+a.price+'"><span class="as-unit">元</span></div></div>'
+        + '<div class="as-field"><span>剩餘數量</span><div class="as-valwrap"><input type="number" class="gox-input as-stock" value="'+a.stock+'"><span class="as-unit">件</span></div></div>'
+        + '<div class="as-field" style="grid-column:span 2;"><span>販售期間 <span class="as-eff '+st.c+'">'+st.t+'</span></span><div class="as-daterange"><input type="date" class="gox-input as-ss" value="'+(a.sellStart||'')+'"><span class="as-sep">→</span><input type="date" class="gox-input as-se" value="'+(a.sellEnd||'')+'"></div></div>'
       + '</div></div>';
   }
   function acRow(kind){
@@ -910,7 +908,7 @@ a:hover { text-decoration: underline; }
   function render(){
     var html='';
     if(view.type==='addon'){
-      html+='<div class="gox-card"><div class="gox-card-title">加購品折扣設定<span class="as-titlesub">此加購品一套折扣，掛到哪些主商品都共用</span></div><div class="gox-card-body">'
+      html+='<div class="gox-card"><div class="gox-card-title">加購品設定<span class="as-titlesub">此加購品＝一個獨立規格：加購價、庫存、販售期間（直接填，非折扣）</span></div><div class="gox-card-body">'
         + addonBlock(view.id, null, true) + '</div></div>';
       var rows=mainsOf(view.id);
       html+='<div class="gox-card"><div class="gox-card-title">掛載主商品<span class="as-titlesub">此加購品要出現在哪些主商品下</span></div><div class="gox-card-body"><div class="as-list">';
@@ -926,7 +924,7 @@ a:hover { text-decoration: underline; }
       html+='<div class="gox-card"><div class="gox-card-title">主商品</div><div class="gox-card-body">'
         + '<div class="as-mainid"><span class="nm">'+m.name+'</span>'+tempTag(m.temp)+'<span class="meta">主商品ID '+view.id+'</span></div></div></div>';
       var rows=addonsOf(view.id);
-      html+='<div class="gox-card"><div class="gox-card-title">此主商品的加購品<span class="as-titlesub">折扣為各加購品共用，改動會同步影響它掛的其它主商品</span></div><div class="gox-card-body"><div class="as-list">';
+      html+='<div class="gox-card"><div class="gox-card-title">此主商品的加購品<span class="as-titlesub">加購價／庫存／販售期間是各加購規格自己的，改動會同步影響它掛的其它主商品</span></div><div class="gox-card-body"><div class="as-list">';
       html+= rows.map(function(p){ return addonBlock(p.a, p, false); }).join('')
         || '<div style="color:var(--gox-text-muted);font-size:13px;padding:4px 0;">此主商品尚未有加購品</div>';
       html+=acRow('addon')+'</div></div>';
@@ -937,17 +935,16 @@ a:hover { text-decoration: underline; }
   }
 
   function updatePreview(block){
-    var aid=block.dataset.addon, a=ADDONS[aid], fin=finalOf(a), bad=fin<=0;
-    block.querySelector('.as-unit').textContent = a.mode==='fixed'?'元':'（0～1）';
+    var aid=block.dataset.addon, a=ADDONS[aid], bad=(Number(a.price)||0)<=0;
     var sm=block.querySelector('.as-summary'); sm.classList.toggle('is-invalid', bad);
-    sm.querySelector('.as-final').textContent=money(fin);
-    sm.querySelector('.as-save').textContent= bad?'折後 ≤ $0':'省 '+money(sellOf(a)-fin);
-    var st=effStatus(a), tag=block.querySelector('.as-eff'); tag.className='as-eff '+st.c; tag.textContent=st.t;
+    sm.querySelector('.as-final').textContent=money(a.price);
+    var save=sm.querySelector('.as-save'); if(save) save.textContent= bad?'加購價需 > $0':'';
+    var st=effStatus(a), tag=block.querySelector('.as-eff'); if(tag){ tag.className='as-eff '+st.c; tag.textContent=st.t; }
   }
   function refreshSave(){
     var bad=!!document.querySelector('.as-summary.is-invalid');
     var s=document.getElementById('save-status'), b=document.getElementById('btn-save');
-    if(bad){ s.className='as-status is-invalid'; s.innerHTML='<span class="as-dot"></span>折後金額 ≤ $0，無法儲存'; b.disabled=true; }
+    if(bad){ s.className='as-status is-invalid'; s.innerHTML='<span class="as-dot"></span>加購價需 &gt; $0，無法儲存'; b.disabled=true; }
     else if(s.className.indexOf('is-saved')<0){ s.className='as-status'; s.innerHTML='<span class="as-dot"></span>尚未儲存'; b.disabled=false; }
   }
 
@@ -970,10 +967,6 @@ a:hover { text-decoration: underline; }
   }
 
   document.addEventListener('click', function(e){
-    var seg=e.target.closest('[data-seg] button');
-    if(seg){ var block=seg.closest('.as-ib'); ADDONS[block.dataset.addon].mode=seg.getAttribute('data-mode');
-      block.querySelectorAll('[data-seg] button').forEach(function(b){b.classList.remove('is-active');}); seg.classList.add('is-active');
-      updatePreview(block); refreshSave(); return; }
     var toM=e.target.closest('[data-to-main]'); if(toM){ view={type:'main', id:Number(toM.getAttribute('data-to-main'))}; render(); return; }
     var toA=e.target.closest('[data-to-addon]'); if(toA){ view={type:'addon', id:Number(toA.getAttribute('data-to-addon'))}; render(); return; }
     var rm=e.target.closest('[data-rm]'); if(rm){ var k=rm.getAttribute('data-rm').split('-'); pairs=pairs.filter(function(p){return !(p.a==k[0]&&p.m==k[1]);}); render(); return; }
@@ -987,9 +980,10 @@ a:hover { text-decoration: underline; }
   });
   document.addEventListener('input', function(e){
     if(e.target.classList.contains('ac-input')){ openAc(e.target.closest('.ac')); return; }
-    if(e.target.classList.contains('as-val')){ var b=e.target.closest('.as-ib'); ADDONS[b.dataset.addon].val=parseFloat(e.target.value)||0; updatePreview(b); refreshSave(); }
-    if(e.target.classList.contains('as-s')){ var b2=e.target.closest('.as-ib'); ADDONS[b2.dataset.addon].s=e.target.value; updatePreview(b2); }
-    if(e.target.classList.contains('as-e')){ var b3=e.target.closest('.as-ib'); ADDONS[b3.dataset.addon].e=e.target.value; updatePreview(b3); }
+    if(e.target.classList.contains('as-price')){ var b=e.target.closest('.as-ib'); ADDONS[b.dataset.addon].price=parseFloat(e.target.value)||0; updatePreview(b); refreshSave(); }
+    if(e.target.classList.contains('as-stock')){ var bs=e.target.closest('.as-ib'); ADDONS[bs.dataset.addon].stock=parseInt(e.target.value,10)||0; }
+    if(e.target.classList.contains('as-ss')){ var b2=e.target.closest('.as-ib'); ADDONS[b2.dataset.addon].sellStart=e.target.value; updatePreview(b2); }
+    if(e.target.classList.contains('as-se')){ var b3=e.target.closest('.as-ib'); ADDONS[b3.dataset.addon].sellEnd=e.target.value; updatePreview(b3); }
   });
   document.addEventListener('focusin', function(e){ if(e.target.classList.contains('ac-input')) openAc(e.target.closest('.ac')); });
   document.addEventListener('focusout', function(e){ if(e.target.classList.contains('ac-input')){ var ac=e.target.closest('.ac'); setTimeout(function(){ var l=ac.querySelector('.ac-list'); if(l) l.classList.remove('is-open'); },150); } });

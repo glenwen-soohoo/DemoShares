@@ -8,10 +8,10 @@
     components : src/components/cart/（original／sameDay 兩種購物車）
     css/溫層色  : src/styles/cart.css（常溫 #ff8e88／冷藏 #73bf00／冷凍 #cff6ff）
   加購品明細真名（跨前端共用・＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs，commit ddff3fd）：
-    名 name ← Product.Name；規格 fullDetailDescription；原價 Price；折後價 SellPrice ＝ DiscPrice ?? Price（折扣沿用 PromoteCode）；
+    名 name ← Product.Name；規格 fullDetailDescription；參考原價 Price（v2 選配）；加購價 SellPrice ＝ DiscPrice ?? Price＝加購規格自己的售價（v2 直接填、不折扣）；
     溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
-  新功能・商品加購品（正式站尚無・待新建）：
-    資料表 ProductAddOn（主檔）、ProductAddOnMapping（主商品－加購品配對）、OrderDetailAddOn（訂單標記，§6-3）
+  新功能・商品加購品（v2＝加購品本身是一個獨立 ProductDetail，正式站尚無・待新建）：
+    加購品＝獨立 ProductDetail（v2 無 ProductAddOn 折扣主檔）；ProductAddOnMapping（主商品↔加購規格 AddOnProductDetailId）；OrderDetailAddOn（訂單成效標記，v2 簡化＝只記來源主商品、無改價軌跡，§6-3）
     本頁依 §7-1 為唯讀呈現（＋依主人指示保留刪除）；class sc-coa-* 為 demo 自取（新功能無既有真名）
   完整名稱對照見同資料夾 _交接對照.md
 -->
@@ -132,11 +132,11 @@
           <button class="rm" title="移除商品"><i class="fa fa-trash"></i></button>
         </div>
         <!-- 新功能：商品加購品（唯讀呈現）。sc-coa-* 為 demo 自取（無既有真名）；
-             data-price ＝ 加購折後價 SellPrice（折扣沿用 PromoteCode）；.o ← Price、.n ← SellPrice；
+             data-price ＝ 加購價 SellPrice（v2 加購規格自己的售價、直接填）；.o ← Price（選配參考原價）、.n ← SellPrice；
              .nm ← name、.sub ← fullDetailDescription；外層 data-temp（normal/refrigerated）← temperatureType -->
         <div class="sc-coa">
           <div class="sc-coa-title">加價購商品</div>
-          <div class="sc-coa-row" data-price="360"><!-- data-price ＝ SellPrice（折後價） -->
+          <div class="sc-coa-row" data-price="360"><!-- data-price ＝ SellPrice（加購價，v2 加購規格自己的售價） -->
             <img src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202509180824341.jpg" alt="">
             <div class="body">
               <div class="nm">【冷壓初榨苦茶油】小農直送</div>
@@ -230,7 +230,7 @@
         // 同一產線可能有多筆 order（例：同商品一般買＋加購買＝分兩列不合併）
         const orders = [...document.querySelectorAll(`.sc-order[data-line="${line}"]`)];
         const sumBox = document.querySelector(`.sc-line-sum[data-line="${line}"]`);
-        // 該產線商品總額（所有 order 的主商品＋加購品折後價）
+        // 該產線商品總額（所有 order 的主商品＋加購品加購價）
         let goods = 0;
         orders.forEach(order => order.querySelectorAll('[data-price]').forEach(el => goods += Number(el.dataset.price)));
         // 產線整條被刪光 → 移除商品區與頂部摘要行

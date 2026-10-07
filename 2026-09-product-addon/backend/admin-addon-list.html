@@ -9,14 +9,15 @@
     view       : 待新建
     controller : 待新建（寫入走 Product_Api(EF) 或 GoX＝待工程定案）
     route      : 待新建
-  這一頁的真實欄位名（＝待新建的新表欄位，以下為建議命名）：
-    加購品主檔          ProductAddOn（折扣與「加購品上下架」歸此檔＝兩層狀態的外層）
-    主商品－加購品配對  ProductAddOnMapping（ProductId / ProductAddOnId / IsOnShelf / Sort；唯一鍵 (ProductId,ProductAddOnId)）
+  這一頁的真實欄位名（v2＝加購品本身是一個獨立 ProductDetail，以下為建議命名）：
+    加購品本身          一個獨立 ProductDetail（自己的 Id/價/庫存）＝v2 不再有 ProductAddOn 折扣主檔
+    主商品－加購品配對  ProductAddOnMapping（ProductId / AddOnProductDetailId / IsOnShelf / Sort；唯一鍵 (ProductId,AddOnProductDetailId)）
     產線（篩選器）      Product.Type              ⚠ 是 Product.Type，不是 ProductDetail
-    折抵方式/折抵值     沿用既有 PromoteCode；後台輸入 0.XX 倍率（折後＝原價×倍率）
-    剩餘數量           OriginAmt − SoldAmt       ⚠ 是算出來的剩餘，不是原始庫存量
-    上架（依加購品欄）  ProductAddOn 上下架
-    上架（配對）        ProductAddOnMapping.IsOnShelf
+    加購價             加購規格自己的 Price（有特價 DiscPrice??Price）；營運直接填，非折扣算（v2）
+    販售期間           加購規格自己的 StartTime/EndTime（v2 併 Q2/Q7）
+    剩餘數量           OriginAmt − SoldAmt       ⚠ 加購規格自己的剩餘庫存，不是原始庫存量
+    上架（外層）        ProductDetail.Display（加購規格自己的上架；不上架哪都不顯示）
+    上架（配對/內層）   ProductAddOnMapping.IsOnShelf
   這一頁打的真實 API：待新建（讀清單 / 切上下架 / 批次配對，皆待工程定案）
   本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-on-addon/data-on-main/data-tab）為自由命名，勿照抄進 codebase。
   完整名稱對照見同資料夾 _交接對照.md
@@ -823,7 +824,7 @@ a:hover { text-decoration: underline; }
     <div class="gox-card-body is-table-padding">
       <table class="gox-table">
         <thead><tr>
-          <th>商品照</th><th>規格ID</th><th>加購品名稱</th><th>產線</th><th>折抵</th><th>折後價</th><th>生效期間</th>
+          <th>商品照</th><th>規格ID</th><th>加購品名稱</th><th>產線</th><th>加購價</th><th>販售期間</th>
           <th class="cell-center">掛載主商品</th><th class="cell-center">剩餘數量</th><th class="cell-center">上架</th><th class="cell-ops">操作</th>
         </tr></thead>
         <tbody id="al-addon-body"></tbody>
@@ -891,16 +892,15 @@ a:hover { text-decoration: underline; }
   var IMG1 = 'https://greenboxcdn.azureedge.net/products/Images/20250115163009.webp';
   var IMG2 = 'https://greenboxcdn.azureedge.net/products/Images/20250115161945.webp';
   var IMG3 = 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202608200958301.jpg';
-  // ADDONS：加購品列表資料（待新建 ProductAddOn）。id→加購品主檔PK；line→Product.Type；
-  //   mode/val→折扣沿用 PromoteCode；orig→Price（原價）；sell→目前售價(DiscPrice??Price，有特價才帶，省略＝同原價)；
-  //   加購折扣一律從「售價」往下算：finalOf＝售價×倍率／售價−金額（10/06 定案，不是原價）；
-  //   start/end→折扣生效期間(PromoteCode)；mains→掛載主商品數(count of ProductAddOnMapping)；
-  //   stock→OriginAmt-SoldAmt(剩餘，非原始庫存)；on→ProductAddOn 上下架
+  // ADDONS：加購品列表資料（v2＝加購品本身是一個獨立 ProductDetail）。id→加購規格 ProductDetailId；line→Product.Type；
+  //   price→加購價（＝這個規格自己的售價 DiscPrice??Price，營運直接填、非折扣算）；refOrig→選配的參考原價(刪除線用，省略＝不顯示)；
+  //   start/end→這個加購規格自己的販售起訖(ProductDetail.StartTime/EndTime)；mains→掛載主商品數(ProductAddOnMapping)；
+  //   stock→OriginAmt-SoldAmt(加購規格自己的剩餘庫存)；on→外層上架＝ProductDetail.Display
   var ADDONS = [
-    { id:99753, name:'316 不鏽鋼保溫瓶 500ml', img:IMG1, line:'產地直送', temp:'常溫', mode:'fixed', val:50, orig:399, start:'2026/09/01', end:'2026/09/30', mains:3, stock:128, on:true },
-    { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', mode:'percent', val:0.8, orig:299, sell:249, start:'', end:'', mains:1, stock:64, on:true },
-    { id:36007, name:'冷壓初榨苦茶油 250ml', img:IMG3, line:'產地直送', temp:'冷藏', mode:'fixed', val:60, orig:420, start:'2026/09/01', end:'2026/10/31', mains:5, stock:8, on:true },
-    { id:24011, name:'有機黑芝麻粉 300g', img:'', line:'蔬果乾貨', temp:'冷凍', mode:'fixed', val:40, orig:280, start:'2026/07/01', end:'2026/08/31', mains:2, stock:0, on:false }
+    { id:99753, name:'316 不鏽鋼保溫瓶 500ml', img:IMG1, line:'產地直送', temp:'常溫', price:349, refOrig:399, start:'2026/09/01', end:'2026/09/30', mains:3, stock:128, on:true },
+    { id:101509, name:'手沖濾掛咖啡 10入', img:IMG2, line:'產地直送', temp:'常溫', price:199, start:'', end:'', mains:1, stock:64, on:true },
+    { id:36007, name:'冷壓初榨苦茶油 250ml', img:IMG3, line:'產地直送', temp:'冷藏', price:360, start:'2026/09/01', end:'2026/10/31', mains:5, stock:8, on:true },
+    { id:24011, name:'有機黑芝麻粉 300g', img:'', line:'蔬果乾貨', temp:'冷凍', price:240, start:'2026/07/01', end:'2026/08/31', mains:2, stock:0, on:false }
   ];
   var MAINS = [
     { id:40894, name:'台灣蜜棗禮盒 3斤裝', img:IMG2, line:'產地直送', temp:'常溫', addons:3, stock:56, on:true },
@@ -909,14 +909,12 @@ a:hover { text-decoration: underline; }
     { id:61120, name:'冬季草莓禮盒（已下架）', img:'', line:'產地直送', temp:'冷凍', addons:1, stock:0, on:false }
   ];
   var line = 'all', kw = '', TODAY = '2026/09/16';
-  function sellOf(a){ return a.sell!=null ? a.sell : a.orig; }                                 // 目前售價 DiscPrice??Price（有特價用特價）
-  function finalOf(a){ var s=sellOf(a); return a.mode==='fixed' ? s-a.val : Math.round(s*a.val); }   // 加購折扣從「售價」往下算（10/06 定案，非原價）
-  function discText(a){ return a.mode==='fixed' ? '固定 '+money(a.val) : '×'+a.val; }          // percent 顯示 0.XX 倍率（無「幾折」），與設定頁口徑一致
-  function effStatus(a){
+  // v2：加購價＝加購規格自己的 price，營運直接填，無折扣/倍率計算。
+  function effStatus(a){   // 依加購規格自己的販售起訖判狀態（v2 併 Q2/Q7）
     var s=a.start||'', e=a.end||'';
-    if(s && TODAY<s) return {t:'尚未生效', c:'wait'};
-    if(e && TODAY>e) return {t:'已失效', c:'expired'};
-    return {t:'套用中', c:'active'};
+    if(s && TODAY<s) return {t:'未開賣', c:'wait'};
+    if(e && TODAY>e) return {t:'已停售', c:'expired'};
+    return {t:'販售中', c:'active'};
   }
   function tempTag(t){ var c = t==='冷藏'?'cold':(t==='冷凍'?'frozen':'normal'); return '<span class="tt '+c+'">'+t+'</span>'; }
   function stockCell(n){ return '<td class="cell-center al-stock'+(n<=0?' is-zero':'')+'">'+n+'</td>'; }
@@ -928,14 +926,15 @@ a:hover { text-decoration: underline; }
   function render(){
     var la = ADDONS.filter(function(a){ return (line==='all'||a.line===line) && match(a.name,a.id); });
     document.getElementById('al-addon-body').innerHTML = la.map(function(a){
-      var fin = finalOf(a), period = a.start ? a.start+'～'+a.end : '不指定', st = effStatus(a);
-      return '<tr>'+thumbCell(a.img)+'<td class="al-id">'+a.id+'</td><td>'+a.name+tempTag(a.temp)+'</td><td>'+a.line+'</td><td class="al-disc">'+discText(a)+'</td>'
-        + '<td><span class="al-old">'+money(sellOf(a))+'</span><span class="al-final">'+money(fin)+'</span></td>'
+      var period = a.start ? a.start+'～'+a.end : '不指定', st = effStatus(a);
+      var priceCell = (a.refOrig!=null ? '<span class="al-old">'+money(a.refOrig)+'</span>' : '') + '<span class="al-final">'+money(a.price)+'</span>';
+      return '<tr>'+thumbCell(a.img)+'<td class="al-id">'+a.id+'</td><td>'+a.name+tempTag(a.temp)+'</td><td>'+a.line+'</td>'
+        + '<td>'+priceCell+'</td>'
         + '<td class="al-line">'+period+' <span class="as-eff '+st.c+'">'+st.t+'</span></td><td class="cell-center">'+a.mains+'</td>'
         + stockCell(a.stock)
         + '<td class="cell-center"><span class="gox-switch '+(a.on?'is-on':'')+'" data-on-addon="'+a.id+'"></span></td>'
         + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">編輯</a></td></tr>';
-    }).join('') || '<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的加購品</td></tr>';
+    }).join('') || '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的加購品</td></tr>';
     var lm = MAINS.filter(function(m){ return (line==='all'||m.line===line) && match(m.name,m.id); });
     document.getElementById('al-main-body').innerHTML = lm.map(function(m){
       return '<tr>'+thumbCell(m.img)+'<td class="al-id">'+m.id+'</td><td>'+m.name+tempTag(m.temp)+'</td><td>'+m.line+'</td>'

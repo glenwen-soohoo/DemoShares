@@ -3,24 +3,24 @@
 <head>
 <!--
   DemoShares 交接對照 | 新增加購品子流程（admin-addon-create.html）
-  ⚠ 全新機制：正式站無此頁，待新建。流程＝綁定一個既有產品 → 填一筆加購品專屬規格 → 建立。
-  名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\需求規格.md §3-3
+  ⚠ 全新機制（v2・加購品＝獨立新規格）：正式站無此頁，待新建。流程＝建一筆加購品專屬規格（＝一個 ProductDetail，直接填加購價＋庫存＋販售期間）→ 建立 → 到加購設定掛載主商品。
+  名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\v2_新開規格_設計方案.md、工程交接文件.md §4/§5
   對應正式站：
     view       : 待新建
-    controller : 待新建（建立 ProductAddOn；寫入走 Product_Api(EF) 或 GoX＝待工程定案）
+    controller : 待新建（建立一個加購 ProductDetail；寫入走 Product_Api(EF) 或 GoX＝待工程定案）
     route      : 待新建
-  這一頁的真實欄位名（綁定的產品為既有，加購品規格欄位對齊既有 ProductDetail，建議命名）：
-    綁定產品ID    ac-pid   → Product.Id（productId）
+  這一頁的真實欄位名（v2＝建一個獨立 ProductDetail 當加購品，欄位對齊既有 ProductDetail，建議命名）：
+    綁定產品ID    ac-pid   → Product.Id（productId；加購規格掛在哪個 Product 下，營運用法、不影響機制）
     規格描述      ac-desc  → Detail
     規格量        ac-qty   → Amt
     單位          ac-unit  → Module
-    產品原價      ac-price → Price
+    加購價        ac-price → Price（＝這個加購規格自己的售價，營運直接填，非折扣算）(v2)
     成本          ac-cost  → Cost
-    開始/結束販售 ac-start/ac-end → StartTime / EndTime
+    開始/結束販售 ac-start/ac-end → StartTime / EndTime（加購規格自己的販售期間，v2 併 Q2/Q7）
     剩餘數量      ac-stock → ⚠ 建立時輸入的其實是「進貨量 OriginAmt（庫存量）」，不是剩餘；標籤沿用列表用語但語意是原始庫存
-    上架          ac-listed → Display
+    上架          ac-listed → Display（外層＝加購規格自己的上架）
     可貨到付款    ac-cod   → 貨到付款旗標（對 ProductDetail 既有 COD 欄；確切欄名待工程定案）
-    可作為加購品  固定勾選  → 建議 IsAddOn；即把此規格登記成 ProductAddOn（待新建）
+    作為產品頁加購品 固定勾選 → 建議 IsAddOn；標記此規格為加購品、前台隱藏（v2 無 ProductAddOn 折扣主檔，由配對表或此 flag 認定）
   這一頁打的真實 API：待新建（建立加購品）；成功後導向 admin-addon-setting.html
   本頁 demo JS 鍵（PRODUCTS/PIC、ac-* 的 id）為自由命名，勿照抄進 codebase。
   完整名稱對照見同資料夾 _交接對照.md
@@ -843,8 +843,8 @@ a:hover { text-decoration: underline; }
             </select>
           </div>
           <div class="ac-field">
-            <label>產品原價<span class="ac-req">*</span></label>
-            <input type="number" class="gox-input" id="ac-price" placeholder="399">
+            <label>加購價<span class="ac-req">*</span></label>
+            <input type="number" class="gox-input" id="ac-price" placeholder="349">
           </div>
           <div class="ac-field">
             <label>成本</label>
@@ -871,7 +871,7 @@ a:hover { text-decoration: underline; }
         <div class="ac-checks">
           <label><input type="checkbox" id="ac-listed" checked> 上架</label>
           <label><input type="checkbox" id="ac-cod" checked> 可貨到付款</label>
-          <label class="is-fixed"><input type="checkbox" checked disabled> 可作為加購品（本流程固定建立）</label>
+          <label class="is-fixed"><input type="checkbox" checked disabled> 作為產品頁加購品（本流程固定建立）</label>
         </div>
       </div>
 
@@ -886,11 +886,11 @@ a:hover { text-decoration: underline; }
   <div class="gox-modal-box">
     <div class="gox-card-title">確認建立</div>
     <div class="gox-card-body">
-      <p style="font-size:14px;color:var(--gox-text);margin:0 0 12px;">將在下列產品底下建立一個加購品專屬規格，建立後即可到「加購設定」設定折扣與掛載主商品：</p>
+      <p style="font-size:14px;color:var(--gox-text);margin:0 0 12px;">將建立一個加購品專屬規格（加購價＝此規格自己的售價），建立後即可到「加購設定」掛載主商品：</p>
       <div style="font-size:14px;line-height:1.9;color:var(--gox-text-sub);">
         <div>產品：<b id="ac-c-product" style="color:var(--gox-text);"></b></div>
         <div>規格描述：<b id="ac-c-desc" style="color:var(--gox-text);"></b></div>
-        <div>原價：<b id="ac-c-price" style="color:var(--gox-text);"></b></div>
+        <div>加購價：<b id="ac-c-price" style="color:var(--gox-text);"></b></div>
         <div>剩餘數量：<b id="ac-c-stock" style="color:var(--gox-text);"></b></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
@@ -1029,7 +1029,7 @@ a:hover { text-decoration: underline; }
     var price = document.getElementById('ac-price').value.trim();
     var stock = document.getElementById('ac-stock').value.trim();
     if (!desc) { window.gox.toast('請填寫規格描述'); document.getElementById('ac-desc').focus(); return; }
-    if (!price) { window.gox.toast('請填寫產品原價'); document.getElementById('ac-price').focus(); return; }
+    if (!price) { window.gox.toast('請填寫加購價'); document.getElementById('ac-price').focus(); return; }
     if (!stock) { window.gox.toast('請填寫剩餘數量'); document.getElementById('ac-stock').focus(); return; }
     document.getElementById('ac-c-product').textContent = bound.p.name + '（#' + bound.pid + '）';
     document.getElementById('ac-c-desc').textContent = desc;
@@ -1039,7 +1039,7 @@ a:hover { text-decoration: underline; }
   });
   document.getElementById('ac-c-ok').addEventListener('click', function () {
     document.getElementById('ac-confirm').classList.add('is-hidden');
-    window.gox.toast('已建立加購品，接著設定折扣與掛載');
+    window.gox.toast('已建立加購品，接著掛載主商品');
     setTimeout(function () { location.href = 'admin-addon-setting.html'; }, 900);
   });
   document.getElementById('ac-back').addEventListener('click', function () { location.href = 'admin-addon-list.html'; });

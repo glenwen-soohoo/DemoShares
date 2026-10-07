@@ -18,11 +18,11 @@
     新功能・商品加購品（正式站尚無・待新建）：
       加購資料入 view ： ViewBag.AddOnProducts（ConfirmOrder.cshtml:57），由 OrdersController 的
                         _productAddOnHandler.GetAddOnsProductData(shoppingCart) 產生（撰時約 2290 行）
-      新資料表 ： ProductAddOn（主檔）、ProductAddOnMapping（主商品－加購品配對）、OrderDetailAddOn（訂單標記，§6-3）
+      新資料表（v2）： 加購品＝獨立 ProductDetail（無 ProductAddOn 折扣主檔）；ProductAddOnMapping（主商品↔加購規格 AddOnProductDetailId）；OrderDetailAddOn（訂單成效標記，v2 簡化＝只記來源主商品 SourceProductId、無改價軌跡，§6-3）
       就地加入購物車 API ： POST /Cart/AddToShoppingCartByModule（CartController.cs:269）
       class coa-* / coa-pk / coa-added 為 demo 自取（新功能無既有真名）
     加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
-      名 name ← Product.Name；規格 fullDetailDescription；原價 Price；折後價 SellPrice ＝ DiscPrice ?? Price（折扣沿用 PromoteCode）；
+      名 name ← Product.Name；規格 fullDetailDescription；參考原價 Price（v2 選配）；加購價 SellPrice ＝ DiscPrice ?? Price＝加購規格自己的售價（v2 直接填、不折扣）；
       溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）
     完整名稱對照見同資料夾 _交接對照.md
   -->
@@ -318,8 +318,8 @@
       <!-- 加價購①：部分已加購（已加購 + 尚未加購並存） -->
       <!-- 新功能：商品加購品區塊，正式站尚無。資料來源 ViewBag.AddOnProducts（ConfirmOrder.cshtml:57）。
            coa-* 為 demo 自取（新功能無既有真名）；內層欄位沿用真站 base-field（field-pd/price/amt/...）以對齊主商品。
-           .coa-added ＝已加購列、.coa-pk ＝尚未加購可勾選列；折後價 .n ← SellPrice、原價 .o ← Price（折扣沿用 PromoteCode）。
-           加入訂單後於 OrderDetailAddOn 標記（§6-3，待新建） -->
+           .coa-added ＝已加購列、.coa-pk ＝尚未加購可勾選列；加購價 .n ← SellPrice＝加購規格自己的售價（v2 直接填）、.o ← Price（v2 選配參考原價）。
+           加入訂單後於 OrderDetailAddOn 記來源主商品（成效用，v2 簡化、無改價軌跡；§6-3，待新建） -->
       <div class="coa" id="coa1">
         <div class="coa-added-block">
           <div class="coa-added-title">加價購商品</div>

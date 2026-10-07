@@ -13,9 +13,9 @@
     (2) 新功能「單一商品加購」.acoa-*（掛主商品下）＝本次新增，RN 端尚無；class acoa-* 為 demo 自取。
         購物車回已/未加購 API（新 endpoint・待新建，§6-4）：POST app/cart/productAddOns
   加購品明細真名（＝CartProductDetailDto 投影，權威 Product_Api/.../GetCartItems/GetCartProductDetailsQuery.cs）：
-    名 name ← Product.Name；規格 fullDetailDescription；原價 Price；折後價 SellPrice ＝ DiscPrice ?? Price（data-price，折扣沿用 PromoteCode）；
+    名 name ← Product.Name；規格 fullDetailDescription；參考原價 Price（v2 選配）；加購價 SellPrice ＝ DiscPrice ?? Price（data-price）＝加購規格自己的售價（v2 直接填、不折扣）；
     溫層 temperatureType；封面 coverImg；剩餘數量 Stock ＝ OriginAmt − SoldAmt（≠原始庫存）；每項限購 data-max ＝ limit
-  新資料表：ProductAddOn（主檔）、ProductAddOnMapping（配對）、OrderDetailAddOn（訂單標記，§6-3）（待新建）
+  新資料（v2）：加購品＝獨立 ProductDetail（無 ProductAddOn 折扣主檔）、ProductAddOnMapping（主商品↔加購規格 AddOnProductDetailId）、OrderDetailAddOn（訂單成效標記，v2 簡化＝只記來源主商品、無改價軌跡，§6-3）（待新建）
   完整名稱對照見同資料夾 _交接對照.md
 -->
 <meta charset="UTF-8">
@@ -192,8 +192,8 @@
           </div>
           <!-- ①的加購（單一商品加入・掛主商品下）：已加入置頂恆顯示；未加入收在下拉列內 -->
           <!-- 新功能：單一商品加購（非既有 ExtraProducts）。acoa-* 為 demo 自取（無既有真名）。
-               data-price ＝ 折後價 SellPrice（.o←Price、.n←SellPrice，折扣沿用 PromoteCode）；
-               data-max ＝ 每項限購 limit；data-added 為 demo 狀態旗標（非後端欄位，加/未加由 OrderDetailAddOn 標記）；
+               data-price ＝ 加購價 SellPrice（.o←Price 選配參考原價、.n←SellPrice＝加購規格自己的售價，v2 直接填、不折扣）；
+               data-max ＝ 每項限購 limit；data-added 為 demo 狀態旗標（非後端欄位，加/未加由 OrderDetailAddOn 記來源主商品）；
                .acoa-nm ← name、.acoa-spec ← fullDetailDescription、.acoa-temp ← temperatureType -->
           <div class="acoa" data-line="origin">
             <div class="acoa-item" data-price="360" data-max="3" data-added="1">
