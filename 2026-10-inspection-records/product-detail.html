@@ -531,7 +531,15 @@ window.INSP = (function () {
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
-      if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.records)) return s; }
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.records)) {
+          // 2026-10-08 補的情境「沒有檢驗紀錄、只有上傳圖檔」：舊的瀏覽器資料沒有，補一次
+          if (!s.manual) s.manual = {};
+          if (!s.fx20261008) { if (!s.manual[26813]) s.manual[26813] = normalManual()[26813]; s.fx20261008 = true; }
+          return s;
+        }
+      }
     } catch (e) { }
     return { scenario: 'normal', records: scenarioNormal(), manual: normalManual() };
   }
@@ -543,6 +551,7 @@ window.INSP = (function () {
   function normalManual() {
     return {
       26812: { imgs: [SELF_IMG], exp: dayOffset(60), at: ts(dayOffset(-1)) },   // 小農鮮乳：紀錄 3 天前上架，昨天人工上傳圖檔，圖檔蓋掉紀錄
+      26813: { imgs: [SELF_IMG], exp: dayOffset(90), at: ts(dayOffset(-5)) },   // 無糖希臘優格：沒有檢驗紀錄，只有人工上傳的圖檔（2026-10-08 補）
       29572: { imgs: [], exp: '', at: ts(dayOffset(-2)), removed: true }         // 台東鳳梨釋迦：紀錄 8 天前上架，前天人工上傳又刪掉，留白
     };
   }
@@ -817,7 +826,18 @@ window.INSP = (function () {
 
   function update(no, patch) {
     state.records = state.records.map(function (r) { return r.no === no ? Object.assign({}, r, patch) : r; });
+    if (patch.status === '上架') dropManualOnPublish(no);
     return save();
+  }
+  // 紀錄上架（上傳&儲存）時，把它現在顯示的商品原本手動上傳的圖檔撤掉（2026-10-08 Glen）。
+  // 上傳時間留著不動：紀錄的上架時間比較晚，前台照樣顯示紀錄，不會被當成「刪除後留白」
+  function dropManualOnPublish(no) {
+    var r = state.records.filter(function (x) { return x.no === no; })[0];
+    if (!r) return;
+    productsOf(r).forEach(function (p) {
+      var m = state.manual[p.id];
+      if (m && m.imgs.length && latestForProduct(p.id) === r) state.manual[p.id] = { imgs: [], exp: '', at: m.at, droppedByRecord: r.no };
+    });
   }
 
   // 檢驗項目與結果：確認完成後就鎖住，要改先移至檢驗區（2026-10-06 Glen）。E 版跟 isLocked 一樣

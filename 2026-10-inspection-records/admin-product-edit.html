@@ -13,11 +13,12 @@
     上傳圖檔    name="SelfTestReportsCreate"（multiple）；既有圖 Model.ShowSelfTestReportList，顯示在 .report_banner_self
     到期日      name="SelfTestReportExpiredTime"  #self_test_report_expired_time，存 ProductTestReportRemind（ReportType=0）
     移除按鈕    #Remove-TextReportSelf-Url
-    前台現在顯示 新增唯讀區塊（demo #peAuto），資料來自 InspectionRecordService.GetCurrentSelfReport（待新建）：檢驗紀錄 vs 手動圖檔誰晚放上去顯示誰
+    前台顯示   上半唯讀區塊（demo #peAuto，2026-10-08 改上下排）：標籤「後台檢驗紀錄／此頁上傳檔案／不顯示自主檢驗報告」，資料來自 IInspectionRecordService.GetEditPageReportStatus → ViewBag.SelfReportStatus（已做）
     手動時間    ProductTestReportRemind.ManualUpdateTime（待新建）：上傳與刪除都要寫  ⚠ 少了它，刪除後會分不出「留白」跟「從來沒傳過」
   這一頁打的真實 API：
-    POST /gox/Product/RemoveTextReportSelf  data: { pid }（既有）  ⚠ 要補：清空 RemindDateTime、寫 ManualUpdateTime（現在只刪圖）
-    檢驗紀錄狀態在 Edit18 GET 時由 ViewModel 帶出（建議 Model.SelfInspectionStatus，待新建），不另開 API
+    POST /gox/Product/RemoveTextReportSelf  data: { pid }（既有）  已補：清空 RemindDateTime、寫 ManualUpdateTime
+    紀錄上傳&儲存時自動撤掉這些商品的手動圖檔（2026-10-08 Glen，demo data.js dropManualOnPublish）  ⚠ 正式站待做：SetStatus 切上架時刪 MultipleUploadPics SourceId 0，ManualUpdateTime 不動
+    檢驗紀錄狀態在 Edit18 GET 時由 ViewBag.SelfReportStatus 帶出，不另開 API
   完整名稱對照見同資料夾 _交接對照.md
 -->
 
@@ -897,7 +898,15 @@ window.INSP = (function () {
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
-      if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.records)) return s; }
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.records)) {
+          // 2026-10-08 補的情境「沒有檢驗紀錄、只有上傳圖檔」：舊的瀏覽器資料沒有，補一次
+          if (!s.manual) s.manual = {};
+          if (!s.fx20261008) { if (!s.manual[26813]) s.manual[26813] = normalManual()[26813]; s.fx20261008 = true; }
+          return s;
+        }
+      }
     } catch (e) { }
     return { scenario: 'normal', records: scenarioNormal(), manual: normalManual() };
   }
@@ -909,6 +918,7 @@ window.INSP = (function () {
   function normalManual() {
     return {
       26812: { imgs: [SELF_IMG], exp: dayOffset(60), at: ts(dayOffset(-1)) },   // 小農鮮乳：紀錄 3 天前上架，昨天人工上傳圖檔，圖檔蓋掉紀錄
+      26813: { imgs: [SELF_IMG], exp: dayOffset(90), at: ts(dayOffset(-5)) },   // 無糖希臘優格：沒有檢驗紀錄，只有人工上傳的圖檔（2026-10-08 補）
       29572: { imgs: [], exp: '', at: ts(dayOffset(-2)), removed: true }         // 台東鳳梨釋迦：紀錄 8 天前上架，前天人工上傳又刪掉，留白
     };
   }
@@ -1183,7 +1193,18 @@ window.INSP = (function () {
 
   function update(no, patch) {
     state.records = state.records.map(function (r) { return r.no === no ? Object.assign({}, r, patch) : r; });
+    if (patch.status === '上架') dropManualOnPublish(no);
     return save();
+  }
+  // 紀錄上架（上傳&儲存）時，把它現在顯示的商品原本手動上傳的圖檔撤掉（2026-10-08 Glen）。
+  // 上傳時間留著不動：紀錄的上架時間比較晚，前台照樣顯示紀錄，不會被當成「刪除後留白」
+  function dropManualOnPublish(no) {
+    var r = state.records.filter(function (x) { return x.no === no; })[0];
+    if (!r) return;
+    productsOf(r).forEach(function (p) {
+      var m = state.manual[p.id];
+      if (m && m.imgs.length && latestForProduct(p.id) === r) state.manual[p.id] = { imgs: [], exp: '', at: m.at, droppedByRecord: r.no };
+    });
   }
 
   // 檢驗項目與結果：確認完成後就鎖住，要改先移至檢驗區（2026-10-06 Glen）。E 版跟 isLocked 一樣
@@ -1367,19 +1388,33 @@ window.INSP = (function () {
   .pe-clear { clear:both; }
   .pe-banner img { width:60%; display:block; margin:0 0 8px; border:1px solid #dfdfdf; }
   .pe-hint { font-size:13px; color:#888; margin-top:4px; }
-  .pe-box { border:1px solid #dfdfdf; border-radius:4px; padding:12px; margin-top:8px; font-size:14px; line-height:1.7; background:#fafbfb; }
-  .pe-box b { font-weight:700; }
-  .pe-box .ok { color:#28a745; font-weight:700; }
-  .pe-box .off { color:#888; font-weight:700; }
-  .pe-box .cover { color:#212529; font-weight:700; }
-  .pe-box a { color:#4ba83b; }
+  /* 無毒農檢驗報告：上半「前台顯示」、下半原本的上傳（2026-10-08 Glen：左右改上下，整塊只有一個標題）
+     顏色走後台 --admin-* 變數，取自 HuashanCRM/Content/SCSS/Admin/Component/_variables.scss */
+  .pe-now { --admin-success:#67c23a; --admin-primary:#409eff; --admin-danger:#f56c6c; --admin-text:#606266; --admin-text-muted:#909399; --admin-border:#dcdfe6; --admin-radius:4px; }
+  .pe-now { border:1px solid var(--admin-border); border-radius:var(--admin-radius); padding:12px; margin-bottom:12px; font-size:14px; line-height:1.7; color:var(--admin-text); background:#fff; }
+  .pe-now-ttl { font-weight:700; color:#212529; }
+  .pe-now-line { margin-top:4px; }
+  .pe-tag { display:inline-block; padding:0 8px; border-radius:var(--admin-radius); font-size:13px; line-height:22px; border:1px solid; }
+  .pe-tag.is-record { color:var(--admin-success); border-color:var(--admin-success); background:#f0f9eb; }
+  .pe-tag.is-manual { color:var(--admin-primary); border-color:var(--admin-primary); background:#ecf5ff; }
+  .pe-tag.is-off { color:var(--admin-text-muted); border-color:var(--admin-border); background:#f4f4f5; }
+  .pe-now .pe-fail { color:var(--admin-danger); font-weight:700; }
+  .pe-now .pe-muted { color:var(--admin-text-muted); font-size:13px; }
+  .pe-now a { color:var(--admin-primary); margin-right:12px; }
+  /* 沒有顯示檢驗紀錄時：標題右邊的現況標籤＋淺灰說明 */
+  .pe-title-note { --admin-success:#67c23a; --admin-primary:#409eff; --admin-text-muted:#909399; --admin-border:#dcdfe6; --admin-radius:4px; margin-left:8px; font-size:14px; }
+  .pe-title-note:empty { display:none; }
+  .pe-title-note .pe-note-text { margin-left:8px; color:var(--admin-text-muted); font-size:13px; }
   .pe-actions { text-align:right; margin-top:8px; }
   .pe-save { background:#4ba83b; color:#fff; border:0; border-radius:4px; padding:8px 24px; font-size:15px; font-family:inherit; cursor:pointer; }
   .pe-dev { position:fixed; left:16px; bottom:16px; z-index:1500; background:#2b2b2b; color:#fff; border-radius:6px; padding:12px; width:220px; font-size:13px; box-shadow:0 4px 16px rgba(0,0,0,.2); }
   .pe-dev .ttl { color:#aaa; margin-bottom:8px; }
   .pe-dev button { display:block; width:100%; text-align:left; margin-bottom:4px; background:#3a3a3a; color:#fff; border:0; border-radius:4px; padding:6px 8px; font-size:13px; font-family:inherit; cursor:pointer; }
   .pe-dev button.on { background:#4ba83b; }
+  .pe-dev #peReset { margin-top:8px; background:#555; text-align:center; }
   .pe-dev p { color:#aaa; margin:8px 0 0; font-size:12px; line-height:1.5; }
+  .pe-dev .grp { color:#aaa; font-size:12px; margin:8px 0 4px; }
+  .pe-dev .grp:first-child { margin-top:0; }
 </style>
 
 <div class="gox-content-title"><h2 id="peTitle">產品編輯</h2></div>
@@ -1410,22 +1445,25 @@ window.INSP = (function () {
         </div><div class="pe-sub"></div></div>
       </div>
 
-      <!-- 無毒農檢驗報告：這次要改。左邊新加「檢驗紀錄（自動）」，右邊是原本的人工上傳（放在真站原本空著的那半格，不把原本的欄位往下推）；有上傳圖檔就覆蓋檢驗紀錄 -->
+      <!-- 無毒農檢驗報告（2026-10-08 Glen 改版）：
+             前台顯示檢驗紀錄 → 左右排：左邊紀錄資訊框（#peAuto），右邊原本的手動上傳
+             其他情況 → 沒有框，標題右邊一個現況標籤＋淺灰說明（#peTitleNote），下面直接是手動上傳（佔左半格，同第三方檢驗報告）
+           資料來自 IInspectionRecordService.GetEditPageReportStatus（ViewBag.SelfReportStatus）
+           真站對應：Edit18.cshtml 的 .report_banner_self、name="SelfTestReportsCreate"、#Remove-TextReportSelf-Url、#self_test_report_expired_time -->
       <div class="pe-report">
-        <label class="pe-label">無毒農檢驗報告</label>
-        <div class="pe-sub-row">
-        <div class="pe-sub"><div class="pe-box" id="peAuto"></div></div>
-        <div class="pe-sub">
-        <div class="pe-banner" id="peBanner"><!-- 真站 .report_banner_self --></div>
-        <div class="pe-file"><button type="button" id="pePick">選擇檔案</button><span id="peFileName">未選擇任何檔案</span>
-          <input type="file" id="peFile" accept="image/*" multiple hidden><!-- 真站 name="SelfTestReportsCreate" --></div>
-        <button type="button" class="pe-remove" id="peRemove">移除無毒農檢驗報告</button><!-- 真站 #Remove-TextReportSelf-Url → POST /gox/Product/RemoveTextReportSelf -->
-        <div class="pe-clear"></div>
-        <label class="pe-label">無毒農檢驗到期日</label>
-        <input class="pe-input" id="peExp" type="date"><!-- 真站 name="SelfTestReportExpiredTime" #self_test_report_expired_time -->
-        <div class="pe-hint" id="peExpHint"></div>
-        </div>
-        </div>
+        <label class="pe-label">無毒農檢驗報告<span class="pe-title-note" id="peTitleNote"></span></label>
+        <div class="pe-sub-row"><div class="pe-sub" id="peSubA">
+          <div class="pe-now" id="peAuto"></div>
+        </div><div class="pe-sub" id="peSubB"><div id="peUpload">
+          <div class="pe-banner" id="peBanner"><!-- 真站 .report_banner_self --></div>
+          <div class="pe-file"><button type="button" id="pePick">選擇檔案</button><span id="peFileName">未選擇任何檔案</span>
+            <input type="file" id="peFile" accept="image/*" multiple hidden><!-- 真站 name="SelfTestReportsCreate" --></div>
+          <button type="button" class="pe-remove" id="peRemove">移除無毒農檢驗報告</button><!-- 真站 #Remove-TextReportSelf-Url → POST /gox/Product/RemoveTextReportSelf -->
+          <div class="pe-clear"></div>
+          <label class="pe-label">無毒農檢驗到期日</label>
+          <input class="pe-input" id="peExp" type="date"><!-- 真站 name="SelfTestReportExpiredTime" #self_test_report_expired_time -->
+          <div class="pe-hint" id="peExpHint"></div>
+        </div></div></div>
       </div>
     </div>
 
@@ -1438,27 +1476,29 @@ window.INSP = (function () {
 </div>
 
 <div class="pe-dev" id="peDev">
-  <div class="ttl">無毒農檢驗報告的狀態</div>
+  <div class="ttl">前台顯示（切換情境）</div>
   <div id="peStates"></div>
-  <p>跟檢驗紀錄頁共用這台瀏覽器的資料。此面板僅供預覽，正式頁不會有。</p>
+  <button type="button" id="peReset">重設假資料</button>
+  <p>跟檢驗紀錄頁共用這台瀏覽器的資料；在其他頁上架、移除過，情境對不上時按「重設假資料」。此面板僅供預覽，正式頁不會有。</p>
 </div>
 
 <script>
 (function () {
   var qs = new URLSearchParams(location.search);
   // 開發面板切的是「狀態」，每種狀態對到一個剛好是那種情況的假商品
+  // 照上半「前台顯示」的三種標籤分組（2026-10-08 Glen 改版）；每種情況對到一個剛好是那樣的假商品
   var STATES = [
-    ['record', '檢驗紀錄生效中', 28417],
-    ['expired', '現在這份已過期', 31202],
-    ['none', '沒有任何報告', 31201],
-    ['manual', '手動上傳圖檔蓋掉檢驗紀錄', 26812],
-    ['cleared', '手動圖檔刪除後留白', 29572]
+    ['後台檢驗紀錄', '檢驗紀錄上架中', 28417],
+    ['此頁上傳檔案', '沒有檢驗紀錄、只有上傳圖檔', 26813],
+    ['此頁上傳檔案', '上傳圖檔蓋掉檢驗紀錄', 26812],
+    ['不顯示自主檢驗報告', '沒有任何報告', 31201],
+    ['不顯示自主檢驗報告', '檢驗紀錄已過期', 31202],
+    ['不顯示自主檢驗報告', '上傳的檔案已移除', 29572]
   ];
   var pid = +(qs.get('pid') || 28417);
   var pending = null;   // 選了檔案、還沒按儲存
 
   function fmt(d) { return d ? d.replace(/-/g, '/') : ''; }
-  function stateOf(id) { return INSP.currentFor(id).state; }
 
   function render() {
     var p = INSP.product(pid) || INSP.PRODUCTS[0];
@@ -1470,17 +1510,33 @@ window.INSP = (function () {
     document.getElementById('peStore').value = p.type === '冷凍專區' || p.type === '粥寶寶專區' ? '冷凍' : '冷藏';
 
     var c = INSP.currentFor(pid), m = INSP.manualOf(pid), r = c.record;
-    var recTxt = function (x) { return x.no + '・檢驗 ' + fmt(x.inspectDate) + '・有效至 ' + fmt(x.expDate) + (INSP.hasFail(x) ? '・<b style="color:#dc4e43">含不合格</b>' : ''); };
-    var mDate = m ? fmt(new Date(m.at).toISOString().slice(0, 10)) : '';
-    var line = {
-      record: '<span class="ok">生效中</span>　檢驗紀錄 ' + (r ? recTxt(r) : ''),
-      manual: '<span class="ok">生效中</span>　下方手動上傳的圖檔（' + mDate + ' 上傳' + (m && m.exp ? '・有效至 ' + fmt(m.exp) : '') + '）' + (r ? '，蓋掉了檢驗紀錄 ' + r.no : ''),
-      expired: '<span class="off">已過期</span>　現在這份' + (c.manual ? '手動上傳的圖檔在 ' + fmt(c.manual.exp) : '檢驗紀錄 ' + (r ? r.no + ' 在 ' + fmt(r.expDate) : '')) + ' 過期，前台不顯示，也不會改顯示更舊的',
-      cleared: '<span class="off">留白</span>　手動上傳的圖檔在 ' + mDate + ' 刪除，前台不顯示' + (r ? '，也不會改回檢驗紀錄 ' + r.no : '') + '。之後有新的檢驗紀錄上架、或再上傳圖檔才會顯示',
-      none: '<span class="off">沒有</span>　這個商品的條碼沒有顯示於前台的檢驗紀錄，也沒有手動上傳的圖檔'
-    }[c.state];
-    document.getElementById('peAuto').innerHTML = '<div><b>前台現在顯示</b>（新的檢驗紀錄或手動上傳的圖檔，誰比較晚放上去就顯示誰）</div><div>' + line + '</div>'
-      + (c.state === 'record' || c.state === 'manual' ? '<div><a href="product-detail.html?pid=' + pid + '" target="_blank">看前台報告</a>　<a href="admin-inspection-records.html" target="_blank">到檢驗紀錄頁</a></div>' : '');
+    // 前台顯示（2026-10-08 Glen）：一律在「無毒農檢驗報告」標題右邊放現況標籤
+    //   前台顯示檢驗紀錄 → 左右排：左邊框「後台檢驗紀錄」（紀錄編號、檢驗與有效日期、連結），右邊手動上傳
+    //   前台顯示下方檔案 → 不要框、不加說明，手動上傳移到左邊
+    //   前台不顯示自主檢驗報告 → 不要框；過期、移除時標籤後面加一行淺灰原因，都沒有就不加
+    var auto = document.getElementById('peAuto'), note = document.getElementById('peTitleNote'), up = document.getElementById('peUpload');
+    var tag, why = '';
+    if (c.state === 'record') {
+      tag = '<span class="pe-tag is-record">前台顯示檢驗紀錄</span>';
+      auto.innerHTML = '<div class="pe-now-ttl">後台檢驗紀錄</div>'
+        + '<div class="pe-now-line">檢驗紀錄 ' + r.no + '</div>'
+        + '<div class="pe-now-line">檢驗 ' + fmt(r.inspectDate) + '・有效至 ' + fmt(r.expDate) + (INSP.hasFail(r) ? '・<span class="pe-fail">含不合格</span>' : '') + '</div>'
+        + '<div class="pe-now-line"><a href="product-detail.html?pid=' + pid + '" target="_blank">看前台報告</a><a href="admin-inspection-records.html" target="_blank">到檢驗紀錄頁</a></div>';
+      document.getElementById('peSubB').appendChild(up);
+    } else {
+      if (c.state === 'manual') {
+        tag = '<span class="pe-tag is-manual">前台顯示下方檔案</span>';
+      } else {
+        tag = '<span class="pe-tag is-off">前台不顯示自主檢驗報告</span>';
+        why = c.state === 'expired'
+          ? (c.manual ? '上傳的檔案已於 ' + fmt(c.manual.exp) + ' 過期' : '檢驗紀錄 ' + r.no + ' 已於 ' + fmt(r.expDate) + ' 過期')
+          : c.state === 'cleared' ? '上傳的檔案已於 ' + fmt(new Date(m.at).toISOString().slice(0, 10)) + ' 移除' : '';
+      }
+      auto.innerHTML = '';
+      document.getElementById('peSubA').appendChild(up);
+    }
+    note.innerHTML = tag + (why ? '<span class="pe-note-text">' + why + '</span>' : '');
+    auto.style.display = c.state === 'record' ? '' : 'none';
 
     var imgs = pending ? pending : (m ? m.imgs : []);
     document.getElementById('peBanner').innerHTML = imgs.map(function (x) { return '<img src="' + x + '" alt="檢驗報告">'; }).join('');
@@ -1492,8 +1548,7 @@ window.INSP = (function () {
     else if (r && (c.state === 'record' || c.state === 'expired')) { exp.readOnly = true; exp.value = r.expDate; hint.textContent = '跟著檢驗紀錄的有效日期，上架時自動寫入'; }
     else { exp.readOnly = true; exp.value = ''; hint.textContent = c.state === 'cleared' ? '圖檔刪除時一起清空' : ''; }
 
-    var cur = stateOf(pid);
-    document.querySelectorAll('#peStates button').forEach(function (b) { b.classList.toggle('on', b.dataset.s === cur); });
+    document.querySelectorAll('#peStates button').forEach(function (b) { b.classList.toggle('on', +b.dataset.pid === pid); });
   }
 
   document.getElementById('pePick').onclick = function () { document.getElementById('peFile').click(); };
@@ -1527,10 +1582,15 @@ window.INSP = (function () {
 
   var box = document.getElementById('peStates');
   STATES.forEach(function (st) {
-    var b = document.createElement('button'); b.type = 'button'; b.dataset.s = st[0]; b.textContent = st[1];
+    if (!box.querySelector('[data-group="' + st[0] + '"]')) {
+      var g = document.createElement('div'); g.className = 'grp'; g.dataset.group = st[0]; g.textContent = st[0];
+      box.appendChild(g);
+    }
+    var b = document.createElement('button'); b.type = 'button'; b.dataset.pid = st[2]; b.textContent = st[1];
     b.onclick = function () { pid = st[2]; pending = null; history.replaceState(null, '', '?pid=' + pid); render(); };
     box.appendChild(b);
   });
+  document.getElementById('peReset').onclick = function () { pending = null; INSP.setScenario('normal'); render(); };
   window.addEventListener('insp-change', render);
   render();
 })();
