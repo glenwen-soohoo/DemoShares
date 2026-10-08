@@ -855,7 +855,13 @@ a:hover { text-decoration: underline; }
   // pairs：配對（待新建 ProductAddOnMapping）。a→ProductAddOnId、m→ProductId、on→IsOnShelf(配對層上下架，兩層狀態的內層)
   var pairs=[ {a:99753,m:40894,on:true},{a:99753,m:55210,on:true},{a:99753,m:61120,on:false},
               {a:101509,m:40894,on:true},{a:36007,m:40894,on:true} ];
-  var view={type:'addon', id:99753};
+  // 初始視角依列表帶的 URL 參數（?view=addon|main&id=…）；無效或缺省時 fallback 預設加購品視角
+  var view=(function(){
+    var p=new URLSearchParams(location.search), t=p.get('view'), id=Number(p.get('id'));
+    if(t==='main' && MAINS[id]) return {type:'main', id:id};
+    if(t==='addon' && ADDONS[id]) return {type:'addon', id:id};
+    return {type:'addon', id:99753};
+  })();
 
   // v2：加購價＝加購規格自己的 price，營運直接填，無折扣/倍率計算。
   function mainsOf(aid){ return pairs.filter(function(p){return p.a==aid;}); }

@@ -933,7 +933,7 @@ a:hover { text-decoration: underline; }
         + '<td class="al-line">'+period+' <span class="as-eff '+st.c+'">'+st.t+'</span></td><td class="cell-center">'+a.mains+'</td>'
         + stockCell(a.stock)
         + '<td class="cell-center"><span class="gox-switch '+(a.on?'is-on':'')+'" data-on-addon="'+a.id+'"></span></td>'
-        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">編輯</a></td></tr>';
+        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html?view=addon&id='+a.id+'">編輯</a></td></tr>';
     }).join('') || '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的加購品</td></tr>';
     var lm = MAINS.filter(function(m){ return (line==='all'||m.line===line) && match(m.name,m.id); });
     document.getElementById('al-main-body').innerHTML = lm.map(function(m){
@@ -941,7 +941,7 @@ a:hover { text-decoration: underline; }
         + '<td class="cell-center">'+m.addons+'</td>'
         + stockCell(m.stock)
         + '<td class="cell-center"><span class="gox-switch '+(m.on?'is-on':'')+'" data-on-main="'+m.id+'"></span></td>'
-        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html">設定</a></td></tr>';
+        + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html?view=main&id='+m.id+'">設定</a></td></tr>';
     }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的主商品</td></tr>';
     var active = document.querySelector('[data-tab-panel]:not([hidden])');
     var isAddon = active && active.getAttribute('data-tab-panel')==='byaddon';
