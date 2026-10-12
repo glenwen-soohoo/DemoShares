@@ -26,7 +26,10 @@
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-/* 外殼與 app-member-profile.html 同一份，值全部取自 fruit_app */
+/* 外殼與 app-member-profile.html 同一份，值全部取自 fruit_app
+   底色 #4BA83B theme.primary（MemberSettingScreen 根 View，不是 bgColor）
+   主按鈕 可按 #FF4444 / 不可按 #C6C6C6（MemberSettingScreen.tsx:51）
+   錯誤與必填星號 #FF0000，跟 app 一致（ProductCard / BottomTab 等） */
 * , *::before, *::after { box-sizing: border-box; }
 
 body {
@@ -52,7 +55,7 @@ body {
 .phone {
   position: relative;
   width: 375px; height: 812px;
-  background: #F2F2F2;
+  background: #4BA83B;
   border-radius: 32px;
   overflow: hidden;
   box-shadow: 0 8px 28px rgba(0,0,0,.16);
@@ -128,8 +131,8 @@ body {
   font-family: inherit; font-size: 18px; line-height: 21px; font-weight: 600;
   cursor: pointer; width: 100%;
 }
-.btn-primary { background: #4BA83B; color: #fff; }
-.btn-primary:active { background: #3f8f32; }
+.btn-primary { background: #FF4444; color: #fff; }
+.btn-primary:disabled { background: #C6C6C6; cursor: default; }
 .btn-ghost { background: #E4E7E5; color: #3a3f3b; }
 .btn-card { margin: 16px; width: calc(100% - 32px); }
 

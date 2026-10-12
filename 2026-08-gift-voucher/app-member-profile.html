@@ -36,13 +36,15 @@
    App demo 的共用外殼，與 app-member.html / app-baby-register.html 同一份。
    色票與尺寸全部取自 fruit_app 的真實值，不要自己改：
      theme.primary  #4BA83B   src/utils/constant.ts
-     theme.bgColor  #F2F2F2
+     theme.bgColor  #F2F2F2   注意：這支畫面的底色用 primary，不是 bgColor
      次要灰         #8A8A8E   fontCardRight
      分隔線         #C6C6C8   topBorder（0.5）
      卡片圓角       20        containerCard
      列高           44        containerCardTitle
      列字級         17/22     fontCardTitle / fontCardRight
      按鈕           圓角 20、高 40、字 18/21 600   containerButton / fontButton
+     按鈕可按       #FF4444  MemberSettingScreen.tsx:51（硬寫，不等於 theme.red #FF4040）
+     按鈕不可按     #C6C6C6  同上，isChange 為 false 時
    ────────────────────────────────────────────────────────────── */
 
 * , *::before, *::after { box-sizing: border-box; }
@@ -70,7 +72,7 @@ body {
 .phone {
   position: relative;
   width: 375px; height: 812px;
-  background: #F2F2F2;
+  background: #4BA83B;
   border-radius: 32px;
   overflow: hidden;
   box-shadow: 0 8px 28px rgba(0,0,0,.16);
@@ -141,8 +143,9 @@ body {
   font-family: inherit; font-size: 18px; line-height: 21px; font-weight: 600;
   cursor: pointer; width: 100%;
 }
-.btn-primary { background: #4BA83B; color: #fff; }
-.btn-primary:active { background: #3f8f32; }
+.btn-primary { background: #FF4444; color: #fff; }
+/* 沒改過任何欄位就不能按。真實畫面沒有按下去變色的樣式，Pressable 只有 disabled */
+.btn-primary:disabled { background: #C6C6C6; cursor: default; }
 </style>
 </head>
 <body>
@@ -172,7 +175,7 @@ body {
             <div class="row"><span class="t">載具號碼</span><span class="v is-set">/AB12CD3</span></div>
             <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
           </div>
-          <button type="button" class="btn btn-primary">儲存</button>
+          <button type="button" class="btn btn-primary" disabled>儲存</button>
         </div>
       </div>
     </div>
@@ -195,7 +198,7 @@ body {
             <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
           </div>
 
-          <button type="button" class="btn btn-primary">儲存</button>
+          <button type="button" class="btn btn-primary" disabled>儲存</button>
 
           <div class="card card-apart">
             <div class="card-t"><h3>寶寶資料</h3><span class="count">已登錄 0 / 3 位</span></div>
@@ -223,7 +226,7 @@ body {
             <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
           </div>
 
-          <button type="button" class="btn btn-primary">儲存</button>
+          <button type="button" class="btn btn-primary" disabled>儲存</button>
 
           <div class="card card-apart">
             <div class="card-t"><h3>寶寶資料</h3><span class="count">已登錄 2 / 3 位</span></div>
@@ -253,7 +256,7 @@ body {
             <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
           </div>
 
-          <button type="button" class="btn btn-primary">儲存</button>
+          <button type="button" class="btn btn-primary" disabled>儲存</button>
 
           <!-- 滿 3 位之後「登錄寶寶資料」整列收起來，改成提示。
                留著讓人點進去再看到「不能再加」是多走一趟。 -->
