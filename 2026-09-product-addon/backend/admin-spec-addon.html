@@ -24,7 +24,7 @@
     禮物上架 presentActive→PresentItem.IsActive（＝可否兌換，禮物規格的「上架」綁這個不是 Display）
     禮物原價 presentPrice→PresentDisplayPrice（刪除線價、可留空沿用、有銷量照改，實收 0）
     國際條碼 barcodes[{code,qty}]→（BarcodeSettings，EAN-13 13碼＋數量，須存在庫存表）
-    分頁 tab：all 全部規格 / onshelf 上架中 / offshelf 下架中 / special 贈品與禮物（上下架分頁只收一般規格）
+    分頁 tab：all 全部規格 / onshelf 上架中 / offshelf 下架中 / special 贈品與禮物 / addon 加購品（上下架分頁只收前台一般規格；加購品＝勾選後前台隱藏、有價非零，自成一分頁與紫卡）
   本頁「加購」新增部分（正式站還沒有，待新建；Q6 定案＝只勾選＋跳轉，不內嵌加購設定）：
     作為產品頁加購品 勾選欄 addon → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）。勾選後此規格前台隱藏（ProductDetail.hide）、且與滿額/限購、特殊品類、設為贈品(IsGift)互斥
     前往加購設定   跳轉鈕 → admin-addon-setting.html（路徑一）；加購價與掛載主商品都在那頁管理（同一份資料）
@@ -739,9 +739,10 @@ a:hover { text-decoration: underline; }
              productDetailSettings/ProductDetailSettings.tsx
      ── ConfigProvider 只帶 locale，沒帶 theme，所以 antd 走預設藍 #1677ff
      ── Tailwind class 一一對應：bg-[#28A745] / rounded-t-lg / grid-cols-10 …
-     ── 2026-10-07 比照禮物券(DEV-3963)＋國際條碼(DEV-3869)上線版更新：
-        · 分頁改 4 個：全部規格／上架中／下架中／贈品與禮物（上下架分頁只收一般規格、排除贈品禮物）
-        · 三色卡片：一般綠／贈品藍(IsGift)／禮物橘(IsPresentItem)
+     ── 2026-10-07 比照禮物券(DEV-3963)＋國際條碼(DEV-3869)上線版更新；2026-10-12 加「加購品」分類：
+        · 分頁 5 個：全部規格／上架中／下架中／贈品與禮物／加購品（上下架分頁只收前台一般規格、排除贈品/禮物/加購品）
+        · 四色卡片：一般綠／贈品藍(IsGift)／禮物橘(IsPresentItem)／加購品紫（勾「作為產品頁加購品」）
+          加購品自成一類的理由：有價(非零，不同於贈品)又前台隱藏(不同於一般規格)
         · 禮物規格列：綠框「禮物規格」標籤取代「設為贈品」勾選＋三行說明；上架綁 IsPresentActive(可否兌換)；
           產品原價改編刪除線價(presentPrice，可留空、有銷量照改)；不給複製／刪除
         · 每列尾端新增「國際條碼」黃底區塊（收合摘要＋展開增刪，13 碼 EAN-13）
@@ -770,11 +771,12 @@ a:hover { text-decoration: underline; }
   .ps-tab.is-on { background: #254000; color: #fff; font-weight: 700; }
 
   /* ── 規格列：mt-4 rounded-lg border-2 border-solid p-4 ── */
-  /* 卡片底色：一般綠／贈品藍／禮物橘。⚠ class 名對照：is-bonus＝贈品(IsGift)、is-gift＝禮物規格(IsPresentItem)
+  /* 卡片底色：一般綠／贈品藍／禮物橘／加購品紫。⚠ class 名對照：is-bonus＝贈品(IsGift)、is-gift＝禮物規格(IsPresentItem)、is-addon＝加購品(勾選)
      （沿用既有命名，勿望文生義——is-gift 是「禮物」不是「贈品」） */
   .ps-row { margin-top: 16px; border-radius: 8px; border: 2px solid #16a34a; background: #dcfce7; padding: 16px; }
   .ps-row.is-bonus { border-color: #3b82f6; background: #dbeafe; }   /* 贈品 IsGift */
   .ps-row.is-gift  { border-color: #f59e0b; background: #fef3c7; }   /* 禮物規格 IsPresentItem */
+  .ps-row.is-addon { border-color: #8b5cf6; background: #f5f3ff; }   /* 加購品（勾「作為產品頁加購品」） */
   .ps-inner { display: flex; gap: 12px; }
   .ps-mid { flex: 1 1 auto; min-width: 0; }
 
@@ -950,6 +952,7 @@ a:hover { text-decoration: underline; }
       <button type="button" class="ps-tab is-on" data-tab="onshelf">上架中</button>
       <button type="button" class="ps-tab" data-tab="offshelf">下架中</button>
       <button type="button" class="ps-tab" data-tab="special">贈品與禮物</button>
+      <button type="button" class="ps-tab" data-tab="addon">加購品</button>
     </div>
   </div>
 
@@ -1053,13 +1056,16 @@ a:hover { text-decoration: underline; }
   }
   // 禮物／贈品＝特殊規格，不混進上下架分頁（價格/限制欄位是鎖住的）
   function isSpecial(s) { return s.kind === 'gift' || s.kind === 'present'; }
+  // 加購品＝一般規格勾了「作為產品頁加購品」：前台隱藏、但有價（非零），自成一類、不進上下架前台分頁
+  function isAddonSpec(s) { return s.kind === 'normal' && !!s.addon; }
   // 上架判斷：禮物規格看「可否兌換」(presentActive＝PresentItem.IsActive)，其餘看 Display
   function isOnShelf(s) { return s.kind === 'present' ? !!s.presentActive : !!s.display; }
   function visible(s) {
     if (tab === 'all') return true;                          // 全部規格
     if (tab === 'special') return isSpecial(s);              // 贈品與禮物
-    if (tab === 'onshelf') return !isSpecial(s) && isOnShelf(s);   // 上架中（只收一般規格）
-    if (tab === 'offshelf') return !isSpecial(s) && !isOnShelf(s); // 下架中（只收一般規格）
+    if (tab === 'addon') return isAddonSpec(s);              // 加購品（前台隱藏、有價）
+    if (tab === 'onshelf') return !isSpecial(s) && !isAddonSpec(s) && isOnShelf(s);   // 上架中（只收前台一般規格）
+    if (tab === 'offshelf') return !isSpecial(s) && !isAddonSpec(s) && !isOnShelf(s); // 下架中（只收前台一般規格）
     return true;
   }
 
@@ -1135,8 +1141,8 @@ a:hover { text-decoration: underline; }
     var isPresent = s.kind === 'present';  // 禮物規格（IsPresentItem，橘卡）
     var lock = isGift || isPresent;        // 贈品／禮物：價格與規格限制欄位鎖住
     var soldLock = s.sold > 0;             // 現況：有銷量的規格，原價／優惠價變唯讀文字
-    // ⚠ class 對照：贈品(isGift)→is-bonus(藍)、禮物(isPresent)→is-gift(橘)。is-gift 是禮物不是贈品，勿望文生義。
-    var cls = 'ps-row' + (isGift ? ' is-bonus' : isPresent ? ' is-gift' : '');
+    // ⚠ class 對照：贈品(isGift)→is-bonus(藍)、禮物(isPresent)→is-gift(橘)、加購品(勾選)→is-addon(紫)。is-gift 是禮物不是贈品，勿望文生義。
+    var cls = 'ps-row' + (isGift ? ' is-bonus' : isPresent ? ' is-gift' : (s.addon ? ' is-addon' : ''));
 
     var h = '<div class="' + cls + '" data-row="' + i + '"><div class="ps-inner">';
 
