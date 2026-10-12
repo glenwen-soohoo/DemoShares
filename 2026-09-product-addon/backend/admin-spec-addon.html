@@ -382,7 +382,8 @@ a:hover { text-decoration: underline; }
   font-weight: 600;
   color: var(--gox-text);
 }
-/* 「禮物規格」身分標籤：唯讀，取代原本的「設為禮物」勾選框 */
+/* 「禮物規格」身分標籤：唯讀。禮物規格身分來自後端 IsPresentItem，不是勾出來的；
+   此標籤顯示在禮物列的「規格限制」區，取代該列的「設為贈品」勾選（見 rowHtml） */
 .gift-badge {
   display: inline-block;
   background: #EFF5E5;
@@ -769,9 +770,11 @@ a:hover { text-decoration: underline; }
   .ps-tab.is-on { background: #254000; color: #fff; font-weight: 700; }
 
   /* ── 規格列：mt-4 rounded-lg border-2 border-solid p-4 ── */
+  /* 卡片底色：一般綠／贈品藍／禮物橘。⚠ class 名對照：is-bonus＝贈品(IsGift)、is-gift＝禮物規格(IsPresentItem)
+     （沿用既有命名，勿望文生義——is-gift 是「禮物」不是「贈品」） */
   .ps-row { margin-top: 16px; border-radius: 8px; border: 2px solid #16a34a; background: #dcfce7; padding: 16px; }
-  .ps-row.is-bonus { border-color: #3b82f6; background: #dbeafe; }
-  .ps-row.is-gift  { border-color: #f59e0b; background: #fef3c7; }
+  .ps-row.is-bonus { border-color: #3b82f6; background: #dbeafe; }   /* 贈品 IsGift */
+  .ps-row.is-gift  { border-color: #f59e0b; background: #fef3c7; }   /* 禮物規格 IsPresentItem */
   .ps-inner { display: flex; gap: 12px; }
   .ps-mid { flex: 1 1 auto; min-width: 0; }
 
@@ -1132,6 +1135,7 @@ a:hover { text-decoration: underline; }
     var isPresent = s.kind === 'present';  // 禮物規格（IsPresentItem，橘卡）
     var lock = isGift || isPresent;        // 贈品／禮物：價格與規格限制欄位鎖住
     var soldLock = s.sold > 0;             // 現況：有銷量的規格，原價／優惠價變唯讀文字
+    // ⚠ class 對照：贈品(isGift)→is-bonus(藍)、禮物(isPresent)→is-gift(橘)。is-gift 是禮物不是贈品，勿望文生義。
     var cls = 'ps-row' + (isGift ? ' is-bonus' : isPresent ? ' is-gift' : '');
 
     var h = '<div class="' + cls + '" data-row="' + i + '"><div class="ps-inner">';
