@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | 全家核帳檔匯出 demo・portal 入口
+  portal 無對應正式站 view（純 demo 索引頁，工程不需照抄）。
+  連到的子頁：admin-fami-report.html（對應正式站 /GoX/Setting/FamiReport）
+-->
+<meta charset="UTF-8">
+<title>全家核帳檔匯出 demo 索引</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; padding:56px 20px; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;
+        font-size:16px; line-height:1.7; color:#1a1a1a; background:#fafbfb; }
+  .wrap{ max-width:960px; margin:0 auto; }
+  h1{ font-size:30px; margin:0 0 4px; color:#4ba83b; }
+  .sub{ color:#999; font-size:14px; margin:0 0 32px; }
+
+  .side{ margin-bottom:40px; }
+  .side>h2{ font-size:20px; font-weight:700; color:#1a1a1a; margin:0 0 16px; padding-left:12px; border-left:4px solid #4ba83b; }
+
+  .entries{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width:760px){ .entries{ grid-template-columns:1fr; } }
+
+  .entry{ display:flex; flex-direction:column; background:#fff; border:1px solid #e0e4e6; border-radius:4px;
+          padding:20px; text-decoration:none; color:inherit; transition:border-color .15s, box-shadow .15s, transform .15s; }
+  .entry.ready:hover{ border-color:#4ba83b; box-shadow:0 4px 14px rgba(0,0,0,.08); transform:translateY(-2px); }
+  .entry .name{ font-size:16px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+  .entry.ready .name{ color:#4ba83b; }
+  .entry .desc{ font-size:13px; color:#595757; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>全家核帳檔匯出・demo</h1>
+  <p class="sub">2026-10</p>
+
+  <div class="side">
+    <h2>後台</h2>
+    <div class="entries">
+      <a class="entry ready" href="admin-fami-report.html">
+        <span class="name">全家核帳檔匯出｜月份總計與 Excel</span>
+        <span class="desc">選月份後顯示代收、運費、全家實付與各狀況包數，可下載新格式 Excel，金額為假資料。</span>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
