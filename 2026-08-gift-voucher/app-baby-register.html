@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | App 登錄寶寶資料
+  真相來源：D:\GreenBox\fruit_app（App）／fruit_web 分支 feature/DEV-3963-gift-voucher-module
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應 App：
+    screen : **待新建**。入口在 MemberSettingScreen 的寶寶資料卡（demo 是 app-member-profile.html）
+             換頁方式比照同頁「更改密碼」那一列：Pressable ⇒ navigation.navigate(...)
+    後端   : MemberBaby（新表）。一位寶寶一筆，送出一筆就寫一筆，不要批次送三筆
+  規則與 web 版（member-baby-profile-b.html）完全同一套，見 03 的第二節：
+    小名必填、生日必填且不可為未來日期、上限 3 位、送出後不可自行修改
+
+  ⚠ 生日用 react-native-date-picker 的 modal，不是輸入框，比照
+    MemberSettingScreen 現行那一列（Pressable ⇒ setIsDatePickerOpen(true)）。
+    maximumDate 要設當天，送出時那一關仍要留著，兩道都要。
+
+  ⚠ 一次只填一位。送出之後那一筆變成上面的唯讀列，表單清空等下一位，
+    不要做成「同時展開三組欄位」——那樣會讓人以為要全部填完才送得出去。
+
+  完整名稱對照見同資料夾 _交接對照.md 的 M-1
+-->
+<meta charset="UTF-8">
+<title>App 登錄寶寶資料 — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* 外殼與 app-member-profile.html 同一份，值全部取自 fruit_app */
+* , *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 32px 16px 48px;
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: #e6e9e7;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage { max-width: 1320px; margin: 0 auto; }
+
+.stage-head { text-align: center; margin-bottom: 20px; }
+.stage-head h1 { font-size: 22px; margin: 0 0 4px; color: #008000; }
+.stage-head p { margin: 0; font-size: 14px; color: #6b706c; }
+.stage-head a { color: #008000; }
+
+.phones { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; }
+.phone-wrap { width: 375px; }
+.phone-label { text-align: center; font-size: 14px; color: #4a4f4b; margin-bottom: 8px; font-weight: 700; }
+
+.phone {
+  position: relative;
+  width: 375px; height: 812px;
+  background: #F2F2F2;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  display: flex; flex-direction: column;
+}
+
+.st-bar {
+  height: 28px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; font-size: 12px; font-weight: 600; flex: 0 0 auto;
+}
+
+.app-head {
+  height: 48px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; padding: 0 8px; flex: 0 0 auto;
+}
+.app-head .back {
+  width: 32px; height: 32px; border: 0; background: none; color: #fff;
+  font-size: 22px; line-height: 1; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+}
+.app-head h2 { flex: 1; margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
+.app-head .head-pad { width: 32px; }
+
+.app-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 16px 24px; }
+.app-body::-webkit-scrollbar { width: 0; }
+
+.card { background: #fff; border-radius: 20px; overflow: hidden; margin-top: 8px; }
+
+.card-t {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 8px;
+}
+.card-t h3 { margin: 0; font-size: 15px; font-weight: 600; color: #3a3f3b; }
+.card-t .count { font-size: 13px; color: #8A8A8E; }
+
+.row {
+  height: 44px; margin: 0 16px; padding-right: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.row + .row, .card-t + .row { border-top: 0.5px solid #C6C6C8; }
+.row .t { font-size: 17px; line-height: 22px; color: #1a1a1a; }
+.row .t b { color: #FF0000; font-weight: 400; margin-left: 2px; }
+.row .v { font-size: 17px; line-height: 22px; color: #8A8A8E; text-align: right;
+          display: flex; align-items: center; gap: 4px; }
+.row .v svg { width: 18px; height: 18px; fill: none; stroke: #8A8A8E; stroke-width: 2; }
+.row input {
+  font-family: inherit; font-size: 17px; line-height: 22px; color: #8A8A8E;
+  text-align: right; border: 0; background: none; padding: 0; width: 180px; outline: none;
+}
+.row input::placeholder { color: #C6C6C8; }
+.row input.is-filled { color: #1a1a1a; }
+.row.is-tap { cursor: pointer; }
+.row .v.is-set { color: #1a1a1a; }
+.row.is-saved .t { font-weight: 600; }
+
+/* 頁首提示：這一頁最重要的一句話，所以放在最上面、不是塞在送出鈕旁邊 */
+.lead {
+  background: #fff; border-radius: 20px; margin-top: 8px;
+  padding: 16px; font-size: 14px; line-height: 1.7; color: #3a3f3b;
+}
+.lead b { color: #1a1a1a; }
+
+.err { margin: 0 16px; padding: 8px 0 0; font-size: 13px; color: #FF0000; display: none; }
+.err.is-on { display: block; }
+
+.note { margin: 0 16px; padding: 12px 0 16px; font-size: 14px; line-height: 1.6; color: #8A8A8E; }
+.note.is-top { border-top: 0.5px solid #C6C6C8; padding-top: 12px; }
+
+.btn {
+  display: flex; align-items: center; justify-content: center;
+  height: 40px; margin: 16px 0 0; border: 0; border-radius: 20px;
+  font-family: inherit; font-size: 18px; line-height: 21px; font-weight: 600;
+  cursor: pointer; width: 100%;
+}
+.btn-primary { background: #4BA83B; color: #fff; }
+.btn-primary:active { background: #3f8f32; }
+.btn-ghost { background: #E4E7E5; color: #3a3f3b; }
+.btn-card { margin: 16px; width: calc(100% - 32px); }
+
+.mask {
+  position: absolute; inset: 0; background: rgba(0,0,0,.45);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+  z-index: 20;
+}
+.mask.is-open { display: flex; }
+.sheet {
+  width: 100%; background: #fff; border-radius: 20px; overflow: hidden;
+  max-height: 100%; display: flex; flex-direction: column;
+}
+.sheet-head {
+  background: #4BA83B; color: #fff; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sheet-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.sheet-head button { background: none; border: 0; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; }
+.sheet-body { padding: 16px; overflow-y: auto; }
+.sheet-foot { padding: 0 16px 16px; display: flex; gap: 8px; }
+.sheet-foot .btn { margin: 0; }
+
+.cfm { margin: 0 0 12px; }
+.cfm div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid #C6C6C8; }
+.cfm dt { font-size: 15px; color: #8A8A8E; margin: 0; }
+.cfm dd { font-size: 15px; color: #1a1a1a; margin: 0; font-weight: 600; }
+.cfm-note { margin: 0; font-size: 13px; color: #FF0000; line-height: 1.6; }
+
+/* 真機是 react-native-date-picker 的滾輪，demo 用原生日期輸入代替 */
+.datepick { width: 100%; font-family: inherit; font-size: 17px; padding: 10px 12px;
+            border: 1px solid #C6C6C8; border-radius: 8px; color: #1a1a1a; }
+
+.toast {
+  position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%);
+  background: rgba(0,0,0,.82); color: #fff; font-size: 14px;
+  padding: 8px 16px; border-radius: 20px; opacity: 0;
+  transition: opacity .18s; pointer-events: none; z-index: 30; max-width: 88%;
+  text-align: center;
+}
+.toast.is-on { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="stage-head">
+    <h1>App 登錄寶寶資料</h1>
+    <p>一次填一位，送出就定案。從 <a href="app-member-profile.html">會員資料設定</a> 的寶寶資料卡進來。<a href="index.html">回索引</a></p>
+  </div>
+
+  <div class="phones">
+
+    <!-- ① 還沒登錄 -->
+    <div class="phone-wrap">
+      <div class="phone-label">還沒登錄</div>
+      <div class="phone" id="p1">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><a class="back" href="app-member-profile.html">‹</a><h2>登錄寶寶資料</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="lead">
+            <b>登錄後不可自行修改。</b><br>
+            需修改或登錄超過三位寶寶，請洽客服。
+          </div>
+
+          <div class="card">
+            <div class="card-t"><h3>已登錄的寶寶</h3><span class="count" id="c1">0 / 3 位</span></div>
+            <div id="list1"></div>
+            <div class="note" id="empty1">還沒有登錄的寶寶。</div>
+          </div>
+
+          <div class="card" id="form1">
+            <div class="card-t"><h3>新增寶寶</h3></div>
+            <div class="row">
+              <span class="t">寶寶小名<b>*</b></span>
+              <input id="nick1" type="text" placeholder="例：小豆" maxlength="10">
+            </div>
+            <div class="row is-tap" id="bdrow1">
+              <span class="t">寶寶生日<b>*</b></span>
+              <span class="v" id="bdval1">請選擇<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+            </div>
+            <div class="err" id="err1"></div>
+            <button type="button" class="btn btn-primary btn-card" id="sub1">送出</button>
+          </div>
+
+          <div class="card" id="full1" style="display:none;">
+            <div class="note">已登錄 3 位寶寶，達到上限。</div>
+          </div>
+        </div>
+
+        <div class="mask" id="dp1">
+          <div class="sheet">
+            <div class="sheet-head"><h3>寶寶生日</h3><button type="button" data-close>×</button></div>
+            <div class="sheet-body"><input type="date" class="datepick" id="dpin1"></div>
+            <div class="sheet-foot">
+              <button type="button" class="btn btn-ghost" data-close>取消</button>
+              <button type="button" class="btn btn-primary" id="dpok1">確定</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mask" id="cf1">
+          <div class="sheet">
+            <div class="sheet-head"><h3>確認寶寶資料</h3><button type="button" data-close>×</button></div>
+            <div class="sheet-body">
+              <div class="cfm">
+                <div><dt>小名</dt><dd id="cn1"></dd></div>
+                <div><dt>生日</dt><dd id="cb1"></dd></div>
+              </div>
+              <p class="cfm-note">送出後不可自行修改，請再確認一次生日。</p>
+            </div>
+            <div class="sheet-foot">
+              <button type="button" class="btn btn-ghost" data-close>再看一下</button>
+              <button type="button" class="btn btn-primary" id="cfok1">確認送出</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toast" id="t1"></div>
+      </div>
+    </div>
+
+    <!-- ② 已登錄 2 位 -->
+    <div class="phone-wrap">
+      <div class="phone-label">已登錄 2 位，還能再加 1 位</div>
+      <div class="phone" id="p2">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><a class="back" href="app-member-profile.html">‹</a><h2>登錄寶寶資料</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="lead">
+            <b>登錄後不可自行修改。</b><br>
+            需修改或登錄超過三位寶寶，請洽客服。
+          </div>
+
+          <div class="card">
+            <div class="card-t"><h3>已登錄的寶寶</h3><span class="count" id="c2">2 / 3 位</span></div>
+            <div id="list2"></div>
+            <div class="note" id="empty2" style="display:none;">還沒有登錄的寶寶。</div>
+          </div>
+
+          <div class="card" id="form2">
+            <div class="card-t"><h3>新增寶寶</h3></div>
+            <div class="row">
+              <span class="t">寶寶小名<b>*</b></span>
+              <input id="nick2" type="text" placeholder="例：小豆" maxlength="10">
+            </div>
+            <div class="row is-tap" id="bdrow2">
+              <span class="t">寶寶生日<b>*</b></span>
+              <span class="v" id="bdval2">請選擇<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+            </div>
+            <div class="err" id="err2"></div>
+            <button type="button" class="btn btn-primary btn-card" id="sub2">送出</button>
+          </div>
+
+          <div class="card" id="full2" style="display:none;">
+            <div class="note">已登錄 3 位寶寶，達到上限。</div>
+          </div>
+        </div>
+
+        <div class="mask" id="dp2">
+          <div class="sheet">
+            <div class="sheet-head"><h3>寶寶生日</h3><button type="button" data-close>×</button></div>
+            <div class="sheet-body"><input type="date" class="datepick" id="dpin2"></div>
+            <div class="sheet-foot">
+              <button type="button" class="btn btn-ghost" data-close>取消</button>
+              <button type="button" class="btn btn-primary" id="dpok2">確定</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mask" id="cf2">
+          <div class="sheet">
+            <div class="sheet-head"><h3>確認寶寶資料</h3><button type="button" data-close>×</button></div>
+            <div class="sheet-body">
+              <div class="cfm">
+                <div><dt>小名</dt><dd id="cn2"></dd></div>
+                <div><dt>生日</dt><dd id="cb2"></dd></div>
+              </div>
+              <p class="cfm-note">送出後不可自行修改，請再確認一次生日。</p>
+            </div>
+            <div class="sheet-foot">
+              <button type="button" class="btn btn-ghost" data-close>再看一下</button>
+              <button type="button" class="btn btn-primary" id="cfok2">確認送出</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toast" id="t2"></div>
+      </div>
+    </div>
+
+    <!-- ③ 三位都登錄完 -->
+    <div class="phone-wrap">
+      <div class="phone-label">三位都登錄完</div>
+      <div class="phone" id="p3">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><a class="back" href="app-member-profile.html">‹</a><h2>登錄寶寶資料</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="lead">
+            <b>登錄後不可自行修改。</b><br>
+            需修改或登錄超過三位寶寶，請洽客服。
+          </div>
+
+          <div class="card">
+            <div class="card-t"><h3>已登錄的寶寶</h3><span class="count" id="c3">3 / 3 位</span></div>
+            <div id="list3"></div>
+            <div class="note" id="empty3" style="display:none;">還沒有登錄的寶寶。</div>
+          </div>
+
+          <div class="card" id="form3" style="display:none;">
+            <div class="card-t"><h3>新增寶寶</h3></div>
+            <div class="row">
+              <span class="t">寶寶小名<b>*</b></span>
+              <input id="nick3" type="text" placeholder="例：小豆" maxlength="10">
+            </div>
+            <div class="row is-tap" id="bdrow3">
+              <span class="t">寶寶生日<b>*</b></span>
+              <span class="v" id="bdval3">請選擇<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+            </div>
+            <div class="err" id="err3"></div>
+            <button type="button" class="btn btn-primary btn-card" id="sub3">送出</button>
+          </div>
+
+          <div class="card" id="full3">
+            <div class="note">已登錄 3 位寶寶，達到上限。</div>
+          </div>
+        </div>
+
+        <div class="mask" id="dp3">
+          <div class="sheet">
+            <div class="sheet-head"><h3>寶寶生日</h3><button type="button" data-close>×</button></div>
+            <div class="sheet-body"><input type="date" class="datepick" id="dpin3"></div>
+            <div class="sheet-foot">
+              <button type="button" class="btn btn-ghost" data-close>取消</button>
+              <button type="button" class="btn btn-primary" id="dpok3">確定</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mask" id="cf3">
+          <div class="sheet">
+            <div class="sheet-head"><h3>確認寶寶資料</h3><button type="button" data-close>×</button></div>
+            <div class="sheet-body">
+              <div class="cfm">
+                <div><dt>小名</dt><dd id="cn3"></dd></div>
+                <div><dt>生日</dt><dd id="cb3"></dd></div>
+              </div>
+              <p class="cfm-note">送出後不可自行修改，請再確認一次生日。</p>
+            </div>
+            <div class="sheet-foot">
+              <button type="button" class="btn btn-ghost" data-close>再看一下</button>
+              <button type="button" class="btn btn-primary" id="cfok3">確認送出</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toast" id="t3"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MAX = 3;   // 前台擋 3 筆，第四位以上洽客服（03 的第二節）
+
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  // 一支機身一份狀態
+  function wire(n, seed) {
+    var babies = seed.slice();
+    var pickedBd = '';
+
+    function $(id) { return document.getElementById(id + n); }
+
+    function toast(msg) {
+      var t = $('t');
+      t.textContent = msg;
+      t.classList.add('is-on');
+      setTimeout(function () { t.classList.remove('is-on'); }, 2000);
+    }
+
+    function render() {
+      // 已登錄的是唯讀列：送出後不可自行修改，所以不給 chevron、點不動
+      $('list').innerHTML = babies.map(function (b) {
+        return '<div class="row is-saved"><span class="t">' + esc(b.nick) + '</span>' +
+               '<span class="v">生日 ' + esc(b.bd) + '</span></div>';
+      }).join('');
+      $('c').textContent = babies.length + ' / ' + MAX + ' 位';
+      $('empty').style.display = babies.length ? 'none' : '';
+      var full = babies.length >= MAX;
+      $('form').style.display = full ? 'none' : '';
+      $('full').style.display = full ? '' : 'none';
+    }
+
+    function clearErr() { $('err').classList.remove('is-on'); }
+    function showErr(msg) {
+      $('err').textContent = msg;
+      $('err').classList.add('is-on');
+    }
+
+    // 生日：真機是 DatePicker modal，這裡用原生日期輸入代替滾輪
+    $('bdrow').addEventListener('click', function () {
+      $('dpin').value = pickedBd || '';
+      $('dpin').max = today();          // 對到 maximumDate，選的時候就擋住未來日期
+      $('dp').classList.add('is-open');
+    });
+    $('dpok').addEventListener('click', function () {
+      var v = $('dpin').value;
+      if (!v) { $('dp').classList.remove('is-open'); return; }
+      pickedBd = v;
+      $('bdval').innerHTML = esc(v) + '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+      $('bdval').classList.add('is-set');
+      $('dp').classList.remove('is-open');
+      clearErr();
+    });
+
+    $('nick').addEventListener('input', function () {
+      this.classList.toggle('is-filled', !!this.value.trim());
+      clearErr();
+    });
+
+    // 送出：先擋三條，再跳確認
+    $('sub').addEventListener('click', function () {
+      var nick = $('nick').value.trim();
+      if (!nick) { showErr('請填寫寶寶小名。'); return; }
+      if (!pickedBd) { showErr('請選擇寶寶生日。'); return; }
+      // 日期選擇器已經用 max 擋過，這裡再擋一次：手動輸入的瀏覽器不吃 max
+      if (pickedBd > today()) { showErr('生日不可以是未來的日期。'); return; }
+      clearErr();
+      $('cn').textContent = nick;
+      $('cb').textContent = pickedBd;
+      $('cf').classList.add('is-open');
+    });
+
+    $('cfok').addEventListener('click', function () {
+      babies.push({ nick: $('nick').value.trim(), bd: pickedBd });
+      $('cf').classList.remove('is-open');
+      // 清空等下一位：一次填一位，不做成同時展開三組欄位
+      $('nick').value = '';
+      $('nick').classList.remove('is-filled');
+      pickedBd = '';
+      $('bdval').innerHTML = '請選擇<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+      $('bdval').classList.remove('is-set');
+      render();
+      toast(babies.length >= MAX ? '已登錄 3 位寶寶，達到上限' : '寶寶資料已送出');
+    });
+
+    document.getElementById('p' + n).addEventListener('click', function (e) {
+      if (e.target.closest('[data-close]')) {
+        e.target.closest('.mask').classList.remove('is-open');
+      }
+    });
+
+    render();
+  }
+
+  wire(1, []);
+  wire(2, [
+    { nick: '小豆', bd: '2025-08-14' },
+    { nick: '小芽', bd: '2026-02-03' }
+  ]);
+  wire(3, [
+    { nick: '小豆', bd: '2025-08-14' },
+    { nick: '小芽', bd: '2026-02-03' },
+    { nick: '小米', bd: '2026-09-30' }
+  ]);
+})();
+</script>
+</body>
+</html>

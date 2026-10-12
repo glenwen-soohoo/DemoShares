@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | App 會員資料設定（寶寶資料區塊）
+  真相來源：D:\GreenBox\fruit_app（App）／fruit_web 分支 feature/DEV-3963-gift-voucher-module
+  ⚠ 命名換過三輪，現行是 Present* 前綴。舊文件裡的 GiftItem / GiftVoucher* 都是舊名。
+  對應 App：
+    screen     : src/screens/MemberSettingScreen/MemberSettingScreen.tsx（現行，本頁要加一張卡）
+    入口       : src/screens/MemberScreen/SettingListItem.tsx 的「會員資料設定」
+                 ⇒ navigation.navigate('MemberSettingScreen')
+                 ⚠ 選單上的字是「會員資料設定」不是「會員資料」，照 SettingListItem.tsx:52
+    寶寶資料卡 : **待新建**，位置在現行那顆「儲存」按鈕**下面**
+    登錄頁     : **待新建**，demo 是 app-baby-register.html
+
+  ⚠ 這張卡**不放輸入欄位**（2026-10-12 Glen 定）。只列已經登錄好的寶寶，底下一列
+    「登錄寶寶資料」換頁去填，比照同頁「更改密碼」那一列（Pressable ＋ chevron）。
+    理由是登錄是一次性的獨立流程，夾在設定頁裡跟那顆「儲存」混在一起會分不清楚誰送誰。
+
+  ⚠ 寶寶資料卡放在「儲存」按鈕**下面**，不是上面。
+    現行那顆儲存送的是會員本人那張卡的欄位，寶寶是額外的輸入區塊、各自送出。
+
+  ⚠ 這張畫面上會有兩個「生日」：
+      現行那張卡的「生日」是**會員本人**的（MemberSettingScreen 的 birthday state）
+      寶寶卡裡的是**寶寶**的（MemberBaby.Birthday）
+    所以寶寶資料一定要另外開一張卡、卡上有標題，不要併進現行那張。
+
+  完整名稱對照見同資料夾 _交接對照.md 的 M-1
+-->
+<meta charset="UTF-8">
+<title>App 會員資料設定（寶寶資料） — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ──────────────────────────────────────────────────────────────
+   App demo 的共用外殼，與 app-member.html / app-baby-register.html 同一份。
+   色票與尺寸全部取自 fruit_app 的真實值，不要自己改：
+     theme.primary  #4BA83B   src/utils/constant.ts
+     theme.bgColor  #F2F2F2
+     次要灰         #8A8A8E   fontCardRight
+     分隔線         #C6C6C8   topBorder（0.5）
+     卡片圓角       20        containerCard
+     列高           44        containerCardTitle
+     列字級         17/22     fontCardTitle / fontCardRight
+     按鈕           圓角 20、高 40、字 18/21 600   containerButton / fontButton
+   ────────────────────────────────────────────────────────────── */
+
+* , *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 32px 16px 48px;
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: #e6e9e7;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage { max-width: 1700px; margin: 0 auto; }
+
+.stage-head { text-align: center; margin-bottom: 20px; }
+.stage-head h1 { font-size: 22px; margin: 0 0 4px; color: #008000; }
+.stage-head p { margin: 0; font-size: 14px; color: #6b706c; }
+.stage-head a { color: #008000; }
+
+.phones { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; }
+.phone-wrap { width: 375px; }
+.phone-label { text-align: center; font-size: 14px; color: #4a4f4b; margin-bottom: 8px; font-weight: 700; }
+
+.phone {
+  position: relative;
+  width: 375px; height: 812px;
+  background: #F2F2F2;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  display: flex; flex-direction: column;
+}
+
+.st-bar {
+  height: 28px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; font-size: 12px; font-weight: 600; flex: 0 0 auto;
+}
+
+.app-head {
+  height: 48px; background: #4BA83B; color: #fff;
+  display: flex; align-items: center; padding: 0 8px; flex: 0 0 auto;
+}
+.app-head .back {
+  width: 32px; height: 32px; border: 0; background: none; color: #fff;
+  font-size: 22px; line-height: 1; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+}
+.app-head h2 { flex: 1; margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
+.app-head .head-pad { width: 32px; }
+
+.app-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 16px 24px; }
+.app-body::-webkit-scrollbar { width: 0; }
+
+/* 卡片：containerCard */
+.card { background: #fff; border-radius: 20px; overflow: hidden; margin-top: 8px; }
+/* 寶寶資料是另一組東西、有自己的入口，跟上面那組隔開。
+   24 延續 app 的 8 階（8 ⇒ 16 ⇒ 24），不是隨手填的值 */
+.card-apart { margin-top: 24px; }
+
+/* 卡片標題列：現行那幾張卡沒有標題，寶寶資料這張要有，
+   因為同一個畫面已經有一個「生日」了，不標清楚會被當成會員本人的 */
+.card-t {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 8px;
+}
+.card-t h3 { margin: 0; font-size: 15px; font-weight: 600; color: #3a3f3b; }
+.card-t .count { font-size: 13px; color: #8A8A8E; }
+
+/* 列：containerCardTitle ＋ topBorder */
+.row {
+  height: 44px; margin: 0 16px; padding-right: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  text-decoration: none; color: inherit;
+}
+.row + .row, .card-t + .row { border-top: 0.5px solid #C6C6C8; }
+.row .t { font-size: 17px; line-height: 22px; color: #1a1a1a; }
+.row .v { font-size: 17px; line-height: 22px; color: #8A8A8E; text-align: right;
+          display: flex; align-items: center; gap: 4px; }
+.row .v svg { width: 18px; height: 18px; fill: none; stroke: #8A8A8E; stroke-width: 2; }
+.row.is-tap { cursor: pointer; }
+.row .v.is-set { color: #1a1a1a; }
+
+/* 已登錄的寶寶：唯讀列，右邊不給 chevron，點不動 */
+.row.is-saved .t { font-weight: 600; }
+
+/* 提示文字：現行沒有這種樣式，照 fontCardRight 的灰字做 */
+.note { margin: 0 16px; padding: 12px 0 16px; font-size: 14px; line-height: 1.6; color: #8A8A8E; }
+.note.is-top { border-top: 0.5px solid #C6C6C8; padding-top: 12px; }
+
+/* 按鈕：containerButton / fontButton */
+.btn {
+  display: flex; align-items: center; justify-content: center;
+  height: 40px; margin: 16px 0 0; border: 0; border-radius: 20px;
+  font-family: inherit; font-size: 18px; line-height: 21px; font-weight: 600;
+  cursor: pointer; width: 100%;
+}
+.btn-primary { background: #4BA83B; color: #fff; }
+.btn-primary:active { background: #3f8f32; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="stage-head">
+    <h1>App 會員資料設定：寶寶資料</h1>
+    <p>卡上只列已登錄的寶寶，要填去 <a href="app-baby-register.html">登錄寶寶資料</a> 那一頁。<a href="index.html">回索引</a></p>
+  </div>
+
+  <div class="phones">
+
+    <!-- ① 現行 -->
+    <div class="phone-wrap">
+      <div class="phone-label">現行</div>
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><a class="back" href="app-member.html">‹</a><h2>會員資料設定</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="card">
+            <div class="row"><span class="t">帳號</span><span class="v">0912345678</span></div>
+            <div class="row is-tap"><span class="t">密碼</span><span class="v">更改密碼<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">姓名</span><span class="v is-set">王小綠</span></div>
+            <div class="row"><span class="t">信箱</span><span class="v is-set">green@example.com</span></div>
+            <div class="row is-tap"><span class="t">性別</span><span class="v is-set">女<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row is-tap"><span class="t">生日</span><span class="v is-set">1992-03-18<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">載具號碼</span><span class="v is-set">/AB12CD3</span></div>
+            <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
+          </div>
+          <button type="button" class="btn btn-primary">儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② 還沒登錄 -->
+    <div class="phone-wrap">
+      <div class="phone-label">定案：還沒登錄</div>
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><a class="back" href="app-member.html">‹</a><h2>會員資料設定</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="card">
+            <div class="row"><span class="t">帳號</span><span class="v">0912345678</span></div>
+            <div class="row is-tap"><span class="t">密碼</span><span class="v">更改密碼<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">姓名</span><span class="v is-set">王小綠</span></div>
+            <div class="row"><span class="t">信箱</span><span class="v is-set">green@example.com</span></div>
+            <div class="row is-tap"><span class="t">性別</span><span class="v is-set">女<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row is-tap"><span class="t">生日</span><span class="v is-set">1992-03-18<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">載具號碼</span><span class="v is-set">/AB12CD3</span></div>
+            <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
+          </div>
+
+          <button type="button" class="btn btn-primary">儲存</button>
+
+          <div class="card card-apart">
+            <div class="card-t"><h3>寶寶資料</h3><span class="count">已登錄 0 / 3 位</span></div>
+            <a class="row is-tap" href="app-baby-register.html"><span class="t">登錄寶寶資料</span><span class="v"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 已登錄 2 位 -->
+    <div class="phone-wrap">
+      <div class="phone-label">已登錄 2 位</div>
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><a class="back" href="app-member.html">‹</a><h2>會員資料設定</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="card">
+            <div class="row"><span class="t">帳號</span><span class="v">0912345678</span></div>
+            <div class="row is-tap"><span class="t">密碼</span><span class="v">更改密碼<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">姓名</span><span class="v is-set">王小綠</span></div>
+            <div class="row"><span class="t">信箱</span><span class="v is-set">green@example.com</span></div>
+            <div class="row is-tap"><span class="t">性別</span><span class="v is-set">女<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row is-tap"><span class="t">生日</span><span class="v is-set">1992-03-18<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">載具號碼</span><span class="v is-set">/AB12CD3</span></div>
+            <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
+          </div>
+
+          <button type="button" class="btn btn-primary">儲存</button>
+
+          <div class="card card-apart">
+            <div class="card-t"><h3>寶寶資料</h3><span class="count">已登錄 2 / 3 位</span></div>
+            <div class="row is-saved"><span class="t">小豆</span><span class="v">生日 2025-08-14</span></div>
+            <div class="row is-saved"><span class="t">小芽</span><span class="v">生日 2026-02-03</span></div>
+            <a class="row is-tap" href="app-baby-register.html"><span class="t">登錄寶寶資料</span><span class="v"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ 三位都登錄完 -->
+    <div class="phone-wrap">
+      <div class="phone-label">三位都登錄完</div>
+      <div class="phone">
+        <div class="st-bar"><span>9:41</span><span>100%</span></div>
+        <div class="app-head"><a class="back" href="app-member.html">‹</a><h2>會員資料設定</h2><span class="head-pad"></span></div>
+        <div class="app-body">
+          <div class="card">
+            <div class="row"><span class="t">帳號</span><span class="v">0912345678</span></div>
+            <div class="row is-tap"><span class="t">密碼</span><span class="v">更改密碼<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">姓名</span><span class="v is-set">王小綠</span></div>
+            <div class="row"><span class="t">信箱</span><span class="v is-set">green@example.com</span></div>
+            <div class="row is-tap"><span class="t">性別</span><span class="v is-set">女<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row is-tap"><span class="t">生日</span><span class="v is-set">1992-03-18<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+            <div class="row"><span class="t">載具號碼</span><span class="v is-set">/AB12CD3</span></div>
+            <div class="row"><span class="t">備註</span><span class="v">請留言...</span></div>
+          </div>
+
+          <button type="button" class="btn btn-primary">儲存</button>
+
+          <!-- 滿 3 位之後「登錄寶寶資料」整列收起來，改成提示。
+               留著讓人點進去再看到「不能再加」是多走一趟。 -->
+          <div class="card card-apart">
+            <div class="card-t"><h3>寶寶資料</h3><span class="count">已登錄 3 / 3 位</span></div>
+            <div class="row is-saved"><span class="t">小豆</span><span class="v">生日 2025-08-14</span></div>
+            <div class="row is-saved"><span class="t">小芽</span><span class="v">生日 2026-02-03</span></div>
+            <div class="row is-saved"><span class="t">小米</span><span class="v">生日 2026-09-30</span></div>
+            <div class="note is-top">登錄後不可自行修改。<br>需修改或登錄超過三位寶寶，請洽客服。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
