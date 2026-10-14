@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | 產地直送上下架呈現優化 - 商品狀態呈現規則（營運版）
+  portal 無對應正式站 view（純說明頁，工程不需照抄）。
+  內容同步自 D:\Obsidian\GreenBox\02_一般需求\202610_產地直送上下架呈現優化\商品狀態呈現規則_營運版.md
+  流程圖原始碼就在下方 <pre class="mermaid"> 區塊，要改直接改那段文字。
+  mermaid 載不進來時會自動改顯示 #flow-fallback 的文字版。
+-->
+<meta charset="UTF-8">
+<title>產地直送 商品狀態呈現規則（營運版）</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0;padding:56px 20px;font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;font-size:16px;line-height:1.7;color:#1a1a1a;background:#fafbfb}
+  .wrap{max-width:1040px;margin:0 auto}
+  a{color:#4ba83b}
+  .back{display:inline-block;margin-bottom:16px;font-size:14px;text-decoration:none}
+  .back:hover{text-decoration:underline}
+  h1{font-size:30px;margin:0 0 4px;color:#4ba83b}
+  .sub{color:#595757;font-size:14px;margin:0 0 40px}
+  section{margin-bottom:48px}
+  h2{font-size:20px;font-weight:700;margin:0 0 16px;padding-left:12px;border-left:4px solid #4ba83b}
+  h3{font-size:16px;font-weight:700;margin:32px 0 8px}
+  p{margin:0 0 12px}
+  .lead{background:#fff;border:1px solid #e0e4e6;border-radius:4px;padding:20px 24px;margin-bottom:40px}
+  .lead p:last-child{margin-bottom:0}
+  .diagram{background:#fff;border:1px solid #e0e4e6;border-radius:4px;padding:24px;overflow-x:auto}
+  .diagram svg{max-width:100%;height:auto;display:block;margin:0 auto}
+  pre.mermaid{margin:0;font-family:inherit}
+  pre.mermaid:not([data-processed]){display:none}
+  #flow-fallback{display:none;margin:0;padding:0 0 0 20px;font-size:15px;line-height:1.8}
+  #flow-fallback ol{padding-left:20px}
+  #flow-fallback li{margin-bottom:4px}
+  .tablewrap{overflow-x:auto;background:#fff;border:1px solid #e0e4e6;border-radius:4px}
+  .tablewrap table{min-width:620px}
+  .tablewrap.narrow table{min-width:420px}
+  table{width:100%;border-collapse:collapse;background:#fff;font-size:15px}
+  caption{text-align:left;color:#595757;font-size:14px;padding:0 0 8px}
+  th,td{padding:12px;text-align:left;vertical-align:top;border-top:1px solid #e0e4e6}
+  thead th{background:#ecf0f1;border-top:0;font-weight:500;white-space:nowrap}
+  tbody th{font-weight:700;white-space:nowrap}
+  td.no{color:#595757}
+  td.yes{color:#4ba83b;font-weight:500}
+  .note{display:block;margin-top:4px;color:#595757;font-size:13px}
+  .after-table{margin-top:16px}
+  ul.plain{margin:0 0 12px;padding-left:20px}
+  ul.plain li{margin-bottom:8px}
+  .warn{background:#ecf0f1;border-radius:4px;padding:16px 20px;margin-bottom:12px}
+  .warn p:last-child{margin-bottom:0}
+  @media (max-width:760px){
+    body{padding:32px 16px}
+    table{font-size:14px}
+    th,td{padding:8px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← 回 demo 目錄</a>
+  <h1>產地直送 商品狀態呈現規則</h1>
+  <p class="sub">營運版・2026-10</p>
+
+  <div class="lead">
+    <p>客人在前台看到什麼，由你們在後台填的這幾個欄位決定：<strong>產品標籤（狀態、原因、日期）、快速到貨-類別、上架提醒事項、上架勾選</strong>，再加上規格層級的<strong>開始／結束販售時間</strong>與<strong>可售庫存</strong>。</p>
+    <p>這份只講「怎麼填會變成什麼」。</p>
+  </div>
+
+  <section>
+    <h2>判斷流程</h2>
+    <div class="diagram">
+<pre class="mermaid">
+flowchart TD
+    A[產地直送商品] --> B{有勾上架嗎}
+    B -- 沒勾 --> Z[商品頁打不開<br/>Google 也搜不到]
+
+    B -- 有勾 --> C{有打過產品標籤嗎}
+    C -- 沒有 --> T[看規格的販售時間與庫存]
+
+    C -- 有 --> D{最新那筆標籤的狀態}
+    D -- 正常上架 / 提早上架 --> T
+    D -- 正常下架 / 提早下架 / 未上架 --> E{原因是不是<br/>農友終止合作<br/>或轉作改種}
+
+    E -- 是 --> F[本商品已停止販售]
+    E -- 否 --> G{快速到貨-類別<br/>是不是不顯示}
+
+    G -- 是 --> S[走產季判斷]
+    G -- 否 --> H{原因屬於哪一類}
+
+    H -- 天氣 / 氣候類 --> I[氣候因素暫停接單]
+    H -- 農友供應鏈類 或 平台營運類 --> J[供貨不足，暫停接單]
+    H -- 其他原因 --> S
+
+    S --> K{標籤日期距今<br/>滿一個月了嗎}
+    K -- 還沒滿 --> L[產季結束]
+    K -- 滿了 --> M{上架提醒事項<br/>有填嗎}
+    M -- 有填 --> N[產季未到<br/>並顯示預計X採收]
+    M -- 沒填 --> L
+
+    T --> T1{規格的開始販售時間到了嗎}
+    T1 -- 到了 --> T2{過了結束販售時間嗎}
+    T1 -- 還沒到 --> U[未開賣，顯示倒數]
+    T2 -- 過了 --> V[結束販售]
+    T2 -- 還沒 --> T3{這個規格還有庫存嗎}
+    T3 -- 沒有 --> W[已售完]
+    T3 -- 有 --> Y[正常販售]
+
+    classDef ok fill:#4ba83b,stroke:#4ba83b,color:#ffffff
+    classDef stop fill:#ecf0f1,stroke:#999999,color:#1a1a1a
+    class Y ok
+    class F,I,J,L,N,U,V,W,Z stop
+</pre>
+      <div id="flow-fallback">
+        <ol>
+          <li>沒有勾「上架」，商品頁打不開、Google 也搜不到，到此為止。</li>
+          <li>沒打過產品標籤，跳到第 7 步看販售時間與庫存。</li>
+          <li>最新那筆標籤的狀態是「正常上架」或「提早上架」，一樣跳到第 7 步，原因不生效。</li>
+          <li>原因是「農友終止合作」或「轉作／改種其他品項」，顯示<strong>本商品已停止販售</strong>。</li>
+          <li>快速到貨-類別是「不顯示」，跳到第 6 步的產季判斷。否則：天氣／氣候類顯示<strong>氣候因素暫停接單</strong>；農友供應鏈類或平台營運類顯示<strong>供貨不足，暫停接單</strong>；其他原因進第 6 步。</li>
+          <li>產季判斷：標籤日期還沒滿一個月，顯示<strong>產季結束</strong>；滿一個月且上架提醒事項有填，顯示<strong>產季未到</strong>並帶出預計採收月份；滿一個月但沒填，還是<strong>產季結束</strong>。</li>
+          <li>販售時間與庫存：還沒到開始販售時間顯示<strong>未開賣倒數</strong>；過了結束販售時間顯示<strong>結束販售</strong>；沒庫存顯示<strong>已售完</strong>；都正常就是<strong>正常販售</strong>。</li>
+        </ol>
+      </div>
+    </div>
+    <div class="after-table">
+      <ul class="plain">
+        <li><strong>最新那筆標籤的「狀態」是第一道關。</strong>選「正常上架」或「提早上架」，原因就完全不生效，商品照常賣。這是為了讓你們打一筆上架紀錄就能把蓋圖撤掉。</li>
+        <li><strong>只看最新那一筆。</strong>不是去找最近一次下架紀錄，所以補一筆上架就會立刻生效。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>各狀態的出現條件</h2>
+    <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>客人看到</th><th>要怎樣才會出現</th><th>分類／列表頁</th><th>搜尋得到</th><th>商品頁</th><th>能不能買</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>正常販售</th>
+          <td>沒打標籤，或最新標籤狀態是上架類；而且規格在販售期間內、有庫存</td>
+          <td>看得到</td><td class="yes">是</td><td>打得開</td><td class="yes">可以</td>
+        </tr>
+        <tr>
+          <th>產季結束</th>
+          <td>標籤狀態是下架類，原因是產季類／品質類／病蟲害類等一般原因；或快速到貨-類別＝不顯示。且「標籤日期未滿一個月」或「上架提醒事項沒填」</td>
+          <td><strong>看不到</strong></td><td class="yes">是</td><td>打得開</td><td class="no">不行</td>
+        </tr>
+        <tr>
+          <th>產季未到<span class="note">含「預計X採收」</span></th>
+          <td>同上，但標籤日期已滿一個月<strong>而且</strong>上架提醒事項有填</td>
+          <td><strong>看不到</strong></td><td class="yes">是</td><td>打得開</td><td class="no">不行</td>
+        </tr>
+        <tr>
+          <th>氣候因素暫停接單</th>
+          <td>標籤狀態是下架類，原因屬天氣／氣候類，而且快速到貨-類別<strong>不是</strong>「不顯示」</td>
+          <td>看得到</td><td class="yes">是</td><td>打得開</td><td class="no">不行</td>
+        </tr>
+        <tr>
+          <th>供貨不足，暫停接單</th>
+          <td>標籤狀態是下架類，原因屬農友供應鏈類或平台營運類（不含農友終止合作、轉作改種），而且快速到貨-類別<strong>不是</strong>「不顯示」</td>
+          <td>看得到</td><td class="yes">是</td><td>打得開</td><td class="no">不行</td>
+        </tr>
+        <tr>
+          <th>本商品已停止販售</th>
+          <td>標籤狀態是下架類，原因是「農友終止合作」或「轉作／改種其他品項」</td>
+          <td><strong>看不到</strong></td><td class="yes">是</td><td>打得開</td><td class="no">不行</td>
+        </tr>
+        <tr>
+          <th>未開賣<span class="note">顯示倒數</span></th>
+          <td>沒有生效的標籤，而且規格的開始販售時間還沒到</td>
+          <td>看得到，圖上有倒數</td><td class="yes">是</td><td>打得開，顯示倒數</td><td class="no">不行<span class="note">倒數歸零自動開賣</span></td>
+        </tr>
+        <tr>
+          <th>結束販售</th>
+          <td>沒有生效的標籤，而且已過規格的結束販售時間</td>
+          <td>看得到</td><td class="yes">是</td><td>打得開</td><td class="no">不行</td>
+        </tr>
+        <tr>
+          <th>已售完</th>
+          <td>沒有生效的標籤，在販售期間內但規格沒庫存</td>
+          <td>看得到</td><td class="yes">是</td><td>打得開</td><td class="no">不行</td>
+        </tr>
+        <tr>
+          <th>商品整個看不到</th>
+          <td>沒有勾「上架」</td>
+          <td>看不到</td><td class="no"><strong>否</strong></td><td class="no"><strong>打不開，跳回首頁</strong></td><td class="no">不行</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="after-table">
+      <p>「看不到」指的是不出現在分類頁與首頁輪播，但客人用商品名稱搜尋還是找得到，點進去也看得到商品頁與原因。這是這次改版的重點：<strong>不讓商品整個消失，而是讓客人看到為什麼買不到。</strong></p>
+    </div>
+  </section>
+
+  <section>
+    <h2>反查：我想讓客人看到某個狀態，該怎麼設</h2>
+    <div class="tablewrap narrow">
+    <table>
+      <thead><tr><th>想要的效果</th><th>後台這樣設</th></tr></thead>
+      <tbody>
+        <tr><th>這批結束了，明年還會有</th><td>打一筆產品標籤：狀態選下架類、原因選「產季結束」。上架提醒事項先不用填</td></tr>
+        <tr><th>這批結束了，想告訴客人下次大概幾月回來</th><td>同上，再把「上架提醒事項」填成<strong>下次開賣的月份</strong>（例如「11月中旬」）。要等標籤日期滿一個月後才會從「產季結束」換成「產季未到」</td></tr>
+        <tr><th>颱風來了先停賣，過幾天恢復</th><td>打一筆標籤：狀態選下架類、原因選天氣／氣候類。快速到貨-類別維持原本的，不要改成「不顯示」，商品才會留在列表上</td></tr>
+        <tr><th>農友出不了貨先停賣</th><td>同上，原因選農友供應鏈類或平台營運類</td></tr>
+        <tr><th>這個農友不合作了，以後都不會有</th><td>打一筆標籤：狀態選下架類、原因選「農友終止合作」或「轉作／改種其他品項」。<strong>不要取消「上架」勾選</strong>，取消了商品頁會整個消失、Google 流量也會不見</td></tr>
+        <tr><th>商品要回來賣了</th><td>補打一筆新的產品標籤，狀態選「正常上架」或「提早上架」。蓋圖會自動消失，不用去改別的欄位</td></tr>
+        <tr><th>預購，想讓客人看到倒數</th><td>不要打下架類標籤，把規格的「開始販售時間」設在未來。倒數歸零會自動開賣</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>五個容易誤會的地方</h2>
+
+    <h3>1. 標籤的「狀態」選上架類，原因就不看了</h3>
+    <p>這是刻意的。你們打「產季開始／正常上架」就是要讓商品回來賣，所以原因欄填什麼都不影響。</p>
+    <p>反過來說，如果你是要<strong>停賣</strong>，狀態一定要選下架類（正常下架／提早下架／未上架），選成上架類的話前台不會有任何變化。</p>
+
+    <h3>2. 「產季未到」現在幾乎不會出現</h3>
+    <p>它要三個條件同時成立：標籤狀態是下架類、標籤日期滿一個月、上架提醒事項有填。</p>
+    <div class="warn">
+      <p>用 2026-10-14 的資料算，全部產地直送商品裡符合的只有 <strong>5 個</strong>，而且那 5 個的「上架提醒事項」填的都是 <strong>8月、8月下旬、8月底、9月初</strong> 這類已經過去的月份。客人會看到「產季未到，預計 8月底 採收」，但現在是 10 月。</p>
+    </div>
+    <p>如果希望這個狀態真的有用，「上架提醒事項」要當成<strong>下次開賣的月份</strong>來維護，不是記錄上一次的採收期。</p>
+
+    <h3>3. 「快速到貨-類別＝不顯示」會改變文案</h3>
+    <p>同一個颱風標籤，快速到貨-類別不是「不顯示」時客人看到「氣候因素暫停接單」、商品留在列表；一旦設成「不顯示」，客人會改成看到「產季結束」或「產季未到」，商品也從列表消失。</p>
+    <p>所以這個欄位不只影響列表，也影響客人看到的理由。</p>
+
+    <h3>4. 「已停止販售」不要靠取消上架來做</h3>
+    <p>取消「上架」勾選的話，商品頁會直接跳回首頁，Google 搜尋累積的流量也會消失。正確做法是<strong>維持上架、打「農友終止合作」標籤</strong>，文案會跟「產季結束」不同，客人才知道這個品項是真的不會再進了。</p>
+
+    <h3>5. 「產季結束」跟「結束販售」是兩件事</h3>
+    <ul class="plain">
+      <li>「產季結束」來自你們打的產品標籤</li>
+      <li>「結束販售」來自規格的結束販售時間到了</li>
+    </ul>
+    <p>兩個都讓客人買不了，但來源不同、改法也不同。</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  function showFallback(){
+    var pre=document.querySelector('pre.mermaid');
+    if(pre)pre.style.display='none';
+    document.getElementById('flow-fallback').style.display='block';
+  }
+  if(window.mermaid){
+    mermaid.initialize({startOnLoad:false,theme:'base',themeVariables:{
+      fontFamily:"'Noto Sans TC',sans-serif",fontSize:'15px',
+      primaryColor:'#ffffff',primaryBorderColor:'#4ba83b',primaryTextColor:'#1a1a1a',
+      lineColor:'#595757',tertiaryColor:'#ffffff'}});
+    document.fonts.ready.then(function(){return mermaid.run();}).catch(showFallback);
+  }else{
+    showFallback();
+  }
+</script>
+</body>
+</html>
