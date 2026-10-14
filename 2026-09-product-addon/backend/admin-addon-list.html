@@ -18,7 +18,7 @@
     剩餘數量           OriginAmt − SoldAmt       ⚠ 加購規格自己的剩餘庫存，不是原始庫存量
     上架（外層）        ProductDetail.Display（加購規格自己的上架；不上架哪都不顯示）
     上架（配對/內層）   ProductAddOnMapping.IsOnShelf
-    ⚠ 上架只屬於「加購規格」(外層) 與「配對」(內層)；「依主商品」分頁不放上架欄——主商品是整個商品(Product)、不是規格，沒有規格層的 Display。
+    ⚠ 上架、剩餘數量都只屬於「加購規格」(一個 ProductDetail)；「依主商品」分頁不放上架／剩餘數量欄——主商品是整個商品(Product)、不是規格，沒有規格層的 Display 與單一庫存。
   這一頁打的真實 API：待新建（讀清單 / 切上下架 / 批次配對，皆待工程定案）
   本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-on-addon/data-tab）為自由命名，勿照抄進 codebase。
   完整名稱對照見同資料夾 _交接對照.md
@@ -838,7 +838,7 @@ a:hover { text-decoration: underline; }
       <table class="gox-table">
         <thead><tr>
           <th>商品照</th><th>主商品ID</th><th>商品名稱</th><th>產線</th>
-          <th class="cell-center">加購品數</th><th class="cell-center">剩餘數量</th><th class="cell-ops">操作</th>
+          <th class="cell-center">加購品數</th><th class="cell-ops">操作</th>
         </tr></thead>
         <tbody id="al-main-body"></tbody>
       </table>
@@ -940,9 +940,8 @@ a:hover { text-decoration: underline; }
     document.getElementById('al-main-body').innerHTML = lm.map(function(m){
       return '<tr>'+thumbCell(m.img)+'<td class="al-id">'+m.id+'</td><td>'+m.name+tempTag(m.temp)+'</td><td>'+m.line+'</td>'
         + '<td class="cell-center">'+m.addons+'</td>'
-        + stockCell(m.stock)
         + '<td class="cell-ops"><a class="gox-btn-op" href="admin-addon-setting.html?view=main&id='+m.id+'">設定</a></td></tr>';
-    }).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的主商品</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gox-text-muted);">找不到符合條件的主商品</td></tr>';
     var active = document.querySelector('[data-tab-panel]:not([hidden])');
     var isAddon = active && active.getAttribute('data-tab-panel')==='byaddon';
     document.getElementById('al-count').textContent = isAddon ? la.length : lm.length;

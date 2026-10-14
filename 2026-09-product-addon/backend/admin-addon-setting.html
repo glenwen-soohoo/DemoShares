@@ -16,7 +16,8 @@
     剩餘數量 stock      OriginAmt − SoldAmt      ⚠ 加購規格自己的剩餘庫存，不是原始庫存量
     販售期間 sellStart/sellEnd  加購規格自己的 StartTime/EndTime（v2 併 Q2/Q7）
     上架（data-up）     ProductDetail.Display      ← 外層＝加購規格自己的上架（不上架哪都不顯示）
-    上架（data-toggle） ProductAddOnMapping.IsOnShelf（配對層，鍵＝addonId-mainId）← 內層
+    上架（data-toggle） ProductAddOnMapping.IsOnShelf（配對層，鍵＝addonId-mainId）← 內層；只出現在「依主商品視角」的加購品列
+    ⚠「依加購品視角」的掛載主商品清單＝整個商品(Product)，不放上下架開關（主商品不是規格、沒有 Display）；只做掛載／移除
     移除配對 data-rm    刪 ProductAddOnMapping 一列（只刪配對、不刪加購規格本身）
     異溫層掛載          出貨會拆單（既有拆單機制，判溫層不同）
   這一頁打的真實 API：待新建（讀設定 / 儲存加購規格與配對 / 刪除）
@@ -919,9 +920,9 @@ a:hover { text-decoration: underline; }
       var rows=mainsOf(view.id);
       html+='<div class="gox-card"><div class="gox-card-title">掛載主商品<span class="as-titlesub">此加購品要出現在哪些主商品下</span></div><div class="gox-card-body"><div class="as-list">';
       html+= rows.map(function(p){
-        return '<div class="as-maprow'+(p.on?'':' is-off')+'"><div class="as-idblock"><span class="as-badge">主商品ID '+p.m+'</span><span class="as-sname">'+MAINS[p.m].name+'</span>'+tempTag(MAINS[p.m].temp, MAINS[p.m].temp!==ADDONS[view.id].temp)+'</div>'
+        // 主商品是整個商品(Product)、不是規格，這一列不放「上下架」開關；只做掛載／移除（配對層上下架改在「依主商品視角」的加購品列設）
+        return '<div class="as-maprow"><div class="as-idblock"><span class="as-badge">主商品ID '+p.m+'</span><span class="as-sname">'+MAINS[p.m].name+'</span>'+tempTag(MAINS[p.m].temp, MAINS[p.m].temp!==ADDONS[view.id].temp)+'</div>'
           + '<div class="as-rowacts">'+switchBtn('main',p.m,'主商品')
-          + '<button class="gox-switch '+(p.on?'is-on':'')+'" data-toggle="'+p.a+'-'+p.m+'"></button><span class="as-swlabel">'+(p.on?'上架':'下架')+'</span>'
           + '<button class="gox-icon-btn is-cancel" data-rm="'+p.a+'-'+p.m+'" title="移除">✕</button></div></div>';
       }).join('') || '<div style="color:var(--gox-text-muted);font-size:13px;padding:4px 0;">尚未掛載任何主商品</div>';
       html+=acRow('main')+'</div></div>';
