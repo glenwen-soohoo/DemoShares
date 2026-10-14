@@ -18,7 +18,7 @@
     成本          ac-cost  → Cost
     開始/結束販售 ac-start/ac-end → StartTime / EndTime（加購規格自己的販售期間，v2 併 Q2/Q7）
     剩餘數量      ac-stock → ⚠ 建立時輸入的其實是「進貨量 OriginAmt（庫存量）」，不是剩餘；標籤沿用列表用語但語意是原始庫存
-    上架          ac-listed → Display（外層＝加購規格自己的上架）
+    上架          ac-listed → Display（加購規格自己的上架；唯一的上下架）
     可貨到付款    ac-cod   → 貨到付款旗標（對 ProductDetail 既有 COD 欄；確切欄名待工程定案）
     作為產品頁加購品 固定勾選 → 建議 IsAddOn；標記此規格為加購品、前台隱藏（v2 無 ProductAddOn 折扣主檔，由配對表或此 flag 認定）
   這一頁打的真實 API：待新建（建立加購品）；成功後導向 admin-addon-setting.html
