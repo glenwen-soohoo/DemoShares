@@ -16,8 +16,8 @@
     加購價             加購規格自己的 Price（有特價 DiscPrice??Price）；營運直接填，非折扣算（v2）
     販售期間           加購規格自己的 StartTime/EndTime（v2 併 Q2/Q7）
     剩餘數量           OriginAmt − SoldAmt       ⚠ 加購規格自己的剩餘庫存，不是原始庫存量
-    上架（外層）        ProductDetail.Display（加購規格自己的上架；不上架哪都不顯示）
-    上架（配對/內層）   ProductAddOnMapping.IsOnShelf
+    上架                ProductDetail.Display（加購規格自己的上架；唯一的上下架，不上架哪都不顯示）
+    ⚠ v2 只有這一種上下架（加購規格自己的）。配對沒有獨立上下架——不要在某主商品下顯示就「移除」配對、或用加購規格的販售期間控管。
     ⚠ 上架、剩餘數量都只屬於「加購規格」(一個 ProductDetail)；「依主商品」分頁不放上架／剩餘數量欄——主商品是整個商品(Product)、不是規格，沒有規格層的 Display 與單一庫存。
   這一頁打的真實 API：待新建（讀清單 / 切上下架 / 批次配對，皆待工程定案）
   本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-on-addon/data-tab）為自由命名，勿照抄進 codebase。
