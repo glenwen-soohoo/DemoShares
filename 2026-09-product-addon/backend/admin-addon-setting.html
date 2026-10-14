@@ -3,7 +3,7 @@
 <head>
 <!--
   DemoShares 交接對照 | 產品頁加購設定・編輯頁（admin-addon-setting.html・路徑一）
-  ⚠ 全新機制（v2・加購品＝獨立新規格）：正式站無此頁，待新建。本頁＝編一個加購品（＝一個 ProductDetail）的加購價／庫存／販售期間、兩層上下架、以及掛載哪些主商品。
+  ⚠ 全新機制（v2・加購品＝獨立新規格）：正式站無此頁，待新建。本頁＝編一個加購品（＝一個 ProductDetail）的加購價／庫存／販售期間／上架、以及掛載哪些主商品（上下架只有加購規格自己的這一種）。
   名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\v2_新開規格_設計方案.md、工程交接文件.md §4/§5
   對應正式站：
     view       : 待新建
@@ -846,7 +846,7 @@ a:hover { text-decoration: underline; }
   var money=function(n){ return '$'+Math.round(n).toLocaleString('en-US'); };
   var esc=function(s){ return String(s); };
   // v2：加購品本身是一個獨立 ProductDetail。price＝加購價（規格自己的售價，營運直接填）；refOrig＝選配的參考原價(刪除線，省略＝不顯示)；
-  //      up＝外層上架(ProductDetail.Display)；stock＝加購規格自己的剩餘庫存；sellStart/sellEnd＝加購規格自己的販售期間。
+  //      up＝加購規格自己的上架(ProductDetail.Display，唯一的上下架)；stock＝加購規格自己的剩餘庫存；sellStart/sellEnd＝加購規格自己的販售期間。
   var ADDONS={
     99753:{prod:'316 不鏽鋼保溫瓶', spec:'單瓶 500ml', temp:'常溫', price:349, refOrig:399, up:true, qty:1, unit:'瓶', stock:128, ship:'2026-08-12', sellStart:'2026-07-01', sellEnd:'2026-12-31'},
     101509:{prod:'手沖濾掛咖啡', spec:'10 入袋裝', temp:'常溫', price:199, up:true, qty:10, unit:'入', stock:64, ship:'2026-09-01', sellStart:'2026-09-01', sellEnd:'2026-12-31'},
