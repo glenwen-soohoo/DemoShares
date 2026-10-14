@@ -15,14 +15,13 @@
     參考原價 refOrig    選配的刪除線對照價（省略＝不顯示）
     剩餘數量 stock      OriginAmt − SoldAmt      ⚠ 加購規格自己的剩餘庫存，不是原始庫存量
     販售期間 sellStart/sellEnd  加購規格自己的 StartTime/EndTime（v2 併 Q2/Q7）
-    上架（data-up）     ProductDetail.Display      ← 外層＝加購規格自己的上架（不上架哪都不顯示）
-    上架（data-toggle） ProductAddOnMapping.IsOnShelf（配對層，鍵＝addonId-mainId）← 內層；只出現在「依主商品視角」的加購品列
-    ⚠「依加購品視角」的掛載主商品清單＝整個商品(Product)，不放上下架開關（主商品不是規格、沒有 Display）；只做掛載／移除
+    上架（data-up）     ProductDetail.Display      ← 加購品自己的上架（唯一的上下架；不上架哪都不顯示）
+    ⚠ v2 配對沒有獨立上下架：要暫停一個加購品用它自己的上架或販售期間；不要在某主商品下顯示就「移除」該配對。兩視角的主商品列/加購品列都只做掛載／移除、不放上下架開關。
     移除配對 data-rm    刪 ProductAddOnMapping 一列（只刪配對、不刪加購規格本身）
     異溫層掛載          出貨會拆單（既有拆單機制，判溫層不同）
   這一頁打的真實 API：待新建（讀設定 / 儲存加購規格與配對 / 刪除）
   本頁「修改規格」連到 admin-spec-addon.html（路徑二・規格內嵌）。
-  本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-up/data-toggle/data-rm/data-add）為自由命名，勿照抄進 codebase。
+  本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-up/data-rm/data-add）為自由命名，勿照抄進 codebase。
   完整名稱對照見同資料夾 _交接對照.md
 -->
 <meta charset="UTF-8">
@@ -853,7 +852,7 @@ a:hover { text-decoration: underline; }
     24011:{prod:'有機黑芝麻粉', spec:'300g 罐裝', temp:'冷凍', price:240, up:false, qty:1, unit:'罐', stock:0, ship:'2026-07-15', sellStart:'2026-07-01', sellEnd:'2026-08-31'}
   };
   var MAINS={ 40894:{name:'台灣蜜棗禮盒 3斤裝', temp:'常溫'}, 55210:{name:'日曬紅龍果原箱', temp:'冷藏'}, 61120:{name:'冬季草莓禮盒（已下架）', temp:'冷藏'}, 47788:{name:'當季鮮採蔬菜箱', temp:'常溫'} };
-  // pairs：配對（待新建 ProductAddOnMapping）。a→ProductAddOnId、m→ProductId、on→IsOnShelf(配對層上下架，兩層狀態的內層)
+  // pairs：配對（待新建 ProductAddOnMapping）。a→ProductAddOnId、m→ProductId。（v2 配對無獨立上下架，on 欄位已停用）
   var pairs=[ {a:99753,m:40894,on:true},{a:99753,m:55210,on:true},{a:99753,m:61120,on:false},
               {a:101509,m:40894,on:true},{a:36007,m:40894,on:true} ];
   // 初始視角依列表帶的 URL 參數（?view=addon|main&id=…）；無效或缺省時 fallback 預設加購品視角
@@ -880,7 +879,8 @@ a:hover { text-decoration: underline; }
   }
 
   // 加購品 item block（兩視角共用・v2）。加購品＝一個獨立規格：編它自己的 加購價／庫存／販售期間。
-  // isSubject＝加購品視角的主體（右側放外層上架 ProductDetail.Display）；否則放改編/配對層上下架/移除。
+  // isSubject＝加購品視角的主體（右側放加購品自己的上架 ProductDetail.Display）；否則（依主商品視角的加購品列）只放改編/移除。
+  // v2：配對沒有獨立上下架——要暫停一個加購品用它自己的上架或販售期間；不要在某主商品下顯示就「移除」該配對。
   function addonBlock(aid, pair, isSubject){
     var a=ADDONS[aid], bad=(Number(a.price)||0)<=0, st=effStatus(a);
     var refTxt = (a.refOrig!=null) ? '<s>'+money(a.refOrig)+'</s> ' : '';   // 選配參考原價（刪除線）
@@ -893,9 +893,8 @@ a:hover { text-decoration: underline; }
     var acts = isSubject
       ? '<div class="tg"><button class="gox-switch '+(a.up?'is-on':'')+'" data-up="'+aid+'"></button><span class="as-swlabel">'+(a.up?'上架':'下架')+'</span></div>'
       : switchBtn('addon',aid,'加購品')
-        + '<div class="tg"><button class="gox-switch '+(pair.on?'is-on':'')+'" data-toggle="'+pair.a+'-'+pair.m+'"></button><span class="as-swlabel">'+(pair.on?'上架':'下架')+'</span></div>'
         + '<button class="gox-icon-btn is-cancel" data-rm="'+pair.a+'-'+pair.m+'" title="移除">✕</button>';
-    var off = !isSubject && !pair.on;
+    var off = false;
     var mismatch = !isSubject && MAINS[pair.m].temp!==a.temp;
     return '<div class="as-ib'+(off?' is-off':'')+(isSubject?' is-bare':'')+'" data-addon="'+aid+'">'
       + '<div class="as-ib-head"><div class="as-summary'+(bad?' is-invalid':'')+'"><span class="as-badge">規格ID '+aid+'</span><span class="nm">'+esc(a.prod)+'</span>'+tempTag(a.temp, mismatch)+'<span class="spec">'+esc(a.spec)+'</span>'
@@ -920,7 +919,7 @@ a:hover { text-decoration: underline; }
       var rows=mainsOf(view.id);
       html+='<div class="gox-card"><div class="gox-card-title">掛載主商品<span class="as-titlesub">此加購品要出現在哪些主商品下</span></div><div class="gox-card-body"><div class="as-list">';
       html+= rows.map(function(p){
-        // 主商品是整個商品(Product)、不是規格，這一列不放「上下架」開關；只做掛載／移除（配對層上下架改在「依主商品視角」的加購品列設）
+        // 主商品是整個商品(Product)、不是規格，這一列不放「上下架」開關；只做掛載／移除（v2 配對沒有獨立上下架）
         return '<div class="as-maprow"><div class="as-idblock"><span class="as-badge">主商品ID '+p.m+'</span><span class="as-sname">'+MAINS[p.m].name+'</span>'+tempTag(MAINS[p.m].temp, MAINS[p.m].temp!==ADDONS[view.id].temp)+'</div>'
           + '<div class="as-rowacts">'+switchBtn('main',p.m,'主商品')
           + '<button class="gox-icon-btn is-cancel" data-rm="'+p.a+'-'+p.m+'" title="移除">✕</button></div></div>';
@@ -995,13 +994,9 @@ a:hover { text-decoration: underline; }
   document.addEventListener('focusin', function(e){ if(e.target.classList.contains('ac-input')) openAc(e.target.closest('.ac')); });
   document.addEventListener('focusout', function(e){ if(e.target.classList.contains('ac-input')){ var ac=e.target.closest('.ac'); setTimeout(function(){ var l=ac.querySelector('.ac-list'); if(l) l.classList.remove('is-open'); },150); } });
   document.addEventListener('gox:switch', function(e){
-    var t=e.target.getAttribute('data-toggle'), up=e.target.getAttribute('data-up');
-    if(up){ ADDONS[up].up=e.detail.on; var lb=e.target.parentNode.querySelector('.as-swlabel'); if(lb) lb.textContent=e.detail.on?'上架':'下架'; return; }
-    if(!t) return; var k=t.split('-');
-    var p=pairs.find(function(x){return x.a==k[0]&&x.m==k[1];}); if(p) p.on=e.detail.on;
-    var label=e.target.parentNode.querySelector('.as-swlabel'); if(label) label.textContent=e.detail.on?'上架':'下架';
-    var mr=e.target.closest('.as-maprow'); if(mr) mr.classList.toggle('is-off', !e.detail.on);
-    var ib=e.target.closest('.as-ib'); if(ib) ib.classList.toggle('is-off', !e.detail.on);
+    // v2：只剩加購品自己的上架（data-up＝ProductDetail.Display）；配對沒有獨立上下架。
+    var up=e.target.getAttribute('data-up');
+    if(up){ ADDONS[up].up=e.detail.on; var lb=e.target.parentNode.querySelector('.as-swlabel'); if(lb) lb.textContent=e.detail.on?'上架':'下架'; }
   });
 
   render();
