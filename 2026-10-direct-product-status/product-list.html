@@ -4611,6 +4611,7 @@ check `inset` unsupport
     const result={status:'normal',labelText:available?'':'已售完',buttonText:available?(Number(input.Type2)===6?'結束販售':'加入菜籃'):'已售完',canAddToCart:available&&Number(input.Type2)!==6,showInList:Number(input.Type2)!==6,showInSearch:true,showProductPage:true,seasonText:null,canNotify:false};
     if(!input.Display) return {...result,status:'hidden',labelText:'',canAddToCart:false,showInList:false,showInSearch:false,showProductPage:false};
     if(!input.hasTag) return result;
+    if(input.Status==='正常上架'||input.Status==='提早上架') return result;
     const reasons=input.reasons || [];
     if(reasons.some(r=>reasonPriority(r)===0)) return {...result,status:'discontinued',labelText:'本商品已停止販售',buttonText:'結束販售',canAddToCart:false,showInList:false};
     if(Number(input.Type2)!==6) {
