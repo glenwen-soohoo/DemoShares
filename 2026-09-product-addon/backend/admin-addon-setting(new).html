@@ -2,7 +2,13 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 產品頁加購設定・編輯頁（admin-addon-setting.html・路徑一）
+  DemoShares 交接對照 | 產品頁加購設定・編輯頁（admin-addon-setting(new).html・路徑一）
+  全新頁面：正式站無對應（新建）  產品頁加購設定・編輯
+  這次要動的檔（改既有 0 支 ／ 新建 2 項）：
+    [新建]   產品頁加購設定・編輯頁（view／controller／route 全部待新建）
+             編一個加購品（＝一個 ProductDetail）的加購價／庫存／販售期間／上架，以及掛載哪些主商品
+    [新建]   ProductAddOnMapping 表                                    ProductId／AddOnProductDetailId／Sort；移除配對＝刪一列
+    [只參考] ProductDetail.Display                                     加購規格自己的上架，是唯一的上下架，沿用既有欄位
   ⚠ 全新機制（v2・加購品＝獨立新規格）：正式站無此頁，待新建。本頁＝編一個加購品（＝一個 ProductDetail）的加購價／庫存／販售期間／上架、以及掛載哪些主商品（上下架只有加購規格自己的這一種）。
   名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\v2_新開規格_設計方案.md、工程交接文件.md §4/§5
   對應正式站：
@@ -22,7 +28,7 @@
     移除配對 data-rm    刪 ProductAddOnMapping 一列（只刪配對、不刪加購規格本身）
     異溫層掛載          出貨會拆單（既有拆單機制，判溫層不同）
   這一頁打的真實 API：待新建（讀設定 / 儲存加購規格與配對 / 刪除）
-  本頁「修改規格」連到 admin-spec-addon.html（路徑二・規格內嵌）。
+  本頁「修改規格」連到 admin-spec-addon(ProductDetailSettings).html（路徑二・規格內嵌）。
   本頁 demo JS 鍵（ADDONS/MAINS/pairs、data-up/data-rm/data-add）為自由命名，勿照抄進 codebase。
   完整名稱對照見同資料夾 _交接對照.md
 -->
@@ -696,7 +702,7 @@ a:hover { text-decoration: underline; }
   <nav class="gox-breadcrumb">
     <span>產品管理</span>
     <span class="sep">&gt;</span>
-    <a href="admin-addon-list.html">產品頁加購設定</a>
+    <a href="admin-addon-list(new).html">產品頁加購設定</a>
     <span class="sep">&gt;</span>
     <strong>編輯</strong>
   </nav>
@@ -710,7 +716,7 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">產品頁加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list(new).html" class="gox-menu-child is-active">產品頁加購設定</a><a href="admin-lineaddon-setting(ExtraProductSetting).html" class="gox-menu-child ">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
@@ -833,7 +839,7 @@ a:hover { text-decoration: underline; }
     <button class="as-del-btn" id="btn-del" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>刪除加購設定</button>
     <div class="as-right">
       <span class="as-status" id="save-status"><span class="as-dot"></span>尚未儲存</span>
-      <a class="gox-btn gox-btn-default" href="admin-addon-list.html">取消</a>
+      <a class="gox-btn gox-btn-default" href="admin-addon-list(new).html">取消</a>
       <button class="gox-btn gox-btn-primary" id="btn-save">儲存設定</button>
     </div>
   </div>
@@ -891,7 +897,7 @@ a:hover { text-decoration: underline; }
     var specrow = isSubject ? '<div class="as-specrow">'
       + '<span class="i"><span>規格量</span><b>'+a.qty+' '+a.unit+'</b></span>'
       + '<span class="i"><span>預計出貨日</span><b>'+(a.ship||'—')+'</b></span>'
-      + '<a class="as-spec-edit" href="admin-spec-addon.html">修改規格</a>'
+      + '<a class="as-spec-edit" href="admin-spec-addon(ProductDetailSettings).html">修改規格</a>'
       + '</div>' : '';
     var acts = isSubject
       ? '<div class="tg"><button class="gox-switch '+(a.up?'is-on':'')+'" data-up="'+aid+'"></button><span class="as-swlabel">'+(a.up?'上架':'下架')+'</span></div>'
@@ -986,7 +992,7 @@ a:hover { text-decoration: underline; }
       else { pairs.push({a:id, m:view.id, on:true}); mm=ADDONS[id].temp!==MAINS[view.id].temp; }
       window.gox&&window.gox.toast(mm?'已加入（異溫層，出貨會拆單）':'已加入'); render(); return; }
     if(e.target.closest('#btn-save')){ var s=document.getElementById('save-status'); s.className='as-status is-saved'; s.innerHTML='<span class="as-dot"></span>已儲存（'+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+'）'; window.gox&&window.gox.toast('已儲存加購設定'); return; }
-    if(e.target.closest('#btn-del')){ var a=ADDONS[view.id]; if(window.confirm('確定刪除「'+a.prod+'」的加購設定？\n刪除後，掛載的主商品將不再顯示此加購品。')){ window.gox&&window.gox.toast('已刪除加購設定'); setTimeout(function(){ location.href='admin-addon-list.html'; },600); } return; }
+    if(e.target.closest('#btn-del')){ var a=ADDONS[view.id]; if(window.confirm('確定刪除「'+a.prod+'」的加購設定？\n刪除後，掛載的主商品將不再顯示此加購品。')){ window.gox&&window.gox.toast('已刪除加購設定'); setTimeout(function(){ location.href='admin-addon-list(new).html'; },600); } return; }
   });
   document.addEventListener('input', function(e){
     if(e.target.classList.contains('ac-input')){ openAc(e.target.closest('.ac')); return; }

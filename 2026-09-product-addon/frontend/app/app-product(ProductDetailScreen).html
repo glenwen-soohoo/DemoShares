@@ -3,6 +3,12 @@
 <head>
 <!--
   DemoShares 交接對照 | APP 商品詳情頁・加價購商品（React Native）
+  改的是既有介面：APP 商品詳情頁  fruit_app src/screens/ProductDetailScreen/ProductDetailScreen.tsx
+  這次要動的檔（改既有 1 支 ／ 新建 1 項）：
+    [改既有] fruit_app src/screens/ProductDetailScreen/ProductDetailScreen.tsx  加購卡（demo 的 .addon-* 那塊）
+    [新建]   Product_Api  GET app/products/{productId}/addOns          APP 詳情頁取加購清單（§6-4）
+    [只參考] ProductShoppingTab                                        既有底部購買列，不用改
+    [只參考] POST app/extraProducts（Product.cs:102）                   既有「產線加購品」API，別拿來服務商品加購品
   真相來源：D:\GreenBox\fruit_app（iOS/Android 同一套）；加購品明細投影 Product_Api（ddff3fd）
   對應正式站：
     screen     : src/screens/ProductDetailScreen（既有商品詳情頁；加購卡為新增區塊）

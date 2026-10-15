@@ -3,6 +3,17 @@
 <head>
   <!--
     DemoShares 交接對照 | 結帳頁（確認訂單）・加價購商品
+    改的是既有介面：結帳頁／確認訂單（前台）  route /Orders/ConfirmOrder  view HuashanCRM/Views/Orders/ConfirmOrder.cshtml
+    這次要動的檔（改既有 4 支 ／ 新建 2 項）：
+      [改既有] fruit_web Views/Orders/ConfirmOrder.cshtml:57             加購區塊＋ViewBag.AddOnProducts
+      [改既有] fruit_web OrdersController.ConfirmOrder（約 :2290）       呼叫 _productAddOnHandler.GetAddOnsProductData(shoppingCart)
+      [改既有] fruit_web Views/Shared/_ConfirmProduct.cshtml             商品列底下掛已購加購品（桌機與 mob 兩套 DOM 都要）
+      [改既有] fruit_web Scripts/Web/ConfirmOrder.js（約 :1005）         就地加購互動與金額重算
+      [新建]   ProductAddOnMapping 表                                    主商品↔加購規格配對（§3-3）
+      [新建]   OrderDetailAddOn 表                                       訂單成效標記，只記來源主商品 SourceProductId（§6-3）
+      [只參考] CartController.cs:269 /Cart/AddToShoppingCartByModule     既有 API；加購加入時要記來源主商品 ⚠ 改在哪一層待工程定案
+      [只參考] #SA-Area 超值加購專區（CompanyGift）                      既有的另一套機制，不要動、也不要混用
+      [只參考] Dist/Css/Order/ConfirmOrder-min.css、order-payment-min.css 樣式沿用，不用改
     真相來源：D:\GreenBox\fruit_web dev（d18f11e2a）；加購品明細投影 Product_Api（ddff3fd）
     對應正式站：
       view       : HuashanCRM/Views/Orders/ConfirmOrder.cshtml

@@ -3,6 +3,12 @@
 <head>
 <!--
   DemoShares 交接對照 | APP 購物車・加價購商品（React Native）
+  改的是既有介面：APP 購物車  fruit_app src/screens/CartScreen/CartScreen.tsx
+  這次要動的檔（改既有 1 支 ／ 新建 1 項）：
+    [改既有] fruit_app src/screens/CartScreen/CartScreen.tsx           單一商品加購區（demo 的 .acoa-* 那塊）
+    [新建]   Product_Api  POST app/cart/productAddOns                  購物車回已／未加購（§6-4）
+    [只參考] 既有「加購專區」.extra-*（POST app/extraProducts）         產線加購品，既有機制不要動
+    [只參考] BottomTab／ProductGroups／ProductItem                     既有元件，不用改
   真相來源：D:\GreenBox\fruit_app（iOS/Android 同一套）；加購品明細投影 Product_Api（ddff3fd）
   對應正式站：
     screen     : src/screens/CartScreen（既有購物車）；底部 BottomTab、產線分組 ProductGroups、商品列 ProductItem 均既有
