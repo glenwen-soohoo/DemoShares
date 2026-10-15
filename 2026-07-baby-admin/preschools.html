@@ -798,7 +798,8 @@ a:hover { text-decoration: underline; }
     <div class="tb-left">
       <input id="flt-kw" class="gox-input" placeholder="搜尋院所名稱" style="width:180px;">
       <select id="flt-type" class="gox-select"><option value="">全部專案</option></select>
-      <button id="btn-search" class="gox-btn gox-btn-default">查詢</button>
+      <select id="flt-coop" class="gox-select"><option value="">全部合作狀態</option><option value="coop" selected>合作中</option><option value="stop">已停止合作</option></select>
+      <select id="flt-show" class="gox-select"><option value="">全部顯示狀態</option><option value="show">顯示</option><option value="hide">隱藏</option></select>
       <div class="tb-actions">
         <button id="btn-open-batch" class="gox-btn gox-btn-primary">批次開需求</button>
         <button id="btn-add-pres" class="gox-btn gox-btn-default">＋ 新增院所</button>
@@ -845,6 +846,7 @@ a:hover { text-decoration: underline; }
       <span style="margin:0 8px;color:var(--gox-text-muted);">/</span>
       <span id="d-name-head"></span>
     </h2>
+    <button id="btn-del-pres" class="gox-btn gox-btn-danger">刪除育幼院</button>
   </div>
 
   <div class="d-cols">
@@ -1075,8 +1077,11 @@ a:hover { text-decoration: underline; }
   function refreshMonthSel(){ const opts=openedMonths(); if(!opts.includes(curMonth)) curMonth=opts[0]||'2026-07'; fillSel(fltMonth,opts,fmtMonth); fltMonth.value=curMonth; }
 
   function renderList(){
-    const kw=(v('#flt-kw')||'').trim(), ft=v('#flt-type');
-    const rows=Object.entries(PRES).filter(([id,p])=>(!kw||p.name.includes(kw))&&(!ft||p.type===ft));
+    const kw=(v('#flt-kw')||'').trim(), ft=v('#flt-type'), fc=v('#flt-coop'), fs=v('#flt-show');
+    const rows=Object.entries(PRES).filter(([id,p])=>(!kw||p.name.includes(kw))&&(!ft||p.type===ft)
+      &&(!fc||(fc==='coop'?p.coop:!p.coop))
+      &&(!fs||(fs==='show'?p.show:!p.show)))
+      .sort((a,b)=>Number(b[0])-Number(a[0]));  // 編號大的排上面
     document.querySelector('#pres-count').textContent=rows.length;
     let td=0,tdone=0;
     document.querySelector('#pres-tbody').innerHTML = rows.map(([id,p])=>{
@@ -1238,9 +1243,18 @@ a:hover { text-decoration: underline; }
   });
   document.querySelector('#btn-back').addEventListener('click',(e)=>{ e.preventDefault();
     document.querySelector('#view-detail').setAttribute('hidden',''); document.querySelector('#view-list').removeAttribute('hidden'); renderList(); });
-  document.querySelector('#btn-search').addEventListener('click', renderList);
-  document.querySelector('#flt-kw').addEventListener('keydown',(e)=>{ if(e.key==='Enter') renderList(); });
+  document.querySelector('#btn-del-pres').addEventListener('click',()=>{
+    const p=PRES[detailId]; if(!p) return;
+    if(!confirm(`確定要刪除「${p.name}」？刪除後名冊與每月需求都會一併移除，此動作無法復原。`)) return;
+    delete PRES[detailId];
+    document.querySelector('#view-detail').setAttribute('hidden','');
+    document.querySelector('#view-list').removeAttribute('hidden');
+    renderList(); window.gox.toast(`已刪除「${p.name}」`);
+  });
+  document.querySelector('#flt-kw').addEventListener('input', renderList);
   document.querySelector('#flt-type').addEventListener('change', renderList);
+  document.querySelector('#flt-coop').addEventListener('change', renderList);
+  document.querySelector('#flt-show').addEventListener('change', renderList);
   fltMonth.addEventListener('change',()=>{ curMonth=fltMonth.value; renderList(); });
 
   document.addEventListener('gox:switch',(e)=>{ if(!detailId) return;
