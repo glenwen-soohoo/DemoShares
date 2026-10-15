@@ -13,11 +13,12 @@
   這一頁的真實欄位名（demo → 真名）：
     訂單編號   → OrderNumber
     捐款人     → name / Nickname   ⚠ 個資，demo 用匿名化示意名，真資料是捐款人姓名
+    手機       → Mobile（關鍵字可搜手機）
     捐贈院所   → Preschool_Name / School_Id（取自 Preschool 表）
     捐贈年月   → Search_Year / Search_Month（或 CreateTime）
     金額/箱數  → TotalPrice（金額真實，卡4-26 一律讀 Orders.TotalPrice）；箱數為金額÷單價換算
     付款方式   → PaymentType
-    收據       → ReceiptType（BabyDonateReceiptTypeEnum）；寄送走 SendBabyDonateReceipt
+    發票類型   → InvoiceType（二聯式／三聯式／捐物收據）；清單篩選＝InvoiceType radios。收據「寄送」是另一動作 ReceiptType（BabyDonateReceiptTypeEnum）＋ SendBabyDonateReceipt
     建立時間   → CreateTime
     來源管道   → ad_from（現有 Donate 清單即有此欄）
   新增（非示意，真資料可推導，只是現有清單還沒顯示）：
@@ -718,9 +719,9 @@ a:hover { text-decoration: underline; }
   <div class="flt-row">
     <label>專案類型</label><select id="f-type" class="gox-select"><option value="">全部</option></select>
     <label>捐贈年月</label><select id="f-month" class="gox-select"><option value="">全部</option></select>
-    <label>付款方式</label><select id="f-pay" class="gox-select"><option value="">全部</option><option>信用卡</option><option>ATM</option><option>定期定額</option><option>劃撥</option></select>
-    <label>收據</label><select id="f-rc" class="gox-select"><option value="">全部</option><option>已寄送</option><option>未寄送</option></select>
-    <input id="f-kw" class="gox-input" placeholder="捐款人 / 訂單編號" style="width:170px;">
+    <label>付款方式</label><select id="f-pay" class="gox-select"><option value="">全部</option><option>信用卡</option><option>ATM轉帳</option><option>定期定額</option><option>劃撥</option></select>
+    <label>發票類型</label><select id="f-inv" class="gox-select"><option value="">全部</option><option>二聯式</option><option>三聯式</option><option>捐物收據</option></select>
+    <input id="f-kw" class="gox-input" placeholder="訂單編號 / 姓名 / 手機" style="width:180px;">
     <button id="btn-search" class="gox-btn gox-btn-primary">查詢</button>
     <button id="btn-reset" class="gox-btn gox-btn-default">重設</button>
   </div>
@@ -738,12 +739,48 @@ a:hover { text-decoration: underline; }
   <table class="gox-table">
     <thead><tr>
       <th style="width:32px;"><input type="checkbox" id="ck-all"></th>
-      <th>訂單編號</th><th>捐款人</th><th>專案類型</th><th>捐贈院所</th>
-      <th class="cell-right">金額 / 箱數</th><th>付款方式</th><th class="cell-center">收據</th><th>建立時間</th><th class="cell-ops">操作</th>
+      <th>訂單編號</th><th>捐款人</th><th>手機</th>
+      <th class="cell-right">金額 / 箱數</th><th>捐贈院所</th><th>專案類型</th><th>付款方式</th><th>發票類型</th><th>建立時間</th><th class="cell-ops">操作</th>
     </tr></thead>
     <tbody id="d-tbody"></tbody>
   </table>
 </div></div>
+
+<style>
+  .mv-t{ width:100%; border-collapse:collapse; font-size:13px; }
+  .mv-t td{ padding:7px 10px; border-bottom:1px solid #f0f0f0; }
+  .mv-t td:first-child{ color:var(--gox-text-sub); width:96px; white-space:nowrap; }
+  #print-area{ display:none; }
+  .rcpt{ color:#000; background:#fff; width:21cm; max-width:100%; min-height:14.8cm; margin:0 auto; padding:24px 30px; font-family:'Noto Sans TC',sans-serif; font-size:16px; box-shadow:0 0 30px rgba(50,50,50,.4); box-sizing:border-box; }
+  .rcpt-top{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .rcpt-org{ flex:0 0 74%; }
+  .rcpt-org-name{ font-size:20px; font-weight:700; }
+  .rcpt-org-line{ font-size:15px; line-height:24px; }
+  .rcpt-title{ font-size:20px; font-weight:700; margin-top:8px; }
+  .rcpt-logo{ width:22%; height:auto; object-fit:contain; }
+  .rcpt-t{ width:96%; border-collapse:collapse; border-radius:6px; margin:12px auto; font-size:16px; }
+  .rcpt-t td{ border:1px solid #000; padding:7px 10px; }
+  .rcpt-sign{ display:flex; padding:10px 0; }
+  .rcpt-sign-c{ flex:1; font-size:15px; }
+  .rcpt-sign-c img{ width:50px; margin-left:10px; vertical-align:middle; }
+  .rcpt-sign-c .seal{ width:100px; }
+  .rcpt-break{ page-break-after:always; }
+  @media print{
+    body > *:not(#print-area){ display:none !important; }
+    #print-area{ display:block !important; }
+  }
+</style>
+
+<div id="modal-view" class="gox-modal-overlay is-hidden">
+  <div class="gox-modal-box" style="min-width:420px;max-width:520px;">
+    <h4>捐款明細</h4>
+    <div id="mv-body"></div>
+    <div class="gox-modal-actions">
+      <button class="gox-btn gox-btn-default" data-gox-close>關閉</button>
+      <button class="gox-btn gox-btn-primary" id="mv-print">列印收據</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -754,41 +791,99 @@ a:hover { text-decoration: underline; }
   // 真實育幼院名稱（取自資料庫 Preschool 表）
   const PRES=['聖方濟育幼院','雲林縣信義育幼院','財團法人新北市榮光育幼院','天主教善牧基金會 花蓮兒童之家','家扶基金會 大同育幼院','臺北市私立伯大尼兒少家園'];
   // 捐款人為個資，demo 用匿名化示意名
-  const PAYS=['信用卡','ATM','定期定額','劃撥']; const NAMES=['王小明','陳怡君','林志豪','張淑芬','黃建宏','行動家股份有限公司'];
+  const PAYS=['信用卡','ATM轉帳','定期定額','劃撥']; const NAMES=['王小明','陳怡君','林志豪','張淑芬','黃建宏','行動家股份有限公司'];
+  const INVS=['二聯式','三聯式','捐物收據'];
   const ROWS=[];
   for(let i=0;i<26;i++){ const type=TYPES[i%TYPES.length]; const box=[1,2,3,5][i%4]; const price=[599,650,720,880][i%4];
-    ROWS.push({ no:'DEMO-'+(1001+i), name:NAMES[i%NAMES.length], type, pres:PRES[i%PRES.length], amount:box*price, box, pay:PAYS[i%PAYS.length], sent:i%3===0, time:'2026-07-'+String(2+(i%26)).padStart(2,'0') }); }
+    const nm=NAMES[i%NAMES.length];
+    ROWS.push({ no:'DEMO-'+(1001+i), name:nm, mobile:'09'+String(12345678+i*1111111).slice(0,8), type, pres:PRES[i%PRES.length], amount:box*price, box, pay:PAYS[i%PAYS.length], invoice:INVS[i%3], time:'2026-07-'+String(2+(i%26)).padStart(2,'0'),
+      sn:String(1150700001+i), taxid:nm.includes('公司')?'27415566':'' }); }
   document.querySelector('#f-type').insertAdjacentHTML('beforeend', TYPES.map(t=>`<option>${t}</option>`).join(''));
   document.querySelector('#f-month').insertAdjacentHTML('beforeend', ['2026-07','2026-06','2026-05'].map(m=>`<option>${m}</option>`).join(''));
   const sel=new Set(); const v=s=>document.querySelector(s).value;
 
-  function filtered(){ const ft=v('#f-type'),fm=v('#f-month'),fp=v('#f-pay'),fr=v('#f-rc'),kw=v('#f-kw').trim();
-    return ROWS.filter(r=>(!ft||r.type===ft)&&(!fm||r.time.startsWith(fm))&&(!fp||r.pay===fp)&&(!fr||(fr==='已寄送')===r.sent)&&(!kw||(r.no+r.name).includes(kw))); }
+  function filtered(){ const ft=v('#f-type'),fm=v('#f-month'),fp=v('#f-pay'),fi=v('#f-inv'),kw=v('#f-kw').trim();
+    return ROWS.filter(r=>(!ft||r.type===ft)&&(!fm||r.time.startsWith(fm))&&(!fp||r.pay===fp)&&(!fi||r.invoice===fi)&&(!kw||(r.no+r.name+r.mobile).includes(kw))); }
   function render(){ const list=filtered(); document.querySelector('#d-count').textContent=list.length;
     document.querySelector('#d-tbody').innerHTML=list.map(r=>`<tr>
       <td><input type="checkbox" class="ck" value="${r.no}" ${sel.has(r.no)?'checked':''}></td>
-      <td>${r.no}</td><td>${r.name}</td><td>${ptag(r.type)}</td><td>${r.pres}</td>
+      <td>${r.no}</td><td>${r.name}</td><td>${r.mobile}</td>
       <td class="cell-right stack"><div class="money">$${r.amount.toLocaleString()}</div><div class="box">${r.box} 箱</div></td>
-      <td>${r.pay}</td>
-      <td class="cell-center">${r.sent?'<span class="gox-tag is-success">已寄</span>':'<span class="gox-tag">未寄</span>'}</td>
+      <td>${r.pres}</td><td>${ptag(r.type)}</td><td>${r.pay}</td>
+      <td>${r.invoice}</td>
       <td>${r.time}</td>
       <td class="cell-ops"><a href="#" class="gox-btn-op" data-print="${r.no}">列印</a><a href="#" class="gox-btn-op" data-view="${r.no}">檢視</a></td>
-    </tr>`).join('')||`<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gox-text-muted);">查無捐款紀錄</td></tr>`;
+    </tr>`).join('')||`<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--gox-text-muted);">查無捐款紀錄</td></tr>`;
     syncSel(); }
   function syncSel(){ document.querySelector('#sel-n').textContent=sel.size; document.querySelector('#sel-bar').style.display=sel.size?'flex':'none';
     const bs=[...document.querySelectorAll('.ck')]; document.querySelector('#ck-all').checked=bs.length&&bs.every(b=>b.checked); }
 
   document.querySelector('#btn-search').addEventListener('click',render);
-  document.querySelector('#btn-reset').addEventListener('click',()=>{ ['#f-type','#f-month','#f-pay','#f-rc','#f-kw'].forEach(s=>document.querySelector(s).value=''); render(); });
+  document.querySelector('#btn-reset').addEventListener('click',()=>{ ['#f-type','#f-month','#f-pay','#f-inv','#f-kw'].forEach(s=>document.querySelector(s).value=''); render(); });
   document.querySelector('#f-kw').addEventListener('keydown',e=>{ if(e.key==='Enter') render(); });
   document.querySelector('#ck-all').addEventListener('change',e=>{ filtered().forEach(r=>{ e.target.checked?sel.add(r.no):sel.delete(r.no); }); render(); });
   document.addEventListener('change',e=>{ const c=e.target.closest('.ck'); if(!c)return; c.checked?sel.add(c.value):sel.delete(c.value); syncSel(); });
   document.querySelector('#btn-clear').addEventListener('click',()=>{ sel.clear(); render(); });
-  document.querySelector('#btn-export').addEventListener('click',()=>window.gox.toast('已依目前條件匯出名冊 Excel'));
-  document.querySelector('#btn-print').addEventListener('click',()=>window.gox.toast(`已把選取的 ${sel.size} 張收據合成 PDF`));
-  document.querySelector('#btn-mail').addEventListener('click',()=>window.gox.toast(`已排程寄出 ${sel.size} 張收據`));
+  const byNo=no=>ROWS.find(r=>r.no===no);
+  const RBLOB='https://fruitbox.blob.core.windows.net/pagematerials/baby/print';
+  function receiptHTML(r){ return `
+    <div class="rcpt">
+      <div class="rcpt-top">
+        <div class="rcpt-org">
+          <div class="rcpt-org-name">中華民國等家寶寶社會福利協會</div>
+          <div class="rcpt-org-line">地址：106臺北市大安區復興南路一段321號7樓-1　電話：02-2771-3010</div>
+          <div class="rcpt-org-line">網址：https://greenbox.tw/Baby</div>
+          <div class="rcpt-org-line">E-mail：babygreenbox@greenbox.tw</div>
+          <div class="rcpt-org-line">統一編號：75972723　立案字號：台內團字第1070087702號</div>
+          <div class="rcpt-org-line">勸募字號：衛部救字第 1151362501 號</div>
+          <div class="rcpt-title">捐款收據</div>
+        </div>
+        <img class="rcpt-logo" src="${RBLOB}/baby-logo-for-receipt.png" alt="等家寶寶協會">
+      </div>
+      <table class="rcpt-t">
+        <tr><td style="width:50%;">捐贈者姓名：${r.name}</td><td style="width:50%;">收據號：${r.sn}</td></tr>
+        <tr><td colspan="2">金額：${r.amount.toLocaleString()}</td></tr>
+        <tr><td colspan="2">捐贈日期：${r.time}</td></tr>
+        <tr><td colspan="2">統一編號：${r.taxid||''}</td></tr>
+        <tr><td colspan="2">備註：</td></tr>
+      </table>
+      <div class="rcpt-sign">
+        <div class="rcpt-sign-c">理事長：曾逸峰<img src="${RBLOB}/enzo.png" alt=""></div>
+        <div class="rcpt-sign-c">經手人：曾逸峰<img src="${RBLOB}/enzo.png" alt=""></div>
+        <div class="rcpt-sign-c" style="text-align:right;"><img class="seal" src="${RBLOB}/等家寶寶協會.png" alt="協會印"></div>
+      </div>
+    </div>`; }
+  function printArea(){ let pa=document.querySelector('#print-area'); if(!pa){ pa=document.createElement('div'); pa.id='print-area'; document.body.appendChild(pa); } return pa; }
+  function doPrint(nos){ const rs=nos.map(byNo).filter(Boolean); if(!rs.length){ window.gox.toast('沒有可列印的收據'); return; }
+    printArea().innerHTML=rs.map(receiptHTML).join('<div class="rcpt-break"></div>'); window.print(); }
+  let viewNo=null;
+  function openView(no){ const r=byNo(no); if(!r)return; viewNo=no;
+    document.querySelector('#mv-body').innerHTML=`<table class="mv-t">
+      <tr><td>訂單編號</td><td>${r.no}</td></tr>
+      <tr><td>捐款人</td><td>${r.name}</td></tr>
+      <tr><td>手機</td><td>${r.mobile}</td></tr>
+      <tr><td>專案類型</td><td>${ptag(r.type)}</td></tr>
+      <tr><td>捐贈院所</td><td>${r.pres}</td></tr>
+      <tr><td>金額 / 箱數</td><td>$${r.amount.toLocaleString()}（${r.box} 箱）</td></tr>
+      <tr><td>付款方式</td><td>${r.pay}</td></tr>
+      <tr><td>發票類型</td><td>${r.invoice}</td></tr>
+      <tr><td>建立時間</td><td>${r.time}</td></tr>
+    </table>`;
+    window.gox.openModal('#modal-view'); }
+  function exportCSV(){ const list=filtered(); const head=['訂單編號','捐款人','手機','金額','箱數','捐贈院所','專案類型','付款方式','發票類型','建立時間'];
+    const esc=s=>`"${String(s).replace(/"/g,'""')}"`;
+    const lines=[head.join(',')].concat(list.map(r=>[r.no,r.name,r.mobile,r.amount,r.box,r.pres,r.type,r.pay,r.invoice,r.time].map(esc).join(',')));
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`捐款名冊_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    window.gox.toast(`已匯出 ${list.length} 筆（CSV）`); }
+
+  document.querySelector('#btn-export').addEventListener('click', exportCSV);
+  document.querySelector('#btn-print').addEventListener('click',()=>{ if(!sel.size){ window.gox.toast('請先勾選要列印的收據'); return; } doPrint([...sel]); });
+  document.querySelector('#btn-mail').addEventListener('click',()=>window.gox.toast(`已排程寄出 ${sel.size} 張收據 Email`));
+  document.querySelector('#mv-print').addEventListener('click',()=>{ if(viewNo) doPrint([viewNo]); });
   document.addEventListener('click',e=>{ const p=e.target.closest('[data-print]'),vv=e.target.closest('[data-view]');
-    if(p){ e.preventDefault(); window.gox.toast('列印這張收據'); } if(vv){ e.preventDefault(); window.gox.toast('開啟這筆捐款/收據'); } });
+    if(p){ e.preventDefault(); doPrint([p.dataset.print]); } if(vv){ e.preventDefault(); openView(vv.dataset.view); } });
   render();
 })();
 </script>
