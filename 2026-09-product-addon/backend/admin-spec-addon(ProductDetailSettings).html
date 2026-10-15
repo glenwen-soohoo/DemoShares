@@ -2,7 +2,15 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 規格編輯・加購設定（admin-spec-addon.html・路徑二・勾選＋跳轉）
+  DemoShares 交接對照 | 規格編輯・加購設定（admin-spec-addon(ProductDetailSettings).html・路徑二・勾選＋跳轉）
+  改的是既有介面：後台規格編輯頁的規格設定區（GoX）  ⚠ 工程要改的是 react-component-export src/pages/productSetting/productDetailSettings/ProductDetailSettings.tsx；Edit18.cshtml:365 只是掛載殼，改那裡沒畫面
+  這次要動的檔（改既有 1 支 ／ 新建 1 項）：
+    [改既有] react-component-export src/pages/productSetting/productDetailSettings/ProductDetailSettings.tsx
+             既有「規格限制」checkbox 群組尾端加「作為產品頁加購品」＋旁邊「前往加購設定」跳轉鈕（Q6 定案：只勾選＋跳轉，不內嵌設定）
+    [新建]   IsAddOn 欄位（建議命名）                                   標記此規格為加購品、前台隱藏 ⚠ 欄名待工程定案
+    [只參考] fruit_web Areas/GoX/Views/Product/Edit18.cshtml:365        只掛 <div id="product-detail-settings"> 容器，:33 載 bundle
+             ⚠ 這支是空殼，改它不會有畫面（feedback: handoff-razor-is-just-a-shell）
+    [只參考] window.productDetailsValidateFields()                      既有驗證入口
   真相來源（demo 對齊的 commit；行號會隨後續推進漂移，請以錨點 id／函式名為準）：
     fruit_web              D:\GreenBox\fruit_web              分支 dev（commit d18f11e2a）
     React-Component-Export D:\GreenBox\react-component-export 分支 dev（commit 2221a6f）
@@ -27,7 +35,7 @@
     分頁 tab：all 全部規格 / onshelf 上架中 / offshelf 下架中 / special 贈品與禮物 / addon 加購品（上下架分頁只收前台一般規格；加購品＝勾選後前台隱藏、有價非零，自成一分頁與紫卡）
   本頁「加購」新增部分（正式站還沒有，待新建；Q6 定案＝只勾選＋跳轉，不內嵌加購設定）：
     作為產品頁加購品 勾選欄 addon → 建議 IsAddOn；對齊既有「規格限制」antd checkbox 樣式（群組尾端）。勾選後此規格前台強制隱藏（靠 IsAddOn 身分、比照禮物券 IsPresentItem／贈品 IsGift 的既有做法，無 ProductDetail.hide 欄位）、且與滿額/限購、特殊品類、設為贈品(IsGift)互斥
-    前往加購設定   跳轉鈕 → admin-addon-setting.html（路徑一）；加購價與掛載主商品都在那頁管理（同一份資料）
+    前往加購設定   跳轉鈕 → admin-addon-setting(new).html（路徑一）；加購價與掛載主商品都在那頁管理（同一份資料）
     （v2：加購品＝獨立新規格、加購價是規格自己的價，無折扣機制；下列欄位＝路徑一的設定，列此供對名、本頁不內嵌）：
     加購價         → 加購規格自己的 Price（DiscPrice??Price），營運直接填
     掛載主商品     → ProductAddOnMapping（ProductId / AddOnProductDetailId / Sort；無 IsOnShelf＝配對只有掛上/移除）
@@ -1100,9 +1108,9 @@ a:hover { text-decoration: underline; }
   }
 
   // Q6 定案：路徑二不內嵌加購設定，勾「作為產品頁加購品」後、緊接著在選項後面出現「前往加購設定」跳轉鈕。
-  // 加購價／庫存／販售期間與掛載主商品都集中在路徑一的加購設定頁（admin-addon-setting.html）(v2)。
+  // 加購價／庫存／販售期間與掛載主商品都集中在路徑一的加購設定頁（admin-addon-setting(new).html）(v2)。
   function addonJumpBtn() {
-    return '<div class="fi" style="margin-bottom:24px;"><a class="addon-jump-btn" href="admin-addon-setting.html">前往加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a></div>';
+    return '<div class="fi" style="margin-bottom:24px;"><a class="addon-jump-btn" href="admin-addon-setting(new).html">前往加購設定<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></a></div>';
   }
 
   // 國際條碼（DEV-3869）：黃底卡片、預設收合只秀摘要 Tag（{條碼} x{數量}，通過驗證綠、否則紅），

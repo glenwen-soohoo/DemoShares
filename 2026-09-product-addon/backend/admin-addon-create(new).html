@@ -2,7 +2,13 @@
 <html lang="zh-Hant-TW">
 <head>
 <!--
-  DemoShares 交接對照 | 新增加購品子流程（admin-addon-create.html）
+  DemoShares 交接對照 | 新增加購品子流程（admin-addon-create(new).html）
+  全新頁面：正式站無對應（新建）  新增加購品子流程
+  這次要動的檔（改既有 0 支 ／ 新建 1 項）：
+    [新建]   新增加購品子流程頁（view／controller／route 全部待新建）
+             流程＝建一筆加購品專屬規格（一個 ProductDetail，直接填加購價＋庫存＋販售期間）→ 建立 → 到加購設定掛載主商品
+             ⚠ 寫入走 Product_Api(EF) 還是 GoX，待工程定案
+    [只參考] 既有 ProductDetail 欄位（Detail／Amt／Module／Price／Cost／StartTime／EndTime／OriginAmt／Display）  沿用既有欄位，不新開
   ⚠ 全新機制（v2・加購品＝獨立新規格）：正式站無此頁，待新建。流程＝建一筆加購品專屬規格（＝一個 ProductDetail，直接填加購價＋庫存＋販售期間）→ 建立 → 到加購設定掛載主商品。
   名稱素材來源：D:\Obsidian\GreenBox\02_一般需求\202609_商品頁加購品\v2_新開規格_設計方案.md、工程交接文件.md §4/§5
   對應正式站：
@@ -21,7 +27,7 @@
     上架          ac-listed → Display（加購規格自己的上架；唯一的上下架）
     可貨到付款    ac-cod   → 貨到付款旗標（對 ProductDetail 既有 COD 欄；確切欄名待工程定案）
     作為產品頁加購品 固定勾選 → 建議 IsAddOn；標記此規格為加購品、前台隱藏（v2 無 ProductAddOn 折扣主檔，由配對表或此 flag 認定）
-  這一頁打的真實 API：待新建（建立加購品）；成功後導向 admin-addon-setting.html
+  這一頁打的真實 API：待新建（建立加購品）；成功後導向 admin-addon-setting(new).html
   本頁 demo JS 鍵（PRODUCTS/PIC、ac-* 的 id）為自由命名，勿照抄進 codebase。
   完整名稱對照見同資料夾 _交接對照.md
 -->
@@ -695,7 +701,7 @@ a:hover { text-decoration: underline; }
   <nav class="gox-breadcrumb">
     <span>產品管理</span>
     <span class="sep">&gt;</span>
-    <a href="admin-addon-list.html">產品頁加購設定</a>
+    <a href="admin-addon-list(new).html">產品頁加購設定</a>
     <span class="sep">&gt;</span>
     <strong>新增加購品</strong>
   </nav>
@@ -709,7 +715,7 @@ a:hover { text-decoration: underline; }
 <aside class="gox-sidebar">
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">帳號管理</span></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">會員管理</span></div>
-  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list.html" class="gox-menu-child is-active">產品頁加購設定</a><a href="admin-lineaddon-setting.html" class="gox-menu-child ">產線加購品</a></div></div>
+  <div class="gox-menu-group is-open"><button type="button" class="gox-menu-title"><span class="gox-arrow">▼</span><span>產品管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">產品列表</a><a href="#" class="gox-menu-child ">規格管理</a><a href="admin-addon-list(new).html" class="gox-menu-child is-active">產品頁加購設定</a><a href="admin-lineaddon-setting(ExtraProductSetting).html" class="gox-menu-child ">產線加購品</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">訂單管理</span></div>
   <div class="gox-menu-group "><button type="button" class="gox-menu-title"><span class="gox-arrow">▶</span><span>網頁管理</span></button><div class="gox-menu-children"><a href="#" class="gox-menu-child ">贈品列表</a><a href="#" class="gox-menu-child ">首頁版型</a></div></div>
   <div class="gox-menu-item is-disabled" style="text-decoration:none;color:inherit;"><span class="gox-arrow">▶</span><span class="label">留言管理</span><span class="gox-badge">2</span></div>
@@ -1040,9 +1046,9 @@ a:hover { text-decoration: underline; }
   document.getElementById('ac-c-ok').addEventListener('click', function () {
     document.getElementById('ac-confirm').classList.add('is-hidden');
     window.gox.toast('已建立加購品，接著掛載主商品');
-    setTimeout(function () { location.href = 'admin-addon-setting.html'; }, 900);
+    setTimeout(function () { location.href = 'admin-addon-setting(new).html'; }, 900);
   });
-  document.getElementById('ac-back').addEventListener('click', function () { location.href = 'admin-addon-list.html'; });
+  document.getElementById('ac-back').addEventListener('click', function () { location.href = 'admin-addon-list(new).html'; });
 
   setLocked(true);
 

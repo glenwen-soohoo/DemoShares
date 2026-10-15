@@ -3,6 +3,12 @@
 <head>
 <!--
   DemoShares 交接對照 | 側邊購物車・加價購商品
+  改的是既有介面：側邊購物車（前台・獨立 repo platform-components-webpack）  src/components/cart/　⚠ 需求規格點名整個資料夾，分 original／sameDay 兩種車，兩種都要掛加購品列；商品列本體是根層 cartItem.tsx（由 original/cartOrder.tsx:54 map 出來）
+  這次要動的檔（改既有 1 支 ／ 新建 0 項）：
+    [改既有] platform-components-webpack src/components/cart/          加購品列（唯讀＋可刪）
+             ⚠ original/ 與 sameDay/ 兩種車都要掛，不是只做一種（需求規格 §）
+             商品列本體＝根層 cartItem.tsx，清單在 original/cartOrder.tsx:54 map 出來
+    [只參考] src/styles/cart.css                                       溫層色沿用（常溫#ff8e88／冷藏#73bf00／冷凍#cff6ff）
   真相來源：D:\GreenBox\platform-components-webpack（5201d8f）＝獨立 repo（React＋MUI Drawer＋Tailwind）
   對應正式站：
     components : src/components/cart/（original／sameDay 兩種購物車）

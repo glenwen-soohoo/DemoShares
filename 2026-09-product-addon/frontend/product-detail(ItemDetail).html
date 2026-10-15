@@ -3,6 +3,14 @@
 <head>
   <!--
     DemoShares 交接對照 | 商品詳情頁・加價購商品
+    改的是既有介面：商品詳情頁（前台）  route /Products/ItemDetail/{id}  view HuashanCRM/Views/Products/ItemDetail.cshtml
+    這次要動的檔（改既有 3 支 ／ 新建 1 項）：
+      [改既有] fruit_web HuashanCRM/Views/Products/ItemDetail.cshtml     商品頁加購區塊（demo 的 .addon-* 那塊）
+      [改既有] fruit_web ProductsController.ItemDetail(int id) ＠68、220  帶加購清單進 View（比照結帳頁 ViewBag.AddOnProducts）
+      [改既有] fruit_web Scripts/Web/ProductsDetail.js                   加購勾選／數量／加入菜籃互動
+      [新建]   ProductAddOnMapping 表                                    主商品↔加購規格配對（§3-3）
+      [只參考] CartController.cs:269 /Cart/AddToShoppingCartByModule     既有加入菜籃 API，直接呼叫
+      [只參考] Dist/Css/Product/ItemDeail-min.css                        樣式沿用，不用改（拼字就是 ItemDeail）
     真相來源：D:\GreenBox\fruit_web dev（d18f11e2a）；加購品明細投影 D:\GreenBox\Product_Api（ddff3fd）
     對應正式站（加購區塊掛在這個 view）：
       view       : HuashanCRM/Views/Products/ItemDetail.cshtml

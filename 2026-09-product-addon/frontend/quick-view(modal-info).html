@@ -3,6 +3,13 @@
 <head>
 <!--
   DemoShares 交接對照 | 快速預覽彈窗・加價購商品
+  改的是既有介面：商品快速預覽彈窗（前台・React）  react-component-export src/components/product/modal/info/index.tsx（檔名是 index.tsx，括號取資料夾名 modal-info）
+  這次要動的檔（改既有 1 支 ／ 新建 1 項）：
+    [改既有] react-component-export src/components/product/modal/info/index.tsx:37  彈窗本體加「加購區」
+    [新建]   ProductAddOnMapping 表                                    主商品↔加購規格配對（§3-3）
+    [只參考] src/components/product/modal/specs/addToCart.tsx          既有售完／缺貨 disable 邏輯，沿用不改
+    [只參考] cartContext.tsx → /Cart/AddToShoppingCartByModule         既有加入菜籃流程
+    ⚠ demo 彈窗版型照「線上舊版」1:1 還原，與 repo 裡未上線的重構版不同；開工前先確認工程要接哪一版
   真相來源：D:\GreenBox\react-component-export（2221a6f）；加入菜籃 API 在 D:\GreenBox\fruit_web（d18f11e2a）；加購品明細投影 Product_Api（ddff3fd）
   對應正式站：
     component  : src/components/product/modal/info/index.tsx:37（快速預覽彈窗本體）
