@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | 猜你喜歡 測試台（前台商品頁）
+  改的是既有介面：商品詳情頁（前台）  route /Products/ItemDetail/{id}  view HuashanCRM/Views/Products/ItemDetail.cshtml
+  這次要動的檔（改既有 2 支 ／ 新建 2 項 ／ 只參考 3 支）：
+    [改既有] fruit_web HuashanCRM/Views/Products/ItemDetail.cshtml      插入「猜你會喜歡」區塊容器；既有「為您推薦」(:1566) 依 C 題結論去留
+    [改既有] fruit_web HuashanCRM/Controllers/ProductsController.cs     商品頁不再同步帶推薦，改由前端非同步要
+    [新建]   fruit_web 官網自己的推薦 API（/api/recommend）             用登入 Session 的會員 Id 代呼叫 enzo-gb.net，只回畫面要的欄位
+    [新建]   前端非同步載入腳本                                          IntersectionObserver 捲到才要、逾時 3 秒降級
+    [只參考] greenbox.tw/Dist/Css/Product/ItemDeail-min.css              商品頁既有樣式，本頁直接連線載入做 1:1（拼字就是 ItemDeail，少一個 t）
+    [只參考] greenbox.tw/Content/Web/ItemDetail.css                      同上
+    [只參考] enzo-gb.net recommend_products_for_member                   推薦服務本體，不在 fruit_web
+  區塊標題沿用正式站做法：圖片底（title2_web{產線}.png / title_mobile{產線}.png）＋ .productDescription 疊字；
+  小標沿用 .sub-line + .sub-title-icon(icon{產線}) + .sub-title(產線主色)。四條產線的圖與主色對照見 ItemDetail.cshtml:192-215。
+  ⚠ 本頁是「測試台」，給四條產線撥開關做決定用，不是要上線的畫面。
+-->
+<meta charset="UTF-8">
+<title>猜你喜歡測試台 — 商品頁 (demo)</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ===========================================================
+   base.css — reset + body + 容器佈局
+   =========================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "Microsoft JhengHei", "微軟正黑體", -apple-system, BlinkMacSystemFont, "PingFang TC", sans-serif;
+  background: #fff;
+  color: #33435a;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; padding: 0; margin: 0; }
+img { vertical-align: middle; }
+
+/* 簡易 icon helper（fa 替代用 unicode 字符） */
+.icon {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+}
+
+/* ===========================================================
+   主版面容器
+   - .sb-site-container：全寬白底外殼
+   - .page：水平 padding，無 max-width 限制（會員中心會延伸到視窗右側）
+     若要限制寬度（一般頁面），自行在 .page 加 max-width: 1200px; margin: 0 auto;
+   =========================================================== */
+.sb-site-container {
+  background: #fff;
+  padding: 20px 0;
+  min-height: 400px;
+}
+.page {
+  padding: 0 20px;
+}
+.page::after { content: ''; display: table; clear: both; }
+
+/* ===========================================================
+   header.css — 無毒農主站 header
+   設計參考：正式站 header 樣式
+   主色：#4ba83b（按鈕綠）、#caa940（hover 金）、#dc4e43（badge 紅）
+   max-width 1200 與內容容器對齊
+   =========================================================== */
+
+.gb-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  border-bottom: 1px solid rgba(211, 211, 211, 0.74);
+}
+
+.gb-head .top-bar {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  gap: 14px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.gb-head .logo-wrap img { height: 36px; }
+
+.gb-head .search-box {
+  flex: 0 0 260px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 18px;
+  font-size: 13px;
+}
+.gb-head .search-box input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  flex: 1;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.gb-head .spacer { flex: 1; }
+
+.gb-head .right-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gb-head .member-wrap-link {
+  color: #4ba83b;
+  font-size: 15px;
+  margin: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gb-head .member-wrap-link:hover { opacity: 0.8; }
+
+.gb-head .cart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 18px;
+  background: #4ba83b;
+  color: #fff;
+  font-size: 13px;
+  position: relative;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.gb-head .cart-btn:hover { background: #3d8c30; }
+
+.gb-head .cart-btn .badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc4e43;
+  color: #fff;
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.gb-head .nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px 8px;
+  font-size: 15px;
+  font-weight: 700;
+  overflow-x: auto;
+  white-space: nowrap;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.gb-head .nav-row a {
+  color: #4ba83b;
+  padding: 4px 2px;
+  position: relative;
+}
+.gb-head .nav-row a:hover { color: #caa940; }
+.gb-head .new-badge {
+  color: red;
+  margin-right: 4px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+@media (max-width: 960px) {
+  .gb-head .search-box { display: none; }
+  .gb-head .nav-row { font-size: 13px; gap: 14px; padding: 6px 12px; }
+}
+@media (max-width: 720px) {
+  .gb-head .top-bar { padding: 8px 12px; gap: 8px; }
+  .gb-head .top-bar .username { display: none; }
+}
+
+/* ===========================================================
+   footer.css — 無毒農主站 footer
+   設計參考：正式站 footer 樣式
+   主色：#4ba83b（鮮綠底）、白字
+   =========================================================== */
+
+.gb-footer {
+  background: #4ba83b;
+  color: #fff;
+  padding: 32px 20px 18px;
+}
+
+.gb-footer .wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.gb-footer h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.gb-footer a {
+  color: #fff;
+  opacity: 0.9;
+  display: block;
+}
+.gb-footer a:hover { opacity: 1; }
+
+.gb-footer .social {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.gb-footer .social a {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+}
+.gb-footer .social img { width: 28px; height: 28px; }
+
+.gb-footer .info {
+  font-size: 12px;
+  opacity: 0.9;
+  line-height: 1.7;
+  margin-top: 8px;
+}
+
+.gb-footer .bottom {
+  max-width: 1200px;
+  margin: 24px auto 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.25);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.85;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gb-footer .bottom .slogan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+}
+.gb-footer .bottom .slogan img { height: 28px; }
+.gb-footer .bottom .legal p {
+  margin: 0;
+  line-height: 1.7;
+  text-align: right;
+}
+
+@media (max-width: 960px) {
+  .gb-footer .wrap { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .gb-footer .wrap { grid-template-columns: 1fr; }
+  .gb-footer .bottom { flex-direction: column; align-items: flex-start; }
+  .gb-footer .bottom .legal p { text-align: left; }
+}
+
+
+</style>
+
+  <!-- 1:1 還原：正式站商品頁樣式，直接連線載入（不是複製一份） -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="https://www.greenbox.tw/Dist/Css/layout-min.css?v=3.3.4.4" rel="stylesheet">
+  <link href="https://www.greenbox.tw/Content/Web/ItemDetail.css?v=1.0.8" rel="stylesheet">
+  <link href="https://www.greenbox.tw/Dist/Css/Product/ItemDeail-min.css?v=1.0.9" rel="stylesheet">
+</head>
+<body>
+
+<!--
+  header.html — 無毒農主站 header
+  依賴：base.css、header.css
+  圖片：images/logo.svg、images/smallNormal.svg
+  使用前可調整：會員姓名、購物車數量、active 連結
+-->
+<header class="gb-head">
+  <div class="top-bar">
+    <div class="logo-wrap">
+      <a href="/"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJf5bGkXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0OCA4MCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmOWMxNTg7fS5jbHMtMntmaWxsOiM4M2NjZDI7fS5jbHMtM3tmaWxsOiNhYmNkMDM7fS5jbHMtNHtmaWxsOiM0YmE4M2I7fTwvc3R5bGU+PC9kZWZzPjxnPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMTA0LjgzIiB5PSIzMS4zMiIgd2lkdGg9IjQuMzQiIGhlaWdodD0iNDEuNzUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUzLjgzIDE1OC43Mikgcm90YXRlKC04OS40OCkiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iOTAuNzQgNDcuMDQgOTUuMDkgNDcuMDggOTUuMTQgNDAuNyAxMDAuNTYgNDAuNzUgMTAwLjUxIDQ3LjEyIDEwNC44NCA0Ny4xNyAxMDQuOTEgNDAuNzkgMTEwLjMzIDQwLjg0IDExMC4yNyA0Ny4yMiAxMTQuNjEgNDcuMjYgMTE0LjY4IDQwLjg4IDEyMC4xIDQwLjkyIDEyMC4wNCA0Ny4zMSAxMjQuMzggNDcuMzUgMTI0LjQ0IDQwLjk2IDEyNy45NyA0MSAxMjguMDEgMzYuNjYgMTI0LjQ4IDM2LjYzIDEyNC41MiAzMi4wNSAxMjAuMTggMzIuMDEgMTIwLjE0IDM2LjU5IDExNC43MiAzNi41NCAxMTQuNzUgMzEuOTYgMTEwLjQyIDMxLjkyIDExMC4zNyAzNi41IDEwNC45NSAzNi40NSAxMDQuOTkgMzEuODggMTAwLjY0IDMxLjgzIDEwMC42IDM2LjQxIDk1LjE4IDM2LjM3IDk1LjIyIDMxLjc5IDkwLjg4IDMxLjc1IDkwLjg0IDM2LjMzIDg2LjI2IDM2LjI4IDg2LjIyIDQwLjYyIDkwLjggNDAuNjYgOTAuNzQgNDcuMDQiLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTI3LjUyIDIzLjI3IDkxLjEyIDIzLjI3IDkxLjEzIDE5LjA5IDg2Ljc5IDE5LjA5IDg2Ljc4IDI3LjYxIDEyNy41MiAyNy42MSAxMjcuNTIgMjMuMjciLz48cG9seWdvbiBjbGFzcz0iY2xzLTQiIHBvaW50cz0iMTY5LjY5IDMyLjI2IDE4Ny4zOCAzMi4yNiAxODcuMzggMjguNjUgMTY5LjY5IDI4LjY1IDE2OS42OSAyNi4xOSAxODkuOTYgMjYuMTkgMTg5Ljk2IDIyLjQ3IDE2OS42OSAyMi40NyAxNjkuNjkgMTkuMDkgMTY0LjMgMTkuMDkgMTY0LjMgMjIuNDcgMTQzLjggMjIuNDcgMTQzLjggMjYuMTkgMTY0LjMgMjYuMTkgMTY0LjMgMjguNjUgMTQ2LjY3IDI4LjY1IDE0Ni42NyAzMi4yNiAxNjQuMyAzMi4yNiAxNjQuMyAzNSAxNDIuODMgMzUgMTQyLjgzIDM4LjczIDE5MS42MiAzOC43MyAxOTEuNjIgMzUgMTY5LjY5IDM1IDE2OS42OSAzMi4yNiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0OCwzNi41NWgtNDAuMTl2MzEuMjhoNS4zOHYtMTIuODhoMi44MXYxMi44OGgxMS41N3YtMy42MWgtNi4xOXYtOS4yN2gxLjM3bDIyLjU5LDEzLjA0LDEuOC0zLjEzLTIuMzEtMS4zM3YtOC41OGgzLjE2di0zLjYxaC0zNC44MXYtMTEuMTloMzQuODF2LTMuNjFabS04LjU0LDIzLjg5bC05LjQ5LTUuNDhoOS40OXY1LjQ4WiIvPjxyZWN0IGNsYXNzPSJjbHMtNCIgeD0iMjE0Ljk0IiB5PSI0My42MyIgd2lkdGg9IjI5Ljk1IiBoZWlnaHQ9IjMuNjEiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xODUuNTUsNDQuNDR2LTMuNjFoLTM2LjI1djcuMmgtNS4zMnYzLjYxaDUuMzJ2Ny44NWgzMC44NnY0LjI0aC0xOC41N3YzLjYxaDIzLjk1di03Ljg1aDIuNzF2LTMuNjFoLTIuNzF2LTQuMjRoNC4zNHYtMy42MWgtNC4zNHYtMy41OVptLTUuMzgsMy41OWgtMTEuODRsLTMuNTEtMy41OWgxNS4zNXYzLjU5Wm0tMjUuNDgtMy41OWg1LjI2bC0uMDksLjA5LDMuNDIsMy41aC04LjU5di0zLjU5Wm0wLDcuMmgxMi4xMmw0LjE1LDQuMjRoLTE2LjI3di00LjI0Wm0yNS40OCw0LjI0aC00LjE2bC00LjE1LTQuMjRoOC4zMXY0LjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTIzMS43MiwyMy44NGwtLjAzLS4wMmMtMS4zLTEuNTQtMi43MS0yLjM0LTQuMTctMi4zNS0xLjIzLS4wMS0yLjI1LC41NC0yLjk3LDEuMWwtLjg5LTEuNDJjLTEuMy0yLjA3LTIuNzMtMy4xMy00LjI0LTMuMTUtMi41Ny0uMDItNC4xOCwzLjAxLTQuMjEsMy4wN2wtNy42MywxMS42OGgzMS42M2wtNy40OS04LjkxWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTI0Ni44MSwzMS4wMWwtNS42Ny05Ljg0Yy0xLjItMi4wOS0yLjU0LTMuMTYtMy45Ny0zLjE3LTIuMzktLjAyLTMuODMsMi44NC0zLjk1LDMuMWwtLjQ0LC43NCw3Ljk3LDkuMThoNi4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik04NS4xMSw2Ni4zOGwzLjYyLDEuNDVjMS45Mi0yLjc0LDMuOTMtNy4wNCw1LjIzLTEwLjRsLTMuNjItLjkzYy0xLjI5LDMuMzYtMy40MSw3LjQtNS4yMyw5Ljg4WiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTk4Ljk4LDU3Ljk0Yy42MiwzLjEsMS4wOSw3LjA5LDEuMDksOS40N2wzLjc4LS41N2MtLjA1LTIuMzMtLjYyLTYuMjEtMS4yOS05LjIxbC0zLjU3LC4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik0xMDkuNjMsNTcuODRjMS4yOSwzLjA1LDIuNjQsNy4wNCwzLjEsOS40N2wzLjc4LS43OGMtLjUyLTIuNDMtMS45Mi02LjM2LTMuMzYtOS4zMWwtMy41MiwuNjJaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMTIwLjI5LDU3LjYzYzEuODYsMy4yMSw0LjE5LDcuNSw1LjE3LDEwLjA5bDMuNzItMS42Yy0xLjE0LTIuNTMtMy41Mi02Ljc4LTUuNDMtOS44OGwtMy40NywxLjRaIi8+PC9nPjxnPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTU4Ljc1LDM3Ljk4Yy00LjQ2LC4zLTguOTEsMS41Ni0xMy4xOSwzLjc2LTMuMzUsMS43Mi02LjYsNC4wMi05LjY2LDYuODEtMy42NiwzLjM0LTYuMiw2LjYyLTcuNDQsOC4zN2gyOC4zMWMxLjk1LTMuNjQsMi45OC03Ljc0LDIuOTgtMTEuOSwwLTIuNC0uMzMtNC43Ni0xLTcuMDVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAuNDgsMjMuODloNC40NWMtLjM4LTEuNzMtMS45Mi00Ljc3LTguMDUtNC45OS01LjA3LS4xOC02Ljk0LTIuNjktOS4wOS01LjYtMS41Ny0yLjEyLTMuNDEtNC42LTcuMDItNi45NSwzLjM5LDMuOTcsNy40OSwxMCw5LjQ3LDE3LjU1aDEwLjI0WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTM2LjYzLDczLjE3Yy4zOC0yLjE4LDIuMzUtMy4yNywyLjQ0LTMuMzFsLjE2LS4wOCwuMTctLjAzYzEuMzQtLjI3LDIuNjYtLjY0LDMuOTMtMS4xMWwtMS42Ny0yLjkyLS4wMy0uMjNjLS40LTMuMDYsMi4wNi00LjQ1LDMuNDItNC43NmwuNS0uMTEsNS4zMiwzLjY0YzEuNzEtMS40NiwzLjIxLTMuMTMsNC40Ny00Ljk4SDEzLjY2YzEuMjgsMS44NywyLjc5LDMuNTUsNC41Myw1LjAybDUuMzEtMy42MiwuNSwuMTFjMS4zNiwuMzEsMy44MiwxLjcxLDMuNDIsNC43NmwtLjAzLC4yMy0xLjY3LDIuOTJjMS4yNywuNDcsMi41OSwuODQsMy45MywxLjExbC4xNywuMDMsLjE2LC4wOGMuMDgsLjA1LDIuMDYsMS4xMywyLjQ0LDMuMzEsLjE4LDEuMDctLjA1LDIuMTctLjY3LDMuMjksMS44NSwuMTYsMy43NCwuMTYsNS42MSwwLS42NS0xLjE0LS44OS0yLjI2LS43LTMuMzRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNzUsMzEuNzdjLTUuMDIsMC05LjExLDQuMDktOS4xMSw5LjExLDAsLjQ1LC4wNCwuOTEsLjEsMS4zNiwzLjM2LC45OCw2LjQ2LDIuMzIsOS4yMyw0LDIuODEtMi40OCw1Ljc3LTQuNTcsOC44My02LjIxLS40My00LjYxLTQuMzUtOC4yNi05LjA2LTguMjZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDcuODIsMjMuODljLTIuMDYtNy4zMi02LjItMTMuMDktOS40My0xNi43MywxLjg3LDQuNzEsMy45LDExLjQzLDIuOTgsMTYuNzNoNi40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNC43NCw0LjYzYy0xLjg2LDQuMDMtNS41NSwxMy4xMS00LjI0LDE5LjI2aDguNDhjMS4zMS02LjE2LTIuMzktMTUuMjUtNC4yNC0xOS4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMS42OCwyMy44OWg2LjQ0Yy0uOTItNS4yOSwxLjExLTEyLDIuOTgtMTYuNzItMy4yMiwzLjYyLTcuMzYsOS4zOC05LjQyLDE2LjcyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5LjI1LDIzLjg5YzIuMS04LDYuNTctMTQuMjgsMTAuMDUtMTguMjEtNC4zMywyLjU0LTYuMzYsNS4yOS04LjA5LDcuNjItMi4xNiwyLjkxLTQuMDIsNS40My05LjA5LDUuNjEtMy4wNCwuMTEtNS4yOSwuOTItNi42NywyLjQyLS44MSwuODgtMS4xOCwxLjg0LTEuMzUsMi41NmgxNS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05LjM2LDQyLjc3Yy0uMDcsLjc0LS4xLDEuNS0uMSwyLjI2LDAsNC4xNiwxLjAzLDguMjYsMi45OCwxMS45aDEzLjM5Yy40MS0uNjUsMy00LjY0LDcuNTUtOS4wNC0yLjY1LTEuNTMtNS41OC0yLjc0LTguNzctMy42bC4zMS0xLjEzaDBsLS4zMSwxLjEyYy02LjcyLTEuODQtMTIuODEtMS42Ny0xNS4wNS0xLjUyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTYzLjc3LDI2Ljc5aDMuNTdjLjMsMCwuNTQtLjIzLC41NS0uNTNsLjA1LTEuMTJjMC0uMTMsLjExLTMuMjEtMi4yNi01Ljc4LTEuOTMtMi4wOS00Ljg2LTMuMjItOC43LTMuMzUtMy42OC0uMTMtNC44MS0xLjY2LTYuODctNC40My0yLjM1LTMuMTctNS41Ni03LjUxLTE0LjI1LTEwLjkzaDBjLS41OS0uMjQtMS4wNC0uMzktMS4wNC0uMzlsLS4xNy0uMDZjLS4wNi0uMDItLjEyLS4wMy0uMTctLjAzLS4wNywwLS4xMywuMDEtLjE5LC4wNGwtLjM5LC4xNWMtOS4yNSwzLjQ1LTEyLjU4LDcuOTUtMTUuMDEsMTEuMjMtMi4wNiwyLjc4LTMuMTksNC4zMS02Ljg3LDQuNDQtMy44NCwuMTMtNi43NywxLjI2LTguNywzLjM1LTIuMzcsMi41Ny0yLjI3LDUuNjUtMi4yNiw1Ljc4bC4wNSwxLjEyYy4wMSwuMywuMjYsLjUzLC41NSwuNTNoMy41N0MxLjgxLDMyLjI1LDAsMzguNTQsMCw0NS4wNWMwLDguMzIsMywxNi4zNSw4LjQ1LDIyLjYyLDUuNCw2LjIxLDEyLjgyLDEwLjI5LDIwLjkxLDExLjUsMS42NiwuMjYsMy4zOSwuMzgsNS4xNCwuMzhzMy40Ny0uMTMsNS4xNy0uMzljOC4wOC0xLjIxLDE1LjUtNS4zLDIwLjg5LTExLjUxLDUuNDQtNi4yNyw4LjQ0LTE0LjMsOC40NC0yMi42MSwwLTYuNTEtMS44LTEyLjgtNS4yMy0xOC4yNlptLTE1Ljk4LTEzLjQ5YzIuMTYsMi45MSw0LjAyLDUuNDMsOS4wOSw1LjYsNi4xMywuMjIsNy42NywzLjI2LDguMDUsNC45OWgtMTQuNjljLTEuOTgtNy41NS02LjA4LTEzLjU3LTkuNDctMTcuNTUsMy42MSwyLjM1LDUuNDQsNC44Myw3LjAyLDYuOTVabS4wMiwxMC41OWgtNi40NWMuOTItNS4zLTEuMTEtMTIuMDItMi45OC0xNi43MywzLjIzLDMuNjQsNy4zNyw5LjQxLDkuNDMsMTYuNzNaTTM0Ljc0LDQuNjNjMS44NSw0LjAxLDUuNTUsMTMuMSw0LjI0LDE5LjI2aC04LjQ4Yy0xLjMxLTYuMTYsMi4zOC0xNS4yNCw0LjI0LTE5LjI2Wm0tNi42MywxOS4yNmgtNi40NGMyLjA2LTcuMzQsNi4yLTEzLjA5LDkuNDItMTYuNzItMS44Nyw0LjcyLTMuODksMTEuNDMtMi45OCwxNi43MlptLTI0LjAzLDBjLjE3LS43MiwuNTQtMS42OSwxLjM1LTIuNTYsMS4zOS0xLjUsMy42My0yLjMyLDYuNjctMi40Miw1LjA3LS4xOCw2Ljk0LTIuNjksOS4wOS01LjYxLDEuNzItMi4zMywzLjc2LTUuMDcsOC4wOS03LjYyLTMuNDgsMy45NC03Ljk1LDEwLjIxLTEwLjA1LDE4LjIxSDQuMDlabTQuNzgsNDMuNDFjLjY2LC43NiwxLjM1LDEuNDksMi4wNywyLjE4LS43Mi0uNjktMS40MS0xLjQyLTIuMDctMi4xOFptMjguNDcsOS4yMWMtMS44NywuMTctMy43NiwuMTctNS42MSwwLC42My0xLjEyLC44Ni0yLjIyLC42Ny0zLjI5LS4zOC0yLjE4LTIuMzUtMy4yNy0yLjQ0LTMuMzFsLS4xNi0uMDgtLjE3LS4wM2MtMS4zNC0uMjctMi42Ni0uNjQtMy45My0xLjExbDEuNjctMi45MiwuMDMtLjIzYy40LTMuMDYtMi4wNi00LjQ1LTMuNDItNC43NmwtLjUtLjExLTUuMzEsMy42MmMtMS43NC0xLjQ3LTMuMjUtMy4xNS00LjUzLTUuMDJINTUuMzRjLTEuMjYsMS44NS0yLjc2LDMuNTItNC40Nyw0Ljk4bC01LjMyLTMuNjQtLjUsLjExYy0xLjM2LC4zMS0zLjgyLDEuNzEtMy40Miw0Ljc2bC4wMywuMjMsMS42NywyLjkyYy0xLjI3LC40Ny0yLjU5LC44NC0zLjkzLDEuMTFsLS4xNywuMDMtLjE2LC4wOGMtLjA4LC4wNS0yLjA2LDEuMTMtMi40NCwzLjMxLS4xOSwxLjA4LC4wNiwyLjIsLjcsMy4zNFptLTQuMTYtMjguNjJjLTQuNTUsNC4zOS03LjE1LDguMzktNy41NSw5LjA0SDEyLjIzYy0xLjk1LTMuNjQtMi45OC03Ljc0LTIuOTgtMTEuOSwwLS43NiwuMDMtMS41MiwuMS0yLjI2LDIuMjUtLjE1LDguMzMtLjMyLDE1LjA1LDEuNTJsLjMxLTEuMTNoMGwtLjMxLDEuMTNjMy4xOCwuODcsNi4xMiwyLjA3LDguNzcsMy42Wm0xLjgtMS42NWMtMi43OC0xLjY4LTUuODgtMy4wMi05LjIzLTQtLjA3LS40NS0uMS0uOTEtLjEtMS4zNiwwLTUuMDIsNC4wOS05LjExLDkuMTEtOS4xMSw0LjcxLDAsOC42MywzLjY1LDkuMDYsOC4yNi0zLjA1LDEuNjQtNi4wMiwzLjczLTguODMsNi4yMVptMTAuNTgtNC41YzQuMjgtMi4yLDguNzMtMy40NywxMy4xOS0zLjc2LC42NiwyLjI4LDEsNC42NSwxLDcuMDUsMCw0LjE2LTEuMDMsOC4yNi0yLjk4LDExLjlIMjguNDVjMS4yNS0xLjc1LDMuNzgtNS4wNCw3LjQ0LTguMzcsMy4wNi0yLjgsNi4zMS01LjA5LDkuNjYtNi44MVptLTUuNjMsMzQuNDNjLS41OS0uNzUtMS4xMy0xLjctLjk5LTIuNTksLjE0LS44NCwuODQtMS40LDEuMTItMS41OSwxLjg3LS4zOCwzLjY5LS45Niw1LjQxLTEuN2wxLjItLjUyLTIuNzUtNC44Yy0uMDUtMS4wNywuNjgtMS41OCwxLjItMS44MWw1Ljg2LDQsLjY4LS41NGMyLjc2LTIuMTksNS4wNS00Ljg2LDYuOC03LjkyLDIuMzctNC4xNCwzLjYzLTguODcsMy42My0xMy42OCwwLTIuOTQtLjQ2LTUuODUtMS4zNy04LjYzbC0uMjYtLjgxaC0uOWMtNC41OSwuMTgtOS4xNCwxLjMtMTMuNTIsMy4zMi0uOTQtNS4zNy01LjY3LTkuNDktMTEuMjgtOS40OS02LjMyLDAtMTEuNDUsNS4xNC0xMS40NSwxMS40NSwwLC4yNCwwLC40OCwuMDIsLjcyLTguMTctMS44OS0xNC44Ny0xLjExLTE1LjE3LTEuMDhsLS45LC4xMS0uMTIsLjljLS4xNSwxLjE0LS4yMiwyLjMyLS4yMiwzLjQ5LDAsNC44LDEuMjUsOS41MiwzLjYxLDEzLjY1LDEuNzYsMy4wOSw0LjA3LDUuNzcsNi44Nyw3Ljk5bC42OCwuNTMsNS44NC0zLjk4Yy41MiwuMjMsMS4yNCwuNzUsMS4yLDEuODFsLTIuNzUsNC44LDEuMiwuNTJjMS43MywuNzUsMy41NSwxLjMyLDUuNDEsMS43LC4yOSwuMiwuOTksLjc1LDEuMTMsMS41OSwuMTQsLjg3LS4zNywxLjgtLjk1LDIuNTQtMTUuMDEtMi41Ni0yNi4yNS0xNS44My0yNi4yNS0zMS4xNCwwLTYuODYsMi4xNS0xMy4zNSw2LjIyLTE4LjgxSDU5Ljg5YzQuMDYsNS40Nyw2LjIyLDExLjk2LDYuMjIsMTguODEsMCwxNS4yOC0xMS4yMSwyOC41My0yNi4xOCwzMS4xM1oiLz48L2c+PC9zdmc+" alt="無毒農，友善環境的安心水果"></a>
+    </div>
+    <div class="search-box">
+      <i class="icon">&#128269;</i>
+      <input type="text" placeholder="請輸入關鍵字">
+    </div>
+    <div class="spacer"></div>
+    <div class="right-area">
+      <a class="member-wrap-link" href="/Volunteers/Orders">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYiIGhlaWdodD0iMjYiIHZpZXdCb3g9IjAgMCAyNiAyNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyLjY5MjEgMjZDMTIuODMwMiAyNiAxLjc3MjA1IDIxLjU4IDAuNjg3MzY3IDE3LjczMjhDLTAuMTYxNjk1IDE0LjcxODQgLTAuMDI3NjMyNyA1LjgyMTU2IDAuMDc3OTkyMyAxLjg5NzE5QzAuMTA2NDMgMC44NDA5MzggMS4wMTIzNyAwIDIuMTE3MzcgMEgyMy40MDg5QzI0LjUxMzkgMCAyNS40MTk5IDAuODQwOTM4IDI1LjQ0ODMgMS44OTcxOUMyNS41NTM5IDUuODIxNTYgMjUuNjg4IDE0LjcxNDQgMjQuODM0OSAxNy43MzI4QzIzLjc1MDIgMjEuNTggMTIuNjkyMSAyNiAxMi44MzAyIDI2SDEyLjY5MjFaIiBmaWxsPSIjQjlDM0NFIi8+CjxwYXRoIGQ9Ik0xMi44MTAyIDBIMi4xMTc2OEMxLjAxMjY4IDAgMC4xMDY3NDEgMC44NDA5MzggMC4wNzgzMDMyIDEuODk3MTlDLTAuMDI3MzIxOCA1LjgyMTU2IC0wLjE2MTM4NCAxNC43MTg0IDAuNjkxNzQxIDE3LjczMjhDMS43NzY0MyAyMS41ODQxIDEyLjgzNDYgMjYgMTIuNjk2NCAyNkgxMi44MTQyVjBIMTIuODEwMloiIGZpbGw9IiNDNUQwREIiLz4KPHBhdGggZD0iTTEuODUzMTMgMi42NzcyMUMxLjY0NTk1IDIuNjc3MjEgMS40MzQ3IDIuNTkxOSAxLjI5MjUxIDIuNDQxNTlDMS4xNDIyIDIuMjkxMjggMS4wNTY4OCAyLjA4ODE1IDEuMDU2ODggMS44ODA5NkMxLjA1Njg4IDEuNjczNzggMS4xNDIyIDEuNDcwNjUgMS4yOTI1MSAxLjMyNDRDMS40NzUzMiAxLjEzMzQ2IDEuNzUxNTcgMS4wNTYyOCAyLjAwMzQ1IDEuMTAwOTZDMi4wNTYyNiAxLjExMzE1IDIuMTA5MDcgMS4xMjUzNCAyLjE1Mzc2IDEuMTQ1NjVDMi4xOTg0NSAxLjE2NTk2IDIuMjQzMTMgMS4xOTAzNCAyLjI5MTg4IDEuMjE4NzhDMi4zMzY1NyAxLjI1MTI4IDIuMzc3MiAxLjI4Mzc4IDIuNDA5NyAxLjMyNDRDMi41NjAwMSAxLjQ2NjU5IDIuNjQ1MzIgMS42Njk3MSAyLjY0NTMyIDEuODgwOTZDMi42NDUzMiAyLjA5MjIxIDIuNTYwMDEgMi4yOTEyOCAyLjQwOTcgMi40NDE1OUMyLjI2NzUxIDIuNTkxOSAyLjA1NjI2IDIuNjc3MjEgMS44NTMxMyAyLjY3NzIxWiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNMTguNTIxNyAxLjg4MTA1QzE4LjUyMTcgMS40NDIzIDE4Ljg3NTEgMS4wODg4NyAxOS4zMTM4IDEuMDg4ODdDMTkuNzUyNiAxLjA4ODg3IDIwLjEwNiAxLjQ0MjMgMjAuMTA2IDEuODgxMDVDMjAuMTA2IDIuMzE5OCAxOS43NTI2IDIuNjc3MyAxOS4zMTM4IDIuNjc3M0MxOC44NzUxIDIuNjc3MyAxOC41MjE3IDIuMzE5OCAxOC41MjE3IDEuODgxMDVaTTE0LjE1NDUgMS44ODEwNUMxNC4xNTQ1IDEuNDQyMyAxNC41MTIgMS4wODg4NyAxNC45NTA3IDEuMDg4ODdDMTUuMzg5NSAxLjA4ODg3IDE1Ljc0MjkgMS40NDIzIDE1Ljc0MjkgMS44ODEwNUMxNS43NDI5IDIuMzE5OCAxNS4zODk1IDIuNjc3MyAxNC45NTA3IDIuNjc3M0MxNC41MTIgMi42NzczIDE0LjE1NDUgMi4zMTk4IDE0LjE1NDUgMS44ODEwNVpNOS43OTEzNSAxLjg4MTA1QzkuNzkxMzUgMS40NDIzIDEwLjE0NDggMS4wODg4NyAxMC41ODM1IDEuMDg4ODdDMTEuMDIyMyAxLjA4ODg3IDExLjM3NTcgMS40NDIzIDExLjM3NTcgMS44ODEwNUMxMS4zNzU3IDIuMzE5OCAxMS4wMjIzIDIuNjc3MyAxMC41ODM1IDIuNjc3M0MxMC4xNDQ4IDIuNjc3MyA5Ljc5MTM1IDIuMzE5OCA5Ljc5MTM1IDEuODgxMDVaTTUuNDI4MjIgMS44ODEwNUM1LjQyODIyIDEuNDQyMyA1Ljc4MTY2IDEuMDg4ODcgNi4yMjA0MSAxLjA4ODg3QzYuNjU5MTYgMS4wODg4NyA3LjAxMjYgMS40NDIzIDcuMDEyNiAxLjg4MTA1QzcuMDEyNiAyLjMxOTggNi42NTkxNiAyLjY3NzMgNi4yMjA0MSAyLjY3NzNDNS43ODE2NiAyLjY3NzMgNS40MjgyMiAyLjMxOTggNS40MjgyMiAxLjg4MTA1WiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNMjMuNjcyOSAyLjY3NzE2QzIzLjQ2NTcgMi42NzcxNiAyMy4yNjI2IDIuNTkxODUgMjMuMTEyMyAyLjQ0MTUzQzIyLjk3MDEgMi4yOTEyMiAyMi44ODQ4IDIuMDg4MSAyMi44ODQ4IDEuODgwOTFDMjIuODg0OCAxLjY3MzcyIDIyLjk3MDEgMS40NzA2IDIzLjExMjMgMS4zMjQzNUMyMy40MTI5IDEuMDIzNzIgMjMuOTQxIDEuMDIzNzIgMjQuMjM3NiAxLjMyNDM1QzI0LjM4NzkgMS40NjY1MyAyNC40NjUxIDEuNjY5NjYgMjQuNDY1MSAxLjg4MDkxQzI0LjQ2NTEgMi4wOTIxNiAyNC4zODc5IDIuMjkxMjIgMjQuMjM3NiAyLjQ0MTUzQzI0LjA4NzMgMi41OTE4NSAyMy44ODQxIDIuNjc3MTYgMjMuNjc3IDIuNjc3MTZIMjMuNjcyOVoiIGZpbGw9IiNBOUIyQkUiLz4KPHBhdGggZD0iTTE1LjY2NTcgMjIuNTkxNUMxNS40NzA3IDIyLjIwNTUgMTUuNjI1MSAyMS43MzAyIDE2LjAxMSAyMS41MjcxQzE2LjQwMSAyMS4zMzIxIDE2Ljg4MDQgMjEuNDg2NSAxNy4wNzU0IDIxLjg3MjRDMTcuMjc4NSAyMi4yNjI0IDE3LjEyMDEgMjIuNzQxOCAxNi43MzAxIDIyLjk0NDlDMTYuNjIwNCAyMi45OTc3IDE2LjQ5NDQgMjMuMDMwMiAxNi4zNzI2IDIzLjAzMDJDMTYuMDg0MSAyMy4wMzAyIDE1LjgxMTkgMjIuODY3NyAxNS42NjU3IDIyLjU5MTVaTTE5LjE3MTYgMjAuNzAyNEMxOC45MzYgMjAuMzM2OCAxOS4wNDE2IDE5Ljg0NTIgMTkuNDA3MiAxOS42MDU1QzE5Ljc3MjkgMTkuMzY5OSAyMC4yNjQ0IDE5LjQ3NTUgMjAuNTA0MSAxOS44NDEyQzIwLjczOTcgMjAuMjE0OSAyMC42MzQxIDIwLjcwMjQgMjAuMjY0NCAyMC45MzhDMjAuMTM0NCAyMS4wMjM0IDE5Ljk4NDEgMjEuMDY0IDE5Ljg0MTkgMjEuMDY0QzE5LjU4MTkgMjEuMDY0IDE5LjMyNiAyMC45MzggMTkuMTc1NyAyMC43MDY1TDE5LjE3MTYgMjAuNzAyNFpNMjIuNDA5NCAxOC4zNjI0QzIyLjA1MTkgMTguMTA2NSAyMS45NjY2IDE3LjYxOSAyMi4yMTg1IDE3LjI1NzRDMjIuNDY2MyAxNi44OTk5IDIyLjk2MTkgMTYuODE0NiAyMy4zMjM1IDE3LjA2NjVDMjMuNjc2OSAxNy4zMjI0IDIzLjc2MjIgMTcuODA5OSAyMy41MTQ0IDE4LjE3MTVDMjMuMzU2IDE4LjM5NDkgMjMuMTA4MiAxOC41MDQ2IDIyLjg2MDQgMTguNTA0NkMyMi43MDE5IDE4LjUwNDYgMjIuNTQ3NiAxOC40NTk5IDIyLjQwOTQgMTguMzYyNFpNMjMuNTA2MyAxNC42MjA5QzIzLjA2NzYgMTQuNTk2NSAyMi43NDI2IDE0LjIxNDYgMjIuNzY2OSAxMy43Nzk5QzIyLjc5OTQgMTMuMzQxMiAyMy4xNzcyIDEzLjAxNjIgMjMuNjA3OSAxMy4wNDA1QzI0LjA0NjYgMTMuMDczIDI0LjM3OTcgMTMuNDUwOSAyNC4zNDcyIDEzLjg4OTZDMjQuMzIyOSAxNC4zMDggMjMuOTczNSAxNC42MjkgMjMuNTU1MSAxNC42MjlDMjMuNTU1MSAxNC42MjkgMjMuNTIyNiAxNC42MjkgMjMuNTAyMiAxNC42MjA5SDIzLjUwNjNaTTIzLjcwMTMgMTAuNjQzN0MyMy4yNjI2IDEwLjYzNTUgMjIuOTE3MiAxMC4yNjk5IDIyLjkyNTQgOS44MzUyMkMyMi45MzM1IDkuMzk2NDcgMjMuMjk5MSA5LjA1MTE2IDIzLjczMzggOS4wNTkyOUMyNC4xNzI2IDkuMDcxNDcgMjQuNTE3OSA5LjQzMzA0IDI0LjUwOTcgOS44Njc3MkMyNC41MDE2IDEwLjI5ODMgMjQuMTQ0MSAxMC42NDM3IDIzLjcxMzUgMTAuNjQzN0gyMy43MDEzWk0yMi45NDE2IDUuODcwMjJDMjIuOTMzNSA1LjQzMTQ3IDIzLjI4NjkgNS4wNzgwNCAyMy43MjU3IDUuMDczOTdDMjQuMTY0NCA1LjA3Mzk3IDI0LjUyMTkgNS40Mjc0MSAyNC41MjE5IDUuODY2MTZDMjQuNTMwMSA2LjMwNDkxIDI0LjE3NjYgNi42NTgzNSAyMy43Mzc5IDYuNjYyNDFIMjMuNzI5N0MyMy4yOTkxIDYuNjYyNDEgMjIuOTM3NiA2LjMwODk3IDIyLjkzNzYgNS44NzAyMkgyMi45NDE2WiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNMTIuNzYxMiAyNC43MjQ0QzEyLjU1ODEgMjQuNzI0NCAxMi4zNTA5IDI0LjYzOTEgMTIuMjA0NiAyNC40OTY5QzEyLjA1NDMgMjQuMzQ2NiAxMS45NjkgMjQuMTQzNCAxMS45NjkgMjMuOTM2M0MxMS45NjkgMjMuNzI5MSAxMi4wNTQzIDIzLjUyNTkgMTIuMjA0NiAyMy4zNzU2QzEyLjQ5NzEgMjMuMDgzMSAxMy4wMjkzIDIzLjA4MzEgMTMuMzIxOCAyMy4zNzU2QzEzLjQ3MjEgMjMuNTI1OSAxMy41NTc0IDIzLjcyOTEgMTMuNTU3NCAyMy45MzYzQzEzLjU1NzQgMjQuMTQzNCAxMy40NzIxIDI0LjM0NjYgMTMuMzIxOCAyNC40OTY5QzEzLjE3OTYgMjQuNjM5MSAxMi45Njg0IDI0LjcyNDQgMTIuNzYxMiAyNC43MjQ0WiIgZmlsbD0iI0E5QjJCRSIvPgo8cGF0aCBkPSJNOC43OTYxNiAyMi45NDVDOC40MTAyMiAyMi43NDE5IDguMjU1ODUgMjIuMjY2NSA4LjQ1MDg1IDIxLjg4MDZDOC42NDU4NSAyMS40OTA2IDkuMTI1MjIgMjEuMzMyMiA5LjUxNTIyIDIxLjUyNzJDOS45MDUyMiAyMS43MzAzIDEwLjA2MzcgMjIuMjA1NiA5Ljg2MDU0IDIyLjU5OTdDOS43MjI0MSAyMi44NzU5IDkuNDQyMSAyMy4wMzAzIDkuMTUzNjYgMjMuMDMwM0M5LjAzNTg1IDIzLjAzMDMgOC45MTM5NyAyMy4wMDU5IDguNzk2MTYgMjIuOTQ1Wk01LjI2MTc5IDIwLjkzODFDNC44OTYxNiAyMC43MDI1IDQuNzg2NDcgMjAuMjE1IDUuMDI2MTYgMTkuODQ5NEM1LjI2MTc5IDE5LjQ3NTYgNS43NDkyOSAxOS4zNzQgNi4xMTQ5MSAxOS42MTM3QzYuNDg4NjYgMTkuODQ5NCA2LjU5MDIyIDIwLjMzNjkgNi4zNTQ2IDIwLjcwMjVDNi4xOTYxNiAyMC45MzgxIDUuOTQ0MjkgMjEuMDY4MSA1LjY4MDIyIDIxLjA2ODFDNS41MzgwNCAyMS4wNjgxIDUuMzg3NzIgMjEuMDI3NSA1LjI1NzcyIDIwLjkzODFINS4yNjE3OVpNMi4wMTU4NSAxOC4xODM3QzEuNzU5OTEgMTcuODI2MiAxLjg0NTIyIDE3LjMyNjUgMi4xOTg2NiAxNy4wNzg3QzIuNTU2MTYgMTYuODIyOCAzLjA1NTg1IDE2LjkwODEgMy4zMDc3MiAxNy4yNjk3VjE3LjI2MTVDMy41NTU1NCAxNy42MTkgMy40NzAyMiAxOC4xMTg3IDMuMTE2NzkgMTguMzcwNkMyLjk3NDYgMTguNDY4MSAyLjgxNjE2IDE4LjUxMjggMi42NTc3MiAxOC41MTI4QzIuNDA5OTEgMTguNTEyOCAyLjE2MjEgMTguMzk1IDIuMDExNzkgMTguMTc5N0wyLjAxNTg1IDE4LjE4MzdaTTEuMTY2NzkgMTMuODkzN0MxLjE0MjQxIDEzLjQ1NSAxLjQ2NzQxIDEzLjA4NTMgMS45MDYxNiAxMy4wNTI4QzIuMzQ0OTEgMTMuMDIwMyAyLjcyMjcyIDEzLjM1MzQgMi43NDcxIDEzLjc5MjJDMi43Nzk2IDE0LjIzMDkgMi40NDY0NyAxNC42MDg3IDIuMDE1ODUgMTQuNjMzMUgxLjk1ODk3QzEuNTQ4NjYgMTQuNjMzMSAxLjIwMzM1IDE0LjMxMjIgMS4xNjY3OSAxMy44OTM3Wk0xLjAwODM1IDkuODc1OTJDMS4wMDAyMiA5LjQzNzE3IDEuMzQ5NiA5LjA3MTU0IDEuNzg0MjkgOS4wNjc0OEMyLjIyMzA0IDkuMDU5MzYgMi41ODA1NCA5LjQwODczIDIuNTkyNzIgOS44NDM0MkMyLjYwMDg1IDEwLjI4MjIgMi4yNTE0NyAxMC42Mzk3IDEuODE2NzkgMTAuNjUxOUgxLjc5NjQ3QzEuMzY1ODUgMTAuNjUxOSAxLjAxMjQxIDEwLjMwNjUgMS4wMDQyOSA5Ljg3NTkySDEuMDA4MzVaTTEuNzgwMjIgNi42NjI0OEMxLjM0MTQ3IDYuNjYyNDggMC45ODgwMzcgNi4zMDQ5OCAwLjk4ODAzNyA1Ljg2NjIzQzAuOTk2MTYyIDUuNDI3NDggMS4zNTM2NiA1LjA3NDA0IDEuNzkyNDEgNS4wODIxN0MyLjIyMzA0IDUuMDgyMTcgMi41NzY0NyA1LjQzOTY3IDIuNTc2NDcgNS44Nzg0MkMyLjU2ODM1IDYuMzE3MTcgMi4yMTg5NyA2LjY2MjQ4IDEuNzg0MjkgNi42NjI0OEgxLjc3NjE2SDEuNzgwMjJaIiBmaWxsPSIjQTlCMkJFIi8+CjxwYXRoIGQ9Ik0yMS43MDI2IDQuMjI5SDMuODIzNUMzLjY5NzU2IDEwLjIwOSAzLjg4ODUgMTQuOTA5MyA0LjMyNzI1IDE2LjQ2OTNDNC40Njk0NCAxNi42ODQ2IDUuNzY1MzcgMTguNDA3MSAxMi42MTA3IDIxLjM1NjVDMTIuNjYzNSAyMS4zODA5IDEyLjcxMjIgMjEuNDAxMiAxMi43NjUxIDIxLjQyNTZDMTkuNzQ4NSAxOC40MzU2IDIxLjA2MDcgMTYuNjg4NyAyMS4yMDI5IDE2LjQ2OTNDMjEuNjQxNiAxNC45MDUzIDIxLjgzMjYgMTAuMjA0OSAyMS43MDY2IDQuMjI5SDIxLjcwMjZaIiBmaWxsPSIjQTlCMkJFIi8+CjxwYXRoIGQ9Ik0xMi43NjExIDIxLjkzMzNDMTIuNjkyMSAyMS45MzMzIDEyLjYyNzEgMjEuOTIxMSAxMi41NjIxIDIxLjg5MjdMMTIuNDY0NiAyMS44NTJDNS41Mjk4OCAxOC44NjYxIDQuMTEyMDcgMTcuMDc4NiAzLjg5Njc1IDE2Ljc0OTVDMy44NjgzMiAxNi43MDQ5IDMuODQ4IDE2LjY1NjEgMy44MzE3NSAxNi42MDc0QzMuMzc2NzUgMTQuOTg2NCAzLjE4MTc1IDEwLjM1NTIgMy4zMTE3NSA0LjIxNjczQzMuMzE1ODIgMy45NDA0OCAzLjU0MzMyIDMuNzE3MDQgMy44MjM2MyAzLjcxNzA0SDIxLjcwMjdDMjEuOTc4OSAzLjcxNzA0IDIyLjIwNjQgMy45NDA0OCAyMi4yMTQ2IDQuMjE2NzNDMjIuMzQ0NiAxMC4zNTExIDIyLjE0OTYgMTQuOTgyNCAyMS42OTQ2IDE2LjYwNzRDMjEuNjgyNCAxNi42NTYxIDIxLjY1OCAxNi43MDQ5IDIxLjYyOTYgMTYuNzQ5NUMyMS40MTAyIDE3LjA4MjcgMTkuOTY4IDE4Ljg5NDUgMTIuOTY0MyAyMS44OTI3QzEyLjg5OTMgMjEuOTIxMSAxMi44MzAyIDIxLjkzMzMgMTIuNzY1MiAyMS45MzMzSDEyLjc2MTFaTTQuNzkwNSAxNi4yNDU4QzUuMDQyMzggMTYuNTY2NyA2LjU0OTU3IDE4LjE4NzcgMTIuNzYxMSAyMC44Njg5QzE4Ljk3MjcgMTguMTg3NyAyMC40NzU4IDE2LjU2NjcgMjAuNzMxOCAxNi4yNDU4QzIxLjEyNTggMTQuNjk4IDIxLjMwNDYgMTAuMzM4OSAyMS4yMDMgNC43MzY3M0g0LjMyMzMyQzQuMjIxNzUgMTAuMzM4OSA0LjQwMDUgMTQuNjk4IDQuNzk0NTcgMTYuMjQ1OEg0Ljc5MDVaIiBmaWxsPSIjQTlCMkJFIi8+CjxwYXRoIGQ9Ik0yMC41NDQ4IDUuMzQyMkgxMi42MjdWMjAuMjUxNkMxMi42NzE2IDIwLjI3MTkgMTIuNzE2MyAyMC4yOTIyIDEyLjc2MSAyMC4zMDg0QzE4Ljg0MjYgMTcuNzA0NCAxOS45ODQxIDE2LjE4NSAyMC4xMDYgMTUuOTk0MUMyMC40ODc5IDE0LjYzMzEgMjAuNjU0NSAxMC41NDIyIDIwLjU0NDggNS4zMzgxM1Y1LjM0MjJaIiBmaWxsPSIjQjlDM0NFIi8+CjxwYXRoIGQ9Ik00Ljk4MTQgNS4zNDIwNEM0Ljg3MTcxIDEwLjU0NjEgNS4wMzgyNyAxNC42MzcgNS40MjAxNSAxNS45OThDNS41NDIwMiAxNi4xODQ5IDYuNjcxNCAxNy42ODM5IDEyLjYzMTEgMjAuMjUxNFY1LjM0MjA0SDQuOTgxNFoiIGZpbGw9IiNDRURBRTYiLz4KPGcgb3BhY2l0eT0iMC40NCI+CjxwYXRoIGQ9Ik0yMC4xMTAzIDE1Ljk5OEMyMC40OTIyIDE0LjYzNyAyMC42NTg3IDEwLjU0NjEgMjAuNTQ5IDUuMzQyMDRIMTYuNjM2OEMxNi43NDI1IDguNjM2NzMgMTYuMjg3NSAxNy4wMTc3IDkuMTQ5NjYgMTguNjA2MUMxMC4wNzE4IDE5LjA5MzYgMTEuMjEzNCAxOS42NDIgMTIuNjMxMiAyMC4yNTU1QzEyLjY3NTkgMjAuMjc1OCAxMi43MjA2IDIwLjI5NjEgMTIuNzY1MyAyMC4zMTI0QzE4Ljg0NjggMTcuNzA4MyAxOS45ODg0IDE2LjE4ODkgMjAuMTEwMyAxNS45OThaIiBmaWxsPSIjQTZCQUQxIi8+CjwvZz4KPHBhdGggZD0iTTQuNzI5NDcgNS45MzkzQzQuNzQ1NzIgNi4zOTQzIDQuNzQ1NzIgNi44NDUyNCA0Ljc1Mzg0IDcuMzAwMjRDNC43NjE5NyA3Ljk1ODM2IDQuODE0NzggOC42MTY0OSA0Ljg2MzUzIDkuMjc0NjFDNC44OTYwMyA5LjcxMzM2IDUuMjI5MTUgMTAuMTM1OSA1LjcwNDQ3IDEwLjExNTVDNi4xMzEwMyAxMC4wOTUyIDYuNTc3OSA5Ljc0NTg2IDYuNTQ1NCA5LjI3NDYxQzYuNDk2NjUgOC42MTY0OSA2LjQ0Mzg0IDcuOTU4MzYgNi40MzU3MiA3LjMwMDI0QzYuNDI3NTkgNi44NDUyNCA2LjQyNzU5IDYuMzk0MyA2LjQxMTM0IDUuOTM5M0M2LjM5NTA5IDUuNTAwNTUgNi4wMzc1OSA1LjA3ODA1IDUuNTcwNCA1LjA5ODM2QzUuMTI3NTkgNS4xMTg2NyA0LjcxMzIyIDUuNDY4MDUgNC43Mjk0NyA1LjkzOTNaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" width="16" alt="">
+        <span class="username">王○明　|　會員中心　|</span>
+      </a>
+      <a class="member-wrap-link" href="/Login/Off">登出</a>
+      <button class="cart-btn" type="button">
+        <i class="icon">&#128722;</i>
+        <span class="badge">0</span>
+      </button>
+    </div>
+  </div>
+  <nav class="nav-row">
+    <a href="/Home/AboutNew">關於無毒農</a>
+    <a href="/BabyFood">粥寶寶</a>
+    <a href="/Eaglebabee">益菓保</a>
+    <a href="/Activity/GreenSmoothie"><span class="new-badge">NEW!</span>綠時光</a>
+    <a href="/Products/ItemNew">產地直送(免運)</a>
+    <a href="/Products/FrozenFood">冷凍超市</a>
+    <a href="/Baby/About">等家寶寶</a>
+    <a href="/Blog/BlogNew">部落格</a>
+  </nav>
+</header>
+
+
+<div class="sb-site-container">
+  <div class="page">
+<!--
+  DemoShares 交接對照 | 猜你喜歡 測試台（前台商品頁）
+  改的是既有介面：商品詳情頁（前台）  route /Products/ItemDetail/{id}  view HuashanCRM/Views/Products/ItemDetail.cshtml
+  這次要動的檔（改既有 2 支 ／ 新建 2 項 ／ 只參考 3 支）：
+    [改既有] fruit_web HuashanCRM/Views/Products/ItemDetail.cshtml      插入「猜你會喜歡」區塊容器；既有「為您推薦」(:1566) 依 C 題結論去留
+    [改既有] fruit_web HuashanCRM/Controllers/ProductsController.cs     商品頁不再同步帶推薦，改由前端非同步要
+    [新建]   fruit_web 官網自己的推薦 API（/api/recommend）             用登入 Session 的會員 Id 代呼叫 enzo-gb.net，只回畫面要的欄位
+    [新建]   前端非同步載入腳本                                          IntersectionObserver 捲到才要、逾時 3 秒降級
+    [只參考] greenbox.tw/Dist/Css/Product/ItemDeail-min.css              商品頁既有樣式，本頁直接連線載入做 1:1（拼字就是 ItemDeail，少一個 t）
+    [只參考] greenbox.tw/Content/Web/ItemDetail.css                      同上
+    [只參考] enzo-gb.net recommend_products_for_member                   推薦服務本體，不在 fruit_web
+  區塊標題沿用正式站做法：圖片底（title2_web{產線}.png / title_mobile{產線}.png）＋ .productDescription 疊字；
+  小標沿用 .sub-line + .sub-title-icon(icon{產線}) + .sub-title(產線主色)。四條產線的圖與主色對照見 ItemDetail.cshtml:192-215。
+  ⚠ 本頁是「測試台」，給四條產線撥開關做決定用，不是要上線的畫面。
+-->
+
+<style>
+/* ===== 正式站 cshtml 內嵌、bundle 沒涵蓋的規則（照 ItemDetail.cshtml 原樣） ===== */
+.font-16px { font-size: 16px; }
+.col-xs-1-cus-1 { width: 4.333333%; float: left; font-size: 16px; }
+.spec-frame .spec-btn { border: 1px solid #ccc; font-size: 16px; cursor: pointer; border-radius: 2px; color: #000; width: 90%; background: #fff; padding: 5px 2px; margin-bottom: 1.2rem; }
+.spec-btn.active { color: #fff; background: #4ba83b; }
+.pd-frame { color: #333; font-size: 16px; margin-bottom: 0; }
+.pd-gallery .main { width: 100%; height: auto; display: block; }
+.pd-gallery .thumbs { display: flex; gap: 6px; margin-top: 8px; }
+.pd-gallery .thumbs img { flex: 1 1 0; min-width: 0; height: 68px; object-fit: cover; border: 2px solid transparent; cursor: pointer; }
+.pd-gallery .thumbs img.active { border-color: #4ba83b; }
+
+/* ===== 加價購區塊：沿用 2026-09-product-addon demo 的定版樣式，兩份 demo 保持一致 ===== */
+.addon { clear: both; margin: 24px 0 0; border: 1px solid #e5e5e5; border-radius: 6px; overflow: hidden; }
+.addon-head { background: linear-gradient(90deg,#4ba83b,#5bbd49); color: #fff; padding: 12px 16px; font-size: 17px; font-weight: 700; }
+.addon-list { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: #f0f0f0; }
+@media (max-width: 820px) { .addon-list { grid-template-columns: 1fr; } }
+.addon-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin: 0; background: #fff; }
+.addon-ck { width: 18px; height: 18px; accent-color: #4ba83b; flex: 0 0 auto; cursor: pointer; }
+.addon-thumb { width: 62px; height: 62px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e5e5; flex: 0 0 auto; }
+.addon-temp { display: inline-block; background: #4e9854; color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+.addon-body { flex: 1; min-width: 0; }
+.addon-name { font-size: 15px; color: #333; font-weight: 500; }
+.addon-spec { font-size: 13px; color: #808080; margin-top: 2px; }
+.addon-price { flex: 0 0 auto; text-align: right; min-width: 78px; }
+.addon-price .orig { display: block; text-decoration: line-through; color: #aaa; font-size: 13px; }
+.addon-price .now { color: #dc4e43; font-size: 18px; font-weight: 700; }
+.addon-more { display: block; width: 100%; text-align: center; padding: 11px; background: #fafafa; border: 0; border-top: 1px solid #f0f0f0; color: #4ba83b; font-size: 15px; cursor: pointer; font-family: inherit; }
+
+/* ===== 猜你會喜歡（新功能，正式站尚無。卡片比照 .recommand-product-slick 的商品卡） ===== */
+.gy-sec { clear: both; margin: 32px 0 0; }
+.gy-grp { margin-bottom: 18px; }
+.gy-grp > h4 { margin: 0 0 10px; font-size: 17px; font-weight: 700; }
+.gy-railwrap { position: relative; }
+.gy-rail { display: flex; gap: 12px; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 6px; }
+.gy-rail::-webkit-scrollbar { height: 6px; }
+.gy-rail::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 4px; }
+.gy-card { flex: 0 0 184px; background: #fff; display: flex; flex-direction: column; }
+.gy-card .img-bg { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f1f2f7; display: block; margin-bottom: 5px; }
+.gy-card .noimg { width: 100%; aspect-ratio: 1/1; background: #f1f2f7; display: flex; align-items: center; justify-content: center; color: #b6bcc7; font-size: 13px; margin-bottom: 5px; }
+.gy-card .p-item-name { font-size: 15px; color: #333; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
+.gy-tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; margin-bottom: 4px; }
+.gy-why { font-size: 12px; color: #808080; line-height: 1.5; margin-bottom: 4px; }
+.gy-ft { margin-top: auto; display: flex; align-items: center; gap: 8px; }
+.gy-price { font-size: 17px; color: #dc4e43; font-weight: 700; }
+.gy-price small { font-size: 12px; font-weight: 400; }
+.gy-add { margin-left: auto; border: 0; background: #dc4e43; color: #fff; border-radius: 4px; padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.gy-arrow { position: absolute; top: 34%; right: -6px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e5e5; background: #fff; color: #808080; font-size: 20px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.gy-note { font-size: 12px; color: #b6bcc7; margin-top: 8px; }
+.gy-omit { clear: both; background: #fafafa; border: 1px dashed #e5e5e5; border-radius: 6px; padding: 24px; color: #808080; font-size: 14px; line-height: 2; text-align: center; }
+
+/* 區塊標題：完全照正式站的 markup（col-xs-12 p-0 ＋ web-show/mobile-show 圖 ＋ .productDescription 疊字）。
+   定位與 RWD 切換一律交給正式站的 layout-min.css / ItemDeail-min.css，這裡不覆寫，只補間距。 */
+.gy-title { margin-bottom: 14px; }
+
+
+/* ===== 版型實驗（購物流程UX檢討 第五節的六個開關） ===== */
+/* 卡片圖片比例 */
+.gy-card.ratio43 .img-bg, .gy-card.ratio43 .noimg { aspect-ratio: 4/3; }
+/* 您常買改橫向小圖列：客人已經買過，認得名字就會點，不需要大圖 */
+.gy-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.gy-list::-webkit-scrollbar { height: 6px; }
+.gy-list::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 4px; }
+.gy-li { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border: 1px solid #e5e5e5; border-radius: 6px; background: #fff; cursor: pointer; max-width: 280px; }
+.gy-li img, .gy-li .noimg { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; background: #f1f2f7; flex: 0 0 auto; margin: 0; aspect-ratio: auto; }
+.gy-li .noimg { display: flex; align-items: center; justify-content: center; font-size: 11px; color: #b6bcc7; }
+.gy-li-bd { min-width: 0; }
+.gy-li-nm { font-size: 14px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+.gy-li-ft { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.gy-li-pr { font-size: 14px; color: #dc4e43; font-weight: 700; }
+/* 加購品與推薦混排時，卡片要標示自己是哪一種動作 */
+.gy-act { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+.gy-act.add { background: #4ba83b; color: #fff; }
+.gy-act.go { background: #f1f2f7; color: #6b7585; }
+/* 加入菜籃後展開 */
+.gy-collapse { max-height: 0; overflow: hidden; transition: max-height .45s ease; }
+.gy-collapse.is-open { max-height: 1600px; }
+.gy-collapse-hint { text-align: center; padding: 14px; color: #808080; font-size: 14px; background: #fafafa; border: 1px dashed #e5e5e5; border-radius: 6px; }
+/* 加入菜籃按鈕上方的免運提示 */
+.freeship { background: #fff8e6; border: 1px solid #f0dca8; border-radius: 4px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; color: #7a5f1f; }
+.freeship b { color: #dc4e43; }
+
+
+
+/* ⚠ 區塊標題用的是真站的 .col-xs-12（Bootstrap float:left）。
+   .gy-rail 是 flex 容器，會像 BFC 一樣避開 float，不加 clear 會被擠成 0 寬、整排卡片看不見。 */
+.gy-grp, .gy-railwrap, .gy-rail, .gy-collapse, .gy-grid, .gy-more { clear: both; }
+
+
+
+
+
+
+/* ===== 一個區塊、一排六個洞 ===== */
+.gy-slots { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; clear: both; }
+@media (max-width: 1199px) { .gy-slots { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 860px)  { .gy-slots { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px)  { .gy-slots { grid-template-columns: repeat(2, 1fr); } }
+.gy-slots .gy-card { flex: none; min-width: 0; }
+
+/* 區塊標題：真站的為您推薦是 500 寬素材縮到 323（52px 高）。全寬區塊改用 1000 寬素材，
+   並把容器限寬到 662（＝真站主欄寬），算出來也是 53px，跟真站一致。 */
+.gy-title { max-width: 662px; }
+
+/* 標題列右側的輪播控制 */
+.gy-head { display: flex; align-items: flex-end; gap: 12px; clear: both; }
+.gy-head .gy-title { flex: 1 1 auto; margin-bottom: 0; }
+.gy-rot { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding-bottom: 6px; }
+.gy-rot button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e5e5e5; background: #fff;
+  color: #808080; font-size: 16px; line-height: 1; cursor: pointer; font-family: inherit; }
+.gy-rot button:hover { border-color: #b6bcc7; color: #33435a; }
+.gy-rot .pg { font-size: 12px; color: #8a94a6; min-width: 34px; text-align: center; }
+.gy-rot .pause { font-size: 11px; color: #4ba83b; min-width: 48px; }
+@media (max-width: 560px) { .gy-head { flex-direction: column; align-items: stretch; } .gy-rot { justify-content: flex-end; } }
+
+/* ===== 兩塊之間的明確分隔（左右並置時） ===== */
+.gy-side-l { border-right: 1px solid #e5e5e5; padding-right: 20px; }
+@media (max-width: 991px) {
+  .gy-side-l { border-right: 0; padding-right: 0; border-bottom: 1px solid #e5e5e5; padding-bottom: 16px; }
+}
+
+/* ===== 向下展開模式：兩塊共用同一套 ===== */
+.gy-grid { display: grid; gap: 12px; }
+.gy-grid .gy-card { flex: none; min-width: 0; }
+.gy-grid.c2 { grid-template-columns: repeat(2, 1fr); }
+.gy-grid.c3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 991px) { .gy-grid.c3 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .gy-grid.c2, .gy-grid.c3 { grid-template-columns: repeat(2, 1fr); } }
+.gy-more { display: block; width: 100%; text-align: center; padding: 10px; margin-top: 10px;
+  background: #fafafa; border: 1px solid #e5e5e5; border-radius: 4px; color: #4ba83b;
+  font-size: 14px; cursor: pointer; font-family: inherit; }
+
+/* ===== 加購品改用跟推薦同一種卡片 ===== */
+.addon-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 12px; }
+.gy-card.is-addon .gy-price small.orig { text-decoration: line-through; color: #aaa; font-weight: 400; margin-left: 4px; }
+
+/* ===== 加入菜籃按鈕與已加入狀態 ===== */
+.gy-add { margin-left: auto; border: 1px solid #dc4e43; background: #dc4e43; color: #fff; border-radius: 4px;
+  padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.gy-add.is-in { background: #fff; color: #4ba83b; border-color: #4ba83b; }
+.gy-ft { margin-top: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* ===== 多規格商品的規格選擇（真站是點進商品頁選，demo 用小窗讓流程可以走完） ===== */
+.sp-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9998; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.sp-box { background: #fff; border-radius: 8px; width: 100%; max-width: 380px; overflow: hidden; font-family: 'Noto Sans TC','Microsoft JhengHei',sans-serif; }
+.sp-hd { padding: 14px 16px; border-bottom: 1px solid #e5e5e5; font-size: 16px; font-weight: 700; color: #333; }
+.sp-nm { padding: 10px 16px 0; font-size: 14px; color: #808080; }
+.sp-list { padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+.sp-opt { display: flex; align-items: center; gap: 10px; border: 1px solid #ccc; border-radius: 4px; padding: 10px 12px; cursor: pointer; font-size: 15px; color: #333; background: #fff; text-align: left; font-family: inherit; }
+.sp-opt.on { border-color: #4ba83b; background: #f3faf1; }
+.sp-opt .pr { margin-left: auto; color: #dc4e43; font-weight: 700; }
+.sp-ft { padding: 12px 16px 16px; display: flex; gap: 8px; }
+.sp-ft button { flex: 1; height: 42px; border-radius: 4px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; border: 1px solid #ccc; background: #fff; color: #333; }
+.sp-ft button.main { background: #dc4e43; border-color: #dc4e43; color: #fff; }
+
+/* ===== 加入後的輕量提示 ===== */
+.gy-toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: #33435a; color: #fff;
+  padding: 10px 18px; border-radius: 4px; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.gy-toast.on { opacity: .95; }
+
+/* ===== 左右並置：加購品（窄欄）｜猜你會喜歡（寬欄） ===== */
+.gy-side { display: flex; gap: 20px; align-items: flex-start; margin-top: 24px; }
+/* 左右等寬：段落標題圖是固定 500px 寬的素材，兩欄不等寬時會縮放成不同高度（實測 62 vs 80）。
+   等寬之後兩個標題就一致了，而且左右對稱本身也是一種節奏。 */
+.gy-side-l, .gy-side-r { flex: 1 1 0; min-width: 0; }
+.gy-side-l .addon { margin-top: 0; }
+.gy-side-r .gy-sec { margin-top: 0; }
+@media (max-width: 991px) {
+  /* 直向時 align-items 要改 stretch：flex-start 會讓右欄縮到內容寬（一排卡約 1800px）而橫向溢出 */
+  .gy-side { flex-direction: column; gap: 16px; align-items: stretch; }
+  .gy-side-l, .gy-side-r { flex: 0 0 auto; width: 100%; min-width: 0; }
+}
+
+/* ===== 區塊標題的小標樣式（沿用商品頁既有的 .sub-line / .sub-title，不用 80px 大橫幅） ===== */
+.gy-subtitle { margin-bottom: 12px; }
+.gy-subtitle .sub-title { font-size: 17px; font-weight: 700; }
+
+/* ===== 卡片瘦身版：標籤疊在圖上，元素從 6 個收成 3 組 ===== */
+.gy-card.slim .gy-imgwrap { position: relative; margin-bottom: 6px; }
+.gy-card.slim .img-bg, .gy-card.slim .noimg { aspect-ratio: 4/3; margin-bottom: 0; }
+.gy-card.slim .gy-tag { position: absolute; left: 6px; top: 6px; margin: 0; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.gy-card.slim .p-item-name { margin-bottom: 6px; }
+
+/* ===== 開發者面板 ===== */
+#tbp { position: fixed; top: 0; right: 0; width: 304px; height: 100vh; background: #2b2f3a; color: #e8eaee; overflow-y: auto; z-index: 9999; font-size: 13px; box-shadow: -4px 0 20px rgba(0,0,0,.25); font-family: 'Noto Sans TC','Microsoft JhengHei',sans-serif; }
+#tbp .hd { padding: 12px 16px; background: #1f232c; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; }
+#tbp .hd b { font-size: 14px; }
+#tbp .hd button { margin-left: auto; background: none; border: 0; color: #8a94a6; font-size: 18px; cursor: pointer; }
+#tbp .bd { padding: 8px 16px 48px; }
+#tbp .grp { margin-top: 16px; }
+#tbp .grp > label { display: block; font-size: 11px; color: #7f8899; letter-spacing: .5px; margin-bottom: 8px; border-top: 1px solid #3a3f4c; padding-top: 12px; }
+#tbp .f { margin-bottom: 12px; }
+#tbp .f > span { display: block; margin-bottom: 4px; color: #b6bcc7; }
+#tbp .seg { display: flex; flex-wrap: wrap; gap: 4px; }
+#tbp .seg button { flex: 1 1 auto; min-width: 42px; padding: 5px 6px; border: 1px solid #3a3f4c; background: #353a46; color: #b6bcc7; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit; }
+#tbp .seg button.on { background: #4ba83b; border-color: #4ba83b; color: #fff; }
+#tbp .rng { display: flex; align-items: center; gap: 10px; }
+#tbp .rng input[type=range] { flex: 1 1 auto; accent-color: #4ba83b; }
+#tbp .rng b { flex: 0 0 24px; text-align: right; color: #fff; font-size: 14px; }
+#tbp .hint { margin-top: 4px; color: #7f8899; font-size: 11px; line-height: 1.5; }
+#tbp .warn { background: #4a3328; border: 1px solid #7a5230; border-radius: 4px; padding: 8px 10px; margin-top: 8px; color: #f0c79a; font-size: 12px; line-height: 1.6; }
+#tbp.is-min { width: 44px; overflow: hidden; }
+#tbp.is-min .hd b, #tbp.is-min .bd { display: none; }
+
+@media (max-width: 1480px) {
+  #tbp { width: 44px; overflow: hidden; }
+  #tbp .hd b, #tbp .bd { display: none; }
+  #tbp.is-open { width: 304px; overflow-y: auto; }
+  #tbp.is-open .hd b, #tbp.is-open .bd { display: block; }
+}
+@media (max-width: 820px) {
+  #tbp { width: auto; height: auto; top: auto; bottom: 16px; right: 16px; border-radius: 24px; box-shadow: 0 4px 16px rgba(0,0,0,.3); overflow: visible; }
+  #tbp .hd { padding: 10px 14px; border-radius: 24px; position: static; }
+  #tbp .hd b, #tbp .bd { display: none; }
+  #tbp.is-open { top: 0; bottom: 0; right: 0; width: 320px; max-width: 86vw; height: 100vh; border-radius: 0; overflow-y: auto; }
+  #tbp.is-open .hd { border-radius: 0; position: sticky; top: 0; }
+  #tbp.is-open .hd b, #tbp.is-open .bd { display: block; }
+  .gy-card { flex: 0 0 150px; }
+  .gy-arrow { display: none; }
+}
+
+/* ===== 內容區的「無毒農檢驗」（復刻真站，順便說明為您推薦已經不在這了） ===== */
+.gy-inspect { clear: both; margin-top: 32px; }
+/* 標題與檢驗圖都跟著所在欄的寬度走。為您推薦被拿掉時這一欄是全寬，它們就一起變寬 */
+.gy-inspect .gy-regtitle { height: 53px; }
+.gy-inspect img.check { width: 100%; display: block; margin-top: 20px; }
+
+/* 圖片腰帶（真站 class 就叫 adArea）。實測真站：margin-top 40、欄內距 15、圖寬 100%
+   圖本身是 1600×200，所以高度會隨寬度等比縮（1040 寬時是 130 高） */
+.adArea { margin-top: 40px; padding: 0 15px; clear: both; }
+/* 推薦區塊跟腰帶、內容區一樣吃 Bootstrap 欄位的 15px 內距，三塊的左右邊界才會對齊 */
+#tbSlotA, #tbSlotB, #tbSlotC { padding: 0 15px; }
+.adArea a { display: block; }
+.adArea img { width: 100%; max-width: 100%; height: auto; display: block; }
+#tbSide:empty { display: none; }
+
+/* 真站用 web-show / mobile-show 切桌機與手機兩張圖，斷點是 550px（量真站 CSS 得到）。
+   這組規則在 demo 裡沒生效，結果桌機兩張圖都畫出來、手機畫的是桌機版的標題圖，
+   所以自己補一份。區標題因為有 overflow:hidden 才一直看不出這個問題 */
+@media (min-width: 551px) {
+  .web-show { display: block !important; }
+  .mobile-show { display: none !important; }
+}
+@media (max-width: 550px) {
+  .web-show { display: none !important; }
+  .mobile-show { display: block !important; }
+}
+
+/* ===== 照 2026-10-20 截圖標註改 =====
+   1 左四右二兩個區，各自一個段落標題，中間一條分隔線
+   2 加購品區只放加購品，空格就空著，不給推薦補
+   3 卡片邊框統一單層灰線（推薦也是）
+   4 價格與按鈕同一行，不準換行                              */
+
+/* 兩個區：寬度比算過，讓兩邊的卡片寬度一致
+   左 4 欄 3 個內距、右 2 欄 1 個內距，右區 basis = (100% - 2*gap)/3 時兩邊欄寬相等 */
+/* 兩區之間留 32px（原本 12px 太擠）。
+   欄寬公式：整列 6 欄、欄間距 12、兩區之間 32，所以單欄寬 = (100% - 4*12 - 32) / 6。
+   左區佔幾欄由 JS 依實際加購品數量給，右區吃剩下的，兩邊欄寬才會一致。 */
+.gy-two { display: flex; gap: 32px; clear: both; align-items: flex-start; --gyw: calc((100% - 80px) / 6); }
+.gy-reg-a { flex: 0 0 auto; min-width: 0; }
+.gy-reg-r { flex: 1 1 auto; min-width: 0; position: relative; }
+.gy-reg-r::before { content: ''; position: absolute; left: -16px; top: 0; bottom: 0; width: 1px; background: #e5e5e5; }
+.gy-reg-r.no-divider::before { display: none; }
+
+.gy-reg-grid { display: grid; gap: 12px; clear: both; }
+.gy-two, .gy-reg-a, .gy-reg-r { clear: both; }
+/* 欄數由 JS 設 --cols */
+.gy-reg-grid { grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); }
+.gy-reg-grid .gy-card { flex: none; min-width: 0; }
+
+@media (max-width: 1199px) {
+  .gy-two { flex-direction: column; }
+  .gy-reg-a, .gy-reg-r { flex: 0 0 auto; width: 100%; }
+  .gy-reg-r::before { display: none; }
+  .gy-reg-r { border-top: 1px solid #e5e5e5; padding-top: 16px; }
+  .gy-reg-a .gy-reg-grid, .gy-reg-r .gy-reg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .gy-reg-a .gy-reg-grid, .gy-reg-r .gy-reg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 手機卡片只有 130px 寬，四位數價格加按鈕放不下同一行。
+     讓它自己換行會變成「短價格不換、長價格換」，高度就不一致了，
+     所以手機一律改成價格一行、按鈕整寬在下面，每張卡結構相同才會等高。
+     桌機仍維持同一行不換行（主人的要求） */
+  .gy-reg-grid .gy-ft { flex-direction: column; align-items: stretch; gap: 6px; }
+  .gy-reg-grid .gy-ft .gy-add { width: 100%; text-align: center; }
+}
+
+/* 區塊標題：兩區寬度不同，圖等比縮放會變成不同高度，所以固定高度、靠左裁切（icon 在左邊會留著） */
+.gy-regtitle { position: relative; height: 44px; overflow: hidden; margin-bottom: 12px; clear: both; }
+/* 輪播控制放進標題列裡（絕對定位），不然在右區那種窄欄會把標題擠掉 */
+.gy-head { position: relative; display: block; margin-bottom: 12px; }
+.gy-head .gy-regtitle { margin-bottom: 0; }
+.gy-head .gy-rot { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; gap: 4px; z-index: 2; padding: 0; }
+.gy-head .gy-rot button { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,.75);
+  background: rgba(255,255,255,.22); color: #fff; font-size: 14px; line-height: 1; }
+.gy-head .gy-rot button:hover { background: rgba(255,255,255,.45); color: #fff; }
+.gy-head .gy-rot .pg { font-size: 11px; color: #fff; min-width: 28px; }
+.gy-head .gy-rot .pause { font-size: 10px; color: #fff; min-width: 0; }
+.gy-regtitle img { width: 100%; height: 100%; object-fit: cover; object-position: left center; display: block; }
+
+/* 卡片邊框統一：單層灰線，推薦也是 */
+.gy-card { border: 1px solid #e5e5e5; border-radius: 4px; padding: 8px; background: #fff; cursor: default; }
+/* 只有圖與品名可以點去商品頁，卡片其他地方（價格、標籤、留白）點了沒反應 */
+.gy-card a.gy-link { display: block; text-decoration: none; color: inherit; cursor: pointer; }
+.gy-card a.gy-link:hover .p-item-name { color: #4ba83b; text-decoration: underline; }
+.gy-card.is-incart { border-color: #4ba83b; }
+
+/* 價格與按鈕同一行，不準換行。加購品的原價另起一行放上面，不然兩個價格擠不下 */
+.gy-ft { margin-top: auto; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.gy-price { font-size: 16px; color: #dc4e43; font-weight: 700; white-space: nowrap; }
+.gy-price small { font-size: 12px; font-weight: 400; }
+/* 卡片高度統一：品名固定佔兩行、原價那一行一律保留（沒有原價就留空），
+   這樣加購品卡與推薦卡的結構完全一樣，每張高度才會一致 */
+.gy-orig { display: block; font-size: 12px; color: #aaa; text-decoration: line-through; margin-bottom: 2px; min-height: 17px; }
+.gy-orig:empty::before { content: '\00a0'; }
+.gy-card .p-item-name { min-height: calc(1.45em * 2); }
+.gy-add { margin-left: auto; flex: 0 0 auto; white-space: nowrap; font-size: 12px; padding: 5px 8px;
+  border: 1px solid #dc4e43; background: #dc4e43; color: #fff; border-radius: 4px; cursor: pointer; font-family: inherit; }
+.gy-add.is-in { background: #fff; color: #4ba83b; border-color: #4ba83b; }
+</style>
+
+<div style="max-width:1080px;margin:0 auto;padding:16px 16px 64px;">
+
+  <!-- 既有區塊：商品主圖＋購買卡片（照 ItemDetail.cshtml 的結構與 class） -->
+  <div class="row">
+    <div class="col-md-6 col-xs-12 m-b-15">
+      <div class="pd-gallery">
+        <img class="main" id="tbHero" alt="">
+        <div class="thumbs" id="tbThumbs"></div>
+      </div>
+      <div class="col-xs-12 sub-line p-0" style="margin-top:22px;">
+        <img class="sub-title-icon" id="tbIcon1" src="" alt="">
+        <span class="sub-title" id="tbSub1">貼心叮嚀</span>
+      </div>
+      <div id="tbTips"></div>
+    </div>
+
+    <div class="col-md-6 col-xs-12 m-b-15">
+      <h1 class="item-title" id="tbName" style="font-size:24px;font-weight:700;margin:0 0 10px;line-height:1.4;color:#333;"></h1>
+      <div class="col-xs-12 score-area p-0" style="border-bottom:1px solid #b3b3b1;padding-bottom:10px;">
+        <span style="color:#f5b22d;font-size:18px;">★★★★☆</span>
+        <span class="font-16px">&nbsp;4.90 / 5</span>
+        <span style="color:#808080;">（1300 條評論）</span>
+        <span class="font-16px">　已售出 <b id="tbSold">8038</b> 組</span>
+      </div>
+
+      <div class="col-xs-12 sub-line p-0" style="margin-top:22px;">
+        <img class="sub-title-icon" id="tbIcon2" src="" alt="">
+        <span class="sub-title" id="tbSub2">商品規格</span>
+      </div>
+      <div class="col-xs-12 p-0"><span class="col-xs-1-cus-1 p-0 font-16px">．</span><span class="col-xs-11 p-0 font-16px" id="tbSpecTxt"></span></div>
+
+      <div class="col-xs-12 sub-line p-0" id="tbAgeRow" style="margin-top:22px;">
+        <img class="sub-title-icon" id="tbIcon3" src="" alt="">
+        <span class="sub-title" id="tbAgeTitle">適合月齡</span>
+      </div>
+      <div class="col-xs-12 p-0" id="tbAgeBody"><span class="col-xs-1-cus-1 p-0 font-16px">．</span><span class="col-xs-11 p-0 font-16px" id="tbAgeTxt"></span></div>
+
+      <div class="col-xs-12 sub-line p-0" style="margin-top:22px;">
+        <img class="sub-title-icon" id="tbIcon4" src="" alt="">
+        <span class="sub-title" id="tbSub4">溫層配送</span>
+      </div>
+      <div class="col-xs-12 p-0"><span class="col-xs-1-cus-1 p-0 font-16px">．</span><span class="col-xs-11 p-0 font-16px" id="tbTemp"></span></div>
+
+      <div class="col-xs-12 p-0 m-t-20 pd-frame">
+        <div class="spec-frame row" id="tbSpecBtns"></div>
+        <div class="col-xs-12 p-0 m-b-10">
+          <span class="font-16px">售價：</span>
+          <span class="price product-price-text" id="tbPrice" style="color:#dc4e43;font-size:28px;font-weight:700;"></span>
+          <span class="price" id="tbOrig" style="text-decoration:line-through;margin-left:6px;color:#ccc;"></span>
+        </div>
+        <div class="col-xs-12 p-0 m-b-20">
+          <span class="font-16px">數量：</span>
+          <select style="padding:4px 8px;border:1px solid #ccc;border-radius:2px;"><option>1</option><option>2</option><option>3</option></select>
+          <span style="color:#dc4e43;margin-left:16px;">剩餘 33 組</span>
+        </div>
+        <div class="col-xs-12 p-0" id="tbFreeship"></div>
+        <div class="col-xs-12 p-0">
+          <a href="javascript:void(0)" class="buybutton" id="tbBuyBtn" style="display:block;background:#dc4e43;color:#fff;text-align:center;padding:14px;font-size:18px;font-weight:700;border-radius:4px;text-decoration:none;"><i class="fa fa-shopping-basket"></i> 加入菜籃</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 真站：購買區下方有一條分隔線 -->
+  <div class="col-xs-12 score-area" style="border-bottom:1px solid #b3b3b1;"></div>
+
+  <!-- 新增：本次需求的兩個區塊，順序由開發者面板控制 -->
+  <div id="tbSlotA"></div>
+  <div id="tbSlotB"></div>
+
+  <!-- 真站的圖片腰帶（內頁廣告），位置在購買區與內容區之間 -->
+  <div class="col-xs-12 adArea" id="tbAdTop"></div>
+
+  <div class="row" style="margin-top:32px;">
+    <div class="col-xs-12" id="tbContent">
+      <div id="tbInspect"></div>
+      <div class="gy-omit" style="margin-top:32px;">商品描述 ／ 產地故事 ／ 保存方式 ／ 商品評論（相同版型，略）</div>
+    </div>
+    <div class="col-xs-12" id="tbSide"></div>
+  </div>
+
+  <div id="tbSlotC"></div>
+</div>
+
+<aside id="tbp">
+  <div class="hd"><b>測試台開關</b><button id="tbpT">☰</button></div>
+  <div class="bd" id="tbpBody"></div>
+</aside>
+
+<script>
+/* 測試台假資料：四條產線的主商品與推薦候選
+   商品名稱／價格／圖片路徑全部取自正式站真實資料（2026-10-20 撈） */
+const CDN = 'https://greenboxcdn.azureedge.net';
+
+/* 產線主色，取自 ItemDetail.cshtml:193-215 */
+const LINE_COLOR = {
+  產地直送: '#4ba83b',
+  冷凍超市: '#198FA7',
+  粥寶寶: '#ef8e8e',
+  益菓保: '#e09200',
+};
+
+/* season: null＝全年；[起月, 迄月]＝產季區間（只有產地直送有）
+   age:    [起月齡, 迄月齡]＝適用月齡（只有粥寶寶有）
+   temp:   常溫 / 冷藏 / 冷凍
+   addon:  true＝這是加購規格，前台隱藏、不單獨零售（故意留著示範誤推） */
+const DATA = {
+  產地直送: {
+    anchor: { id: 33626, name: '【金牌珍珠芭樂】陳建裕', price: 599, pic: '/upload/Product_3033/202602040316351.png', specNames: ['5斤裝', '【限時優惠】10斤裝'], specs: 2, temp: '常溫' },
+    items: [
+      { id: 25006, name: '蘋果季【梨山蜜蘋果】甜莃果園', price: 899, pic: '/upload/Product_3033/202609140222391.jpg', specNames: ['大果3斤裝', '大果5斤裝', '中果3斤裝', '中果5斤裝'], season: [10, 12], temp: '常溫', bought: 0 },
+      { id: 78654, name: '柿子季【梨山甜柿】林山果原', price: 1290, pic: '/upload/Product_3033/202610150344031.jpg', specNames: ['8粒裝', '9粒裝'], season: [9, 11], temp: '常溫', bought: 0 },
+      { id: 25784, name: '【珍稀黃金果】不一樣鱷魚農場', price: 699, pic: '/upload/Product_3033/201908280451361.jpg', specNames: ['大果6粒裝', '中果6粒裝', '小果10粒裝', '特大果6粒裝'], season: [8, 11], temp: '常溫', bought: 0 },
+      { id: 57965, name: '限量【嘉義極光哈密瓜】大原山農場', price: 1699, pic: '/upload/Product_3033/202610190639081.png', specNames: ['大果雙入裝', '特大果雙入裝', '頂級特大果雙入裝', '頂級特大果單入裝'], season: null, temp: '常溫', bought: 0 },
+      { id: 56653, name: '草莓季【有機豐香草莓】鴨子草莓園', price: 999, pic: '/upload/Product_3033/202601020238471.png', specNames: ['24粒裝', '20粒裝', '15粒裝', '28粒裝'], season: [12, 4], temp: '冷藏', bought: 0 },
+      { id: 58715, name: '【梨山水蜜桃】無毒農', price: 1199, pic: '/upload/Product_3033/202606170339201.jpg', specNames: ['8粒裝', '6粒裝', '5粒裝'], season: [6, 8], temp: '常溫', bought: 0 },
+      { id: 35608, name: '荔枝季【特級剪枝玉荷包荔枝】許家荔枝', price: 699, pic: '/upload/Product_3033/202605050716241.jpg', specNames: ['5斤裝', '3斤裝'], season: [6, 7], temp: '常溫', bought: 0 },
+      { id: 29337, name: '【鳳梨釋迦】好時果子', price: 749, pic: '/upload/Product_3033/202601070656311.png', specNames: ['大果10斤裝', '中大果7.5斤裝', '大果5斤裝'], season: [12, 3], temp: '常溫', bought: 0 },
+      { id: 60584, name: '【拉拉山五月桃】無毒農', price: 919, pic: '/upload/Product_3033/202604020921251.png', specNames: ['12粒裝', '10粒裝', '8粒裝', '6粒裝'], season: [5, 6], temp: '常溫', bought: 0 },
+      { id: 78639, name: '【野蓮．水蓮】阿香野蓮農場', price: 499, pic: '/upload/Product_3033/202610080852301.jpg', specNames: ['5包(200g/包)'], season: null, temp: '冷藏', bought: 2, days: 26 },
+      { id: 78651, name: '【台灣無毒鮮凍山藥】大和山藥', price: 790, pic: '/upload/Product_3033/202610150307071.jpg', specNames: ['紅龍山藥6包', '牛奶山藥6包', '牛奶山藥3包+紅龍山藥3包'], season: null, temp: '冷凍', bought: 4, days: 31, due: true },
+      { id: 78623, name: '【台灣時令酪梨】無毒農', price: 649, pic: '/upload/Product_3033/202610051006571.jpg', specNames: ['【黑金轉色酪梨】3000g…', '【黑金轉色酪梨】6000g…', '【十月紅轉色酪梨】3600…', '【十月紅轉色酪梨】6000…'], season: [7, 11], temp: '常溫', bought: 1, days: 58 },
+      { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, pic: '/upload/Product_3033/202411120141401.jpg', specNames: ['3900g±10%，6顆裝'], season: [8, 11], temp: '常溫', bought: 0, addon: true },
+    ],
+  },
+  冷凍超市: {
+    anchor: { id: 51804, name: '【宅魚】去刺金目鱸魚排', price: 185, pic: '/upload/Product_3033/202502200531261.jpg', specNames: ['單一規格', '多包優惠'], specs: 2, temp: '冷凍' },
+    items: [
+      { id: 57251, name: '厚切【宅魚】嚴選銀鮭魚輪切', price: 250, pic: '/upload/Product_3033/202502110401431.jpg', specNames: ['單一規格', '多包優惠'], temp: '冷凍', bought: 0 },
+      { id: 74944, name: '【宅魚】-澎湖土魠魚（10斤以上）', price: 145, pic: '/upload/Product_3033/202502060713361.png', specNames: ['頭，251-300g', '輪切，251-300g', '魚塊，201-250g（2…', '魚塊，301-350g（2…'], temp: '冷凍', bought: 0 },
+      { id: 29260, name: '【宅魚】澎湖活凍野生小卷', price: 210, pic: '/upload/Product_3033/202408210253131.png', specNames: ['300g/包(約5-6支)'], temp: '冷凍', bought: 0 },
+      { id: 57403, name: '【蝦覓世界】生鮮活凍白蝦仁（無膨發）', price: 250, pic: '/upload/Product_3033/202410310618231.jpg', specNames: ['大蝦仁'], temp: '冷凍', bought: 0 },
+      { id: 64949, name: '【宅魚】去刺虱目魚肚', price: 189, pic: '/upload/Product_3033/202502200529041.jpg', specNames: ['180g/片', '180g/片，多包優惠'], temp: '冷凍', bought: 2, days: 24 },
+      { id: 62742, name: '【蘇澳區漁會】薄鹽鯖魚', price: 90, pic: '/upload/Product_3033/202502200530081.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 5, days: 29, due: true },
+      { id: 28972, name: '【萬金畜牧場】去骨雞腿肉', price: 265, pic: '/upload/Product_3033/202410310620281.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
+      { id: 37899, name: '【萬金畜牧場】棒棒腿', price: 240, pic: '/upload/Product_3033/201907080335431.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
+      { id: 39816, name: '【永發放山雞】去皮胸肉', price: 150, pic: '/upload/Product_3033/202410310620011.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 1, days: 47 },
+      { id: 40042, name: '【松樹門】職人手工嚴選香魚', price: 210, pic: '/upload/Product_3033/202409100247541.png', specNames: ['公香魚', '母香魚'], temp: '冷凍', bought: 0 },
+      { id: 77976, name: '社群限定【包飯店】燻香滷味', price: 80, pic: '/upload/Product_3033/202606240157151.jpg', specNames: ['滷鵪鶉蛋，200g/包', '乾鍋雞爪，300g/包', '乾鍋鴨翅，4支/包', '乾鍋米血，250g/包'], temp: '冷藏', bought: 0 },
+    ],
+  },
+  粥寶寶: {
+    anchor: { id: 66539, name: '一歲以上PLUS+ 閃亮升級燉飯組合', price: 999, pic: '/upload/Product_3033/202411260951501.png', specNames: ['有牛/10入，150克/入', '沒有牛/10入，150克/入'], specs: 2, temp: '冷凍', age: [12, 36] },
+    items: [
+      { id: 63099, name: '寶寶熟水餃', price: 236, pic: '/upload/Product_3033/202308230348571.png', specNames: ['玉米蝦、甘藍豬 各1包', '玉米蝦2包', '甘藍豬2包'], age: [12, 36], temp: '冷凍', bought: 3, days: 35 },
+      { id: 63206, name: '無鹽寶寶烏龍麵', price: 115, pic: '/upload/Product_3033/202411250623351.png', specNames: ['三口味 各1包', '三口味 各2包', '南瓜3包', '菠菜3包'], age: [10, 36], temp: '常溫', bought: 0 },
+      { id: 58318, name: '拌拌飯-地瓜栗香雞飯', price: 180, pic: '/upload/Product_3033/202210130618011.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
+      { id: 60367, name: '拌拌飯-蘋果櫻桃鴨飯', price: 180, pic: '/upload/Product_3033/202210130614521.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
+      { id: 58320, name: '拌拌飯-南洋鳳梨豬飯', price: 180, pic: '/upload/Product_3033/202408060630411.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
+      { id: 44265, name: '中寶寶 番茄牛肉粥', price: 140, pic: '/upload/Product_3033/202208191006151.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
+      { id: 44270, name: '中寶寶 南瓜雞肉粥', price: 140, pic: '/upload/Product_3033/202411010619531.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
+      { id: 44269, name: '中寶寶 玉米雞肉粥', price: 140, pic: '/upload/Product_3033/202208191004191.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 2, days: 28 },
+      { id: 44272, name: '中寶寶 芋頭豬肉粥', price: 140, pic: '/upload/Product_3033/202311290603241.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
+      { id: 65470, name: '【小寶寶】含運-十倍粥體驗組（首購限定）', price: 399, pic: '/upload/Product_3033/202601160724251.png', specNames: ['8口味，各1入', '8口味，各1入+益生菌試吃…'], age: [4, 10], temp: '冷凍', bought: 0 },
+      { id: 46965, name: '中寶寶 彩虹營養寶寶粥組合', price: 759, pic: '/upload/Product_3033/202411110607301.jpg', specNames: ['12入，120克/入'], age: [7, 18], temp: '冷凍', bought: 1, days: 62 },
+      { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, pic: '/upload/Product_3033/202606160750091.png', specNames: ['天麻枸杞鱸魚', '山藥鮑魚雞', '黃耆枸杞雞'], age: null, temp: '冷凍', bought: 0, addon: true },
+    ],
+  },
+  益菓保: {
+    anchor: { id: 64951, name: '順順好益生菌-草莓口味(30入)', price: 1288, pic: '/upload/Product_3033/202604140647241.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], specs: 4, temp: '常溫' },
+    items: [
+      { id: 64978, name: '敏敏好益生菌-蘋果口味(30入)', price: 1288, pic: '/upload/Product_3033/202604140646231.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
+      { id: 64979, name: '護護好益生菌-芭樂口味(30入)', price: 1688, pic: '/upload/Product_3033/202604140645431.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
+      { id: 63330, name: '歐趴DHA魚油', price: 980, pic: '/upload/Product_3033/202605270719031.jpg', specNames: ['買3送1，共4盒魚油', '單一規格', '買5送2，共7盒魚油', '買10送5，共15盒魚油'], temp: '常溫', bought: 2, days: 31, due: true },
+      { id: 64812, name: '英國海藻維生素D3', price: 599, pic: '/upload/Product_3033/202511200629341.jpg', specNames: ['買3送1，共4盒D3', '單一規格', '買5送2，共7盒D3', '買10送5，共15盒D3'], temp: '常溫', bought: 1, days: 44 },
+      { id: 66331, name: '益生菌7日三角防護體驗組', price: 849, pic: '/upload/Product_3033/202604140642051.png', specNames: ['7日體驗組'], temp: '常溫', bought: 0 },
+      { id: 65011, name: '順順好益生菌-草莓口味(7入)', price: 288, pic: '/upload/Product_3033/202604140644141.png', specNames: ['效期2027/03/11'], temp: '常溫', bought: 0 },
+      { id: 65012, name: '敏敏好益生菌-蘋果口味(7入)', price: 299, pic: '/upload/Product_3033/202604140643311.png', specNames: ['單一規格'], temp: '常溫', bought: 0 },
+      { id: 65013, name: '護護好益生菌-芭樂口味(7入)', price: 399, pic: '/upload/Product_3033/202604140642531.png', specNames: ['單一規格'], temp: '常溫', bought: 0 },
+      { id: 77091, name: '【14歲以上】四合一紅藻萃取蝦紅素魚油EX(30顆)', price: 888, pic: '/upload/Product_3033/202604141019421.png', specNames: ['30顆裝', '30顆裝，買3送1，共4盒', '30顆裝，買5送2，共7盒', '30顆裝，買10送5，共1…'], temp: '常溫', bought: 0 },
+      { id: 69748, name: '益生菌30入混搭專區', price: 3864, pic: '/upload/Product_3033/202604140637321.png', specNames: ['順順3盒+敏敏1盒', '順順2盒+敏敏2盒', '順順1盒+敏敏3盒', '順順3盒+護護1盒'], temp: '常溫', bought: 0 },
+    ],
+  },
+};
+
+/* 加購品（商品頁加購區用，不是推薦）。名稱、加購價、原價、圖片都取自正式站 */
+const ADDONS = {
+  產地直送: [
+    { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, orig: 1229, pic: '/upload/Product_3033/202411120141401.jpg', temp: '常溫' },
+    { id: 78628, name: '超值加購 柿子季【高山甜柿】褚譽合作社', price: 949, orig: 1399, pic: '/upload/Product_3033/202510010158161.jpg', temp: '常溫' },
+    { id: 78627, name: '超值加購【台農二號有機木瓜】山上阿德', price: 549, orig: 899, pic: '/upload/Product_3033/202609110317181.jpg', temp: '常溫' },
+    { id: 78548, name: '超值加購 梨子季【石虎甘露梨】銘雄堂有機農場', price: 799, orig: 1180, pic: '/upload/Product_3033/202608140944141.jpg', temp: '常溫' },
+    { id: 78545, name: '超值加購【台灣黃金奇異果(獼猴桃)】富山農場', price: 799, orig: 1699, pic: '/upload/Product_3033/202609170733501.jpg', temp: '常溫' },
+    { id: 78535, name: '超值加購 蘋果季【梨山青龍蘋果】尚蘋果園', price: 859, orig: 1149, pic: '/upload/Product_3033/202608190235071.jpg', temp: '常溫' },
+  ],
+  冷凍超市: [
+    { id: 78664, name: '滿$999加購【綠時光】綠拿鐵風味版', price: 228, orig: 240, pic: '/upload/Product_3033/202511210904151.jpg', temp: '常溫' },
+    { id: 78638, name: '滿$999加購【鮮凍無花果】無毒農', price: 699, orig: 949, pic: '/upload/Product_3033/202608170748591.jpg', temp: '常溫' },
+    { id: 78634, name: '滿$999加購【天時莓果】有機冷凍蔓越莓', price: 389, orig: 399, pic: '/upload/Product_3033/202303150153551.jpg', temp: '常溫' },
+    { id: 78632, name: '滿$999加購【無毒農嚴選】澳洲和牛紐約客燒烤片', price: 299, orig: 429, pic: '/upload/Product_3033/202609010348001.jpg', temp: '常溫' },
+  ],
+  粥寶寶: [
+    { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, orig: 398, pic: '/upload/Product_3033/202610200824221.png', temp: '常溫' },
+    { id: 78621, name: '超值加購│常溫粥-玉米紅蘿蔔鮭魚粥(2027-01-05到期)', price: 170, orig: 180, pic: '/upload/Product_3033/202501150817081.png', temp: '常溫' },
+    { id: 78603, name: '超值加購│好吸袋-風味版-綠拿鐵香蕉口味300g（2026-11-11到期）', price: 79, orig: 110, pic: '/upload/Product_3033/202607090935561.png', temp: '常溫' },
+    { id: 78602, name: '超值加購│好吸袋-風味版-綠拿鐵鳳梨口味300g（2026-11-08到期）', price: 79, orig: 110, pic: '/upload/Product_3033/202607090929381.png', temp: '常溫' },
+    { id: 78595, name: '超值加購│大人系養生-剝皮辣椒雞湯(2026-12-26到期)', price: 180, orig: 199, pic: '/upload/Product_3033/202606300614401.png', temp: '常溫' },
+    { id: 78377, name: '超值加購│風味版-綠拿鐵蓮霧口味(2026-12-08到期)', price: 99, orig: 120, pic: '/upload/Product_3033/202604220329291.png', temp: '常溫' },
+  ],
+  益菓保: [
+    { id: 77505, name: '超值加購｜護護好益生菌-芭樂口味(7入)', price: 388, orig: 399, pic: '/upload/Product_3033/202604140642531.png', temp: '常溫' },
+    { id: 77504, name: '超值加購｜順順好益生菌-草莓口味(7入)', price: 199, orig: 299, pic: '/upload/Product_3033/202604140644141.png', temp: '常溫' },
+    { id: 68970, name: '超值加購【簡單JAN DAN】玻尿酸水潤面膜', price: 250, orig: 550, pic: '/upload/Product_3033/202502100810451.jpg', temp: '常溫' },
+    { id: 67564, name: '超值加購│益菓保嚴選 - 金緗雞嚐滴雞精', price: 150, orig: 200, pic: '/upload/Product_3033/202211110739311.jpg', temp: '常溫' },
+    { id: 66613, name: '超值加購｜歐趴DHA魚油', price: 450, orig: 980, pic: '/upload/Product_3033/202311240404331.jpg', temp: '常溫' },
+    { id: 66612, name: '超值加購｜敏敏好益生菌-蘋果口味(30入)', price: 1088, orig: 1288, pic: '/upload/Product_3033/202604140639071.png', temp: '常溫' },
+  ],
+};
+
+/* 跨產線候選：推別條產線時從這裡補 */
+const CROSS = {
+  產地直送: ['冷凍超市', '粥寶寶'],
+  冷凍超市: ['產地直送', '粥寶寶'],
+  粥寶寶: ['產地直送', '冷凍超市'],
+  益菓保: ['粥寶寶', '產地直送'],
+};
+
+/* 猜你喜歡測試台：狀態、產線切換列、開發者面板、畫面重繪 */
+const NOW_MONTH = 10; // 以 2026-10-20 為基準
+
+/* 正式站的區塊標題圖與小標 icon（ItemDetail.cshtml:192-215 的 titleBackground / smallIconName） */
+const MAT = 'https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/';
+const LINE_ASSET = {
+  產地直送: { t: '', icon: 'icon.png' },
+  冷凍超市: { t: '_frozen', icon: 'icon_frozen.png' },
+  粥寶寶: { t: '_babyfood', icon: 'icon_babyfood.png' },
+  益菓保: { t: '_eaglebabee', icon: 'icon_eaglebabee.svg' },
+};
+/* 貼心叮嚀：各產線的文案口徑（粥寶寶那組取自正式站商品頁） */
+const TIPS = {
+  產地直送: ['水果運送過程中會有辭水現象，送到時若在 5% 誤差範圍內屬正常現象', '網頁商品為示意圖片，果物依季節而略有差異', '收到後請立即開箱檢查，並置於常溫通風處'],
+  冷凍超市: ['冷凍保存，收到後請立即放入冷凍庫', '解凍後請勿再次冷凍，建議當餐食用完畢', '本產品與魚類、甲殼類於同一生產線生產，食品過敏者請留意'],
+  粥寶寶: ['本商品適合 1 歲以上的大寶寶。', '冷凍保存，製作到期限共 6 個月有效（正品保證效期 90 天以上）', '每開封後建議一天內食用完畢。', '將寶寶燉飯倒入碗裡，放入電鍋或微波爐加熱即可食用。', '本組合含魚類產品，已經過多次人工挑刺與去除鱗片，但仍有機率魚刺殘留，餵食時仍須注意。'],
+  益菓保: ['常溫保存，請置於陰涼乾燥處，避免陽光直射', '開封後請儘速食用完畢', '本產品非藥品，不具醫療效果'],
+};
+
+const S = {
+  // ── 面板上調得到的 ──────────────────────────────
+  // 誰在看
+  line: '粥寶寶', logged: true, baby: 'none',
+  // 這一頁的情境
+  addonCount: 6, count: 6, edge: 'normal',
+  // 推薦規則（要問產線的）
+  cross: 2, age: 'sort', season: 'hide', temp: 'auto', rebuy: true, recOrder: 'boughtFirst',
+  // 新舊推薦怎麼併
+  plan: 'C',
+  // 還沒定的細節
+  rotate: true, afterAdd: 'none',
+
+  // ── 已定案，固定住不再放上面板（理由見 A_UI/版面節奏與層級.md）────
+  listMode: 'slots',      // 版面＝左右兩個區（二之四定案）
+  cardStyle: 'slim',      // 兩邊同一種瘦身卡（2.5 定案）
+  grouping: 'merged',     // 我常買與別人常買混一排，標籤區分（2.2 定案）
+  secTitleStyle: 'banner',// 各產線段落標題（2.7 定案）
+  rebuyTag: 'frequent',   // 一律「常買」，不標該補貨了（2.3 定案）
+  reason: 'tag',          // 只留短標籤，不印長句（2.7 卡片瘦身定案）
+  tagColor: 'two',        // 兩色標籤
+  order: 'addon', layoutMode: 'side', slotsPerRow: 6, rotateSec: 6,
+};
+
+/* 這一頁有幾個加購品，由面板的滑桿決定（0~10）。
+   真實資料每條產線只有 4~6 個，要湊到 10 就把清單循環接下去，
+   id 會重複所以另外給一個 _key，購物車狀態才不會互相連動 */
+function addonsForPage() {
+  const src = ADDONS[S.line] || [];
+  const n = Math.max(0, Math.min(10, S.addonCount));
+  if (!src.length || n === 0) return [];
+  return Array.from({ length: n }, (_, i) => ({ ...src[i % src.length], _key: i }));
+}
+
+const PANEL = [
+  ['誰在看', [
+    ['line', '產線', [['產地直送', '產地直送'], ['冷凍超市', '冷凍超市'], ['粥寶寶', '粥寶寶'], ['益菓保', '益菓保']]],
+    ['logged', '登入狀態', [[true, '已登入'], [false, '未登入']]],
+    ['baby', '寶寶月齡（只有粥寶寶用得到）', [['none', '沒填'], [6, '6 個月'], [10, '10 個月'], [18, '18 個月'], ['two', '兩個寶寶']]],
+  ]],
+  ['這一頁的情境', [
+    ['addonCount', '這個商品有幾個加購品', { min: 0, max: 10, hint: addonHint }],
+    ['count', '推薦池抓幾個（輪播從這裡換）', [[4, '4'], [6, '6'], [10, '10']]],
+    ['edge', '例外情境', [['normal', '正常'], ['timeout', '推薦逾時'], ['empty', '沒有結果'], ['noimg', '商品缺圖'], ['addonleak', '誤推加購品']]],
+  ]],
+  ['推薦規則（要問產線的）', [
+    ['cross', '推不推別條產線', [[0, '只推自己'], [2, '別條最多 2 個'], [99, '不限']]],
+    ['age', '月齡規則', [['off', '關'], ['sort', '只排序'], ['filter', '篩掉不符的']]],
+    ['season', '產季過濾', [['off', '關'], ['hide', '過季不推'], ['mark', '推但標示']]],
+    ['temp', '溫層限制', [['off', '關'], ['auto', '冷凍線自動開'], ['same', '一律只推同溫層']]],
+    ['rebuy', '推不推「您常買」', [[true, '推'], [false, '不推']]],
+    ['recOrder', '買過的排哪', [['boughtFirst', '前面'], ['boughtLast', '後面']]],
+  ]],
+  ['新舊推薦怎麼併', [
+    ['plan', '三案', [['A', 'A 同版位切換'], ['B', 'B 兩區並存'], ['C', 'C 只留一塊']]],
+  ]],
+  ['還沒定的細節', [
+    ['rotate', '推薦輪播', [[true, '開（6 秒）'], [false, '關']]],
+    ['afterAdd', '按下加入菜籃後', [['none', '無動作'], ['expand', '展開推薦'], ['freeship', '按鈕上方出現免運提示']]],
+  ]],
+];
+
+/* 滑桿下面那行字：把「幾個加購品」會變成什麼版面直接講出來，
+   不然要撥到某個數字才發現版面變了 */
+function addonHint(n) {
+  if (n === 0) return '沒有左區，六個洞全給推薦';
+  const cols = Math.min(n, 4);
+  const rows = Math.ceil(n / cols);
+  const recs = (6 - cols) * rows;
+  return `左 ${cols} 欄 ${rows} 列、右 ${6 - cols} 欄 ${recs} 個推薦`
+    + (rows > 1 ? '，收合時只看得到第一列' : '');
+}
+
+const STATE_WARN = () => (!S.logged
+  ? '現在是未登入訪客：不呼叫推薦，區塊標題換成「為您推薦」，顯示本產線熱門。'
+  : S.age === 'filter' && S.baby !== 'none'
+    ? '月齡設成「篩掉不符的」。注意推薦剩幾個，篩過頭的話整區會降級成熱門。'
+    : null);
+const EDGE_WARN = {
+  addonleak: '現在推薦清單裡混進了加購品（卡片有紅框）。加購品在正式站是前台隱藏、不單獨零售的，客人點進去買不到。這就是必須單獨修掉的那一項。',
+  timeout: '推薦服務逾時。重點看：商品頁其他部分完全不受影響，推薦區塊降級成本產線熱門，不是開天窗。',
+  empty: '推薦沒有任何結果（例如新會員加上過濾太嚴）。行為跟逾時一樣，降級不留白。',
+  noimg: '部分商品沒有圖。重點看版面不破、卡片高度一致。',
+};
+
+/* ---------- 工具 ---------- */
+const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h !== undefined) n.innerHTML = h; return n; };
+const img = (src, cls) => `<img class="${cls}" src="${CDN}${src}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;noimg&quot;>商品圖</div>'">`;
+const inSeason = (s) => !s || (s[0] <= s[1] ? NOW_MONTH >= s[0] && NOW_MONTH <= s[1] : NOW_MONTH >= s[0] || NOW_MONTH <= s[1]);
+const babyList = () => (S.baby === 'none' ? [] : S.baby === 'two' ? [6, 18] : [S.baby]);
+const ageFit = (it) => { const bs = babyList(); if (!bs.length || !it.age) return true; return bs.some((b) => b >= it.age[0] && b <= it.age[1]); };
+
+/* 區塊標題：沿用正式站的圖片底＋疊字，圖依產線換 */
+/* 區塊標題改字：滿版標題圖用 .productDescription、小標樣式用 .sub-title */
+function setTitleText(node, text) {
+  const t = node.querySelector('.productDescription, .sub-title');
+  if (t) t.textContent = text;
+}
+
+function secTitle(text) {
+  const a = LINE_ASSET[S.line];
+  // 小標樣式：沿用商品頁既有的 .sub-line + .sub-title-icon + .sub-title（跟「商品規格」同一套）
+  if (S.secTitleStyle === 'subtitle') {
+    return el('div', 'col-xs-12 p-0 sub-line gy-subtitle',
+      `<img class="sub-title-icon" src="${MAT}${a.icon}" alt="">
+       <span class="sub-title" style="color:${LINE_COLOR[S.line]}">${text}</span>`);
+  }
+  // 照 ItemDetail.cshtml:1570-1577 的 markup。正式站用 lazyload + data-src，這裡沒載 lazyload 套件所以直接給 src
+  // 全寬區塊用 title_web（1000x80），真站的右欄小區塊才用 title2_web（500x80）
+  return el('div', 'col-xs-12 p-0 gy-title',
+    `<img class="web-show" src="${MAT}title_web${a.t}.png" alt="">
+     <img class="mobile-show" src="${MAT}title_mobile${a.t}.png" alt="">
+     <span class="productDescription">${text}</span>`);
+}
+
+/* ---------- 開發者面板 ---------- */
+function renderPanel() {
+  const bd = document.getElementById('tbpBody');
+  bd.innerHTML = '';
+  PANEL.forEach(([grpName, fields]) => {
+    const g = el('div', 'grp');
+    g.appendChild(el('label', null, grpName));
+    fields.forEach(([key, label, opts]) => {
+      const f = el('div', 'f');
+      if (label) f.appendChild(el('span', null, label));
+      if (Array.isArray(opts)) {
+        const seg = el('div', 'seg');
+        opts.forEach(([val, txt]) => {
+          const b = el('button', S[key] === val ? 'on' : null, txt);
+          b.onclick = () => { S[key] = val; renderPanel(); renderPage(); };
+          seg.appendChild(b);
+        });
+        f.appendChild(seg);
+      } else {
+        // 滑桿：任意整數，右邊即時顯示目前值，下面一行講這個數字會變成什麼版面
+        const row = el('div', 'rng');
+        const inp = document.createElement('input');
+        inp.type = 'range'; inp.min = opts.min; inp.max = opts.max; inp.step = 1; inp.value = S[key];
+        const num = el('b', null, String(S[key]));
+        inp.oninput = () => {
+          S[key] = Number(inp.value);
+          num.textContent = inp.value;
+          const h = f.querySelector('.hint');
+          if (h && opts.hint) h.textContent = opts.hint(S[key]);
+          renderPage();
+        };
+        row.appendChild(inp); row.appendChild(num);
+        f.appendChild(row);
+        if (opts.hint) f.appendChild(el('div', 'hint', opts.hint(S[key])));
+      }
+      g.appendChild(f);
+    });
+    bd.appendChild(g);
+  });
+  const w = EDGE_WARN[S.edge] || STATE_WARN();
+  if (w) bd.appendChild(el('div', 'warn', w));
+}
+
+/* ---------- 推薦計算 ---------- */
+function computeRecs() {
+  const d = DATA[S.line];
+  let own = d.items.map((x) => ({ ...x, line: S.line }));
+  let cross = S.cross === 0 ? [] : CROSS[S.line].flatMap((l) => DATA[l].items.map((x) => ({ ...x, line: l })));
+
+  const strip = (arr) => arr.filter((x) => (S.edge === 'addonleak' ? true : !x.addon));
+  own = strip(own); cross = strip(cross);
+
+  const tempOn = S.temp === 'same' || (S.temp === 'auto' && S.line === '冷凍超市');
+  const byTemp = (x) => !tempOn || x.temp === d.anchor.temp;
+  own = own.filter(byTemp); cross = cross.filter(byTemp);
+
+  const seasonDrop = (x) => S.season === 'hide' && x.line === '產地直送' && !inSeason(x.season);
+  own = own.filter((x) => !seasonDrop(x)); cross = cross.filter((x) => !seasonDrop(x));
+
+  if (S.age === 'filter') { own = own.filter(ageFit); cross = cross.filter(ageFit); }
+  if (S.age === 'sort' && babyList().length) {
+    const w = (x) => (ageFit(x) ? 0 : 1);
+    own.sort((a, b) => w(a) - w(b)); cross.sort((a, b) => w(a) - w(b));
+  }
+
+  const rebuy = S.logged && S.rebuy ? own.filter((x) => x.bought > 0).sort((a, b) => (b.due ? 1 : 0) - (a.due ? 1 : 0)).slice(0, 5) : [];
+  const ids = new Set(rebuy.map((x) => x.id));
+  const ownNew = own.filter((x) => !x.bought && !ids.has(x.id));
+  // 跨產線的名額要先保留，不然自己這條線商品一多，別條永遠擠不進前幾個
+  const nCross = S.cross === 0 ? 0 : S.cross === 99 ? Math.floor(S.count / 2) : S.cross;
+  const crossPick = cross.filter((x) => !x.bought).slice(0, nCross);
+  const ownPick = ownNew.slice(0, Math.max(0, S.count - crossPick.length));
+  const discover = [...ownPick, ...crossPick];
+
+  if (S.edge === 'noimg') [...rebuy, ...discover].forEach((x, i) => { if (i % 3 === 1) x._noimg = true; });
+  return { rebuy, discover };
+}
+
+/* ---------- 購物車狀態機（demo 用，狀態存在記憶體） ---------- */
+const CART = new Map(); // id -> { name, spec, price }
+
+function badge() {
+  const b = document.querySelector('.cart-btn .badge');
+  if (b) b.textContent = CART.size;
+}
+function toast(msg) {
+  let el2 = document.getElementById('gyToast');
+  if (!el2) { el2 = el('div', 'gy-toast'); el2.id = 'gyToast'; document.body.appendChild(el2); }
+  el2.textContent = msg;
+  el2.classList.add('on');
+  clearTimeout(el2._t);
+  el2._t = setTimeout(() => el2.classList.remove('on'), 1600);
+}
+function addToCart(it, spec) {
+  CART.set(it.id, { name: it.name, spec: spec || '單一規格', price: it.price });
+  badge();
+  toast(`已加入：${it.name}${spec ? '（' + spec + '）' : ''}`);
+  renderPage();
+}
+function removeFromCart(it) {
+  CART.delete(it.id);
+  badge();
+  toast(`已移除：${it.name}`);
+  renderPage();
+}
+/* 多規格商品：真站是點進商品頁選規格，demo 用小窗讓流程走得完 */
+function openSpecPicker(it) {
+  const names = it.specNames || ['單一規格'];
+  let pick = 0;
+  const mask = el('div', 'sp-mask');
+  const draw = () => {
+    mask.innerHTML = `<div class="sp-box">
+      <div class="sp-hd">選擇規格</div>
+      <div class="sp-nm">${it.name}</div>
+      <div class="sp-list">${names.map((n, i) =>
+        `<button class="sp-opt${i === pick ? ' on' : ''}" data-i="${i}">${n}<span class="pr">$${it.price.toLocaleString()} 起</span></button>`).join('')}</div>
+      <div class="sp-ft"><button data-act="cancel">取消</button><button class="main" data-act="add">加入菜籃</button></div>
+    </div>`;
+  };
+  draw();
+  mask.onclick = (e) => {
+    const opt = e.target.closest('.sp-opt');
+    if (opt) { pick = +opt.dataset.i; draw(); return; }
+    const act = e.target.closest('[data-act]');
+    if (!act) { if (e.target === mask) mask.remove(); return; }
+    if (act.dataset.act === 'add') { mask.remove(); addToCart(it, names[pick]); }
+    else mask.remove();
+  };
+  document.body.appendChild(mask);
+}
+function cartClick(it) {
+  if (CART.has(it.id)) { removeFromCart(it); return; }
+  if ((it.specNames || []).length > 1) openSpecPicker(it);
+  else addToCart(it, (it.specNames || [])[0]);
+}
+
+/* ---------- 卡片 ---------- */
+function tagOf(it, kind) {
+  if (kind === 'addon' || it._isAddon) return ['加價購', '原價 $' + (it.orig || it.price).toLocaleString()];
+  if (kind === 'mixedrail') kind = it._kind || (it.bought > 0 ? 'rebuy' : 'discover');
+  if (kind === 'rebuy') {
+    // 混排時主動提醒（該補貨了）不合適：它需要解釋才有說服力，一個標籤的版位放不下
+    const due = S.rebuyTag === 'due' && it.due;
+    return due ? ['該補貨了', `您平常約 ${it.days} 天買一次，差不多可以補貨了`]
+      : ['常買', `您買過 ${it.bought} 次，最近一次約 ${it.days} 天前`];
+  }
+  if (it.line !== S.line) return ['熱門', `${it.line}最近 90 天熱門商品`];
+  if (it._anchorN) return ['一起買', `買「${DATA[S.line].anchor.name}」的客人也常買`];
+  return ['同類熱門', `同類「${S.line}」最近熱門`];
+}
+const TAG4 = { 加價購: ['#e9f4e5', '#3c8430'], 該補貨了: ['#fff6e0', '#a9761a'], 常買: ['#fdeef0', '#c4536c'], 一起買: ['#e9f4e5', '#3c8430'], 同類熱門: ['#f1f2f7', '#6b7585'], 熱門: ['#f1f2f7', '#6b7585'] };
+function tagStyle(name, kind) {
+  if (S.tagColor === 'four') { const [bg, fg] = TAG4[name]; return `background:${bg};color:${fg}`; }
+  return kind === 'rebuy'
+    ? `background:color-mix(in srgb, ${LINE_COLOR[S.line]} 16%, #fff);color:${LINE_COLOR[S.line]}`
+    : 'background:#f1f2f7;color:#6b7585';
+}
+function card(it, kind) {
+  const [tag, why] = tagOf(it, kind);
+  const dim = S.season === 'mark' && it.line === '產地直送' && !inSeason(it.season);
+  const leak = S.edge === 'addonleak' && it.addon;
+  const inCart = CART.has(it.id);
+  const c = el('div', 'gy-card'
+    + (S.cardStyle === 'slim' ? ' slim' : '')
+    + (it._isAddon ? ' is-addon' : '')
+    + (inCart ? ' is-incart' : ''));
+  if (leak) c.style.outline = '2px solid #dc4e43';
+  if (dim) c.style.opacity = '.55';
+
+  const tagHtml = `<span class="gy-tag" style="${tagStyle(tag, kind)}">${dim ? '下次產季見' : tag}</span>`;
+  const imgHtml = it._noimg ? '<div class="noimg">商品圖</div>' : img(it.pic, 'img-bg');
+  const multi = (it.specNames || []).length > 1;
+  // 加購品的原價另起一行放上面，兩個價格擠在同一行會換行
+  const origHtml = it._isAddon && it.orig ? `<span class="gy-orig">$${it.orig.toLocaleString()}</span>` : '';
+  const priceHtml = `<span class="gy-price">$${it.price.toLocaleString()}${it._isAddon ? '' : '<small> 起</small>'}</span>`;
+  const btnHtml = `<button class="gy-add${inCart ? ' is-in' : ''}">${
+    inCart ? '已加入' : (multi ? '選規格' : '加入菜籃')}</button>`;
+
+  // 圖與品名包成連結去商品頁；價格、標籤、留白點了沒反應
+  const href = `https://www.greenbox.tw/Products/ItemDetail/${it.id}`;
+  const linkOpen = `<a class="gy-link" href="${href}" target="_blank" rel="noopener">`;
+  c.innerHTML = S.cardStyle === 'slim'
+    ? `${linkOpen}<div class="gy-imgwrap">${imgHtml}${tagHtml}</div>
+       <div class="p-item-name">${it.name}</div></a>
+       ${leak ? '<div class="gy-why" style="color:#dc4e43">這是加購品，客人點進去買不到</div>' : ''}
+       ${origHtml || '<span class="gy-orig"></span>'}
+       <div class="gy-ft">${priceHtml}${btnHtml}</div>`
+    : `${linkOpen}${imgHtml}
+       <div class="p-item-name">${it.name}</div></a>
+       <div>${tagHtml}</div>
+       ${S.reason === 'text' ? `<div class="gy-why">${why}</div>` : ''}
+       ${leak ? '<div class="gy-why" style="color:#dc4e43">這是加購品，客人點進去買不到</div>' : ''}
+       ${origHtml || '<span class="gy-orig"></span>'}
+       <div class="gy-ft">${priceHtml}${btnHtml}</div>`;
+
+  c.querySelector('.gy-add').onclick = (e) => { e.stopPropagation(); cartClick(it); };
+  return c;
+}
+/* 兩塊共用同一套清單呈現。加購品與推薦的展開邏輯要一致，不能一個向下展開一個左右滑 */
+function cardList(items, kind, perRow) {
+  if (S.listMode === 'rail') return rail(items, kind);
+  const wrap = el('div');
+  const grid = el('div', 'gy-grid c' + perRow);
+  const first = items.slice(0, perRow);
+  const rest = items.slice(perRow);
+  first.forEach((it) => grid.appendChild(card(it, kind)));
+  wrap.appendChild(grid);
+  if (rest.length) {
+    const btn = el('button', 'gy-more', `顯示更多 ∨（還有 ${rest.length} 項）`);
+    btn.type = 'button';
+    let open = false;
+    btn.onclick = () => {
+      open = !open;
+      if (open) rest.forEach((it) => grid.appendChild(card(it, kind)));
+      else [...grid.children].slice(perRow).forEach((n) => n.remove());
+      btn.textContent = open ? '收合 ∧' : `顯示更多 ∨（還有 ${rest.length} 項）`;
+    };
+    wrap.appendChild(btn);
+  }
+  return wrap;
+}
+
+function rail(items, kind) {
+  const w = el('div', 'gy-railwrap');
+  const r = el('div', 'gy-rail');
+  items.forEach((it) => r.appendChild(card(it, kind)));
+  w.appendChild(r);
+  if (items.length > 4) {
+    const a = el('button', 'gy-arrow', '›');
+    a.onclick = () => r.scrollBy({ left: 400 });
+    w.appendChild(a);
+  }
+  return w;
+}
+
+/* ---------- 一排六個洞：加價購優先，其餘給推薦 ---------- */
+let ROT_TIMER = null;
+function stopRotate() { if (ROT_TIMER) { clearInterval(ROT_TIMER); ROT_TIMER = null; } }
+
+function slotsBlock(addons, recs) {
+  // 左四右二：加購品區只放加購品（最多 4 欄），推薦區只放推薦（2 欄）。
+  // 列數由加購品的數量決定；加購品不夠填滿的格子就空著，不給推薦補（2026-10-20 截圖標註）。
+  // 左區佔幾欄＝加購品數量，上限 4 欄（規則，不是開關）。
+  // 不足 4 個就把空間讓給推薦，一個都沒有就整塊都是推薦。
+  // 益菓保這種沒有推薦的線，左區吃滿六欄，右區不產生
+  const noRecs = recs.length === 0;
+  const aCols = Math.max(0, Math.min(noRecs ? 6 : 4, addons.length));
+  const rCols = noRecs ? 0 : 6 - aCols;
+  const rows = aCols > 0 ? Math.max(1, Math.ceil(addons.length / aCols)) : 1;
+  if (S._slotsOpen === undefined) S._slotsOpen = false;
+  const visibleRows = S._slotsOpen ? rows : 1;
+  const aShow = addons.slice(0, visibleRows * aCols);
+  const recNeed = visibleRows * rCols;
+  const pages = Math.max(1, Math.ceil(recs.length / Math.max(1, recNeed)));
+  if (S._recPage === undefined || S._recPage >= pages) S._recPage = 0;
+
+  const sec = el('section', 'gy-sec');
+  const two = el('div', 'gy-two');
+  function appendMore() {
+    if (rows <= 1) return;
+    const more = el('button', 'gy-more',
+      S._slotsOpen ? '收合 ∧' : `顯示更多 ∨（還有 ${addons.length - aCols} 個加價購）`);
+    more.type = 'button';
+    more.onclick = () => { S._slotsOpen = !S._slotsOpen; renderPage(); };
+    sec.appendChild(more);
+  }
+
+  // 左：加購品
+  if (aCols > 0) {
+    const regA = el('div', 'gy-reg-a');
+    // 沒有右區時左區吃滿整列，不然會在右邊留下兩區之間那 32px 的空白
+    regA.style.flex = noRecs ? '0 0 100%' : `0 0 calc(var(--gyw) * ${aCols} + ${(aCols - 1) * 12}px)`;
+    regA.appendChild(regionTitle('加價購'));
+    const gridA = el('div', 'gy-reg-grid');
+    gridA.style.setProperty('--cols', aCols);
+    aShow.forEach((it) => gridA.appendChild(card({ ...it, line: S.line, bought: 0, _isAddon: true }, 'addon')));
+    regA.appendChild(gridA);
+    two.appendChild(regA);
+  }
+
+  // 右：猜你喜歡（這條線不推薦就整個不產生）
+  if (noRecs) {
+    sec.appendChild(two);
+    appendMore();
+    return sec;
+  }
+  const regR = el('div', aCols > 0 ? 'gy-reg-r' : 'gy-reg-r no-divider');
+  const head = el('div', 'gy-head');
+  head.appendChild(regionTitle('猜你喜歡'));
+  let pgLabel = null;
+  if (S.rotate && pages > 1) {
+    const rot = el('div', 'gy-rot');
+    rot.innerHTML = `<button data-a="prev" title="上一組">‹</button>
+      <span class="pg"></span>
+      <button data-a="next" title="下一組">›</button>
+      <span class="pause" id="gyPause"></span>`;
+    pgLabel = rot.querySelector('.pg');
+    rot.onclick = (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      S._recPage = (S._recPage + (b.dataset.a === 'next' ? 1 : pages - 1)) % pages;
+      paintRecs(); restart();
+    };
+    head.appendChild(rot);
+  }
+  regR.appendChild(head);
+  const gridR = el('div', 'gy-reg-grid');
+  gridR.style.setProperty('--cols', rCols);
+  const holders = [];
+  for (let i = 0; i < recNeed; i++) { const hd = el('div'); gridR.appendChild(hd); holders.push(hd); }
+  regR.appendChild(gridR);
+  two.appendChild(regR);
+  sec.appendChild(two);
+
+  // 輪播只換推薦那幾張卡，不重繪整個區塊
+  function paintRecs() {
+    holders.forEach((hd, i) => {
+      const it = recs[(S._recPage * recNeed + i) % recs.length];
+      hd.innerHTML = '';
+      if (it) hd.appendChild(card(it, 'mixedrail'));
+    });
+    if (pgLabel) pgLabel.textContent = `${S._recPage + 1}/${pages}`;
+  }
+  paintRecs();
+
+  appendMore();
+
+  let paused = false;
+  function restart() {
+    stopRotate();
+    if (!S.rotate || pages <= 1) return;
+    ROT_TIMER = setInterval(() => {
+      if (paused) return;
+      S._recPage = (S._recPage + 1) % pages;
+      paintRecs();
+    }, S.rotateSec * 1000);
+  }
+  sec.onmouseenter = () => { paused = true; const x = document.getElementById('gyPause'); if (x) x.textContent = '已暫停'; };
+  sec.onmouseleave = () => { paused = false; const x = document.getElementById('gyPause'); if (x) x.textContent = ''; };
+  restart();
+  return sec;
+}
+
+/* 圖片腰帶：真站的「內頁廣告(上)」。目前掛的是 LINE 加好友橫幅，
+   桌機與手機各一張圖，真站用 web-show / mobile-show 切換 */
+const AD = 'https://greenboxcdn.azureedge.net/upload/';
+function adBelt() {
+  return `<a href="https://line.me/R/ti/p/@greenbox24h" target="_blank" rel="noopener">
+      <img class="web-show" src="${AD}Banner/202606300320251.jpg" alt="">
+      <img class="mobile-show" src="${AD}BannerMobile/202606300320251.jpg" alt="">
+    </a>`;
+}
+
+/* 內容區的「無毒農檢驗」：真站就是段落標題＋一張 CheckTest.png。
+   復刻它一方面補齊內容區，一方面讓人看得出原本的「為您推薦」已經不在這了 */
+function inspectBlock() {
+  const as = LINE_ASSET[S.line];
+  const sec = el('section', 'gy-inspect');
+  sec.appendChild(regionTitle('無毒農檢驗'));
+  sec.innerHTML += `<img class="check" src="https://greenboxcdn.azureedge.net/pagematerials/product/item-detail/CheckTest.png" alt="無毒農檢驗">`;
+  return sec;
+}
+
+/* 區標題：兩區寬度不同，所以固定高度靠左裁切，兩邊才會一樣高 */
+function regionTitle(text) {
+  const as = LINE_ASSET[S.line];
+  // 不帶 col-xs-12：那是 Bootstrap 的 float:left，會把旁邊的格線擠成 0 寬
+  return el('div', 'gy-regtitle',
+    `<img class="web-show" src="${MAT}title_web${as.t}.png" alt="">
+     <img class="mobile-show" src="${MAT}title_mobile${as.t}.png" alt="">
+     <span class="productDescription">${text}</span>`);
+}
+
+/* ---------- 區塊 ---------- */
+function addonBlock() {
+  const list = addonsForPage().map((x) => ({ ...x, line: S.line, bought: 0, _isAddon: true }));
+  const s = el('section', 'gy-sec');
+  s.appendChild(secTitle('優惠加購商品'));   // 跟推薦用同一種段落標題
+  s.appendChild(cardList(list, 'addon', 2));
+  return s;
+}
+const hotItems = () => DATA[S.line].items.filter((x) => !x.addon).slice(0, 4).map((x) => ({ ...x, line: S.line, bought: 0 }));
+function fallbackBlock(title) {
+  const s = el('section', 'gy-sec');
+  s.appendChild(secTitle(title));
+  s.appendChild(cardList(hotItems(), 'hot', 3));
+  return s;
+}
+function recBlock() {
+  if (S.line === '益菓保') return null;
+  const s = el('section', 'gy-sec');
+  const t = secTitle('猜你會喜歡');
+  s.appendChild(t);
+  if (!S.logged || S.edge === 'timeout' || S.edge === 'empty') {
+    setTitleText(t, '為您推薦');
+    s.appendChild(cardList(hotItems(), 'hot', 3));
+    return s;
+  }
+  const { rebuy, discover } = computeRecs();
+  discover.slice(0, 2).forEach((x) => { x._anchorN = true; });
+
+  // 展開模式：軌道包一層可收合容器，按下加入菜籃才打開
+  const body = S.afterAdd === 'expand' ? el('div', 'gy-collapse') : s;
+  if (body !== s) {
+    const hint = el('div', 'gy-collapse-hint', '加入菜籃後，這裡會展開為你挑的商品');
+    hint.id = 'tbExpandHint';
+    s.appendChild(hint);
+    s.appendChild(body);
+  }
+  const grp = (title, node) => {
+    const g = el('div', 'gy-grp');
+    if (title) { const h = el('h4', null, title); h.style.color = LINE_COLOR[S.line]; g.appendChild(h); }
+    g.appendChild(node);
+    body.appendChild(g);
+  };
+
+  if (S.grouping === 'merged') {
+    // 「我買過」跟「別人也買過」對客人不重要到要分兩排，混一排用標籤區分就好
+    rebuy.forEach((x) => { x._kind = 'rebuy'; });
+    discover.forEach((x) => { x._kind = 'discover'; });
+    const all = S.recOrder === 'boughtFirst' ? [...rebuy, ...discover] : [...discover, ...rebuy];
+    if (all.length) grp(null, cardList(all, 'mixedrail', 3));
+  } else {
+    if (rebuy.length) grp('您常買・可以再買', cardList(rebuy, 'rebuy', 3));
+    if (discover.length) grp('買這個的客人也常買', cardList(discover, 'discover', 3));
+  }
+  if (!rebuy.length && !discover.length) {
+    setTitleText(t, '為您推薦');
+    s.appendChild(cardList(hotItems(), 'hot', 3));
+  }
+  s.appendChild(el('div', 'gy-note', '價格與庫存以結帳時為準'));
+  return s;
+}
+
+/* ---------- 主畫面 ---------- */
+function renderPage() {
+  const d = DATA[S.line], a = d.anchor, asset = LINE_ASSET[S.line], color = LINE_COLOR[S.line];
+
+  document.getElementById('tbHero').src = CDN + a.pic;
+  document.getElementById('tbThumbs').innerHTML = d.items.slice(0, 4)
+    .map((x, i) => `<img class="${i === 0 ? 'active' : ''}" src="${CDN}${x.pic}" alt="">`).join('');
+  document.getElementById('tbName').textContent = a.name;
+
+  // 小標的 icon 與顏色照產線換（ItemDetail.cshtml 的 smallIconName / mainColor）
+  [1, 2, 3, 4].forEach((n) => { const e = document.getElementById('tbIcon' + n); if (e) e.src = MAT + asset.icon; });
+  document.querySelectorAll('.sub-title').forEach((e) => { e.style.color = color; });
+
+  document.getElementById('tbTips').innerHTML = TIPS[S.line]
+    .map((x) => `<div class="col-xs-12 p-0"><span class="col-xs-1-cus-1 p-0 font-16px">．</span><span class="col-xs-11 p-0 font-16px">${x}</span></div>`).join('');
+
+  document.getElementById('tbSpecTxt').textContent = `共 ${a.specs} 種規格可選`;
+  document.getElementById('tbTemp').textContent = a.temp;
+
+  // 適合月齡／適合年齡只有粥寶寶與益菓保有（ItemDetail.cshtml:787）
+  const isBaby = S.line === '粥寶寶' || S.line === '益菓保';
+  document.getElementById('tbAgeRow').style.display = isBaby ? '' : 'none';
+  document.getElementById('tbAgeBody').style.display = isBaby ? '' : 'none';
+  document.getElementById('tbAgeTitle').textContent = S.line === '益菓保' ? '適合年齡' : '適合月齡';
+  document.getElementById('tbAgeTxt').textContent = S.line === '益菓保' ? '14 歲以上' : '1 歲以上寶寶';
+
+  document.getElementById('tbPrice').textContent = '$' + a.price.toLocaleString();
+  document.getElementById('tbOrig').textContent = '$' + Math.round(a.price * 1.06).toLocaleString();
+  // 主商品規格：用真實規格名稱，可以點選切換
+  const specNames = a.specNames || Array.from({ length: a.specs }, (_, i) => `規格 ${i + 1}`);
+  if (S._spec === undefined || S._specLine !== S.line) { S._spec = 0; S._specLine = S.line; }
+  const sb = document.getElementById('tbSpecBtns');
+  sb.innerHTML = specNames.map((n, i) =>
+    `<div class="col-xs-6 p-0"><button class="spec-btn${i === S._spec ? ' active' : ''}" type="button" data-i="${i}">${n}</button></div>`).join('');
+  sb.onclick = (e) => {
+    const b = e.target.closest('.spec-btn');
+    if (!b) return;
+    S._spec = +b.dataset.i;
+    renderPage();
+  };
+
+  const slotA = document.getElementById('tbSlotA'), slotB = document.getElementById('tbSlotB'),
+    slotC = document.getElementById('tbSlotC'), side = document.getElementById('tbSide'),
+    fs = document.getElementById('tbFreeship');
+  [slotA, slotB, slotC, side, fs].forEach((n) => { n.innerHTML = ''; });
+  // 真站的益菓保不顯示無毒農檢驗（ItemDetail.cshtml 註解：益生菌不顯示無毒農檢驗）
+  const insp = document.getElementById('tbInspect');
+  if (insp) { insp.innerHTML = ''; if (S.line !== '益菓保') insp.appendChild(inspectBlock()); }
+  const adTop = document.getElementById('tbAdTop');
+  if (adTop) adTop.innerHTML = adBelt();
+
+  // 為您推薦（右欄）還在不在，決定內容區是 8/4 還是全寬。
+  // 這不是新發明：真站的益菓保因為不顯示為您推薦，程式裡本來就寫 col-lg-12（ItemDetail.cshtml:1331）
+  const hasSide = S.plan === 'B' && S.line !== '益菓保';
+  const content = document.getElementById('tbContent');
+  if (content) content.className = hasSide ? 'col-md-8 col-xs-12' : 'col-md-12 col-xs-12';
+  side.className = hasSide ? 'col-md-4 col-xs-12' : 'col-xs-12';
+
+  // 按下加入菜籃後：按鈕上方的免運提示（不改變版面高度、不打斷捲動）
+  if (S.afterAdd === 'freeship') {
+    fs.innerHTML = '<div class="freeship">再加 <b>$200</b> 就免運，下面有幾個可以湊</div>';
+  }
+
+  const rec = recBlock();
+  const addon = addonBlock();
+  // C 題三案：A＝同版位切換、B＝兩區並存、C＝只留一塊（降級已做在 recBlock 裡）
+  let recSlot = rec;
+  if (S.plan === 'A' && !S.logged) recSlot = fallbackBlock('為您推薦');
+  if (S.listMode === 'slots' && S.line !== '益菓保') {
+    // 一個區塊、一排六個洞：加價購優先（最多 4 個），剩下的洞給推薦
+    const { rebuy, discover } = computeRecs();
+    rebuy.forEach((x) => { x._kind = 'rebuy'; });
+    discover.forEach((x) => { x._kind = 'discover'; });
+    const recs = S.recOrder === 'boughtFirst' ? [...rebuy, ...discover] : [...discover, ...rebuy];
+    slotA.appendChild(slotsBlock(addonsForPage(), recs));
+  } else if (S.listMode === 'slots') {
+    // 益菓保預設不出現推薦。版面仍走同一個兩區格線，只是右區不產生、左區吃滿六欄，
+    // 四條產線的加價購才會長得一樣
+    stopRotate();
+    const a2 = addonsForPage();
+    if (a2.length) slotA.appendChild(slotsBlock(a2, []));
+  } else if (S.layoutMode === 'side' && addon && recSlot) {
+    stopRotate();
+    const row = el('div', 'gy-side');
+    const L = el('div', 'gy-side-l'); L.appendChild(addon);
+    const R = el('div', 'gy-side-r'); R.appendChild(recSlot);
+    row.appendChild(L); row.appendChild(R);
+    slotA.appendChild(row);
+  } else {
+    stopRotate();
+    const blocks = S.order === 'addon' ? [addon, recSlot] : [recSlot, addon];
+    blocks.forEach((b, i) => { if (b) (i === 0 ? slotA : slotB).appendChild(b); });
+  }
+
+  // 展開模式：按下加入菜籃才把推薦展開
+  const btn = document.getElementById('tbBuyBtn');
+  if (btn) {
+    const inCart = CART.has(a.id);
+    btn.innerHTML = inCart
+      ? '<i class="fa fa-check"></i> 已加入菜籃（再按一次移除）'
+      : '<i class="fa fa-shopping-basket"></i> 加入菜籃';
+    btn.style.background = inCart ? '#4ba83b' : '#dc4e43';
+    btn.onclick = () => {
+      if (inCart) removeFromCart(a);
+      else addToCart(a, specNames[S._spec]);
+      // 展開模式：加入之後才把推薦展開
+      const box = document.querySelector('.gy-collapse');
+      if (box) {
+        box.classList.add('is-open');
+        const hint = document.getElementById('tbExpandHint');
+        if (hint) hint.remove();
+      }
+    };
+  }
+  badge();
+  if (hasSide) {
+    const sb = fallbackBlock('為您推薦');
+    sb.style.marginTop = '0';
+    side.appendChild(sb);
+  }
+}
+
+document.getElementById('tbpT').onclick = () => {
+  const p = document.getElementById('tbp');
+  p.classList.toggle(window.innerWidth <= 1480 ? 'is-open' : 'is-min');
+};
+renderPanel();
+renderPage();
+
+</script>
+
+  </div>
+</div>
+
+<!--
+  footer.html — 無毒農主站 footer
+  依賴：base.css、footer.css
+  圖片：images/fb.svg、line.svg、ig.svg、yt.svg、footer_logo.svg
+-->
+<footer class="gb-footer">
+  <div class="wrap">
+    <div>
+      <h4>無毒農標準</h4>
+      <a href="/Home/DailyReport">安心檢驗日報</a>
+      <a href="/Home/AboutPGS">PGS參與式驗證</a>
+      <a href="/Blog/BlogNew">無毒農部落格</a>
+    </div>
+    <div>
+      <h4>安心選購</h4>
+      <a href="/BabyFood">粥寶寶</a>
+      <a href="/Eaglebabee">益菓保</a>
+      <a href="/Products/ItemNew">產地直送</a>
+      <a href="/Products/FrozenFood">冷凍超市</a>
+    </div>
+    <div>
+      <h4>幫助/政策</h4>
+      <a href="/Home/QuestionAndAnswer">常見問題</a>
+      <a href="/Home/Privacy">隱私權政策</a>
+      <a href="/Home/TermsConditions">使用者條款</a>
+      <a href="/Home/ReturnPolicy">退貨辦法</a>
+      <a href="/Home/AboutVip">會員制度/紅利積點</a>
+    </div>
+    <div>
+      <h4>認識無毒農</h4>
+      <a href="/Home/AboutNew">關於無毒農</a>
+      <a href="/Home/AboutTeam">團隊介紹</a>
+      <a href="https://www.104.com.tw/company/1a2x6blzu5" target="_blank">人才招募</a>
+      <a href="/Baby/About">等家寶寶</a>
+    </div>
+    <div>
+      <h4>追蹤我們</h4>
+      <div class="social">
+        <a href="https://www.facebook.com/GreenBox.in.tw" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KCjxyZWN0IHg9IjAiIGZpbGw9Im5vbmUiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIvPgoKPGc+Cgo8cGF0aCBmaWxsPSIjNGJhODNiIiBkPSJNOC40NiAxOGgyLjkzdi03LjNoMi40NWwuMzctMi44NGgtMi44MlY2LjA0YzAtLjgyLjIzLTEuMzggMS40MS0xLjM4aDEuNTFWMi4xMWMtLjI2LS4wMy0xLjE1LS4xMS0yLjE5LS4xMS0yLjE4IDAtMy42NiAxLjMzLTMuNjYgMy43NnYyLjFINnYyLjg0aDIuNDZWMTh6Ii8+Cgo8L2c+Cgo8L3N2Zz4=" alt="Facebook"></a>
+        <a href="https://lin.ee/djMfdxH" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAyQzE3LjUxNDEgMiAyMiA1LjY0MDUgMjIgMTAuMTE1MkMyMiAxMS45MDU5IDIxLjMwNTYgMTMuNTE4OSAxOS44NTY1IDE1LjEwODNIMTkuODU2OUMxNy43NTg5IDE3LjUyMjkgMTMuMDY3MyAyMC40NjQyIDEyIDIwLjkxNEMxMC45NjIyIDIxLjM1MTMgMTEuMDgyNCAyMC42NjcyIDExLjEyOTkgMjAuMzk2OUMxMS4xMzEyIDIwLjM4OTIgMTEuMTMyNSAyMC4zODE5IDExLjEzMzcgMjAuMzc0OUMxMS4xNTkyIDIwLjIyNDUgMTEuMjc2NSAxOS41MTg4IDExLjI3NjUgMTkuNTE4OEMxMS4zMTAxIDE5LjI2MzQgMTEuMzQ1IDE4Ljg2NzMgMTEuMjQ0MSAxOC42MTQ2QzExLjEzMjEgMTguMzM2MyAxMC42ODg4IDE4LjE5MTggMTAuMzYzMiAxOC4xMjE0QzUuNTU3NTUgMTcuNDg2NCAyIDE0LjEyNjcgMiAxMC4xMTUyQzIgNS42NDA1IDYuNDg2MzMgMiAxMiAyWk05Ljk3MjE4IDcuOTUyODFIOS4yNjMxQzkuMTU3NjYgNy45NTI4MSA5LjA3MjA4IDguMDM4MzkgOS4wNzIwOCA4LjE0Mzc0VjEyLjUwOEM5LjA3MjA4IDEyLjYxMzUgOS4xNTc2NiAxMi42OTkgOS4yNjMxIDEyLjY5OUg5Ljk3MjE4QzEwLjA3NzcgMTIuNjk5IDEwLjE2MzEgMTIuNjEzNSAxMC4xNjMxIDEyLjUwOFY4LjE0Mzc0QzEwLjE2MzEgOC4wMzgzOSAxMC4wNzc3IDcuOTUyODEgOS45NzIxOCA3Ljk1MjgxWk04LjQ3MTg0IDEyLjUwOEM4LjQ3MTg0IDEyLjYxMzUgOC4zODYzNiAxMi42OTg5IDguMjgwOTEgMTIuNjk4OUg1LjQ3MTQyQzUuMzY1OTggMTIuNjk4OSA1LjI4MDUgMTIuNjEzNSA1LjI4MDUgMTIuNTA4VjguMTQzODFDNS4yODA1IDguMDM4MzYgNS4zNjU5OCA3Ljk1Mjg4IDUuNDcxNDIgNy45NTI4OEg2LjE4MDY5QzYuMjg1NjYgNy45NTI4OCA2LjM3MTUyIDguMDM4NzQgNi4zNzE1MiA4LjE0MzgxVjExLjYwNzlIOC4yODA5MUM4LjM4NTg5IDExLjYwNzkgOC40NzE4NCAxMS42OTM4IDguNDcxODQgMTEuNzk4N1YxMi41MDhaTTE1Ljg2MzcgMTIuNjk4OUgxOC42NzMyQzE4Ljc3ODcgMTIuNjk4OSAxOC44NjQxIDEyLjYxMzUgMTguODY0MSAxMi41MDhWMTEuNzk4N0MxOC44NjQxIDExLjY5MzggMTguNzc4MiAxMS42MDc5IDE4LjY3MzIgMTEuNjA3OUgxNi43NjM5VjEwLjg3MTVIMTguNjczMkMxOC43Nzg3IDEwLjg3MTUgMTguODY0MSAxMC43ODYgMTguODY0MSAxMC42ODA1VjkuOTcxMjhDMTguODY0MSA5Ljg2NjMgMTguNzc4MiA5Ljc4MDM1IDE4LjY3MzIgOS43ODAzNUgxNi43NjM5VjkuMDQzOUgxOC42NzMyQzE4Ljc3ODcgOS4wNDM5IDE4Ljg2NDEgOC45NTg0MiAxOC44NjQxIDguODUyOTdWOC4xNDM4MUMxOC44NjQxIDguMDM4NzQgMTguNzc4MiA3Ljk1Mjg4IDE4LjY3MzIgNy45NTI4OEgxNS44NjM3QzE1Ljc1ODMgNy45NTI4OCAxNS42NzI4IDguMDM4MzYgMTUuNjcyOCA4LjE0MzgxVjEyLjUwOEMxNS42NzI4IDEyLjYxMzUgMTUuNzU4MyAxMi42OTg5IDE1Ljg2MzcgMTIuNjk4OVpNMTQuMDkxIDcuOTUyODFIMTQuODAwMUMxNC45MDU2IDcuOTUyODEgMTQuOTkxMSA4LjAzODM5IDE0Ljk5MTEgOC4xNDM3NFYxMi41MDhDMTQuOTkxMSAxMi42MTM1IDE0LjkwNTYgMTIuNjk5IDE0LjgwMDEgMTIuNjk5SDE0LjA5NDlDMTQuMDc3NiAxMi42OTkgMTQuMDYwOSAxMi42OTY0IDE0LjA0NSAxMi42OTIyTDE0LjA0MzcgMTIuNjkyTDE0LjA0MjIgMTIuNjkxNkMxNC4wMzc3IDEyLjY5MDMgMTQuMDMzMyAxMi42ODg4IDE0LjAyOSAxMi42ODczTDE0LjAyMyAxMi42ODUxQzE0LjAxOTggMTIuNjgzOSAxNC4wMTY4IDEyLjY4MjYgMTQuMDEzNiAxMi42ODExQzE0LjAxMDUgMTIuNjc5NyAxNC4wMDc1IDEyLjY3ODIgMTQuMDA0NSAxMi42NzY2QzE0LjAwMjUgMTIuNjc1NyAxNC4wMDA3IDEyLjY3NDYgMTMuOTk4OCAxMi42NzM2QzEzLjk5NDggMTIuNjcxMyAxMy45OTA3IDEyLjY2ODkgMTMuOTg2OCAxMi42NjYzTDEzLjk4NDcgMTIuNjY0OEMxMy45NjYgMTIuNjUyMSAxMy45NDkyIDEyLjYzNjIgMTMuOTM1NCAxMi42MTY3TDExLjkzNjEgOS45MTY3NVYxMi41MDhDMTEuOTM2MSAxMi42MTM1IDExLjg1MDYgMTIuNjk5IDExLjc0NTIgMTIuNjk5SDExLjAzNkMxMC45MzA2IDEyLjY5OSAxMC44NDUxIDEyLjYxMzUgMTAuODQ1MSAxMi41MDhWOC4xNDM3NEMxMC44NDUxIDguMDM4MzkgMTAuOTMwNiA3Ljk1MjgxIDExLjAzNiA3Ljk1MjgxSDExLjc0MTJDMTEuNzQzNSA3Ljk1MjgxIDExLjc0NTYgNy45NTMwOSAxMS43NDc5IDcuOTUzMThDMTEuNzUxMyA3Ljk1MzI4IDExLjc1NDYgNy45NTMzNyAxMS43NTggNy45NTM3NUwxMS43NjgzIDcuOTU0ODdMMTEuNzc2NCA3Ljk1NjE4TDExLjc4NzcgNy45NTg2MkwxMS43OTQ2IDcuOTYwNEMxMS43OTg1IDcuOTYxNTMgMTEuODAyMyA3Ljk2Mjc0IDExLjgwNjIgNy45NjQxNUwxMS44MTI0IDcuOTY2NEMxMS44MTYxIDcuOTY3OSAxMS44MTk5IDcuOTY5NDkgMTEuODIzNSA3Ljk3MTE4TDExLjgyOTYgNy45NzQxOEMxMS44MzMyIDcuOTc1OTYgMTEuODM2NyA3Ljk3NzkzIDExLjg0MDEgNy45Nzk5OUwxMS44NDU5IDcuOTgzNDZDMTEuODQ5NSA3Ljk4NTggMTEuODUyOSA3Ljk4ODA1IDExLjg1NjEgNy45OTA0TDExLjg2MTMgNy45OTQyNEMxMS44NjQ5IDcuOTk3MTQgMTEuODY4MiA4LjAwMDA1IDExLjg3MTYgOC4wMDMwNUwxMS44NzUyIDguMDA2MzNDMTEuODc5MiA4LjAxMDA4IDExLjg4MyA4LjAxNDExIDExLjg4NjcgOC4wMTgyM0wxMS44ODc5IDguMDE5NjRDMTEuODkzNCA4LjAyNTgzIDExLjg5ODYgOC4wMzIzOSAxMS45MDMzIDguMDM5MzJMMTMuOSAxMC43MzU5VjguMTQzNzRDMTMuOSA4LjAzODM5IDEzLjk4NTUgNy45NTI4MSAxNC4wOTEgNy45NTI4MVoiIGZpbGw9IiM0YmE4M2IiLz4KPC9zdmc+" alt="LINE"></a>
+        <a href="https://www.instagram.com/greenbox_tw/" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAyQzkuMjg0IDIgOC45NDQgMi4wMTEzMyA3Ljg3NzMzIDIuMDZDNi44MTI2NyAyLjEwODY3IDYuMDg1MzMgMi4yNzggNS40NDkzMyAyLjUyNTMzQzQuNzgyNjcgMi43NzYgNC4xNzggMy4xNjkzMyAzLjY3OCAzLjY3ODY3QzMuMTY5NDggNC4xNzgwOSAyLjc3NTkxIDQuNzgyMzMgMi41MjQ2NyA1LjQ0OTMzQzIuMjc4NjcgNi4wODUzMyAyLjEwODY3IDYuODEzMzMgMi4wNiA3Ljg3OEMyLjAxMiA4Ljk0NCAyIDkuMjgzMzMgMiAxMkMyIDE0LjcxNjcgMi4wMTEzMyAxNS4wNTYgMi4wNiAxNi4xMjI3QzIuMTA4NjcgMTcuMTg3MyAyLjI3OCAxNy45MTQ3IDIuNTI1MzMgMTguNTUwN0MyLjc3NiAxOS4yMTczIDMuMTY5MzMgMTkuODIyIDMuNjc4NjcgMjAuMzIyQzQuMTc4MSAyMC44MzA1IDQuNzgyMzQgMjEuMjI0MSA1LjQ0OTMzIDIxLjQ3NTNDNi4wODUzMyAyMS43MjIgNi44MTI2NyAyMS44OTEzIDcuODc3MzMgMjEuOTRDOC45NDQgMjEuOTg4NyA5LjI4NCAyMiAxMiAyMkMxNC43MTYgMjIgMTUuMDU2IDIxLjk4ODcgMTYuMTIyNyAyMS45NEMxNy4xODczIDIxLjg5MTMgMTcuOTE0NyAyMS43MjIgMTguNTUwNyAyMS40NzQ3QzE5LjIxNzMgMjEuMjI0IDE5LjgyMiAyMC44MzA3IDIwLjMyMiAyMC4zMjEzQzIwLjgzMDUgMTkuODIxOSAyMS4yMjQxIDE5LjIxNzcgMjEuNDc1MyAxOC41NTA3QzIxLjcyMiAxNy45MTQ3IDIxLjg5MTMgMTcuMTg3MyAyMS45NCAxNi4xMjI3QzIxLjk4ODcgMTUuMDU2IDIyIDE0LjcxNiAyMiAxMkMyMiA5LjI4NCAyMS45ODg3IDguOTQ0IDIxLjk0IDcuODc3MzNDMjEuODkxMyA2LjgxMjY3IDIxLjcyMiA2LjA4NTMzIDIxLjQ3NDcgNS40NDkzM0MyMS4yMjM2IDQuNzgyMDQgMjAuODMgNC4xNzc1NSAyMC4zMjEzIDMuNjc4QzE5LjgyMTkgMy4xNjk0OCAxOS4yMTc3IDIuNzc1OTEgMTguNTUwNyAyLjUyNDY3QzE3LjkxNDcgMi4yNzg2NyAxNy4xODY3IDIuMTA4NjcgMTYuMTIyIDIuMDZDMTUuMDU2IDIuMDEyIDE0LjcxNjcgMiAxMiAyWk0xMiAzLjgwMkMxNC42NyAzLjgwMiAxNC45ODY3IDMuODEyIDE2LjA0MTMgMy44NkMxNy4wMTYgMy45MDQ2NyAxNy41NDUzIDQuMDY2NjcgMTcuODk4IDQuMjA0NjdDMTguMzY0NyA0LjM4NTMzIDE4LjY5OCA0LjYwMjY3IDE5LjA0OCA0Ljk1MkMxOS4zOTggNS4zMDIgMTkuNjE0NyA1LjYzNTMzIDE5Ljc5NTMgNi4xMDJDMTkuOTMyNyA2LjQ1NDY3IDIwLjA5NTMgNi45ODQgMjAuMTQgNy45NTg2N0MyMC4xODggOS4wMTMzMyAyMC4xOTggOS4zMyAyMC4xOTggMTJDMjAuMTk4IDE0LjY3IDIwLjE4OCAxNC45ODY3IDIwLjE0IDE2LjA0MTNDMjAuMDk1MyAxNy4wMTYgMTkuOTMzMyAxNy41NDUzIDE5Ljc5NTMgMTcuODk4QzE5LjYzNTMgMTguMzMyNCAxOS4zNzk5IDE4LjcyNTMgMTkuMDQ4IDE5LjA0OEMxOC43MjU0IDE5LjM4IDE4LjMzMjQgMTkuNjM1NCAxNy44OTggMTkuNzk1M0MxNy41NDUzIDE5LjkzMjcgMTcuMDE2IDIwLjA5NTMgMTYuMDQxMyAyMC4xNEMxNC45ODY3IDIwLjE4OCAxNC42NzA3IDIwLjE5OCAxMiAyMC4xOThDOS4zMjkzMyAyMC4xOTggOS4wMTMzMyAyMC4xODggNy45NTg2NyAyMC4xNEM2Ljk4NCAyMC4wOTUzIDYuNDU0NjcgMTkuOTMzMyA2LjEwMiAxOS43OTUzQzUuNjY3NjQgMTkuNjM1MyA1LjI3NDY3IDE5LjM3OTkgNC45NTIgMTkuMDQ4QzQuNjIwMTIgMTguNzI1MyA0LjM2NDc1IDE4LjMzMjMgNC4yMDQ2NyAxNy44OThDNC4wNjczMyAxNy41NDUzIDMuOTA0NjcgMTcuMDE2IDMuODYgMTYuMDQxM0MzLjgxMiAxNC45ODY3IDMuODAyIDE0LjY3IDMuODAyIDEyQzMuODAyIDkuMzMgMy44MTIgOS4wMTMzMyAzLjg2IDcuOTU4NjdDMy45MDQ2NyA2Ljk4NCA0LjA2NjY3IDYuNDU0NjcgNC4yMDQ2NyA2LjEwMkM0LjM4NTMzIDUuNjM1MzMgNC42MDI2NyA1LjMwMiA0Ljk1MiA0Ljk1MkM1LjI3NDYzIDQuNjIwMDMgNS42Njc2MSA0LjM2NDY1IDYuMTAyIDQuMjA0NjdDNi40NTQ2NyA0LjA2NzMzIDYuOTg0IDMuOTA0NjcgNy45NTg2NyAzLjg2QzkuMDEzMzMgMy44MTIgOS4zMyAzLjgwMiAxMiAzLjgwMloiIGZpbGw9IiM0YmE4M2IiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMiAxNS4zMzY3QzExLjU2MTggMTUuMzM2NyAxMS4xMjggMTUuMjUwNCAxMC43MjMxIDE1LjA4MjdDMTAuMzE4MyAxNC45MTUgOS45NTA0NyAxNC42NjkyIDkuNjQwNjQgMTQuMzU5NEM5LjMzMDggMTQuMDQ5NSA5LjA4NTAyIDEzLjY4MTcgOC45MTczNCAxMy4yNzY5QzguNzQ5NjUgMTIuODcyMSA4LjY2MzM1IDEyLjQzODIgOC42NjMzNSAxMkM4LjY2MzM1IDExLjU2MTggOC43NDk2NSAxMS4xMjc5IDguOTE3MzQgMTAuNzIzMUM5LjA4NTAyIDEwLjMxODMgOS4zMzA4IDkuOTUwNDYgOS42NDA2NCA5LjY0MDYyQzkuOTUwNDcgOS4zMzA3OCAxMC4zMTgzIDkuMDg1MDEgMTAuNzIzMSA4LjkxNzMyQzExLjEyOCA4Ljc0OTY0IDExLjU2MTggOC42NjMzMyAxMiA4LjY2MzMzQzEyLjg4NSA4LjY2MzMzIDEzLjczMzYgOS4wMTQ4NyAxNC4zNTk0IDkuNjQwNjJDMTQuOTg1MSAxMC4yNjY0IDE1LjMzNjcgMTEuMTE1MSAxNS4zMzY3IDEyQzE1LjMzNjcgMTIuODg0OSAxNC45ODUxIDEzLjczMzYgMTQuMzU5NCAxNC4zNTk0QzEzLjczMzYgMTQuOTg1MSAxMi44ODUgMTUuMzM2NyAxMiAxNS4zMzY3Wk0xMiA2Ljg2QzEwLjYzNjggNi44NiA5LjMyOTQyIDcuNDAxNTMgOC4zNjU0OSA4LjM2NTQ3QzcuNDAxNTUgOS4zMjk0MSA2Ljg2MDAyIDEwLjYzNjggNi44NjAwMiAxMkM2Ljg2MDAyIDEzLjM2MzIgNy40MDE1NSAxNC42NzA2IDguMzY1NDkgMTUuNjM0NUM5LjMyOTQyIDE2LjU5ODUgMTAuNjM2OCAxNy4xNCAxMiAxNy4xNEMxMy4zNjMyIDE3LjE0IDE0LjY3MDYgMTYuNTk4NSAxNS42MzQ1IDE1LjYzNDVDMTYuNTk4NSAxNC42NzA2IDE3LjE0IDEzLjM2MzIgMTcuMTQgMTJDMTcuMTQgMTAuNjM2OCAxNi41OTg1IDkuMzI5NDEgMTUuNjM0NSA4LjM2NTQ3QzE0LjY3MDYgNy40MDE1MyAxMy4zNjMyIDYuODYgMTIgNi44NlpNMTguNjM1MyA2Ljc2NjY3QzE4LjYzNTMgNy4wODg5IDE4LjUwNzMgNy4zOTc5NCAxOC4yNzk1IDcuNjI1OEMxOC4wNTE2IDcuODUzNjYgMTcuNzQyNiA3Ljk4MTY3IDE3LjQyMDQgNy45ODE2N0MxNy4wOTgxIDcuOTgxNjcgMTYuNzg5MSA3Ljg1MzY2IDE2LjU2MTIgNy42MjU4QzE2LjMzMzQgNy4zOTc5NCAxNi4yMDUzIDcuMDg4OSAxNi4yMDUzIDYuNzY2NjdDMTYuMjA1MyA2LjQ0NDQzIDE2LjMzMzQgNi4xMzUzOSAxNi41NjEyIDUuOTA3NTNDMTYuNzg5MSA1LjY3OTY4IDE3LjA5ODEgNS41NTE2NyAxNy40MjA0IDUuNTUxNjdDMTcuNzQyNiA1LjU1MTY3IDE4LjA1MTYgNS42Nzk2OCAxOC4yNzk1IDUuOTA3NTNDMTguNTA3MyA2LjEzNTM5IDE4LjYzNTMgNi40NDQ0MyAxOC42MzUzIDYuNzY2NjdaIiBmaWxsPSIjNGJhODNiIi8+Cjwvc3ZnPg==" alt="Instagram"></a>
+        <a href="https://www.youtube.com/channel/UC1fp9pohpxLtAVtUkQKNLHQ" target="_blank"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJub25lIj48cGF0aCBmaWxsPSIjNGJhODNiIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy40NzggMy4zOTljLjYuMTYxIDEuMDcyLjYzNCAxLjIzNCAxLjIzNEMxNSA1LjcyOCAxNSA4IDE1IDhzMCAyLjI3Mi0uMjg4IDMuMzY3YTEuNzU0IDEuNzU0IDAgMDEtMS4yMzQgMS4yMzRDMTIuMzgyIDEyLjg5IDggMTIuODkgOCAxMi44OXMtNC4zODIgMC01LjQ3OC0uMjg5YTEuNzU0IDEuNzU0IDAgMDEtMS4yMzQtMS4yMzRDMSAxMC4yODMgMSA4IDEgOHMwLTIuMjcyLjI4OC0zLjM2N2MuMTYyLS42LjYzNS0xLjA3MyAxLjIzNC0xLjIzNEMzLjYxOCAzLjExIDggMy4xMSA4IDMuMTFzNC4zODIgMCA1LjQ3OC4yODl6bS0zLjI0IDQuNjEybC0zLjY0NSAyLjFWNS45bDMuNjQ0IDIuMTF6IiBjbGlwLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=" alt="YouTube"></a>
+      </div>
+      <div class="info">
+        總部地址：106 臺北市大安區仁愛路四段 2 號 11 樓<br>
+        電話：(02) 2771-2900<br>
+        客服時間：<br>
+        週一至週五 09:00–18:00（不含國定假日）
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="slogan">
+      <img src="data:image/svg+xml;base64,PHN2ZyBpZD0i5ZyW5bGkXzEiIGRhdGEtbmFtZT0i5ZyW5bGkIDEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI2OS4zMyA3Ny40MSI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmY7fTwvc3R5bGU+PC9kZWZzPjx0aXRsZT5MT0dPIOeZveiJsuasvjwvdGl0bGU+PHJlY3QgY2xhc3M9ImNscy0xIiB4PSIxMDMuMDkiIHk9IjI1LjE0IiB3aWR0aD0iNS4wNCIgaGVpZ2h0PSI0OC40OCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTUuMjYgMTU0LjU0KSByb3RhdGUoLTg5LjQ4KSIvPjxwb2x5Z29uIGNsYXNzPSJjbHMtMSIgcG9pbnRzPSI4Ni43MyA0My4zOSA5MS43NyA0My40NCA5MS44NCAzNi4wMyA5OC4xMyAzNi4wOSA5OC4wOCA0My40OSAxMDMuMSA0My41NSAxMDMuMTggMzYuMTMgMTA5LjQ3IDM2LjE5IDEwOS40MSA0My42MSAxMTQuNDUgNDMuNjUgMTE0LjUyIDM2LjI0IDEyMC44MSAzNi4zIDEyMC43NSA0My43MSAxMjUuNzkgNDMuNzYgMTI1Ljg1IDM2LjM0IDEyOS45NiAzNi4zOCAxMzAuMDEgMzEuMzUgMTI1LjkgMzEuMzEgMTI1Ljk1IDI1Ljk5IDEyMC45MSAyNS45NSAxMjAuODYgMzEuMjcgMTE0LjU3IDMxLjIxIDExNC42MSAyNS44OSAxMDkuNTggMjUuODQgMTA5LjUyIDMxLjE2IDEwMy4yMyAzMS4xIDEwMy4yOCAyNS43OSA5OC4yMyAyNS43NCA5OC4xOCAzMS4wNiA5MS44OSAzMSA5MS45MiAyNS42OCA4Ni44OSAyNS42NCA4Ni44NSAzMC45NSA4MS41MyAzMC45MSA4MS40OCAzNS45NCA4Ni44IDM1Ljk4IDg2LjczIDQzLjM5Ii8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjEyOS40MyAxNS44IDg3LjE3IDE1LjggODcuMTcgMTAuOTQgODIuMTQgMTAuOTQgODIuMTMgMjAuODMgMTI5LjQzIDIwLjgzIDEyOS40MyAxNS44Ii8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjE3OC40IDI2LjIzIDE5OC45NCAyNi4yMyAxOTguOTQgMjIuMDQgMTc4LjQgMjIuMDQgMTc4LjQgMTkuMTggMjAxLjkzIDE5LjE4IDIwMS45MyAxNC44NiAxNzguNCAxNC44NiAxNzguNCAxMC45NCAxNzIuMTUgMTAuOTQgMTcyLjE1IDE0Ljg2IDE0OC4zNCAxNC44NiAxNDguMzQgMTkuMTggMTcyLjE1IDE5LjE4IDE3Mi4xNSAyMi4wNCAxNTEuNjcgMjIuMDQgMTUxLjY3IDI2LjIzIDE3Mi4xNSAyNi4yMyAxNzIuMTUgMjkuNDIgMTQ3LjIxIDI5LjQyIDE0Ny4yMSAzMy43NCAyMDMuODYgMzMuNzQgMjAzLjg2IDI5LjQyIDE3OC40IDI5LjQyIDE3OC40IDI2LjIzIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY5LjMzLDMxLjIySDIyMi42NlY2Ny41NGg2LjI1di0xNWgzLjI2djE1aDEzLjQ0VjYzLjM1aC03LjE5VjUyLjU5SDI0MGwyNi4yMywxNS4xNCwyLjA5LTMuNjMtMi42Ny0xLjU0di0xMGgzLjY3VjQ4LjRIMjI4Ljkxdi0xM2g0MC40MlpNMjU5LjQxLDU5bC0xMS02LjM2aDExWiIvPjxyZWN0IGNsYXNzPSJjbHMtMSIgeD0iMjMwLjk0IiB5PSIzOS40MyIgd2lkdGg9IjM0Ljc4IiBoZWlnaHQ9IjQuMTkiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xOTYuODIsNDAuMzhWMzYuMTlIMTU0LjczdjguMzZoLTYuMTd2NC4xOWg2LjE3djkuMTFoMzUuODR2NC45M0gxNjlWNjdoMjcuODFWNTcuODVIMjAwVjUzLjY2aC0zLjE0VjQ4Ljc0aDVWNDQuNTVoLTVabS02LjI1LDQuMTdIMTc2LjgybC00LjA3LTQuMTdoMTcuODJaTTE2MSw0MC4zOGg2LjExbC0uMS4xLDQsNC4wN0gxNjFabTAsOC4zNmgxNC4wOGw0LjgxLDQuOTJIMTYxWm0yOS41OSw0LjkyaC00LjgzbC00LjgyLTQuOTJoOS42NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNTAuNDIsMTYuNDZsMCwwYy0xLjUxLTEuOC0zLjE0LTIuNzItNC44NC0yLjczQTUuNTgsNS41OCwwLDAsMCwyNDIuMDksMTVsLTEtMS42NWMtMS41MS0yLjQxLTMuMTctMy42NC00LjkzLTMuNjUtMywwLTQuODUsMy40OS00Ljg4LDMuNTZMMjIyLjM5LDI2LjhoMzYuNzNaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY4LDI0Ljc5bC02LjU4LTExLjQzYy0xLjM5LTIuNDItMy0zLjY2LTQuNjItMy42OC0yLjc3LDAtNC40NSwzLjMtNC41OCwzLjU5bC0uNTEuODYsOS4yNSwxMC42NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik04MC4xOSw2NS44NWw0LjIsMS42OGE2Mi4zMyw2Mi4zMywwLDAsMCw2LjA3LTEyLjA4bC00LjItMS4wOEE1Ni40Miw1Ni40MiwwLDAsMSw4MC4xOSw2NS44NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik05Ni4yOSw1Ni4wNWE2NS44LDY1LjgsMCwwLDEsMS4yNiwxMWw0LjM5LS42NmE2NC4yMyw2NC4yMywwLDAsMC0xLjUtMTAuN1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMDguNjcsNTUuOTNhNjUsNjUsMCwwLDEsMy42LDExbDQuMzktLjlhNTQuMyw1NC4zLDAsMCwwLTMuOTEtMTAuODJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTIxLDU1LjY5YTk4LjA2LDk4LjA2LDAsMCwxLDYsMTEuNzJsNC4zMy0xLjg2YTEyMy40OCwxMjMuNDgsMCwwLDAtNi4zMS0xMS40OFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik02Mi4xOSwyNmgzLjQ4YS41NC41NCwwLDAsMCwuNTQtLjUybC4wNS0xLjA5YTguNDIsOC40MiwwLDAsMC0yLjIxLTUuNjNjLTEuODgtMi00LjczLTMuMTQtOC40OC0zLjI3LTMuNTktLjEyLTQuNjktMS42Mi02LjctNC4zMkM0Ni41OCw4LDQzLjQ1LDMuOCwzNSwuNDZoMGMtLjU4LS4yMy0xLS4zOC0xLS4zOGwtLjE3LDBhLjQ3LjQ3LDAsMCwwLS4xNywwLC42My42MywwLDAsMC0uMTksMGwtLjM3LjE1QzI0LDMuNTQsMjAuNzksNy45MiwxOC40MiwxMS4xMmMtMiwyLjcxLTMuMTEsNC4yLTYuNyw0LjMzLTMuNzUuMTMtNi42LDEuMjMtOC40OSwzLjI3QTguMzksOC4zOSwwLDAsMCwxLDI0LjM1bC4wNSwxLjA5YS41NC41NCwwLDAsMCwuNTQuNTJINS4xQTMzLjY0LDMzLjY0LDAsMCwwLDI4LjY0LDc3YTMyLjg3LDMyLjg3LDAsMCwwLDUsLjM4LDM0LDM0LDAsMCwwLDUtLjM4QTMzLjY0LDMzLjY0LDAsMCwwLDYyLjE5LDI2Wk00Ni42LDEyLjgxYzIuMTEsMi44NCwzLjkyLDUuMjksOC44Nyw1LjQ2LDYsLjIxLDcuNDgsMy4xOCw3Ljg1LDQuODdINDlBNDQsNDQsMCwwLDAsMzkuNzYsNiwyNC43MSwyNC43MSwwLDAsMSw0Ni42LDEyLjgxWm0wLDEwLjMzSDQwLjM0Yy45LTUuMTctMS4wOC0xMS43Mi0yLjkxLTE2LjMyQTQyLjMyLDQyLjMyLDAsMCwxLDQ2LjYzLDIzLjE0Wk0zMy44OCw0LjM1QzM1LjY5LDguMjYsMzkuMjksMTcuMTMsMzgsMjMuMTRIMjkuNzVDMjguNDcsMTcuMTMsMzIuMDcsOC4yOCwzMy44OCw0LjM1Wk0yNy40MiwyMy4xNEgyMS4xNGE0Mi4yNCw0Mi4yNCwwLDAsMSw5LjE4LTE2LjNDMjguNSwxMS40NCwyNi41MywxOCwyNy40MiwyMy4xNFpNNCwyMy4xNGE1LjU0LDUuNTQsMCwwLDEsMS4zMi0yLjVjMS4zNS0xLjQ3LDMuNTQtMi4yNiw2LjUxLTIuMzcsNC45NC0uMTcsNi43Ni0yLjYyLDguODYtNS40NmEyNC42LDI0LjYsMCwwLDEsNy44OS03LjQzLDQ0LjQ3LDQ0LjQ3LDAsMCwwLTkuOCwxNy43Nkg0Wk04LjY1LDY1LjQ3Yy42NC43NCwxLjMyLDEuNDUsMiwyLjEzQzEwLDY2LjkyLDkuMjksNjYuMjEsOC42NSw2NS40N1ptMjcuNzYsOWEzMS4yMywzMS4yMywwLDAsMS01LjQ3LDAsNC43OSw0Ljc5LDAsMCwwLC42Ni0zLjJBNC45Myw0LjkzLDAsMCwwLDI5LjIyLDY4TDI5LjA3LDY4bC0uMTcsMGEyNSwyNSwwLDAsMS0zLjgzLTEuMDhMMjYuNyw2NGwwLS4yM2E0LjE5LDQuMTksMCwwLDAtMy4zNC00LjY0TDIyLjkxLDU5bC01LjE4LDMuNTNhMjQuMzksMjQuMzksMCwwLDEtNC40MS00Ljg5SDU0YTI0LDI0LDAsMCwxLTQuMzcsNC44NUw0NC40MSw1OWwtLjQ4LjExYTQuMTcsNC4xNywwLDAsMC0zLjM0LDQuNjRsMCwuMjMsMS42MywyLjg0YTI1LDI1LDAsMCwxLTMuODMsMS4wOGwtLjE3LDBMMzguMSw2OGE0LjkzLDQuOTMsMCwwLDAtMi4zOCwzLjIzQTQuODgsNC44OCwwLDAsMCwzNi40MSw3NC40NlpNMzIuMzUsNDYuNTRBNTAuNTUsNTAuNTUsMCwwLDAsMjUsNTUuMzZIMTEuOTNBMjQuNjQsMjQuNjQsMCwwLDEsOSw0My43NWMwLS43NCwwLTEuNDguMDktMi4yMUE0Ni43NSw0Ni43NSwwLDAsMSwyMy44LDQzbC4zLTEuMWgwbC0uMywxLjFBMzYuNTUsMzYuNTUsMCwwLDEsMzIuMzUsNDYuNTRabTEuNzYtMS42MWEzNy41MiwzNy41MiwwLDAsMC05LTMuOUE5LjkyLDkuOTIsMCwwLDEsMjUsMzkuN2E4Ljg4LDguODgsMCwwLDEsMTcuNzItLjgzQTQ2LjI5LDQ2LjI5LDAsMCwwLDM0LjExLDQ0LjkzWm0xMC4zMi00LjM4YTMyLjYsMzIuNiwwLDAsMSwxMi44Ni0zLjY3LDI0LjczLDI0LjczLDAsMCwxLTEuOTMsMTguNDhIMjcuNzVBNTEuMzYsNTEuMzYsMCwwLDEsMzUsNDcuMTksNDMuNjUsNDMuNjUsMCwwLDEsNDQuNDMsNDAuNTVabS01LjUsMzMuNTdhMy41MywzLjUzLDAsMCwxLTEtMi41MiwyLjU0LDIuNTQsMCwwLDEsMS4xLTEuNTUsMjYuNzcsMjYuNzcsMCwwLDAsNS4yOC0xLjY2bDEuMTctLjUxTDQyLjg0LDYzLjJBMS44LDEuOCwwLDAsMSw0NCw2MS40M2w1LjcxLDMuOTEuNjYtLjUzQTI3LDI3LDAsMCwwLDU5LjIsMzUuMzNMNTksMzQuNTVoLS44OGEzNC4zOSwzNC4zOSwwLDAsMC0xMy4xOSwzLjI0QTExLjE2LDExLjE2LDAsMCwwLDIyLjcyLDM5LjdjMCwuMjMsMCwuNDcsMCwuN0E0Ny4xNyw0Ny4xNywwLDAsMCw4LDM5LjM1bC0uODguMTFMNyw0MC4zNGEyNS41OSwyNS41OSwwLDAsMC0uMjIsMy40MUEyNi44NSwyNi44NSwwLDAsMCwxNyw2NC44NWwuNjYuNTIsNS42OS0zLjg4YTEuODMsMS44MywwLDAsMSwxLjE3LDEuNzdMMjEuOCw2Ny45NGwxLjE3LjUxYTI2LjU3LDI2LjU3LDAsMCwwLDUuMjgsMS42NiwyLjU3LDIuNTcsMCwwLDEsMS4xLDEuNTUsMy40NCwzLjQ0LDAsMCwxLS45MywyLjQ3QTMxLDMxLDAsMCwxLDIuODIsNDMuNzcsMzAuNTIsMzAuNTIsMCwwLDEsOC44OCwyNS40Mkg1OC40YTMwLjQ1LDMwLjQ1LDAsMCwxLDYuMDYsMTguMzVBMzEsMzEsMCwwLDEsMzguOTMsNzQuMTJaIi8+PC9zdmc+" alt="無毒農 logo">
+      <span>用信任連結產地和餐桌</span>
+    </div>
+    <div class="legal">
+      <p>舒果農企業有限公司／無毒農　統編：42829375</p>
+      <p>食品業者登錄字號：A-142829375-00000-8</p>
+      <p>© 無毒農 All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
+
+
+</body>
+</html>
