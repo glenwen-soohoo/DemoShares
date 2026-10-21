@@ -7,17 +7,19 @@
   真相來源：D:\GreenBox\fruit_web 分支 dev（2026-10-21 對過）
     view       HuashanCRM/Views/Products/ItemDetail.cshtml
     controller HuashanCRM/Controllers/ProductsController.cs:76  ItemDetail(int id)
-  這次要動的檔（改既有 3 支 ／ 新建 4 項 ／ 只參考 4 支）：
+  這次要動的檔（改既有 3 支共 4 處 ／ 新建 5 項 ／ 只參考 4 支）：
     [改既有] fruit_web Views/Products/ItemDetail.cshtml:1272     購買區：加入菜籃上方插加價購長條形
     [改既有] fruit_web Views/Products/ItemDetail.cshtml:1330     #Content 的 col-lg-8/col-lg-12 判斷式：
                                                                  條件從「是不是益菓保」換成「這一頁有沒有為您推薦」
-                                                                 ⚠ 商品評論 :1658 用同一個條件，要一起改
-    [改既有] fruit_web Controllers/ProductsController.cs:131     商品頁不再同步帶推薦，改前端非同步要
+                                                                 ⚠ 商品評論 :1659 用同一個條件，要一起改
+    [改既有] fruit_web Controllers/ProductsController.cs:132     商品頁不再同步帶推薦，改前端非同步要
     [改既有] fruit_web Scripts/Admin/NewCart.js:574              加入菜籃要能帶主商品＋勾選的加購品（含每項數量）
     [新建]   猜你喜歡區塊容器                                      ItemDetail.cshtml 新增，別跟既有 .recommend-area 混用
     [新建]   瀏覽紀錄區塊                                          正式站整個 HuashanCRM grep 不到，全新；資料來源未定（B10）
     [新建]   官網自己的推薦 API  GET /Products/Recommend          用 Session 會員 Id 代呼叫 enzo-gb.net，別讓前端直接打外站
     [新建]   ProductAddOnMapping 表                               主商品↔加購規格配對（同 2026-09-product-addon）
+    [新建]   前端非同步載入腳本                                    IntersectionObserver 捲到才要、逾時 3 秒不重試；
+                                                                 載入前先放骨架佔住高度（原始需求 §2.4 是「必須」）
     [只參考] CartController.cs:269 /Cart/AddToShoppingCartByModule 既有加入菜籃 API，直接呼叫
     [只參考] ProductsModel.cs:2372 GetRecommandProduct            既有「為您推薦」的清單來源，C 題判斷要用
     [只參考] greenbox.tw/Content/Web/ItemDetail.css               樣式沿用（本頁直接連線載入做 1:1）
@@ -369,17 +371,19 @@ img { vertical-align: middle; }
   真相來源：D:\GreenBox\fruit_web 分支 dev（2026-10-21 對過）
     view       HuashanCRM/Views/Products/ItemDetail.cshtml
     controller HuashanCRM/Controllers/ProductsController.cs:76  ItemDetail(int id)
-  這次要動的檔（改既有 3 支 ／ 新建 4 項 ／ 只參考 4 支）：
+  這次要動的檔（改既有 3 支共 4 處 ／ 新建 5 項 ／ 只參考 4 支）：
     [改既有] fruit_web Views/Products/ItemDetail.cshtml:1272     購買區：加入菜籃上方插加價購長條形
     [改既有] fruit_web Views/Products/ItemDetail.cshtml:1330     #Content 的 col-lg-8/col-lg-12 判斷式：
                                                                  條件從「是不是益菓保」換成「這一頁有沒有為您推薦」
-                                                                 ⚠ 商品評論 :1658 用同一個條件，要一起改
-    [改既有] fruit_web Controllers/ProductsController.cs:131     商品頁不再同步帶推薦，改前端非同步要
+                                                                 ⚠ 商品評論 :1659 用同一個條件，要一起改
+    [改既有] fruit_web Controllers/ProductsController.cs:132     商品頁不再同步帶推薦，改前端非同步要
     [改既有] fruit_web Scripts/Admin/NewCart.js:574              加入菜籃要能帶主商品＋勾選的加購品（含每項數量）
     [新建]   猜你喜歡區塊容器                                      ItemDetail.cshtml 新增，別跟既有 .recommend-area 混用
     [新建]   瀏覽紀錄區塊                                          正式站整個 HuashanCRM grep 不到，全新；資料來源未定（B10）
     [新建]   官網自己的推薦 API  GET /Products/Recommend          用 Session 會員 Id 代呼叫 enzo-gb.net，別讓前端直接打外站
     [新建]   ProductAddOnMapping 表                               主商品↔加購規格配對（同 2026-09-product-addon）
+    [新建]   前端非同步載入腳本                                    IntersectionObserver 捲到才要、逾時 3 秒不重試；
+                                                                 載入前先放骨架佔住高度（原始需求 §2.4 是「必須」）
     [只參考] CartController.cs:269 /Cart/AddToShoppingCartByModule 既有加入菜籃 API，直接呼叫
     [只參考] ProductsModel.cs:2372 GetRecommandProduct            既有「為您推薦」的清單來源，C 題判斷要用
     [只參考] greenbox.tw/Content/Web/ItemDetail.css               樣式沿用（本頁直接連線載入做 1:1）
@@ -467,20 +471,10 @@ img { vertical-align: middle; }
 
 
 
-/* ===== 一個區塊、一排六個洞 ===== */
-@media (max-width: 1199px) { .gy-slots { grid-template-columns: repeat(4, 1fr); } }
-@media (max-width: 860px)  { .gy-slots { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 560px)  { .gy-slots { grid-template-columns: repeat(2, 1fr); } }
-.gy-slots .gy-card { flex: none; min-width: 0; }
 
 /* 區塊標題：真站的為您推薦是 500 寬素材縮到 323（52px 高）。全寬區塊改用 1000 寬素材，
    並把容器限寬到 662（＝真站主欄寬），算出來也是 53px，跟真站一致。 */
 
-/* 標題列右側的輪播控制 */
-.gy-head { display: flex; align-items: flex-end; gap: 12px; clear: both; }
-.gy-head .gy-title { flex: 1 1 auto; margin-bottom: 0; }
-  color: #808080; font-size: 16px; line-height: 1; cursor: pointer; font-family: inherit; }
-@media (max-width: 560px) { .gy-head { flex-direction: column; align-items: stretch; } .gy-rot { justify-content: flex-end; } }
 
 /* ===== 兩塊之間的明確分隔（左右並置時） ===== */
 
@@ -517,10 +511,6 @@ img { vertical-align: middle; }
   padding: 10px 18px; border-radius: 4px; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .gy-toast.on { opacity: .95; }
 
-/* ===== 左右並置：加購品（窄欄）｜猜你會喜歡（寬欄） ===== */
-/* 左右等寬：段落標題圖是固定 500px 寬的素材，兩欄不等寬時會縮放成不同高度（實測 62 vs 80）。
-   等寬之後兩個標題就一致了，而且左右對稱本身也是一種節奏。 */
-.gy-side-r .gy-sec { margin-top: 0; }
 @media (max-width: 991px) {
   /* 直向時 align-items 要改 stretch：flex-start 會讓右欄縮到內容寬（一排卡約 1800px）而橫向溢出 */
 }
@@ -581,6 +571,22 @@ img { vertical-align: middle; }
 #tbSlotA, #tbSlotC { padding: 0 15px; }
 .adArea a { display: block; }
 .adArea img { width: 100%; max-width: 100%; height: auto; display: block; }
+/* 載入中的骨架。原始需求 §2.4 規則 1 是「必須」：商品頁產生 HTML 時不呼叫推薦，
+   只放空容器，先放骨架或保留高度，避免載入後版面跳動。
+   骨架的格線與卡片尺寸跟真的推薦完全一樣，所以推薦填進來時高度不變、一格都不跳。 */
+.gy-skel .gy-card { border-color: #eee; pointer-events: none; }
+.gy-skel .sk { background: #f0f1f3; border-radius: 4px; }
+.gy-skel .sk-img { aspect-ratio: 4 / 3; width: 100%; }  /* 跟真卡片的商品圖同比例 */
+.gy-skel .sk-nm { display: block; height: 13px; margin: 3px 0; }
+.gy-skel .sk-nm.short { width: 62%; }
+/* footer 用真卡片的結構（價格＋按鈕），只是塗成灰的。
+   手機版價格與按鈕會上下排，用真結構骨架才跟著一起變，高度才不會差 */
+.gy-skel .gy-ft > * { color: transparent !important; background: #f0f1f3 !important;
+  border-color: #f0f1f3 !important; border-radius: 4px; }
+.gy-skel .sk { animation: gySkel 1.2s ease-in-out infinite; }
+@keyframes gySkel { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .gy-skel .sk { animation: none; } }
+
 /* 瀏覽紀錄：版型跟猜你喜歡同一套，只是沒有輪播 */
 .gy-history { clear: both; margin-top: 40px; }
 /* 下方腰帶上下都要留白（真站是 margin:5% auto）。只靠下一塊的 margin-top 會被 margin collapse 吃掉，
@@ -644,10 +650,10 @@ img { vertical-align: middle; }
   .gy-reg-a, .gy-reg-r { flex: 0 0 auto; width: 100%; }
   .gy-reg-r::before { display: none; }
   .gy-reg-r { border-top: 1px solid #e5e5e5; padding-top: 16px; }
-  .gy-reg-a .gy-reg-grid, .gy-reg-r .gy-reg-grid, .gy-history .gy-reg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .gy-reg-a .gy-reg-grid, .gy-reg-r .gy-reg-grid, .gy-history .gy-reg-grid, .gy-skel .gy-reg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
-  .gy-reg-a .gy-reg-grid, .gy-reg-r .gy-reg-grid, .gy-history .gy-reg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gy-reg-a .gy-reg-grid, .gy-reg-r .gy-reg-grid, .gy-history .gy-reg-grid, .gy-skel .gy-reg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* 手機卡片只有 130px 寬，四位數價格加按鈕放不下同一行。
      讓它自己換行會變成「短價格不換、長價格換」，高度就不一致了，
      所以手機一律改成價格一行、按鈕整寬在下面，每張卡結構相同才會等高。
@@ -666,13 +672,6 @@ img { vertical-align: middle; }
   cursor: pointer; transition: background .2s, width .2s; }
 .gy-dots button:hover { background: #b6bcc7; }
 .gy-dots button.on { width: 20px; border-radius: 4px; background: var(--line, #4ba83b); }
-.gy-head .gy-rot { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-  display: flex; align-items: center; gap: 4px; z-index: 2; padding: 0; }
-.gy-head .gy-rot button { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,.75);
-  background: rgba(255,255,255,.22); color: #fff; font-size: 14px; line-height: 1; }
-.gy-head .gy-rot button:hover { background: rgba(255,255,255,.45); color: #fff; }
-.gy-head .gy-rot .pg { font-size: 11px; color: #fff; min-width: 28px; }
-.gy-head .gy-rot .pause { font-size: 10px; color: #fff; min-width: 0; }
 .gy-regtitle img { width: 100%; height: 100%; object-fit: cover; object-position: left center; display: block; }
 /* 卡片邊框統一：單層灰線，推薦也是 */
 .gy-card { border: 1px solid #e5e5e5; border-radius: 4px; padding: 8px; background: #fff; cursor: default; }
@@ -846,27 +845,26 @@ const LINE_COLOR = {
   益菓保: '#e09200',
 };
 
-/* season: null＝全年；[起月, 迄月]＝產季區間（只有產地直送有）
-   age:    [起月齡, 迄月齡]＝適用月齡（只有粥寶寶有）
-   temp:   常溫 / 冷藏 / 冷凍
-   addon:  true＝這是加購規格，前台隱藏、不單獨零售（故意留著示範誤推） */
+/* temp:  常溫 / 冷藏 / 冷凍
+   addon: true＝這是加購規格，前台隱藏、不單獨零售。推薦池會把它濾掉（正式站也該這樣，見 B2）
+   bought / days：買過幾次、最近一次幾天前，用來撐出「常買」那個標籤 */
 const DATA = {
   產地直送: {
     anchor: { id: 33626, name: '【金牌珍珠芭樂】陳建裕', price: 599, pic: '/upload/Product_3033/202602040316351.png', specNames: ['5斤裝', '【限時優惠】10斤裝'], specs: 2, temp: '常溫' },
     items: [
-      { id: 25006, name: '蘋果季【梨山蜜蘋果】甜莃果園', price: 899, pic: '/upload/Product_3033/202609140222391.jpg', specNames: ['大果3斤裝', '大果5斤裝', '中果3斤裝', '中果5斤裝'], season: [10, 12], temp: '常溫', bought: 0 },
-      { id: 78654, name: '柿子季【梨山甜柿】林山果原', price: 1290, pic: '/upload/Product_3033/202610150344031.jpg', specNames: ['8粒裝', '9粒裝'], season: [9, 11], temp: '常溫', bought: 0 },
-      { id: 25784, name: '【珍稀黃金果】不一樣鱷魚農場', price: 699, pic: '/upload/Product_3033/201908280451361.jpg', specNames: ['大果6粒裝', '中果6粒裝', '小果10粒裝', '特大果6粒裝'], season: [8, 11], temp: '常溫', bought: 0 },
-      { id: 57965, name: '限量【嘉義極光哈密瓜】大原山農場', price: 1699, pic: '/upload/Product_3033/202610190639081.png', specNames: ['大果雙入裝', '特大果雙入裝', '頂級特大果雙入裝', '頂級特大果單入裝'], season: null, temp: '常溫', bought: 0 },
-      { id: 56653, name: '草莓季【有機豐香草莓】鴨子草莓園', price: 999, pic: '/upload/Product_3033/202601020238471.png', specNames: ['24粒裝', '20粒裝', '15粒裝', '28粒裝'], season: [12, 4], temp: '冷藏', bought: 0 },
-      { id: 58715, name: '【梨山水蜜桃】無毒農', price: 1199, pic: '/upload/Product_3033/202606170339201.jpg', specNames: ['8粒裝', '6粒裝', '5粒裝'], season: [6, 8], temp: '常溫', bought: 0 },
-      { id: 35608, name: '荔枝季【特級剪枝玉荷包荔枝】許家荔枝', price: 699, pic: '/upload/Product_3033/202605050716241.jpg', specNames: ['5斤裝', '3斤裝'], season: [6, 7], temp: '常溫', bought: 0 },
-      { id: 29337, name: '【鳳梨釋迦】好時果子', price: 749, pic: '/upload/Product_3033/202601070656311.png', specNames: ['大果10斤裝', '中大果7.5斤裝', '大果5斤裝'], season: [12, 3], temp: '常溫', bought: 0 },
-      { id: 60584, name: '【拉拉山五月桃】無毒農', price: 919, pic: '/upload/Product_3033/202604020921251.png', specNames: ['12粒裝', '10粒裝', '8粒裝', '6粒裝'], season: [5, 6], temp: '常溫', bought: 0 },
-      { id: 78639, name: '【野蓮．水蓮】阿香野蓮農場', price: 499, pic: '/upload/Product_3033/202610080852301.jpg', specNames: ['5包(200g/包)'], season: null, temp: '冷藏', bought: 2, days: 26 },
-      { id: 78651, name: '【台灣無毒鮮凍山藥】大和山藥', price: 790, pic: '/upload/Product_3033/202610150307071.jpg', specNames: ['紅龍山藥6包', '牛奶山藥6包', '牛奶山藥3包+紅龍山藥3包'], season: null, temp: '冷凍', bought: 4, days: 31, due: true },
-      { id: 78623, name: '【台灣時令酪梨】無毒農', price: 649, pic: '/upload/Product_3033/202610051006571.jpg', specNames: ['【黑金轉色酪梨】3000g…', '【黑金轉色酪梨】6000g…', '【十月紅轉色酪梨】3600…', '【十月紅轉色酪梨】6000…'], season: [7, 11], temp: '常溫', bought: 1, days: 58 },
-      { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, pic: '/upload/Product_3033/202411120141401.jpg', specNames: ['3900g±10%，6顆裝'], season: [8, 11], temp: '常溫', bought: 0, addon: true },
+      { id: 25006, name: '蘋果季【梨山蜜蘋果】甜莃果園', price: 899, pic: '/upload/Product_3033/202609140222391.jpg', specNames: ['大果3斤裝', '大果5斤裝', '中果3斤裝', '中果5斤裝'], temp: '常溫', bought: 0 },
+      { id: 78654, name: '柿子季【梨山甜柿】林山果原', price: 1290, pic: '/upload/Product_3033/202610150344031.jpg', specNames: ['8粒裝', '9粒裝'], temp: '常溫', bought: 0 },
+      { id: 25784, name: '【珍稀黃金果】不一樣鱷魚農場', price: 699, pic: '/upload/Product_3033/201908280451361.jpg', specNames: ['大果6粒裝', '中果6粒裝', '小果10粒裝', '特大果6粒裝'], temp: '常溫', bought: 0 },
+      { id: 57965, name: '限量【嘉義極光哈密瓜】大原山農場', price: 1699, pic: '/upload/Product_3033/202610190639081.png', specNames: ['大果雙入裝', '特大果雙入裝', '頂級特大果雙入裝', '頂級特大果單入裝'], temp: '常溫', bought: 0 },
+      { id: 56653, name: '草莓季【有機豐香草莓】鴨子草莓園', price: 999, pic: '/upload/Product_3033/202601020238471.png', specNames: ['24粒裝', '20粒裝', '15粒裝', '28粒裝'], temp: '冷藏', bought: 0 },
+      { id: 58715, name: '【梨山水蜜桃】無毒農', price: 1199, pic: '/upload/Product_3033/202606170339201.jpg', specNames: ['8粒裝', '6粒裝', '5粒裝'], temp: '常溫', bought: 0 },
+      { id: 35608, name: '荔枝季【特級剪枝玉荷包荔枝】許家荔枝', price: 699, pic: '/upload/Product_3033/202605050716241.jpg', specNames: ['5斤裝', '3斤裝'], temp: '常溫', bought: 0 },
+      { id: 29337, name: '【鳳梨釋迦】好時果子', price: 749, pic: '/upload/Product_3033/202601070656311.png', specNames: ['大果10斤裝', '中大果7.5斤裝', '大果5斤裝'], temp: '常溫', bought: 0 },
+      { id: 60584, name: '【拉拉山五月桃】無毒農', price: 919, pic: '/upload/Product_3033/202604020921251.png', specNames: ['12粒裝', '10粒裝', '8粒裝', '6粒裝'], temp: '常溫', bought: 0 },
+      { id: 78639, name: '【野蓮．水蓮】阿香野蓮農場', price: 499, pic: '/upload/Product_3033/202610080852301.jpg', specNames: ['5包(200g/包)'], temp: '冷藏', bought: 2, days: 26 },
+      { id: 78651, name: '【台灣無毒鮮凍山藥】大和山藥', price: 790, pic: '/upload/Product_3033/202610150307071.jpg', specNames: ['紅龍山藥6包', '牛奶山藥6包', '牛奶山藥3包+紅龍山藥3包'], temp: '冷凍', bought: 4, days: 31 },
+      { id: 78623, name: '【台灣時令酪梨】無毒農', price: 649, pic: '/upload/Product_3033/202610051006571.jpg', specNames: ['【黑金轉色酪梨】3000g…', '【黑金轉色酪梨】6000g…', '【十月紅轉色酪梨】3600…', '【十月紅轉色酪梨】6000…'], temp: '常溫', bought: 1, days: 58 },
+      { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, pic: '/upload/Product_3033/202411120141401.jpg', specNames: ['3900g±10%，6顆裝'], temp: '常溫', bought: 0, addon: true },
     ],
   },
   冷凍超市: {
@@ -877,7 +875,7 @@ const DATA = {
       { id: 29260, name: '【宅魚】澎湖活凍野生小卷', price: 210, pic: '/upload/Product_3033/202408210253131.png', specNames: ['300g/包(約5-6支)'], temp: '冷凍', bought: 0 },
       { id: 57403, name: '【蝦覓世界】生鮮活凍白蝦仁（無膨發）', price: 250, pic: '/upload/Product_3033/202410310618231.jpg', specNames: ['大蝦仁'], temp: '冷凍', bought: 0 },
       { id: 64949, name: '【宅魚】去刺虱目魚肚', price: 189, pic: '/upload/Product_3033/202502200529041.jpg', specNames: ['180g/片', '180g/片，多包優惠'], temp: '冷凍', bought: 2, days: 24 },
-      { id: 62742, name: '【蘇澳區漁會】薄鹽鯖魚', price: 90, pic: '/upload/Product_3033/202502200530081.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 5, days: 29, due: true },
+      { id: 62742, name: '【蘇澳區漁會】薄鹽鯖魚', price: 90, pic: '/upload/Product_3033/202502200530081.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 5, days: 29 },
       { id: 28972, name: '【萬金畜牧場】去骨雞腿肉', price: 265, pic: '/upload/Product_3033/202410310620281.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
       { id: 37899, name: '【萬金畜牧場】棒棒腿', price: 240, pic: '/upload/Product_3033/201907080335431.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
       { id: 39816, name: '【永發放山雞】去皮胸肉', price: 150, pic: '/upload/Product_3033/202410310620011.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 1, days: 47 },
@@ -886,20 +884,20 @@ const DATA = {
     ],
   },
   粥寶寶: {
-    anchor: { id: 66539, name: '一歲以上PLUS+ 閃亮升級燉飯組合', price: 999, pic: '/upload/Product_3033/202411260951501.png', specNames: ['有牛/10入，150克/入', '沒有牛/10入，150克/入'], specs: 2, temp: '冷凍', age: [12, 36] },
+    anchor: { id: 66539, name: '一歲以上PLUS+ 閃亮升級燉飯組合', price: 999, pic: '/upload/Product_3033/202411260951501.png', specNames: ['有牛/10入，150克/入', '沒有牛/10入，150克/入'], specs: 2, temp: '冷凍' },
     items: [
-      { id: 63099, name: '寶寶熟水餃', price: 236, pic: '/upload/Product_3033/202308230348571.png', specNames: ['玉米蝦、甘藍豬 各1包', '玉米蝦2包', '甘藍豬2包'], age: [12, 36], temp: '冷凍', bought: 3, days: 35 },
-      { id: 63206, name: '無鹽寶寶烏龍麵', price: 115, pic: '/upload/Product_3033/202411250623351.png', specNames: ['三口味 各1包', '三口味 各2包', '南瓜3包', '菠菜3包'], age: [10, 36], temp: '常溫', bought: 0 },
-      { id: 58318, name: '拌拌飯-地瓜栗香雞飯', price: 180, pic: '/upload/Product_3033/202210130618011.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
-      { id: 60367, name: '拌拌飯-蘋果櫻桃鴨飯', price: 180, pic: '/upload/Product_3033/202210130614521.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
-      { id: 58320, name: '拌拌飯-南洋鳳梨豬飯', price: 180, pic: '/upload/Product_3033/202408060630411.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
-      { id: 44265, name: '中寶寶 番茄牛肉粥', price: 140, pic: '/upload/Product_3033/202208191006151.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
-      { id: 44270, name: '中寶寶 南瓜雞肉粥', price: 140, pic: '/upload/Product_3033/202411010619531.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
-      { id: 44269, name: '中寶寶 玉米雞肉粥', price: 140, pic: '/upload/Product_3033/202208191004191.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 2, days: 28 },
-      { id: 44272, name: '中寶寶 芋頭豬肉粥', price: 140, pic: '/upload/Product_3033/202311290603241.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
-      { id: 65470, name: '【小寶寶】含運-十倍粥體驗組（首購限定）', price: 399, pic: '/upload/Product_3033/202601160724251.png', specNames: ['8口味，各1入', '8口味，各1入+益生菌試吃…'], age: [4, 10], temp: '冷凍', bought: 0 },
-      { id: 46965, name: '中寶寶 彩虹營養寶寶粥組合', price: 759, pic: '/upload/Product_3033/202411110607301.jpg', specNames: ['12入，120克/入'], age: [7, 18], temp: '冷凍', bought: 1, days: 62 },
-      { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, pic: '/upload/Product_3033/202606160750091.png', specNames: ['天麻枸杞鱸魚', '山藥鮑魚雞', '黃耆枸杞雞'], age: null, temp: '冷凍', bought: 0, addon: true },
+      { id: 63099, name: '寶寶熟水餃', price: 236, pic: '/upload/Product_3033/202308230348571.png', specNames: ['玉米蝦、甘藍豬 各1包', '玉米蝦2包', '甘藍豬2包'], temp: '冷凍', bought: 3, days: 35 },
+      { id: 63206, name: '無鹽寶寶烏龍麵', price: 115, pic: '/upload/Product_3033/202411250623351.png', specNames: ['三口味 各1包', '三口味 各2包', '南瓜3包', '菠菜3包'], temp: '常溫', bought: 0 },
+      { id: 58318, name: '拌拌飯-地瓜栗香雞飯', price: 180, pic: '/upload/Product_3033/202210130618011.jpg', specNames: ['2入，150克/入'], temp: '冷凍', bought: 0 },
+      { id: 60367, name: '拌拌飯-蘋果櫻桃鴨飯', price: 180, pic: '/upload/Product_3033/202210130614521.jpg', specNames: ['2入，150克/入'], temp: '冷凍', bought: 0 },
+      { id: 58320, name: '拌拌飯-南洋鳳梨豬飯', price: 180, pic: '/upload/Product_3033/202408060630411.jpg', specNames: ['2入，150克/入'], temp: '冷凍', bought: 0 },
+      { id: 44265, name: '中寶寶 番茄牛肉粥', price: 140, pic: '/upload/Product_3033/202208191006151.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 0 },
+      { id: 44270, name: '中寶寶 南瓜雞肉粥', price: 140, pic: '/upload/Product_3033/202411010619531.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 0 },
+      { id: 44269, name: '中寶寶 玉米雞肉粥', price: 140, pic: '/upload/Product_3033/202208191004191.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 2, days: 28 },
+      { id: 44272, name: '中寶寶 芋頭豬肉粥', price: 140, pic: '/upload/Product_3033/202311290603241.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 0 },
+      { id: 65470, name: '【小寶寶】含運-十倍粥體驗組（首購限定）', price: 399, pic: '/upload/Product_3033/202601160724251.png', specNames: ['8口味，各1入', '8口味，各1入+益生菌試吃…'], temp: '冷凍', bought: 0 },
+      { id: 46965, name: '中寶寶 彩虹營養寶寶粥組合', price: 759, pic: '/upload/Product_3033/202411110607301.jpg', specNames: ['12入，120克/入'], temp: '冷凍', bought: 1, days: 62 },
+      { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, pic: '/upload/Product_3033/202606160750091.png', specNames: ['天麻枸杞鱸魚', '山藥鮑魚雞', '黃耆枸杞雞'], temp: '冷凍', bought: 0, addon: true },
     ],
   },
   益菓保: {
@@ -907,7 +905,7 @@ const DATA = {
     items: [
       { id: 64978, name: '敏敏好益生菌-蘋果口味(30入)', price: 1288, pic: '/upload/Product_3033/202604140646231.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
       { id: 64979, name: '護護好益生菌-芭樂口味(30入)', price: 1688, pic: '/upload/Product_3033/202604140645431.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
-      { id: 63330, name: '歐趴DHA魚油', price: 980, pic: '/upload/Product_3033/202605270719031.jpg', specNames: ['買3送1，共4盒魚油', '單一規格', '買5送2，共7盒魚油', '買10送5，共15盒魚油'], temp: '常溫', bought: 2, days: 31, due: true },
+      { id: 63330, name: '歐趴DHA魚油', price: 980, pic: '/upload/Product_3033/202605270719031.jpg', specNames: ['買3送1，共4盒魚油', '單一規格', '買5送2，共7盒魚油', '買10送5，共15盒魚油'], temp: '常溫', bought: 2, days: 31 },
       { id: 64812, name: '英國海藻維生素D3', price: 599, pic: '/upload/Product_3033/202511200629341.jpg', specNames: ['買3送1，共4盒D3', '單一規格', '買5送2，共7盒D3', '買10送5，共15盒D3'], temp: '常溫', bought: 1, days: 44 },
       { id: 66331, name: '益生菌7日三角防護體驗組', price: 849, pic: '/upload/Product_3033/202604140642051.png', specNames: ['7日體驗組'], temp: '常溫', bought: 0 },
       { id: 65011, name: '順順好益生菌-草莓口味(7入)', price: 288, pic: '/upload/Product_3033/202604140644141.png', specNames: ['效期2027/03/11'], temp: '常溫', bought: 0 },
@@ -953,13 +951,6 @@ const ADDONS = {
   ],
 };
 
-/* 跨產線候選：推別條產線時從這裡補 */
-const CROSS = {
-  產地直送: ['冷凍超市', '粥寶寶'],
-  冷凍超市: ['產地直送', '粥寶寶'],
-  粥寶寶: ['產地直送', '冷凍超市'],
-  益菓保: ['粥寶寶', '產地直送'],
-};
 
 /* 商品評論：四條產線各抓主商品在正式站上的真實三則（2026-10-21 擷取）。
    正式站每頁就是顯示三則，再多的走「查看所有評論」。
@@ -1012,16 +1003,10 @@ const S = {
   addonCount: 6, edge: 'normal',    // 這一頁的情境
   rotate: true,                     // 顯示細節
 
-  // ── 推薦規則：2026-10-21 定案，固定住不再放上面板 ──
-  // 預設值就是 B_推薦規則 裡寫的建議值，撥它只是重新問一次已經答過的問題
-  cross: 2,                 // 別條產線最多 2 個
-  age: 'sort',              // 月齡只排序，不篩掉
-  season: 'hide',           // 過季不推
-  temp: 'auto',             // 冷凍線自動開同溫層限制
-  rebuy: true,              // 推「您常買」
-  recOrder: 'boughtFirst',  // 買過的排前面
-  count: 6,                 // 推薦池抓 6 個
-  baby: 'none',             // 寶寶月齡沒填（實際涵蓋率 25.8%，沒填才是多數）
+  // ── 推薦規則：2026-10-21 定案「不改了，拿到什麼用什麼」──
+  // 官網端不過濾、不重排。溫層／產季／月齡／跨產線那幾條都拿掉了，
+  // 因為推薦服務根本沒有那些能力（原始需求 §0.5），定了也實作不出來。
+  limit: 18,                // 跟服務要幾個（規格：預設 10、上限 20）。18 ＝ 六個洞 × 三頁輪播
 
   // 版型定案的八項（版面、卡片、分不分排、區塊標題、買過的標籤、推薦理由、標籤配色、
   // 新舊推薦三案）已經直接寫進程式，不再留成可切換的狀態。理由見 A_UI/版面節奏與層級.md
@@ -1047,7 +1032,7 @@ const PANEL = [
     ['addonCount', '這個商品有幾個加購品（購買區的長條形）', { min: 0, max: 10, hint: addonHint }],
     // 「逾時」與「沒有結果」的畫面完全一樣（都是降級成本產線熱門），分成兩個開關
     // 只會讓人以為「沒有結果」真的會空白，但這個設計本來就是不留白，所以併成一個
-    ['edge', '例外情境', [['normal', '正常'], ['timeout', '推薦拿不到'], ['noimg', '商品缺圖']]],
+    ['edge', '例外情境', [['normal', '正常'], ['loading', '載入中'], ['timeout', '推薦拿不到'], ['noimg', '商品缺圖']]],
   ]],
   ['顯示細節', [
     ['rotate', '推薦自動換頁', [[true, '開（6 秒）'], [false, '關，只能自己點點點']]],
@@ -1067,6 +1052,7 @@ const STATE_WARN = () => (!S.logged
   ? '現在是未登入訪客：不呼叫推薦，區塊標題換成「為您推薦」，顯示本產線熱門。'
   : null);
 const EDGE_WARN = {
+  loading: '推薦還沒回來（非同步載入必須，見原始需求 §2.4）。重點看：骨架佔住的高度跟填完的推薦一模一樣，所以推薦進來時版面不會跳。商品頁其他部分不等推薦，照常顯示。',
   timeout: '推薦拿不到（服務逾時，或過濾太嚴之後一個都不剩）。重點看：商品頁其他部分完全不受影響，推薦區塊降級成本產線熱門、標題換成「為您推薦」，不是開天窗。',
   noimg: '部分商品沒有圖。重點看版面不破、卡片高度一致。',
 };
@@ -1074,9 +1060,6 @@ const EDGE_WARN = {
 /* ---------- 工具 ---------- */
 const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h !== undefined) n.innerHTML = h; return n; };
 const img = (src, cls) => `<img class="${cls}" src="${CDN}${src}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;noimg&quot;>商品圖</div>'">`;
-const inSeason = (s) => !s || (s[0] <= s[1] ? NOW_MONTH >= s[0] && NOW_MONTH <= s[1] : NOW_MONTH >= s[0] || NOW_MONTH <= s[1]);
-const babyList = () => (S.baby === 'none' ? [] : S.baby === 'two' ? [6, 18] : [S.baby]);
-const ageFit = (it) => { const bs = babyList(); if (!bs.length || !it.age) return true; return bs.some((b) => b >= it.age[0] && b <= it.age[1]); };
 
 
 
@@ -1125,36 +1108,28 @@ function renderPanel() {
 }
 
 /* ---------- 推薦計算 ---------- */
+/* 模擬推薦服務 recommend_products_for_member 回什麼。
+   2026-10-21 定案「規則不改了，拿到什麼用什麼」：官網端**不過濾、不重排**，
+   回來什麼就照順序顯示。所以這裡沒有溫層、產季、月齡、跨產線那幾條 ——
+   服務端本來就沒有那些能力（原始需求 §0.5：溫層完全沒有用到、推薦不分產線）。
+
+   照服務端的規格模擬：
+   - rebuy（他買過、現在買得到）最多 5 個，排在前面
+   - discover（沒買過的）補滿到 limit，可能含別條產線
+   - 加購品不會出現（B2 要修的就是這個）*/
 function computeRecs() {
-  const d = DATA[S.line];
-  let own = d.items.map((x) => ({ ...x, line: S.line }));
-  let cross = S.cross === 0 ? [] : CROSS[S.line].flatMap((l) => DATA[l].items.map((x) => ({ ...x, line: l })));
+  // 本產線排前面：這不是官網在篩，是服務端的共購分數自然會讓同類商品浮上來
+  // （原始需求 §0.1 模式 B：「買這個商品的客人也常買」＋ §0.4 補位先找同子分類、同產線）
+  const lines = [S.line, ...Object.keys(DATA).filter((L) => L !== S.line)];
+  const pool = lines.flatMap((L) =>
+    DATA[L].items.filter((x) => !x.addon).map((x) => ({ ...x, line: L })));
+  const own = pool.filter((x) => x.line === S.line);
 
-  // 加購品一律不進推薦池（正式站也該這樣，見 B2「排除加購規格」）
-  const strip = (arr) => arr.filter((x) => !x.addon);
-  own = strip(own); cross = strip(cross);
-
-  const tempOn = S.temp === 'same' || (S.temp === 'auto' && S.line === '冷凍超市');
-  const byTemp = (x) => !tempOn || x.temp === d.anchor.temp;
-  own = own.filter(byTemp); cross = cross.filter(byTemp);
-
-  const seasonDrop = (x) => S.season === 'hide' && x.line === '產地直送' && !inSeason(x.season);
-  own = own.filter((x) => !seasonDrop(x)); cross = cross.filter((x) => !seasonDrop(x));
-
-  if (S.age === 'filter') { own = own.filter(ageFit); cross = cross.filter(ageFit); }
-  if (S.age === 'sort' && babyList().length) {
-    const w = (x) => (ageFit(x) ? 0 : 1);
-    own.sort((a, b) => w(a) - w(b)); cross.sort((a, b) => w(a) - w(b));
-  }
-
-  const rebuy = S.logged && S.rebuy ? own.filter((x) => x.bought > 0).sort((a, b) => (b.due ? 1 : 0) - (a.due ? 1 : 0)).slice(0, 5) : [];
+  // 服務端的 rebuy 上限就是 5，寫死在它那邊
+  const rebuy = S.logged ? own.filter((x) => x.bought > 0).slice(0, 5) : [];
   const ids = new Set(rebuy.map((x) => x.id));
-  const ownNew = own.filter((x) => !x.bought && !ids.has(x.id));
-  // 跨產線的名額要先保留，不然自己這條線商品一多，別條永遠擠不進前幾個
-  const nCross = S.cross === 0 ? 0 : S.cross === 99 ? Math.floor(S.count / 2) : S.cross;
-  const crossPick = cross.filter((x) => !x.bought).slice(0, nCross);
-  const ownPick = ownNew.slice(0, Math.max(0, S.count - crossPick.length));
-  const discover = [...ownPick, ...crossPick];
+  // discover 不分產線：原始需求 §0.5 明說「粥寶寶商品頁也可能推生鮮肉舖的商品」
+  const discover = pool.filter((x) => !x.bought && !ids.has(x.id)).slice(0, S.limit - rebuy.length);
 
   if (S.edge === 'noimg') [...rebuy, ...discover].forEach((x, i) => { if (i % 3 === 1) x._noimg = true; });
   return { rebuy, discover };
@@ -1240,7 +1215,7 @@ function tagStyle(kind) {
 }
 function card(it, kind) {
   const [tag] = tagOf(it, kind);
-  const dim = S.season === 'mark' && it.line === '產地直送' && !inSeason(it.season);
+  const dim = false;  // 產季標示拿掉：推薦服務沒有產季欄位，官網端也不另外判斷
   const inCart = CART.has(it.id);
   const c = el('div', 'gy-card slim'
     + (it._isAddon ? ' is-addon' : '')
@@ -1365,6 +1340,39 @@ function slotsBlock(addons, recs, recTitle) {
   sec.onmouseenter = () => { paused = true; };
   sec.onmouseleave = () => { paused = false; };
   restart();
+  return sec;
+}
+
+/* 載入中的骨架：跟真的推薦同一個格線、同一種卡片尺寸，
+   所以推薦填進來時版面不會跳。標題先放著，因為標題不用等 API */
+function skeletonBlock() {
+  // 外層包得跟真推薦一模一樣（gy-two > gy-reg-r），
+  // 不然手機版 .gy-reg-r 的上邊框＋內距那 17px 骨架會少掉
+  const sec = el('section', 'gy-sec gy-skel');
+  const two = el('div', 'gy-two');
+  const reg = el('div', 'gy-reg-r no-divider');
+  two.appendChild(reg);
+  sec.appendChild(two);
+  const head = el('div', 'gy-head');
+  head.appendChild(regionTitle('猜你喜歡'));
+  reg.appendChild(head);
+  const grid = el('div', 'gy-reg-grid');
+  grid.style.setProperty('--cols', 6);
+  for (let i = 0; i < 6; i++) {
+    // 用真卡片的結構（gy-imgwrap / p-item-name / gy-orig / gy-ft），只是內容換成灰塊，
+    // 這樣高度由同一套 CSS 決定，骨架跟真推薦一定一樣高
+    grid.appendChild(el('div', 'gy-card slim',
+      '<a class="gy-link"><div class="gy-imgwrap"><div class="sk sk-img"></div></div>'
+      + '<div class="p-item-name"><span class="sk sk-nm"></span><span class="sk sk-nm short"></span></div></a>'
+      + '<span class="gy-orig"></span>'
+      + '<div class="gy-ft"><span class="gy-price">$000</span><button class="gy-add" type="button" disabled>加入菜籃</button></div>'));
+  }
+  reg.appendChild(grid);
+  // 點點那一列也要佔住，不然推薦填進來時會多長出 24px
+  const dots = el('div', 'gy-dots');
+  for (let i = 0; i < 3; i++) dots.appendChild(el('button', null, ''));
+  sec.appendChild(dots);
+  sec.setAttribute('aria-busy', 'true');
   return sec;
 }
 
@@ -1612,12 +1620,18 @@ function renderPage() {
 
 
 
-  if (S.line !== '益菓保') {
+  if (S.edge === 'loading' && S.line !== '益菓保') {
+    // 載入中：推薦還沒回來，先用骨架佔住位置
+    stopRotate();
+    slotA.appendChild(skeletonBlock());
+    S._recIds = [];
+  } else if (S.line !== '益菓保') {
     // 商品卡下方那一整塊都是猜你喜歡（加價購在購買區，見二之七）
     const { rebuy, discover } = computeRecs();
     rebuy.forEach((x) => { x._kind = 'rebuy'; });
     discover.forEach((x) => { x._kind = 'discover'; });
-    let recs = S.recOrder === 'boughtFirst' ? [...rebuy, ...discover] : [...discover, ...rebuy];
+    // 照服務回傳的順序：rebuy 在前、discover 在後，官網端不重排
+    let recs = [...rebuy, ...discover];
     // 降級：未登入不呼叫推薦、推薦拿不到也一樣，整區換成本產線熱門、標題換成「為您推薦」
     const degraded = !S.logged || S.edge === 'timeout';
     if (degraded) recs = hotItems();

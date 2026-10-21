@@ -104,27 +104,26 @@ const LINE_COLOR = {
   益菓保: '#e09200',
 };
 
-/* season: null＝全年；[起月, 迄月]＝產季區間（只有產地直送有）
-   age:    [起月齡, 迄月齡]＝適用月齡（只有粥寶寶有）
-   temp:   常溫 / 冷藏 / 冷凍
-   addon:  true＝這是加購規格，前台隱藏、不單獨零售（故意留著示範誤推） */
+/* temp:  常溫 / 冷藏 / 冷凍
+   addon: true＝這是加購規格，前台隱藏、不單獨零售。推薦池會把它濾掉（正式站也該這樣，見 B2）
+   bought / days：買過幾次、最近一次幾天前，用來撐出「常買」那個標籤 */
 const DATA = {
   產地直送: {
     anchor: { id: 33626, name: '【金牌珍珠芭樂】陳建裕', price: 599, pic: '/upload/Product_3033/202602040316351.png', specNames: ['5斤裝', '【限時優惠】10斤裝'], specs: 2, temp: '常溫' },
     items: [
-      { id: 25006, name: '蘋果季【梨山蜜蘋果】甜莃果園', price: 899, pic: '/upload/Product_3033/202609140222391.jpg', specNames: ['大果3斤裝', '大果5斤裝', '中果3斤裝', '中果5斤裝'], season: [10, 12], temp: '常溫', bought: 0 },
-      { id: 78654, name: '柿子季【梨山甜柿】林山果原', price: 1290, pic: '/upload/Product_3033/202610150344031.jpg', specNames: ['8粒裝', '9粒裝'], season: [9, 11], temp: '常溫', bought: 0 },
-      { id: 25784, name: '【珍稀黃金果】不一樣鱷魚農場', price: 699, pic: '/upload/Product_3033/201908280451361.jpg', specNames: ['大果6粒裝', '中果6粒裝', '小果10粒裝', '特大果6粒裝'], season: [8, 11], temp: '常溫', bought: 0 },
-      { id: 57965, name: '限量【嘉義極光哈密瓜】大原山農場', price: 1699, pic: '/upload/Product_3033/202610190639081.png', specNames: ['大果雙入裝', '特大果雙入裝', '頂級特大果雙入裝', '頂級特大果單入裝'], season: null, temp: '常溫', bought: 0 },
-      { id: 56653, name: '草莓季【有機豐香草莓】鴨子草莓園', price: 999, pic: '/upload/Product_3033/202601020238471.png', specNames: ['24粒裝', '20粒裝', '15粒裝', '28粒裝'], season: [12, 4], temp: '冷藏', bought: 0 },
-      { id: 58715, name: '【梨山水蜜桃】無毒農', price: 1199, pic: '/upload/Product_3033/202606170339201.jpg', specNames: ['8粒裝', '6粒裝', '5粒裝'], season: [6, 8], temp: '常溫', bought: 0 },
-      { id: 35608, name: '荔枝季【特級剪枝玉荷包荔枝】許家荔枝', price: 699, pic: '/upload/Product_3033/202605050716241.jpg', specNames: ['5斤裝', '3斤裝'], season: [6, 7], temp: '常溫', bought: 0 },
-      { id: 29337, name: '【鳳梨釋迦】好時果子', price: 749, pic: '/upload/Product_3033/202601070656311.png', specNames: ['大果10斤裝', '中大果7.5斤裝', '大果5斤裝'], season: [12, 3], temp: '常溫', bought: 0 },
-      { id: 60584, name: '【拉拉山五月桃】無毒農', price: 919, pic: '/upload/Product_3033/202604020921251.png', specNames: ['12粒裝', '10粒裝', '8粒裝', '6粒裝'], season: [5, 6], temp: '常溫', bought: 0 },
-      { id: 78639, name: '【野蓮．水蓮】阿香野蓮農場', price: 499, pic: '/upload/Product_3033/202610080852301.jpg', specNames: ['5包(200g/包)'], season: null, temp: '冷藏', bought: 2, days: 26 },
-      { id: 78651, name: '【台灣無毒鮮凍山藥】大和山藥', price: 790, pic: '/upload/Product_3033/202610150307071.jpg', specNames: ['紅龍山藥6包', '牛奶山藥6包', '牛奶山藥3包+紅龍山藥3包'], season: null, temp: '冷凍', bought: 4, days: 31, due: true },
-      { id: 78623, name: '【台灣時令酪梨】無毒農', price: 649, pic: '/upload/Product_3033/202610051006571.jpg', specNames: ['【黑金轉色酪梨】3000g…', '【黑金轉色酪梨】6000g…', '【十月紅轉色酪梨】3600…', '【十月紅轉色酪梨】6000…'], season: [7, 11], temp: '常溫', bought: 1, days: 58 },
-      { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, pic: '/upload/Product_3033/202411120141401.jpg', specNames: ['3900g±10%，6顆裝'], season: [8, 11], temp: '常溫', bought: 0, addon: true },
+      { id: 25006, name: '蘋果季【梨山蜜蘋果】甜莃果園', price: 899, pic: '/upload/Product_3033/202609140222391.jpg', specNames: ['大果3斤裝', '大果5斤裝', '中果3斤裝', '中果5斤裝'], temp: '常溫', bought: 0 },
+      { id: 78654, name: '柿子季【梨山甜柿】林山果原', price: 1290, pic: '/upload/Product_3033/202610150344031.jpg', specNames: ['8粒裝', '9粒裝'], temp: '常溫', bought: 0 },
+      { id: 25784, name: '【珍稀黃金果】不一樣鱷魚農場', price: 699, pic: '/upload/Product_3033/201908280451361.jpg', specNames: ['大果6粒裝', '中果6粒裝', '小果10粒裝', '特大果6粒裝'], temp: '常溫', bought: 0 },
+      { id: 57965, name: '限量【嘉義極光哈密瓜】大原山農場', price: 1699, pic: '/upload/Product_3033/202610190639081.png', specNames: ['大果雙入裝', '特大果雙入裝', '頂級特大果雙入裝', '頂級特大果單入裝'], temp: '常溫', bought: 0 },
+      { id: 56653, name: '草莓季【有機豐香草莓】鴨子草莓園', price: 999, pic: '/upload/Product_3033/202601020238471.png', specNames: ['24粒裝', '20粒裝', '15粒裝', '28粒裝'], temp: '冷藏', bought: 0 },
+      { id: 58715, name: '【梨山水蜜桃】無毒農', price: 1199, pic: '/upload/Product_3033/202606170339201.jpg', specNames: ['8粒裝', '6粒裝', '5粒裝'], temp: '常溫', bought: 0 },
+      { id: 35608, name: '荔枝季【特級剪枝玉荷包荔枝】許家荔枝', price: 699, pic: '/upload/Product_3033/202605050716241.jpg', specNames: ['5斤裝', '3斤裝'], temp: '常溫', bought: 0 },
+      { id: 29337, name: '【鳳梨釋迦】好時果子', price: 749, pic: '/upload/Product_3033/202601070656311.png', specNames: ['大果10斤裝', '中大果7.5斤裝', '大果5斤裝'], temp: '常溫', bought: 0 },
+      { id: 60584, name: '【拉拉山五月桃】無毒農', price: 919, pic: '/upload/Product_3033/202604020921251.png', specNames: ['12粒裝', '10粒裝', '8粒裝', '6粒裝'], temp: '常溫', bought: 0 },
+      { id: 78639, name: '【野蓮．水蓮】阿香野蓮農場', price: 499, pic: '/upload/Product_3033/202610080852301.jpg', specNames: ['5包(200g/包)'], temp: '冷藏', bought: 2, days: 26 },
+      { id: 78651, name: '【台灣無毒鮮凍山藥】大和山藥', price: 790, pic: '/upload/Product_3033/202610150307071.jpg', specNames: ['紅龍山藥6包', '牛奶山藥6包', '牛奶山藥3包+紅龍山藥3包'], temp: '冷凍', bought: 4, days: 31 },
+      { id: 78623, name: '【台灣時令酪梨】無毒農', price: 649, pic: '/upload/Product_3033/202610051006571.jpg', specNames: ['【黑金轉色酪梨】3000g…', '【黑金轉色酪梨】6000g…', '【十月紅轉色酪梨】3600…', '【十月紅轉色酪梨】6000…'], temp: '常溫', bought: 1, days: 58 },
+      { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, pic: '/upload/Product_3033/202411120141401.jpg', specNames: ['3900g±10%，6顆裝'], temp: '常溫', bought: 0, addon: true },
     ],
   },
   冷凍超市: {
@@ -135,7 +134,7 @@ const DATA = {
       { id: 29260, name: '【宅魚】澎湖活凍野生小卷', price: 210, pic: '/upload/Product_3033/202408210253131.png', specNames: ['300g/包(約5-6支)'], temp: '冷凍', bought: 0 },
       { id: 57403, name: '【蝦覓世界】生鮮活凍白蝦仁（無膨發）', price: 250, pic: '/upload/Product_3033/202410310618231.jpg', specNames: ['大蝦仁'], temp: '冷凍', bought: 0 },
       { id: 64949, name: '【宅魚】去刺虱目魚肚', price: 189, pic: '/upload/Product_3033/202502200529041.jpg', specNames: ['180g/片', '180g/片，多包優惠'], temp: '冷凍', bought: 2, days: 24 },
-      { id: 62742, name: '【蘇澳區漁會】薄鹽鯖魚', price: 90, pic: '/upload/Product_3033/202502200530081.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 5, days: 29, due: true },
+      { id: 62742, name: '【蘇澳區漁會】薄鹽鯖魚', price: 90, pic: '/upload/Product_3033/202502200530081.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 5, days: 29 },
       { id: 28972, name: '【萬金畜牧場】去骨雞腿肉', price: 265, pic: '/upload/Product_3033/202410310620281.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
       { id: 37899, name: '【萬金畜牧場】棒棒腿', price: 240, pic: '/upload/Product_3033/201907080335431.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
       { id: 39816, name: '【永發放山雞】去皮胸肉', price: 150, pic: '/upload/Product_3033/202410310620011.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 1, days: 47 },
@@ -144,20 +143,20 @@ const DATA = {
     ],
   },
   粥寶寶: {
-    anchor: { id: 66539, name: '一歲以上PLUS+ 閃亮升級燉飯組合', price: 999, pic: '/upload/Product_3033/202411260951501.png', specNames: ['有牛/10入，150克/入', '沒有牛/10入，150克/入'], specs: 2, temp: '冷凍', age: [12, 36] },
+    anchor: { id: 66539, name: '一歲以上PLUS+ 閃亮升級燉飯組合', price: 999, pic: '/upload/Product_3033/202411260951501.png', specNames: ['有牛/10入，150克/入', '沒有牛/10入，150克/入'], specs: 2, temp: '冷凍' },
     items: [
-      { id: 63099, name: '寶寶熟水餃', price: 236, pic: '/upload/Product_3033/202308230348571.png', specNames: ['玉米蝦、甘藍豬 各1包', '玉米蝦2包', '甘藍豬2包'], age: [12, 36], temp: '冷凍', bought: 3, days: 35 },
-      { id: 63206, name: '無鹽寶寶烏龍麵', price: 115, pic: '/upload/Product_3033/202411250623351.png', specNames: ['三口味 各1包', '三口味 各2包', '南瓜3包', '菠菜3包'], age: [10, 36], temp: '常溫', bought: 0 },
-      { id: 58318, name: '拌拌飯-地瓜栗香雞飯', price: 180, pic: '/upload/Product_3033/202210130618011.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
-      { id: 60367, name: '拌拌飯-蘋果櫻桃鴨飯', price: 180, pic: '/upload/Product_3033/202210130614521.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
-      { id: 58320, name: '拌拌飯-南洋鳳梨豬飯', price: 180, pic: '/upload/Product_3033/202408060630411.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
-      { id: 44265, name: '中寶寶 番茄牛肉粥', price: 140, pic: '/upload/Product_3033/202208191006151.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
-      { id: 44270, name: '中寶寶 南瓜雞肉粥', price: 140, pic: '/upload/Product_3033/202411010619531.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
-      { id: 44269, name: '中寶寶 玉米雞肉粥', price: 140, pic: '/upload/Product_3033/202208191004191.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 2, days: 28 },
-      { id: 44272, name: '中寶寶 芋頭豬肉粥', price: 140, pic: '/upload/Product_3033/202311290603241.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
-      { id: 65470, name: '【小寶寶】含運-十倍粥體驗組（首購限定）', price: 399, pic: '/upload/Product_3033/202601160724251.png', specNames: ['8口味，各1入', '8口味，各1入+益生菌試吃…'], age: [4, 10], temp: '冷凍', bought: 0 },
-      { id: 46965, name: '中寶寶 彩虹營養寶寶粥組合', price: 759, pic: '/upload/Product_3033/202411110607301.jpg', specNames: ['12入，120克/入'], age: [7, 18], temp: '冷凍', bought: 1, days: 62 },
-      { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, pic: '/upload/Product_3033/202606160750091.png', specNames: ['天麻枸杞鱸魚', '山藥鮑魚雞', '黃耆枸杞雞'], age: null, temp: '冷凍', bought: 0, addon: true },
+      { id: 63099, name: '寶寶熟水餃', price: 236, pic: '/upload/Product_3033/202308230348571.png', specNames: ['玉米蝦、甘藍豬 各1包', '玉米蝦2包', '甘藍豬2包'], temp: '冷凍', bought: 3, days: 35 },
+      { id: 63206, name: '無鹽寶寶烏龍麵', price: 115, pic: '/upload/Product_3033/202411250623351.png', specNames: ['三口味 各1包', '三口味 各2包', '南瓜3包', '菠菜3包'], temp: '常溫', bought: 0 },
+      { id: 58318, name: '拌拌飯-地瓜栗香雞飯', price: 180, pic: '/upload/Product_3033/202210130618011.jpg', specNames: ['2入，150克/入'], temp: '冷凍', bought: 0 },
+      { id: 60367, name: '拌拌飯-蘋果櫻桃鴨飯', price: 180, pic: '/upload/Product_3033/202210130614521.jpg', specNames: ['2入，150克/入'], temp: '冷凍', bought: 0 },
+      { id: 58320, name: '拌拌飯-南洋鳳梨豬飯', price: 180, pic: '/upload/Product_3033/202408060630411.jpg', specNames: ['2入，150克/入'], temp: '冷凍', bought: 0 },
+      { id: 44265, name: '中寶寶 番茄牛肉粥', price: 140, pic: '/upload/Product_3033/202208191006151.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 0 },
+      { id: 44270, name: '中寶寶 南瓜雞肉粥', price: 140, pic: '/upload/Product_3033/202411010619531.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 0 },
+      { id: 44269, name: '中寶寶 玉米雞肉粥', price: 140, pic: '/upload/Product_3033/202208191004191.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 2, days: 28 },
+      { id: 44272, name: '中寶寶 芋頭豬肉粥', price: 140, pic: '/upload/Product_3033/202311290603241.jpg', specNames: ['2入，120克/入'], temp: '冷凍', bought: 0 },
+      { id: 65470, name: '【小寶寶】含運-十倍粥體驗組（首購限定）', price: 399, pic: '/upload/Product_3033/202601160724251.png', specNames: ['8口味，各1入', '8口味，各1入+益生菌試吃…'], temp: '冷凍', bought: 0 },
+      { id: 46965, name: '中寶寶 彩虹營養寶寶粥組合', price: 759, pic: '/upload/Product_3033/202411110607301.jpg', specNames: ['12入，120克/入'], temp: '冷凍', bought: 1, days: 62 },
+      { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, pic: '/upload/Product_3033/202606160750091.png', specNames: ['天麻枸杞鱸魚', '山藥鮑魚雞', '黃耆枸杞雞'], temp: '冷凍', bought: 0, addon: true },
     ],
   },
   益菓保: {
@@ -165,7 +164,7 @@ const DATA = {
     items: [
       { id: 64978, name: '敏敏好益生菌-蘋果口味(30入)', price: 1288, pic: '/upload/Product_3033/202604140646231.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
       { id: 64979, name: '護護好益生菌-芭樂口味(30入)', price: 1688, pic: '/upload/Product_3033/202604140645431.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
-      { id: 63330, name: '歐趴DHA魚油', price: 980, pic: '/upload/Product_3033/202605270719031.jpg', specNames: ['買3送1，共4盒魚油', '單一規格', '買5送2，共7盒魚油', '買10送5，共15盒魚油'], temp: '常溫', bought: 2, days: 31, due: true },
+      { id: 63330, name: '歐趴DHA魚油', price: 980, pic: '/upload/Product_3033/202605270719031.jpg', specNames: ['買3送1，共4盒魚油', '單一規格', '買5送2，共7盒魚油', '買10送5，共15盒魚油'], temp: '常溫', bought: 2, days: 31 },
       { id: 64812, name: '英國海藻維生素D3', price: 599, pic: '/upload/Product_3033/202511200629341.jpg', specNames: ['買3送1，共4盒D3', '單一規格', '買5送2，共7盒D3', '買10送5，共15盒D3'], temp: '常溫', bought: 1, days: 44 },
       { id: 66331, name: '益生菌7日三角防護體驗組', price: 849, pic: '/upload/Product_3033/202604140642051.png', specNames: ['7日體驗組'], temp: '常溫', bought: 0 },
       { id: 65011, name: '順順好益生菌-草莓口味(7入)', price: 288, pic: '/upload/Product_3033/202604140644141.png', specNames: ['效期2027/03/11'], temp: '常溫', bought: 0 },
@@ -211,13 +210,6 @@ const ADDONS = {
   ],
 };
 
-/* 跨產線候選：推別條產線時從這裡補 */
-const CROSS = {
-  產地直送: ['冷凍超市', '粥寶寶'],
-  冷凍超市: ['產地直送', '粥寶寶'],
-  粥寶寶: ['產地直送', '冷凍超市'],
-  益菓保: ['粥寶寶', '產地直送'],
-};
 
 /* 商品評論：四條產線各抓主商品在正式站上的真實三則（2026-10-21 擷取）。
    正式站每頁就是顯示三則，再多的走「查看所有評論」。
