@@ -4335,9 +4335,22 @@ check `inset` unsupport
 .img-slick .ds-status-label{font-size:24px;padding:12px 20px}.img-slick .ds-status-label .ds-status-season{font-size:18px}
 .img-slick .fruit_item,[data-product-id] a.w-full>.relative{overflow:hidden}
 .ds-locked{background:#999!important;color:#fff!important;cursor:not-allowed!important;pointer-events:none}
-.ds-notify{background:#4ba83b!important;color:#fff!important;cursor:pointer}
+.ds-notify{background:#9ca3af!important;color:#fff!important;cursor:pointer;white-space:nowrap}
+.ds-notify:hover{background:#6b7280!important}
 .ds-remind-link{display:block;margin-top:12px;cursor:pointer;color:#fff!important}
 .ds-lab-quick{max-width:400px}
+.ds-lab-appframe{width:300px;background:#F2F2F2;border-radius:20px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.18);display:flex;flex-direction:column;font-family:'Noto Sans TC',sans-serif}
+.ds-lab-appbar{flex:0 0 36px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#000}
+.ds-lab-apphero{position:relative;width:100%;aspect-ratio:4/3;background:#ddd}
+.ds-lab-apphero img{width:100%;height:100%;object-fit:cover;display:block}
+.ds-lab-appstamp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(26,26,26,.6);color:#fff}
+.ds-lab-appstamp span{display:block;max-width:86%;padding:6px 10px;border:1px solid #fff;border-radius:4px;font-size:15px;font-weight:700;line-height:1.4;text-align:center;transform:rotate(-8deg)}
+.ds-lab-appbody{padding:12px;background:#fff;margin:8px;border-radius:8px;font-size:13px;line-height:1.6;color:#1a1a1a}
+.ds-lab-appbuybar{flex:0 0 56px;background:rgba(255,255,255,.8);display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #e5e5e5}
+.ds-lab-appcart{width:34px;height:34px;border-radius:17px;border:1.5px solid #4BA83B;background:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}
+.ds-lab-appbtn{flex:1;height:34px;border-radius:20px;background:#FF4040;color:#fff;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.ds-lab-appbtn.off{background:#C6C6C6}
+.ds-lab-appnow{margin-top:12px;font-size:13px;color:#595757;line-height:1.6}
 .ds-lab-blocked{display:flex;align-items:center;justify-content:center;width:100%;max-width:360px;min-height:120px;padding:16px;background:#ecf0f1;color:#595757;text-align:center;line-height:1.6;font-family:'Noto Sans TC',sans-serif}
 .ds-lab-purchase-row{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;align-items:start;border-top:1px solid #ecf0f1}
 .ds-lab-previews .ds-lab-purchase-row .ds-lab-detail-band{grid-column:auto;border-top:0}
@@ -4356,6 +4369,19 @@ check `inset` unsupport
 #ds-dialog .ds-dialog-close{position:absolute;right:8px;top:8px;padding:4px 12px;border:0;font-size:24px}
 #ds-dialog input{display:block;width:100%;padding:8px;margin:8px 0 16px;border:1px solid #999;border-radius:4px;font:inherit}
 #ds-dialog form button{background:#4ba83b;color:#fff;border-color:#4ba83b}
+#ds-dialog .ds-notify-intro{margin:0 0 20px;font-size:15px;line-height:1.6}
+#ds-dialog .ds-notify-product{display:flex;gap:12px;align-items:center;padding:12px;margin-bottom:20px;border:1px solid #dcdfe6;border-radius:4px}
+#ds-dialog .ds-notify-product img{width:64px;height:64px;object-fit:cover;border-radius:4px;flex:none}
+#ds-dialog .ds-notify-product h3{margin:4px 0 0;font-size:15px;font-weight:700;line-height:1.5}
+#ds-dialog .ds-notify-caption{display:block;font-size:12px;color:#595757}
+#ds-dialog .ds-notify-channels{margin:0 0 20px;padding:0;border:0}
+#ds-dialog .ds-notify-channels legend{padding:0;margin-bottom:8px;font-size:13px;color:#595757}
+#ds-dialog .ds-notify-option{display:flex;gap:8px;align-items:center;padding:12px;margin-bottom:8px;border:1px solid #dcdfe6;border-radius:4px;cursor:pointer}
+#ds-dialog .ds-notify-option.is-selected{border-color:#4ba83b;background:#f4faf2}
+#ds-dialog .ds-notify-option input{display:inline-block;width:auto;margin:0;padding:0}
+#ds-dialog .ds-notify-label{font-size:15px;min-width:72px}
+#ds-dialog .ds-notify-address{font-size:14px;color:#595757}
+#ds-dialog .ds-notify-submit{width:100%;padding:12px;background:#4ba83b;color:#fff;border-color:#4ba83b;font-size:16px;cursor:pointer}
 .ds-list-omitted{margin-top:64px;padding:32px 24px;background:#ecf0f1;color:#595757;text-align:center;font-family:'Noto Sans TC',sans-serif;scroll-margin-top:160px}
 .ds-list-omitted p{margin:0;font-size:16px;line-height:1.5;font-family:inherit}
 .ds-list-omitted p+p{margin-top:12px}
@@ -4425,6 +4451,7 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
 <section class="ds-lab-band ds-lab-detail-band"><div class="ds-lab-band-heading"><h2>商品詳細頁：規格與購買</h2></div><div class="ds-lab-incomplete" hidden>尚未填寫完畢</div><div id="detail-purchase" class="ds-lab-purchase"></div></section>
 <section class="ds-lab-band ds-lab-detail-band"><div class="ds-lab-band-heading"><h2>快速購買視窗</h2></div><div class="ds-lab-incomplete" hidden>尚未填寫完畢</div><div id="quick-preview" class="ds-lab-quick"></div></section>
 </div>
+<section class="ds-lab-band"><div class="ds-lab-band-heading"><h2>App 商品頁</h2></div><div class="ds-lab-incomplete" hidden>尚未填寫完畢</div><div id="app-preview"></div></section>
 </div>
 </main>
 </div>
@@ -4477,15 +4504,26 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
     if(reason.startsWith('農友 / 供應鏈類|')||reason.startsWith('平台營運類|'))return 2;
     return 3;
   }
+  // 2026-10-19 Jimmy 需求卡：通知產線（產地直送 0、冷凍超市 7、粥寶寶 9、益菓保 11）的商品買不到時一律給通知入口，
+  // 卡片文案統一「開賣通知我」。kind 沿用正式站 RestockNotifyRule：season 走產季類，soldout 走其餘買不到的情況。
+  const NOTIFY={
+    seasonEnded:{kind:'season',text:'產季已結束，開賣通知我'},
+    seasonNotStarted:{kind:'season',text:'開賣通知我'},
+    weatherPaused:{kind:'soldout',text:'開賣通知我'},
+    supplyPaused:{kind:'soldout',text:'開賣通知我'},
+    soldOut:{kind:'soldout',text:'開賣通知我'},
+    saleEnded:{kind:'soldout',text:'開賣通知我'}
+  };
+  const withNotify=s=>{const n=NOTIFY[s.status];return n?{...s,canNotify:true,notifyKind:n.kind,notifyText:n.text}:{...s,canNotify:false,notifyKind:null,notifyText:null};};
   function tagStatus(id) {
     const input=inputById(id);
     const available=hasStock(id);
-    const result={status:'normal',labelText:available?'':'已售完',buttonText:available?(Number(input.Type2)===6?'結束販售':'加入菜籃'):'已售完',canAddToCart:available&&Number(input.Type2)!==6,showInList:Number(input.Type2)!==6,showInSearch:true,showProductPage:true,seasonText:null,canNotify:false};
+    const result={status:'normal',labelText:available?'':'已售完',buttonText:available?(Number(input.Type2)===6?'結束販售':'加入菜籃'):'已售完',canAddToCart:available&&Number(input.Type2)!==6,showInList:Number(input.Type2)!==6,showInSearch:true,showProductPage:true,seasonText:null,canNotify:false,notifyKind:null,notifyText:null};
     if(!input.Display) return {...result,status:'hidden',labelText:'',canAddToCart:false,showInList:false,showInSearch:false,showProductPage:false};
     if(!input.hasTag) return result;
     if(input.Status==='正常上架'||input.Status==='提早上架') return result;
     const reasons=input.reasons || [];
-    if(reasons.some(r=>reasonPriority(r)===0)) return {...result,status:'discontinued',labelText:'本商品已停止販售',buttonText:'結束販售',canAddToCart:false,showInList:false};
+    if(reasons.some(r=>reasonPriority(r)===0)) return {...result,status:'discontinued',labelText:'本商品已停止販售',buttonText:'已停止販售',canAddToCart:false,showInList:false};
     if(Number(input.Type2)!==6) {
       if(reasons.some(r=>reasonPriority(r)===1)) return {...result,status:'weatherPaused',labelText:'氣候因素暫停接單',buttonText:'暫停販售',canAddToCart:false,showInList:true};
       if(reasons.some(r=>reasonPriority(r)===2)) return {...result,status:'supplyPaused',labelText:'供貨不足，暫停接單',buttonText:'暫停販售',canAddToCart:false,showInList:true};
@@ -4495,39 +4533,46 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
     const boundary=event+30*86400000;
     const now=Date.parse(todayDate()+'T00:00:00Z');
     const upcoming=now>=boundary && Boolean(input.RemindText.trim());
-    return {...result,status:upcoming?'seasonNotStarted':'seasonEnded',labelText:upcoming?'產季未到':'產季結束',buttonText:upcoming?'尚未開始販售':'結束販售',seasonText:upcoming?input.RemindText.trim():null,canAddToCart:false,canNotify:true,showInList:false};
+    return {...result,status:upcoming?'seasonNotStarted':'seasonEnded',labelText:upcoming?'產季未到':'產季結束',buttonText:upcoming?'尚未開始販售':'結束販售',seasonText:upcoming?input.RemindText.trim():null,canAddToCart:false,showInList:false};
   }
   function status(id){
     const result=tagStatus(id);
-    if(result.status!=='normal')return result;
+    if(result.status!=='normal')return withNotify(result);
     const period=salePeriod(id);
-    if(period==='notStarted')return {...result,status:'saleNotStarted',labelText:'尚未開始販售',buttonText:'尚未開始販售',canAddToCart:false};
-    if(period==='ended')return {...result,status:'saleEnded',labelText:'結束販售',buttonText:'結束販售',canAddToCart:false};
-    return result;
+    if(period==='notStarted')return withNotify({...result,status:'saleNotStarted',labelText:'尚未開始販售',buttonText:'尚未開賣',canAddToCart:false});
+    if(period==='ended')return withNotify({...result,status:'saleEnded',labelText:'結束販售',buttonText:'結束販售',canAddToCart:false});
+    return withNotify(result);
   }
   function purchaseState(id,specId,mode='detail'){
     const result=tagStatus(id),period=salePeriod(id),stock=specId===undefined?(hasStock(id)?1:0):stockForSpec(id,specId);
-    const blocked=(text,code)=>({...result,status:code,buttonText:text,canAddToCart:false});
+    const blocked=(text,code)=>withNotify({...result,status:code,buttonText:text,canAddToCart:false});
     const hiddenCategory=()=>Number(inputById(id).Type2)===6;
     if(result.status==='hidden')return result;
     if(mode==='card'){
-      if(result.status!=='normal')return result;
+      // 正式站順序：還沒開賣優先，再來才是產季類（快速到貨-類別＝不顯示）與售完、過期
+      if(result.status!=='normal')return withNotify(result);
+      if(period==='notStarted')return blocked('尚未開賣','saleNotStarted');
+      if(hiddenCategory())return blocked('結束販售','seasonEnded');
       if(stock<=0)return blocked('已售完','soldOut');
-      if(period==='ended'||hiddenCategory())return blocked('結束販售','saleEnded');
-      return {...result,buttonText:'購買',canAddToCart:true};
+      if(period==='ended')return blocked('結束販售','saleEnded');
+      return withNotify({...result,buttonText:'購買',canAddToCart:true});
     }
     if(mode==='quick'){
-      if(result.status!=='normal')return result;
-      if(stock<=0)return blocked('已售完','soldOut');
-      if(period==='notStarted')return blocked('即將販售','saleNotStarted');
-      if(period==='ended'||hiddenCategory())return blocked('結束販售','saleEnded');
-      return {...result,buttonText:'加入購物車',canAddToCart:true};
+      // 快速購買視窗是規格層級，2026-10-19 那張卡沒有動它，所以這裡一律沒有通知入口
+      const plain=s=>({...s,canNotify:false,notifyKind:null,notifyText:null});
+      if(result.status!=='normal')return plain(result);
+      if(stock<=0)return plain({...result,status:'soldOut',buttonText:'已售完',canAddToCart:false});
+      if(period==='notStarted')return plain({...result,status:'saleNotStarted',buttonText:'即將販售',canAddToCart:false});
+      if(period==='ended'||hiddenCategory())return plain({...result,status:'saleEnded',buttonText:'結束販售',canAddToCart:false});
+      return plain({...result,buttonText:'加入購物車',canAddToCart:true});
     }
     if(period==='notStarted')return blocked('倒數開放訂購','countdown');
-    if(result.status!=='normal')return result;
-    if(period==='ended'||hiddenCategory())return blocked('結束販售','saleEnded');
-    if(stock<=0)return blocked('已售完','soldOut');
-    return {...result,buttonText:'加入菜籃',canAddToCart:true};
+    if(result.status!=='normal')return withNotify(result);
+    if(hiddenCategory())return blocked('結束販售','seasonEnded');
+    if(period==='ended')return blocked('結束販售','saleEnded');
+    // 只有這一個規格沒貨、別的規格還買得到時不給通知入口，跟正式站一樣顯示停用的「已售完」
+    if(stock<=0)return blocked('已售完',hasStock(id)?'soldOutSpec':'soldOut');
+    return withNotify({...result,buttonText:'加入菜籃',canAddToCart:true});
   }
   function save() {
     try { localStorage.setItem(KEY,JSON.stringify(state)); } catch {}
@@ -4545,16 +4590,35 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
   const clockSignature=()=>todayDate()+'|'+catalog.map(product=>salePeriod(String(product.id))).join('|');
   let lastClockSignature=clockSignature();
   setInterval(()=>{renderCountdowns();const signature=clockSignature();if(signature!==lastClockSignature){lastClockSignature=signature;state.today=todayDate();apply();}},1000);
+  // 正式站的登記流程：手機（< 768px）不管有沒有登入都直接開 LINE 預填訊息，由 LINE AI 登記；
+  // 電腦開彈窗，從會員資料既有的 Email 與手機二選一，不讓客人自己輸入。
+  const MEMBER={email:'glen.wen@soohoobook.com',mobile:'0928 456 713'};
+  const restockLineUrl=id=>{const p=productById(id);return 'https://line.me/R/oaMessage/%40greenbox/?'+encodeURIComponent('我想登記開賣通知：'+p.name.trim()+'（商品編號'+id+'）');};
   function notifyDialog(id) {
-    const dialog=modal('開賣通知我','<form id="ds-notification"><label>電子信箱<input type="email" name="email" required autocomplete="email"></label><button type="submit">訂閱到貨提醒</button></form>');
-    dialog.querySelector('form').onsubmit=event=>{event.preventDefault();localStorage.setItem('ds-notification-'+id,dialog.querySelector('input').value);dialog.innerHTML='<h2>已登記到貨提醒</h2><button type="button">關閉</button>';dialog.querySelector('button').onclick=()=>dialog.close();};
+    if(window.matchMedia('(max-width: 767px)').matches){window.open(restockLineUrl(id),'_blank','noopener');return;}
+    const product=productById(id);
+    const option=(value,label,address)=>'<label class="ds-notify-option"><input type="radio" name="ds-notify-channel" value="'+value+'"'+(value==='email'?' checked':'')+'><span class="ds-notify-label">'+label+'</span><span class="ds-notify-address">'+esc(address)+'</span></label>';
+    const dialog=modal('開賣通知我',
+      '<p class="ds-notify-intro">留下提醒方式，商品開賣時通知您。</p>'+
+      '<div class="ds-notify-product"><img src="'+esc(product.imgUrls[0])+'" alt=""><div><span class="ds-notify-caption">您要登記的商品</span><h3>'+esc(product.name)+'</h3></div></div>'+
+      '<fieldset class="ds-notify-channels"><legend>選擇提醒方式</legend>'+option('email','Email',MEMBER.email)+option('sms','手機簡訊',MEMBER.mobile)+'</fieldset>'+
+      '<button type="button" class="ds-notify-submit">登記開賣通知</button>');
+    const marks=()=>dialog.querySelectorAll('.ds-notify-option').forEach(o=>o.classList.toggle('is-selected',o.querySelector('input').checked));
+    dialog.querySelectorAll('.ds-notify-option input').forEach(input=>input.onchange=marks);
+    marks();
+    dialog.querySelector('.ds-notify-submit').onclick=()=>{
+      const channel=dialog.querySelector('input[name="ds-notify-channel"]:checked').value;
+      localStorage.setItem('ds-notification-'+id,channel);
+      const done=modal('開賣通知已登記','<p class="ds-notify-intro">「'+esc(product.name)+'」開賣時，將透過'+(channel==='email'?'Email':'手機簡訊')+'通知您。</p><button type="button" class="ds-notify-submit">知道了</button>');
+      done.querySelector('.ds-notify-submit').onclick=()=>done.close();
+    };
   }
   function remindLink(detail,purchase) {
     const host=detail.querySelector('[data-pid][data-pdid]')||detail;
     let link=host.querySelector('.ds-remind-link');
     if(!link){link=document.createElement('a');link.className='example-image-link Remind-link ds-remind-link';link.href='javascript:void(0)';host.append(link);}
     link.hidden=!purchase.canNotify;
-    link.innerHTML=purchase.canNotify?'<i class="fa fa-bell"></i>'+esc(purchase.labelText+'，開賣通知我'):'';
+    link.innerHTML=purchase.canNotify?'<i class="fa fa-bell"></i>'+esc(purchase.notifyText):'';
   }
   const taipeiMs=value=>Date.parse(value+(value.length===16?':00':'')+'+08:00');
   const saleStart=id=>taipeiMs(inputById(id).StartTime);
@@ -4577,7 +4641,7 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
   }
   function stamp(container, result) {
     container.querySelectorAll(':scope > .ds-status-stamp').forEach(el=>el.remove());
-    if(result.status==='normal'||result.status==='hidden'||result.status==='saleNotStarted') return;
+    if(result.status==='normal'||result.status==='hidden'||result.status==='saleNotStarted'||result.status==='saleEnded') return;
     container.style.position='relative';
     const label=document.createElement('div'); label.className='ds-status-stamp';label.dataset.status=result.status;
     const lines=result.status==='weatherPaused'?['氣候因素','暫停接單']:result.status==='supplyPaused'?['供貨不足','暫停接單']:result.status==='discontinued'?['本商品已','停止販售']:[result.labelText];
@@ -4599,7 +4663,7 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
       if(button) {
         if(!button.dataset.originalText)button.dataset.originalText=button.textContent;
         const cardNotify=!purchase.canAddToCart&&purchase.canNotify;
-        button.textContent=purchase.canAddToCart?button.dataset.originalText:cardNotify?'通知我':purchase.buttonText;
+        button.textContent=purchase.canAddToCart?button.dataset.originalText:cardNotify?'開賣通知我':purchase.buttonText;
         button.disabled=!purchase.canAddToCart&&!cardNotify;
         button.classList.toggle('ds-locked',!purchase.canAddToCart&&!cardNotify);
         button.classList.toggle('ds-notify',cardNotify);
@@ -4765,10 +4829,34 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
       const close=()=>{original.style.display='none';original.classList.remove('in');backdrop.remove();};original.querySelector('[data-dismiss]').onclick=close;backdrop.onclick=close;
     }else modal('檢驗報告',self+third);
   }
+  const APP_NEXT={normal:'加入購物車',seasonEnded:'產季已結束，開賣通知我',seasonNotStarted:'開賣通知我',
+    weatherPaused:'開賣通知我',supplyPaused:'開賣通知我',discontinued:'已停止販售',
+    saleNotStarted:'尚未開始販售',countdown:'尚未開始販售',saleEnded:'開賣通知我',soldOut:'開賣通知我',soldOutSpec:'已售完',hidden:'補貨中'};
+  const APP_STAMP={weatherPaused:['氣候因素','暫停接單'],supplyPaused:['供貨不足','暫停接單'],
+    discontinued:['本商品已','停止販售']};
+  function appPreview(id,host){
+    if(!host)return;
+    const result=status(id),purchase=purchaseState(id,undefined,'detail'),product=productById(id);
+    if(result.status==='hidden'){host.innerHTML='<div class="ds-lab-blocked">商品沒有勾「上架」，App 進不到這一頁</div>';return;}
+    const noStamp=result.status==='normal'||result.status==='hidden'||result.status==='saleNotStarted';
+    const lines=noStamp?null:(APP_STAMP[result.status]||(result.labelText?[result.labelText]:null));
+    const season=result.seasonText?'<span style="display:block;font-size:12px;font-weight:500">預計'+esc(result.seasonText)+'採收</span>':'';
+    const stamp=lines?'<div class="ds-lab-appstamp"><span>'+lines.map(esc).join('<br>')+season+'</span></div>':'';
+    const canBuy=purchase.canAddToCart;
+    const text=canBuy?'加入購物車':(APP_NEXT[purchase.status]||APP_NEXT[result.status]||'補貨中');
+    const now=canBuy?'加入購物車':'補貨中';
+    host.innerHTML='<div class="ds-lab-appframe">'
+      +'<div class="ds-lab-appbar">商品詳情</div>'
+      +'<div class="ds-lab-apphero"><img src="'+esc(product.imgUrls?.[0]||'')+'" alt="">'+stamp+'</div>'
+      +'<div class="ds-lab-appbody">'+esc(product.name)+'</div>'
+      +'<div class="ds-lab-appbuybar"><div class="ds-lab-appcart">\u{1F6D2}</div>'
+      +'<div class="ds-lab-appbtn'+(canBuy?'':' off')+'">'+esc(text)+'</div></div></div>'
+      +'<p class="ds-lab-appnow">現況的 App 這顆按鈕會是「'+esc(now)+'」，而且商品圖上沒有遮罩。</p>';
+  }
   function quickPreview(id,host){
     if(!host)return;
     const card=purchaseState(id,undefined,'card');
-    const blocked=card.canNotify?'卡片按鈕是「通知我」，點下去開的是到貨提醒表單，不會開這個視窗'
+    const blocked=card.canNotify?'卡片按鈕是「開賣通知我」，點下去開的是登記通知的彈窗，不會開這個視窗'
       :!card.canAddToCart?'卡片按鈕停用，這個狀態開不了視窗':null;
     if(blocked){host.removeAttribute('data-product-id');host.innerHTML='<div class="ds-lab-blocked">'+esc(blocked)+'</div>';return;}
     quickView(id,host);
@@ -4904,7 +4992,7 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
       lastClockSignature=clockSignature();
       picked();
       document.querySelectorAll('.ds-lab-incomplete').forEach(el=>el.hidden=inputsValid);
-      ['product-category','search-page','detail-purchase','quick-preview','category-count','search-count'].forEach(id=>document.getElementById(id).hidden=!inputsValid);
+      ['product-category','search-page','detail-purchase','quick-preview','app-preview','category-count','search-count'].forEach(id=>document.getElementById(id).hidden=!inputsValid);
       if(!inputsValid)return;
       const visible=testIds.filter(id=>status(id).showInList);
       document.getElementById('category-grid').innerHTML=visible.map(id=>cardHtml(id)).join('');
@@ -4921,6 +5009,7 @@ html,body{margin:0;background:#fff;color:#1a1a1a;font-family:'Noto Sans TC',sans
       document.getElementById('detail-link').href='product-detail.html?id='+fixedId;
       detailStatus(fixedId,document.getElementById('detail-purchase'));
       quickPreview(fixedId,document.getElementById('quick-preview'));
+      appPreview(fixedId,document.getElementById('app-preview'));
     }
     function updateInputs(event){
       const wasValid=inputsValid;
