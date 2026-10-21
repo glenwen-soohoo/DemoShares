@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | 猜你喜歡測試台・portal 入口
+  portal 無對應正式站 view（純 demo 索引頁，工程不需照抄）。
+  連到的子頁（各頁檔頭有自己的對照）：
+    前台：recommend-testbed(ItemDetail).html
+    App ：recommend-testbed-app(ProductDetailScreen).html
+    後台：recommend-setting(new).html
+-->
+<meta charset="UTF-8">
+<title>猜你喜歡測試台 demo 索引</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; padding:56px 20px; font-family:'Noto Sans TC','Microsoft JhengHei','微軟正黑體',sans-serif;
+        font-size:16px; line-height:1.7; color:#1a1a1a; background:#fafbfb; }
+  .wrap{ max-width:960px; margin:0 auto; }
+  h1{ font-size:30px; margin:0 0 4px; color:#4ba83b; }
+  .sub{ color:#999; font-size:14px; margin:0 0 32px; }
+  .side{ margin-bottom:40px; }
+  .side>h2{ font-size:20px; font-weight:700; margin:0 0 16px; padding-left:12px; border-left:4px solid #4ba83b; }
+  .entries{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width:760px){ .entries{ grid-template-columns:1fr; } }
+  .entry{ display:flex; flex-direction:column; background:#fff; border:1px solid #e0e4e6; border-radius:4px;
+          padding:20px; text-decoration:none; color:inherit; transition:border-color .15s, box-shadow .15s, transform .15s; }
+  .entry:hover{ border-color:#4ba83b; box-shadow:0 4px 14px rgba(0,0,0,.08); transform:translateY(-2px); }
+  .entry .name{ font-size:16px; font-weight:700; color:#4ba83b; margin-bottom:4px; }
+  .entry .desc{ font-size:13px; color:#595757; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>猜你喜歡・測試台</h1>
+  <p class="sub">2026-10</p>
+
+  <div class="side">
+    <h2>前台</h2>
+    <div class="entries">
+      <a class="entry" href="recommend-testbed(ItemDetail).html">
+        <span class="name">商品頁｜推薦區塊與版位</span>
+        <span class="desc">右側面板切產線與規則，看推薦內容怎麼變。桌機與手機同一頁。</span>
+      </a>
+      <a class="entry" href="recommend-testbed-app(ProductDetailScreen).html">
+        <span class="name">App 商品頁｜推薦區塊</span>
+        <span class="desc">手機框裡的 App 版版位。推薦區是原生，不是 WebView。</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="side">
+    <h2>後台</h2>
+    <div class="entries">
+      <a class="entry" href="recommend-setting(new).html">
+        <span class="name">推薦設定｜營運能控什麼</span>
+        <span class="desc">四條產線各自的開關、數量與規則，加上開放比例與逾時。</span>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

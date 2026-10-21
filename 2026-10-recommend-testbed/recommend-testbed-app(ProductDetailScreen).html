@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<!--
+  DemoShares 交接對照 | 猜你喜歡 測試台（App 商品頁）
+  改的是既有介面：App 商品詳情頁  fruit_app ProductDetailScreen
+  這次要動的檔（改既有 1 支 ／ 新建 2 項 ／ 只參考 1 支）：
+    [改既有] fruit_app  src/screens/ProductDetail/ProductDetailScreen        在購買區下方插入推薦區塊（原生，不是 WebView）
+    [新建]   Product_Api  GET app/products/{id}/recommend                    App 取推薦清單
+    [新建]   fruit_app  推薦區塊元件（橫向 FlatList）                         卡片與標籤
+    [只參考] fruit_app  ProductDetailWebView                                  只包商品描述那段 HTML，推薦區不要塞進去 ⚠
+  ⚠ App 商品頁是「原生外殼＋WebView 只包商品描述」，推薦區必須做原生。
+  ⚠ 本頁是測試台，給四條產線撥開關做決定用，不是要上線的畫面。
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>猜你喜歡測試台 — App 商品頁 (demo)</title>
+<link rel="icon" href="data:,">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#c9ccce;font-family:'Noto Sans TC','Microsoft JhengHei','微軟正黑體',sans-serif;
+       display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:24px}
+  .app-frame{width:390px;height:min(812px,calc(100vh - 48px));display:flex;flex-direction:column;
+    background:#fff;border-radius:40px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.22);--line:#ef8e8e}
+  .app-statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;
+    padding:0 24px;font-size:13px;color:#33435a;flex:0 0 auto}
+  .app-bar{height:52px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 12px;background:var(--line);color:#fff;flex:0 0 auto}
+  .app-bar h1{font-size:16px;margin:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px}
+  .app-bar button{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer}
+  .app-scroll{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;background:#fff}
+  .app-cta{flex:0 0 auto;padding:12px 16px 28px;background:#fff;border-top:1px solid #e5e5e5;display:flex;gap:8px;align-items:center}
+  .app-cta b{font-size:19px;color:#dc4e43}
+  .app-cta button{flex:1;height:48px;border:0;border-radius:8px;background:#dc4e43;color:#fff;font-size:16px;font-weight:600;font-family:inherit}
+  .ap-hero{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1f2f7;display:block}
+  .ap-body{padding:16px}
+  .ap-name{font-size:17px;font-weight:700;color:#33435a;margin:0 0 8px;line-height:1.5}
+  .ap-meta{font-size:13px;color:#8a94a6;line-height:1.9}
+  .ap-meta b{color:var(--line)}
+  .ap-sec{margin-top:20px;border-top:8px solid #f1f2f7;padding:16px 16px 0}
+  .ap-sec > h2{font-size:15px;color:#33435a;margin:0 0 4px;display:flex;align-items:center;gap:6px}
+  .ap-sec > h2::before{content:'';width:4px;height:15px;background:var(--line);border-radius:2px}
+  .ap-sec > p{margin:0 0 10px;font-size:12px;color:#8a94a6}
+  .ap-addon{border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;margin-top:8px}
+  .ap-addon-hd{background:#4ba83b;color:#fff;padding:8px 12px;font-size:14px;font-weight:700}
+  .ap-addon-row{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid #f1f2f7}
+  .ap-addon-row:last-child{border-bottom:0}
+  .ap-addon-row input{width:18px;height:18px;accent-color:#4ba83b}
+  .ap-addon-row img{width:48px;height:48px;object-fit:cover;border-radius:4px;background:#f1f2f7}
+  .ap-addon-nm{flex:1;min-width:0;font-size:13px;color:#33435a;line-height:1.5}
+  .ap-addon-pr{font-size:14px;color:#dc4e43;font-weight:700;white-space:nowrap}
+  .ap-rail{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;margin:0 -16px;padding-left:16px;padding-right:16px}
+  .ap-rail::-webkit-scrollbar{display:none}
+  .ap-card{flex:0 0 136px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
+  .ap-card img,.ap-card .noimg{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1f2f7;display:block}
+  .ap-card .noimg{display:flex;align-items:center;justify-content:center;color:#b6bcc7;font-size:12px}
+  .ap-card-bd{padding:8px;display:flex;flex-direction:column;gap:4px;flex:1}
+  .ap-card-nm{font-size:12px;color:#33435a;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ap-tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px}
+  .ap-card-pr{margin-top:auto;font-size:14px;color:#dc4e43;font-weight:700}
+  .ap-fb{background:#fafafa;border:1px dashed #e5e5e5;border-radius:6px;padding:10px;font-size:12px;color:#8a94a6;line-height:1.6}
+  .ap-omit{margin-top:20px;border-top:8px solid #f1f2f7;padding:16px;color:#b6bcc7;font-size:12px;line-height:2;text-align:center}
+
+  /* 開發者面板：放在手機框外，一看就知道不是 App 畫面的一部分 */
+  #tbp{position:fixed;left:0;top:0;width:264px;height:100vh;overflow-y:auto;background:#2b2f3a;color:#e8eaee;
+       z-index:9999;font-size:13px;box-shadow:4px 0 20px rgba(0,0,0,.25)}
+  #tbp .hd{padding:12px 16px;background:#1f232c;font-weight:700;position:sticky;top:0}
+  #tbp .bd{padding:8px 16px 40px}
+  #tbp .f{margin-bottom:12px}
+  #tbp .f > span{display:block;margin-bottom:4px;color:#b6bcc7}
+  #tbp .seg{display:flex;flex-wrap:wrap;gap:4px}
+  #tbp .seg button{flex:1 1 auto;min-width:40px;padding:5px 6px;border:1px solid #3a3f4c;background:#353a46;
+       color:#b6bcc7;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit}
+  #tbp .seg button.on{background:#4ba83b;border-color:#4ba83b;color:#fff}
+  #tbp .tip{margin-top:12px;padding:8px 10px;background:#353a46;border-radius:4px;color:#b6bcc7;font-size:12px;line-height:1.7}
+  @media (max-width:900px){ #tbp{display:none} }
+  @media (max-width:480px){
+    body{display:block;margin:0;padding:0}
+    .app-frame{width:100vw;height:100dvh;border-radius:0;box-shadow:none;margin:0}
+    .app-statusbar{display:none}
+  }
+</style>
+</head>
+<body>
+<aside id="tbp"><div class="hd">測試台開關（App 版）</div><div class="bd" id="tbpBody"></div></aside>
+
+<div class="app-frame" id="frame">
+  <div class="app-statusbar"><span>9:41</span><span>▂▄▆ 5G ▮</span></div>
+  <header class="app-bar"><button>‹</button><h1 id="apBar"></h1><button>⋯</button></header>
+  <main class="app-scroll" id="apScroll"></main>
+  <div class="app-cta"><b id="apPrice"></b><button>加入購物車</button></div>
+</div>
+
+<script>
+/* 測試台假資料：四條產線的主商品與推薦候選
+   商品名稱／價格／圖片路徑全部取自正式站真實資料（2026-10-20 撈） */
+const CDN = 'https://greenboxcdn.azureedge.net';
+
+/* 產線主色，取自 ItemDetail.cshtml:193-215 */
+const LINE_COLOR = {
+  產地直送: '#4ba83b',
+  冷凍超市: '#198FA7',
+  粥寶寶: '#ef8e8e',
+  益菓保: '#e09200',
+};
+
+/* season: null＝全年；[起月, 迄月]＝產季區間（只有產地直送有）
+   age:    [起月齡, 迄月齡]＝適用月齡（只有粥寶寶有）
+   temp:   常溫 / 冷藏 / 冷凍
+   addon:  true＝這是加購規格，前台隱藏、不單獨零售（故意留著示範誤推） */
+const DATA = {
+  產地直送: {
+    anchor: { id: 33626, name: '【金牌珍珠芭樂】陳建裕', price: 599, pic: '/upload/Product_3033/202602040316351.png', specNames: ['5斤裝', '【限時優惠】10斤裝'], specs: 2, temp: '常溫' },
+    items: [
+      { id: 25006, name: '蘋果季【梨山蜜蘋果】甜莃果園', price: 899, pic: '/upload/Product_3033/202609140222391.jpg', specNames: ['大果3斤裝', '大果5斤裝', '中果3斤裝', '中果5斤裝'], season: [10, 12], temp: '常溫', bought: 0 },
+      { id: 78654, name: '柿子季【梨山甜柿】林山果原', price: 1290, pic: '/upload/Product_3033/202610150344031.jpg', specNames: ['8粒裝', '9粒裝'], season: [9, 11], temp: '常溫', bought: 0 },
+      { id: 25784, name: '【珍稀黃金果】不一樣鱷魚農場', price: 699, pic: '/upload/Product_3033/201908280451361.jpg', specNames: ['大果6粒裝', '中果6粒裝', '小果10粒裝', '特大果6粒裝'], season: [8, 11], temp: '常溫', bought: 0 },
+      { id: 57965, name: '限量【嘉義極光哈密瓜】大原山農場', price: 1699, pic: '/upload/Product_3033/202610190639081.png', specNames: ['大果雙入裝', '特大果雙入裝', '頂級特大果雙入裝', '頂級特大果單入裝'], season: null, temp: '常溫', bought: 0 },
+      { id: 56653, name: '草莓季【有機豐香草莓】鴨子草莓園', price: 999, pic: '/upload/Product_3033/202601020238471.png', specNames: ['24粒裝', '20粒裝', '15粒裝', '28粒裝'], season: [12, 4], temp: '冷藏', bought: 0 },
+      { id: 58715, name: '【梨山水蜜桃】無毒農', price: 1199, pic: '/upload/Product_3033/202606170339201.jpg', specNames: ['8粒裝', '6粒裝', '5粒裝'], season: [6, 8], temp: '常溫', bought: 0 },
+      { id: 35608, name: '荔枝季【特級剪枝玉荷包荔枝】許家荔枝', price: 699, pic: '/upload/Product_3033/202605050716241.jpg', specNames: ['5斤裝', '3斤裝'], season: [6, 7], temp: '常溫', bought: 0 },
+      { id: 29337, name: '【鳳梨釋迦】好時果子', price: 749, pic: '/upload/Product_3033/202601070656311.png', specNames: ['大果10斤裝', '中大果7.5斤裝', '大果5斤裝'], season: [12, 3], temp: '常溫', bought: 0 },
+      { id: 60584, name: '【拉拉山五月桃】無毒農', price: 919, pic: '/upload/Product_3033/202604020921251.png', specNames: ['12粒裝', '10粒裝', '8粒裝', '6粒裝'], season: [5, 6], temp: '常溫', bought: 0 },
+      { id: 78639, name: '【野蓮．水蓮】阿香野蓮農場', price: 499, pic: '/upload/Product_3033/202610080852301.jpg', specNames: ['5包(200g/包)'], season: null, temp: '冷藏', bought: 2, days: 26 },
+      { id: 78651, name: '【台灣無毒鮮凍山藥】大和山藥', price: 790, pic: '/upload/Product_3033/202610150307071.jpg', specNames: ['紅龍山藥6包', '牛奶山藥6包', '牛奶山藥3包+紅龍山藥3包'], season: null, temp: '冷凍', bought: 4, days: 31, due: true },
+      { id: 78623, name: '【台灣時令酪梨】無毒農', price: 649, pic: '/upload/Product_3033/202610051006571.jpg', specNames: ['【黑金轉色酪梨】3000g…', '【黑金轉色酪梨】6000g…', '【十月紅轉色酪梨】3600…', '【十月紅轉色酪梨】6000…'], season: [7, 11], temp: '常溫', bought: 1, days: 58 },
+      { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, pic: '/upload/Product_3033/202411120141401.jpg', specNames: ['3900g±10%，6顆裝'], season: [8, 11], temp: '常溫', bought: 0, addon: true },
+    ],
+  },
+  冷凍超市: {
+    anchor: { id: 51804, name: '【宅魚】去刺金目鱸魚排', price: 185, pic: '/upload/Product_3033/202502200531261.jpg', specNames: ['單一規格', '多包優惠'], specs: 2, temp: '冷凍' },
+    items: [
+      { id: 57251, name: '厚切【宅魚】嚴選銀鮭魚輪切', price: 250, pic: '/upload/Product_3033/202502110401431.jpg', specNames: ['單一規格', '多包優惠'], temp: '冷凍', bought: 0 },
+      { id: 74944, name: '【宅魚】-澎湖土魠魚（10斤以上）', price: 145, pic: '/upload/Product_3033/202502060713361.png', specNames: ['頭，251-300g', '輪切，251-300g', '魚塊，201-250g（2…', '魚塊，301-350g（2…'], temp: '冷凍', bought: 0 },
+      { id: 29260, name: '【宅魚】澎湖活凍野生小卷', price: 210, pic: '/upload/Product_3033/202408210253131.png', specNames: ['300g/包(約5-6支)'], temp: '冷凍', bought: 0 },
+      { id: 57403, name: '【蝦覓世界】生鮮活凍白蝦仁（無膨發）', price: 250, pic: '/upload/Product_3033/202410310618231.jpg', specNames: ['大蝦仁'], temp: '冷凍', bought: 0 },
+      { id: 64949, name: '【宅魚】去刺虱目魚肚', price: 189, pic: '/upload/Product_3033/202502200529041.jpg', specNames: ['180g/片', '180g/片，多包優惠'], temp: '冷凍', bought: 2, days: 24 },
+      { id: 62742, name: '【蘇澳區漁會】薄鹽鯖魚', price: 90, pic: '/upload/Product_3033/202502200530081.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 5, days: 29, due: true },
+      { id: 28972, name: '【萬金畜牧場】去骨雞腿肉', price: 265, pic: '/upload/Product_3033/202410310620281.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
+      { id: 37899, name: '【萬金畜牧場】棒棒腿', price: 240, pic: '/upload/Product_3033/201907080335431.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 0 },
+      { id: 39816, name: '【永發放山雞】去皮胸肉', price: 150, pic: '/upload/Product_3033/202410310620011.jpg', specNames: ['單一規格'], temp: '冷凍', bought: 1, days: 47 },
+      { id: 40042, name: '【松樹門】職人手工嚴選香魚', price: 210, pic: '/upload/Product_3033/202409100247541.png', specNames: ['公香魚', '母香魚'], temp: '冷凍', bought: 0 },
+      { id: 77976, name: '社群限定【包飯店】燻香滷味', price: 80, pic: '/upload/Product_3033/202606240157151.jpg', specNames: ['滷鵪鶉蛋，200g/包', '乾鍋雞爪，300g/包', '乾鍋鴨翅，4支/包', '乾鍋米血，250g/包'], temp: '冷藏', bought: 0 },
+    ],
+  },
+  粥寶寶: {
+    anchor: { id: 66539, name: '一歲以上PLUS+ 閃亮升級燉飯組合', price: 999, pic: '/upload/Product_3033/202411260951501.png', specNames: ['有牛/10入，150克/入', '沒有牛/10入，150克/入'], specs: 2, temp: '冷凍', age: [12, 36] },
+    items: [
+      { id: 63099, name: '寶寶熟水餃', price: 236, pic: '/upload/Product_3033/202308230348571.png', specNames: ['玉米蝦、甘藍豬 各1包', '玉米蝦2包', '甘藍豬2包'], age: [12, 36], temp: '冷凍', bought: 3, days: 35 },
+      { id: 63206, name: '無鹽寶寶烏龍麵', price: 115, pic: '/upload/Product_3033/202411250623351.png', specNames: ['三口味 各1包', '三口味 各2包', '南瓜3包', '菠菜3包'], age: [10, 36], temp: '常溫', bought: 0 },
+      { id: 58318, name: '拌拌飯-地瓜栗香雞飯', price: 180, pic: '/upload/Product_3033/202210130618011.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
+      { id: 60367, name: '拌拌飯-蘋果櫻桃鴨飯', price: 180, pic: '/upload/Product_3033/202210130614521.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
+      { id: 58320, name: '拌拌飯-南洋鳳梨豬飯', price: 180, pic: '/upload/Product_3033/202408060630411.jpg', specNames: ['2入，150克/入'], age: [12, 36], temp: '冷凍', bought: 0 },
+      { id: 44265, name: '中寶寶 番茄牛肉粥', price: 140, pic: '/upload/Product_3033/202208191006151.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
+      { id: 44270, name: '中寶寶 南瓜雞肉粥', price: 140, pic: '/upload/Product_3033/202411010619531.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
+      { id: 44269, name: '中寶寶 玉米雞肉粥', price: 140, pic: '/upload/Product_3033/202208191004191.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 2, days: 28 },
+      { id: 44272, name: '中寶寶 芋頭豬肉粥', price: 140, pic: '/upload/Product_3033/202311290603241.jpg', specNames: ['2入，120克/入'], age: [7, 18], temp: '冷凍', bought: 0 },
+      { id: 65470, name: '【小寶寶】含運-十倍粥體驗組（首購限定）', price: 399, pic: '/upload/Product_3033/202601160724251.png', specNames: ['8口味，各1入', '8口味，各1入+益生菌試吃…'], age: [4, 10], temp: '冷凍', bought: 0 },
+      { id: 46965, name: '中寶寶 彩虹營養寶寶粥組合', price: 759, pic: '/upload/Product_3033/202411110607301.jpg', specNames: ['12入，120克/入'], age: [7, 18], temp: '冷凍', bought: 1, days: 62 },
+      { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, pic: '/upload/Product_3033/202606160750091.png', specNames: ['天麻枸杞鱸魚', '山藥鮑魚雞', '黃耆枸杞雞'], age: null, temp: '冷凍', bought: 0, addon: true },
+    ],
+  },
+  益菓保: {
+    anchor: { id: 64951, name: '順順好益生菌-草莓口味(30入)', price: 1288, pic: '/upload/Product_3033/202604140647241.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], specs: 4, temp: '常溫' },
+    items: [
+      { id: 64978, name: '敏敏好益生菌-蘋果口味(30入)', price: 1288, pic: '/upload/Product_3033/202604140646231.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
+      { id: 64979, name: '護護好益生菌-芭樂口味(30入)', price: 1688, pic: '/upload/Product_3033/202604140645431.png', specNames: ['買3送1，共4盒', '單一規格', '買5送2，共7盒', '買10送5，共15盒'], temp: '常溫', bought: 0 },
+      { id: 63330, name: '歐趴DHA魚油', price: 980, pic: '/upload/Product_3033/202605270719031.jpg', specNames: ['買3送1，共4盒魚油', '單一規格', '買5送2，共7盒魚油', '買10送5，共15盒魚油'], temp: '常溫', bought: 2, days: 31, due: true },
+      { id: 64812, name: '英國海藻維生素D3', price: 599, pic: '/upload/Product_3033/202511200629341.jpg', specNames: ['買3送1，共4盒D3', '單一規格', '買5送2，共7盒D3', '買10送5，共15盒D3'], temp: '常溫', bought: 1, days: 44 },
+      { id: 66331, name: '益生菌7日三角防護體驗組', price: 849, pic: '/upload/Product_3033/202604140642051.png', specNames: ['7日體驗組'], temp: '常溫', bought: 0 },
+      { id: 65011, name: '順順好益生菌-草莓口味(7入)', price: 288, pic: '/upload/Product_3033/202604140644141.png', specNames: ['效期2027/03/11'], temp: '常溫', bought: 0 },
+      { id: 65012, name: '敏敏好益生菌-蘋果口味(7入)', price: 299, pic: '/upload/Product_3033/202604140643311.png', specNames: ['單一規格'], temp: '常溫', bought: 0 },
+      { id: 65013, name: '護護好益生菌-芭樂口味(7入)', price: 399, pic: '/upload/Product_3033/202604140642531.png', specNames: ['單一規格'], temp: '常溫', bought: 0 },
+      { id: 77091, name: '【14歲以上】四合一紅藻萃取蝦紅素魚油EX(30顆)', price: 888, pic: '/upload/Product_3033/202604141019421.png', specNames: ['30顆裝', '30顆裝，買3送1，共4盒', '30顆裝，買5送2，共7盒', '30顆裝，買10送5，共1…'], temp: '常溫', bought: 0 },
+      { id: 69748, name: '益生菌30入混搭專區', price: 3864, pic: '/upload/Product_3033/202604140637321.png', specNames: ['順順3盒+敏敏1盒', '順順2盒+敏敏2盒', '順順1盒+敏敏3盒', '順順3盒+護護1盒'], temp: '常溫', bought: 0 },
+    ],
+  },
+};
+
+/* 加購品（商品頁加購區用，不是推薦）。名稱、加購價、原價、圖片都取自正式站 */
+const ADDONS = {
+  產地直送: [
+    { id: 78635, name: '超值加購 梨子季【高山甘露梨】無毒農', price: 799, orig: 1229, pic: '/upload/Product_3033/202411120141401.jpg', temp: '常溫' },
+    { id: 78628, name: '超值加購 柿子季【高山甜柿】褚譽合作社', price: 949, orig: 1399, pic: '/upload/Product_3033/202510010158161.jpg', temp: '常溫' },
+    { id: 78627, name: '超值加購【台農二號有機木瓜】山上阿德', price: 549, orig: 899, pic: '/upload/Product_3033/202609110317181.jpg', temp: '常溫' },
+    { id: 78548, name: '超值加購 梨子季【石虎甘露梨】銘雄堂有機農場', price: 799, orig: 1180, pic: '/upload/Product_3033/202608140944141.jpg', temp: '常溫' },
+    { id: 78545, name: '超值加購【台灣黃金奇異果(獼猴桃)】富山農場', price: 799, orig: 1699, pic: '/upload/Product_3033/202609170733501.jpg', temp: '常溫' },
+    { id: 78535, name: '超值加購 蘋果季【梨山青龍蘋果】尚蘋果園', price: 859, orig: 1149, pic: '/upload/Product_3033/202608190235071.jpg', temp: '常溫' },
+  ],
+  冷凍超市: [
+    { id: 78664, name: '滿$999加購【綠時光】綠拿鐵風味版', price: 228, orig: 240, pic: '/upload/Product_3033/202511210904151.jpg', temp: '常溫' },
+    { id: 78638, name: '滿$999加購【鮮凍無花果】無毒農', price: 699, orig: 949, pic: '/upload/Product_3033/202608170748591.jpg', temp: '常溫' },
+    { id: 78634, name: '滿$999加購【天時莓果】有機冷凍蔓越莓', price: 389, orig: 399, pic: '/upload/Product_3033/202303150153551.jpg', temp: '常溫' },
+    { id: 78632, name: '滿$999加購【無毒農嚴選】澳洲和牛紐約客燒烤片', price: 299, orig: 429, pic: '/upload/Product_3033/202609010348001.jpg', temp: '常溫' },
+  ],
+  粥寶寶: [
+    { id: 78659, name: '滿1600加購湯品一組(限購一組)', price: 260, orig: 398, pic: '/upload/Product_3033/202610200824221.png', temp: '常溫' },
+    { id: 78621, name: '超值加購│常溫粥-玉米紅蘿蔔鮭魚粥(2027-01-05到期)', price: 170, orig: 180, pic: '/upload/Product_3033/202501150817081.png', temp: '常溫' },
+    { id: 78603, name: '超值加購│好吸袋-風味版-綠拿鐵香蕉口味300g（2026-11-11到期）', price: 79, orig: 110, pic: '/upload/Product_3033/202607090935561.png', temp: '常溫' },
+    { id: 78602, name: '超值加購│好吸袋-風味版-綠拿鐵鳳梨口味300g（2026-11-08到期）', price: 79, orig: 110, pic: '/upload/Product_3033/202607090929381.png', temp: '常溫' },
+    { id: 78595, name: '超值加購│大人系養生-剝皮辣椒雞湯(2026-12-26到期)', price: 180, orig: 199, pic: '/upload/Product_3033/202606300614401.png', temp: '常溫' },
+    { id: 78377, name: '超值加購│風味版-綠拿鐵蓮霧口味(2026-12-08到期)', price: 99, orig: 120, pic: '/upload/Product_3033/202604220329291.png', temp: '常溫' },
+  ],
+  益菓保: [
+    { id: 77505, name: '超值加購｜護護好益生菌-芭樂口味(7入)', price: 388, orig: 399, pic: '/upload/Product_3033/202604140642531.png', temp: '常溫' },
+    { id: 77504, name: '超值加購｜順順好益生菌-草莓口味(7入)', price: 199, orig: 299, pic: '/upload/Product_3033/202604140644141.png', temp: '常溫' },
+    { id: 68970, name: '超值加購【簡單JAN DAN】玻尿酸水潤面膜', price: 250, orig: 550, pic: '/upload/Product_3033/202502100810451.jpg', temp: '常溫' },
+    { id: 67564, name: '超值加購│益菓保嚴選 - 金緗雞嚐滴雞精', price: 150, orig: 200, pic: '/upload/Product_3033/202211110739311.jpg', temp: '常溫' },
+    { id: 66613, name: '超值加購｜歐趴DHA魚油', price: 450, orig: 980, pic: '/upload/Product_3033/202311240404331.jpg', temp: '常溫' },
+    { id: 66612, name: '超值加購｜敏敏好益生菌-蘋果口味(30入)', price: 1088, orig: 1288, pic: '/upload/Product_3033/202604140639071.png', temp: '常溫' },
+  ],
+};
+
+/* 跨產線候選：推別條產線時從這裡補 */
+const CROSS = {
+  產地直送: ['冷凍超市', '粥寶寶'],
+  冷凍超市: ['產地直送', '粥寶寶'],
+  粥寶寶: ['產地直送', '冷凍超市'],
+  益菓保: ['粥寶寶', '產地直送'],
+};
+
+</script>
+<script>
+const S={line:'粥寶寶',logged:true,order:'addon',cross:2,rebuy:true,count:6,edge:'normal'};
+const PANEL=[
+ ['line','產線',[['產地直送','產地直送'],['冷凍超市','冷凍超市'],['粥寶寶','粥寶寶'],['益菓保','益菓保']]],
+ ['logged','登入狀態',[[true,'已登入'],[false,'未登入']]],
+ ['order','版位順序',[['addon','加購品在上'],['rec','猜你喜歡在上']]],
+ ['cross','推別條產線',[[0,'只推自己'],[2,'最多 2 個'],[99,'不限']]],
+ ['rebuy','「可以再買」',[[true,'開'],[false,'關']]],
+ ['count','推幾個',[[4,'4'],[6,'6'],[10,'10']]],
+ ['edge','例外情境',[['normal','正常'],['timeout','逾時'],['empty','沒結果']]],
+];
+const el=(t,c,h)=>{const n=document.createElement(t);if(c)n.className=c;if(h!==undefined)n.innerHTML=h;return n;};
+const pic=(p,c)=>`<img class="${c||''}" src="${CDN}${p}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;noimg&quot;>商品圖</div>'">`;
+
+function renderPanel(){
+  const bd=document.getElementById('tbpBody');bd.innerHTML='';
+  PANEL.forEach(([k,label,opts])=>{
+    const f=el('div','f');f.appendChild(el('span',null,label));
+    const seg=el('div','seg');
+    opts.forEach(([v,t])=>{const b=el('button',S[k]===v?'on':null,t);b.onclick=()=>{S[k]=v;renderPanel();render();};seg.appendChild(b);});
+    f.appendChild(seg);bd.appendChild(f);
+  });
+  const w=!S.logged?'未登入：不呼叫推薦，區塊標題變成「為您推薦」，顯示本產線熱門。'
+    :S.edge==='timeout'?'推薦逾時（3 秒）：降級顯示本產線熱門，App 其他部分不受影響。'
+    :S.edge==='empty'?'推薦回來是空的：行為跟逾時一樣，降級不留白。':null;
+  if(w)bd.appendChild(el('div','tip',w));
+  bd.appendChild(el('div','tip','手機框外的面板不是 App 畫面的一部分。用真手機打開這一頁，框會自動滿版、面板不顯示。'));
+}
+function recs(){
+  const d=DATA[S.line];
+  const own=d.items.filter(x=>!x.addon).map(x=>({...x,line:S.line}));
+  const nCross=S.cross===0?0:(S.cross===99?Math.floor(S.count/2):S.cross);
+  const cross=S.cross?CROSS[S.line].flatMap(l=>DATA[l].items.filter(x=>!x.addon).map(x=>({...x,line:l}))).filter(x=>!x.bought).slice(0,nCross):[];
+  const rebuy=S.logged&&S.rebuy?own.filter(x=>x.bought>0).sort((a,b)=>(b.due?1:0)-(a.due?1:0)).slice(0,5):[];
+  const ids=new Set(rebuy.map(x=>x.id));
+  const discover=[...own.filter(x=>!x.bought&&!ids.has(x.id)).slice(0,Math.max(0,S.count-cross.length)),...cross];
+  return {rebuy,discover};
+}
+function tagOf(it,kind){
+  if(kind==='rebuy')return it.due?['該補貨了','#fff6e0']:['常買','#fdeef0'];
+  if(it.line!==S.line)return ['熱門','#f1f2f7'];
+  return ['一起買','#e9f4e5'];
+}
+function rail(list,kind){
+  const r=el('div','ap-rail');
+  list.forEach(it=>{
+    const [tag,bg]=tagOf(it,kind);
+    const c=el('div','ap-card');
+    c.innerHTML=`${pic(it.pic)}<div class="ap-card-bd"><div class="ap-card-nm">${it.name}</div>
+      <div><span class="ap-tag" style="background:${bg};color:#5a6372">${tag}</span></div>
+      <div class="ap-card-pr">$${it.price.toLocaleString()} <span style="font-size:11px;font-weight:400">起</span></div></div>`;
+    r.appendChild(c);
+  });
+  return r;
+}
+function render(){
+  const d=DATA[S.line],a=d.anchor;
+  document.getElementById('frame').style.setProperty('--line',LINE_COLOR[S.line]);
+  document.getElementById('apBar').textContent=S.line;
+  document.getElementById('apPrice').textContent='$'+a.price.toLocaleString();
+  const sc=document.getElementById('apScroll');sc.innerHTML='';
+  sc.appendChild(el('div',null,pic(a.pic,'ap-hero')));
+  sc.appendChild(el('div','ap-body',`<h2 class="ap-name">${a.name}</h2>
+    <div class="ap-meta">溫層配送：<b>${a.temp}</b><br>共 ${a.specs} 種規格可選<br>原產地：台灣</div>`));
+
+  const addon=el('section','ap-sec');
+  addon.innerHTML=`<h2>加價購</h2><div class="ap-addon"><div class="ap-addon-hd">優惠加購商品</div>
+    ${ADDONS[S.line].map(x=>`<div class="ap-addon-row"><input type="checkbox">${pic(x.pic)}
+      <div class="ap-addon-nm">${x.name}</div><div class="ap-addon-pr">$${x.price.toLocaleString()}</div></div>`).join('')}</div>`;
+
+  let rec=null;
+  if(S.line!=='益菓保'){
+    rec=el('section','ap-sec');
+    rec.appendChild(el('h2',null,'猜你會喜歡'));
+    if(!S.logged||S.edge!=='normal'){
+      rec.querySelector('h2').textContent='為您推薦';
+      rec.appendChild(rail(d.items.filter(x=>!x.addon).slice(0,4).map(x=>({...x,line:S.line,bought:0})),'hot'));
+    }else{
+      const {rebuy,discover}=recs();
+      if(rebuy.length){rec.appendChild(el('p',null,'您常買・可以再買'));rec.appendChild(rail(rebuy,'rebuy'));}
+      if(discover.length){rec.appendChild(el('p',null,'買這個的客人也常買'));rec.appendChild(rail(discover,'discover'));}
+    }
+  }
+  (S.order==='addon'?[addon,rec]:[rec,addon]).forEach(b=>{if(b)sc.appendChild(b);});
+  sc.appendChild(el('div','ap-omit','商品描述 ／ 貼心叮嚀 ／ 評論（相同版型，略）'));
+}
+renderPanel();render();
+</script>
+</body>
+</html>
