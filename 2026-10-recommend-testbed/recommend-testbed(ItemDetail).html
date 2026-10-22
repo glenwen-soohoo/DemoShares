@@ -556,7 +556,7 @@ img { vertical-align: middle; }
    圖本身是 1600×200，所以高度會隨寬度等比縮（1040 寬時是 130 高） */
 .adArea { margin-top: 40px; padding: 0 15px; clear: both; }
 /* 推薦區塊跟腰帶、內容區一樣吃 Bootstrap 欄位的 15px 內距，三塊的左右邊界才會對齊 */
-#tbSlotA, #tbSlotC { padding: 0 15px; }
+#tbSlotA { padding: 0 15px; }
 .adArea a { display: block; }
 .adArea img { width: 100%; max-width: 100%; height: auto; display: block; }
 /* 載入中的骨架。原始需求 §2.4 規則 1 是「必須」：商品頁產生 HTML 時不呼叫推薦，
@@ -581,7 +581,7 @@ img { vertical-align: middle; }
    實測間距是 0，所以這裡自己給上下 margin */
 #tbAdBottom { margin: 48px 0; }
 
-/* ===== B 版的右欄：原本「為您推薦」那一欄（.recomm），改放瀏覽紀錄。
+/* ===== 右欄「為你推薦」：原本「為您推薦」那一欄（.recomm），只換標題與資料。
    尺寸照真站量（2026-10-21，粥寶寶商品頁）：欄寬 357、左右內距 15、上 40 下 30；
    一張卡 .pitem 寬 326、左右內距 15、下外距 30，圖滿版 4:3，
    品名 19.2px/21.12 粗體 #4e9854，價格 20.8px 600 #33435a ===== */
@@ -594,8 +594,6 @@ img { vertical-align: middle; }
   color: #4e9854; text-align: left; display: -webkit-box; -webkit-line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden; }
 .recomm .price { font-size: 20.8px; line-height: 29.7px; font-weight: 600; color: #33435a; }
-/* 瀏覽紀錄比「為您推薦」多這一行：這是偏離現況的，真站那張卡沒有 */
-.recomm .pitem .ago { display: block; margin-top: 2px; font-size: 13px; color: #9aa3ae; }
 @media (max-width: 991px) {
   .recomm { margin-top: 32px; }
 }
@@ -689,12 +687,43 @@ img { vertical-align: middle; }
 @media (max-width: 680px)  { .gy-reg-r, .gy-history { --peek: 2.2; } }
 
 /* 分頁點點：取代原本標題列上的左右鍵。放在卡片下面置中 */
+/* 左右切換鈕：照站上 slick 的 .slick-prev / .slick-next。
+   箭頭字符出自 slick 字型（slick-theme.css 的 @font-face），畫出來是圓圈箭頭；
+   用一般字型只會得到一條細細的 ← */
+.gy-railwrap { position: relative; clear: both; }
+.gy-arrow { display: none; position: absolute; top: 50px; width: 20px; height: 20px; padding: 0;
+  border: 0; background: transparent; font-size: 0; line-height: 0; z-index: 10; cursor: pointer;
+  align-items: center; justify-content: center; }
+/* 真站那兩顆用的是 slick 字型的圓圈箭頭字符。這份 demo 是獨立的 HTML，
+   跨網域載字型會被 CORS 擋，所以改用 CSS 畫同一個樣子：白色圓框＋人字 */
+.gy-arrow::before { content: ''; width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.75); box-sizing: border-box; }
+.gy-arrow::after { content: ''; position: absolute; width: 6px; height: 6px;
+  border-left: 1.5px solid rgba(255,255,255,.75); border-bottom: 1.5px solid rgba(255,255,255,.75); }
+.gy-arrow.prev::after { transform: rotate(45deg); margin-left: 3px; }
+.gy-arrow.next::after { transform: rotate(-135deg); margin-right: 3px; }
+.gy-arrow:hover::before, .gy-arrow:hover::after { border-color: #fff; }
+.gy-arrow.prev { left: 12px; }
+.gy-arrow.next { right: 12px; }
+.gy-arrow.is-on { display: flex; }
+
 .gy-dots { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; clear: both; }
 .gy-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: #d6d9de;
   cursor: pointer; transition: background .2s, width .2s; }
 .gy-dots button:hover { background: #b6bcc7; }
-.gy-dots button.on { width: 20px; border-radius: 4px; background: var(--line, #4ba83b); }
-.gy-regtitle img { width: 100%; height: 100%; object-fit: cover; object-position: left center; display: block; }
+/* 選中色：粥寶寶用粉紅，其他產線用綠（2026-10-22 定）。--gy-accent 由 renderPage 設 */
+.gy-dots button.on { width: 20px; border-radius: 4px; background: var(--gy-accent, #4ba83b); }
+.gy-regtitle img { width: 100%; height: 100%; object-fit: cover; object-position: left center; }
+/* 滿版那塊的底圖分三段：title3 是 1540x80 的長條，窄版會被壓成細線 */
+.gy-regtitle .t-wide, .gy-regtitle .t-col { display: block; }
+.gy-regtitle .t-mid { display: none; }
+@media (max-width: 767px) {
+  .gy-regtitle.is-wide .t-wide { display: none; }
+  .gy-regtitle.is-wide .t-mid { display: block; }
+}
+@media (max-width: 550px) {
+  .gy-regtitle .t-wide, .gy-regtitle .t-mid, .gy-regtitle .t-col { display: none; }
+}
 /* 標題疊字：真站靠 ItemDetail.css 定位，但列表頁與彈窗沒載那支，所以自己寫一份
    （值照真站量的：絕對置中、白字、18px/26、700） */
 .gy-regtitle .productDescription { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -830,25 +859,21 @@ img { vertical-align: middle; }
 
   <div class="row" style="margin-top:32px;">
     <!-- 既有區塊：內容區 #Content（ItemDetail.cshtml:1330）。
-         正式站是 col-lg-8，益菓保因為不顯示為您推薦才是 col-lg-12。
-         A 版＝全寬（col-md-12），B 版＝維持現況的 col-md-8，右邊留給 #tbSide -->
-    <div class="col-md-12 col-xs-12" id="tbContent">
+         欄寬條件已經從「是不是益菓保」改成「右欄有沒有東西」，右欄一定有，所以固定 col-md-8 -->
+    <div class="col-md-8 col-xs-12" id="tbContent">
       <!-- 既有區塊：無毒農檢驗。ItemDetail.cshtml:1400 的 CheckTest.png（益生菌不顯示） -->
       <div id="tbInspect"></div>
       <div class="gy-omit" style="margin-top:32px;">商品描述 ／ 產地故事 ／ 保存方式（相同版型，略）</div>
     </div>
-    <!-- B 版才出現：原本「為您推薦」那一欄（ItemDetail.cshtml:1569 的 .recommend-area，
-         真站 class 是 col-lg-4 col-md-4 col-sm-4 col-xs-12 m-t-40 recomm），改放瀏覽紀錄 -->
-    <div class="col-md-4 col-xs-12 recomm" id="tbSide" hidden></div>
+    <!-- 既有區塊：原本「為您推薦」那一欄（ItemDetail.cshtml:1569 的 .recommend-area，
+         真站 class 是 col-lg-4 col-md-4 col-sm-4 col-xs-12 m-t-40 recomm）。
+         標題改成「為你推薦」，內容換成推薦服務的 discover；訪客與失敗時放營運手挑的那份 -->
+    <div class="col-md-4 col-xs-12 recomm" id="tbSide"></div>
   </div>
 
   <!-- 既有區塊：圖片腰帶（下）。ItemDetail.cshtml:1645 的 .adArea
        資料＝Model.AdvertisementBannerList ← BannerLocation.ItemDetail = 5 -->
   <div class="col-xs-12 adArea" id="tbAdBottom"></div>
-
-  <!-- 新增：本次需求（瀏覽紀錄）。正式站整個 HuashanCRM 沒有這個功能，
-       資料從哪來還沒有答案（B10）。版型沿用猜你喜歡但不自動換頁 -->
-  <div id="tbSlotC"></div>
 
   <!-- 既有區塊：商品評論。ItemDetail.cshtml:1686 起
        class 全部沿用真名：feedbackMessage-area / account / score-area / star-icon / message
@@ -1069,9 +1094,6 @@ const S = {
   // 版型定案的八項（版面、卡片、分不分排、區塊標題、買過的標籤、推薦理由、標籤配色、
   // 新舊推薦三案）已經直接寫進程式，不再留成可切換的狀態。理由見 A_UI/版面節奏與層級.md
   rotateSec: 6,
-  // A＝猜你喜歡佔掉原本的位置、內容區全寬，瀏覽紀錄排在評論之前（現況）
-  // B＝原本「為您推薦」那一欄拿回來，改放瀏覽紀錄，內容區回到 col-md-8
-  layout: 'a',
 };
 
 /* 這一頁有幾個加購品，由面板的滑桿決定（0~10）。
@@ -1096,7 +1118,6 @@ const PANEL = [
     ['edge', '例外情境', [['normal', '正常'], ['loading', '載入中'], ['timeout', '推薦拿不到'], ['noimg', '商品缺圖']]],
   ]],
   ['顯示細節', [
-    ['layout', '內容區版型', [['a', 'A：內容全寬'], ['b', 'B：右欄放瀏覽紀錄']]],
     ['rotate', '推薦自動換頁', [[true, '開（6 秒）'], [false, '關，只能自己點點點']]],
   ]],
 ];
@@ -1361,14 +1382,25 @@ function slotsBlock(addons, recs, recTitle) {
   }
   const regR = el('div', aCols > 0 ? 'gy-reg-r' : 'gy-reg-r no-divider');
   const head = el('div', 'gy-head');
-  head.appendChild(regionTitle(recTitle || '猜你喜歡'));
+  head.appendChild(regionTitle(recTitle || '猜你喜歡', true));
   regR.appendChild(head);
 
   // 一排五個多一點點：所有推薦一次就排好，橫向捲動。
   // 卡片只建一次，之後換頁是捲動不是重繪，所以圖片不會重新載入、不會閃
   const rail = el('div', 'gy-rail');
   recs.forEach((it) => rail.appendChild(card(it, 'mixedrail')));
-  regR.appendChild(rail);
+  // 左右切換鈕：樣式照站上 slick 的 .slick-prev / .slick-next（slick 字型的圓圈箭頭），
+  // 垂直位置對齊商品圖的中線
+  const railwrap = el('div', 'gy-railwrap');
+  const arrowPrev = el('button', 'gy-arrow prev');
+  const arrowNext = el('button', 'gy-arrow next');
+  [arrowPrev, arrowNext].forEach((b) => { b.type = 'button'; });
+  arrowPrev.setAttribute('aria-label', '上一組');
+  arrowNext.setAttribute('aria-label', '下一組');
+  railwrap.appendChild(arrowPrev);
+  railwrap.appendChild(arrowNext);
+  railwrap.appendChild(rail);
+  regR.appendChild(railwrap);
   two.appendChild(regR);
   sec.appendChild(two);
 
@@ -1394,6 +1426,27 @@ function slotsBlock(addons, recs, recTitle) {
     dots = dotsRow(pageCount(), S._recPage, (i) => { goPage(i); restart(); });
     sec.appendChild(dots);
   }
+  // 只有一頁就沒有東西可以切
+  const manyPages = pageCount() > 1;
+  [arrowPrev, arrowNext].forEach((b) => b.classList.toggle('is-on', manyPages));
+  arrowPrev.onclick = () => { goPage(Math.max(0, S._recPage - 1)); restart(); };
+  arrowNext.onclick = () => { goPage(Math.min(pageCount() - 1, S._recPage + 1)); restart(); };
+  // 卡片寬度隨斷點變、圖是 4:3，所以箭頭的垂直位置只能量出來
+  const placeArrows = () => {
+    const wrap = rail.querySelector('.gy-imgwrap');
+    if (!wrap) return;
+    // 用兩個 rect 相減，不要假設圖就貼在外框上緣（卡片有邊框、軌道有內距）
+    const r = wrap.getBoundingClientRect();
+    const base = railwrap.getBoundingClientRect();
+    const top = Math.max(0, Math.round(r.top - base.top + r.height / 2 - 10));
+    [arrowPrev, arrowNext].forEach((b) => { b.style.top = top + 'px'; });
+  };
+  setTimeout(placeArrows, 0);
+  // 圖還沒載完的時候高度是 0，載完要再對一次
+  window.addEventListener('load', placeArrows);
+  const firstImg = rail.querySelector('img');
+  if (firstImg) firstImg.addEventListener('load', placeArrows);
+  window.addEventListener('resize', placeArrows);
   // 手指滑動或滑鼠拖的時候，點點要跟著走
   rail.onscroll = () => {
     const cw = rail.children[0] ? rail.children[0].offsetWidth + 12 : 1;
@@ -1432,7 +1485,7 @@ function skeletonBlock() {
   two.appendChild(reg);
   sec.appendChild(two);
   const head = el('div', 'gy-head');
-  head.appendChild(regionTitle('猜你喜歡'));
+  head.appendChild(regionTitle('猜你喜歡', true));
   reg.appendChild(head);
   const grid = el('div', 'gy-reg-grid');
   grid.style.setProperty('--cols', 6);
@@ -1505,60 +1558,31 @@ function toTopBtn() {
    所以這是新區塊，資料要從哪來還沒有答案，見 B_推薦規則。
    demo 的做法：從四條產線的商品裡挑出不是主商品、也不在這次推薦裡的，當成客人最近看過的。
    刻意跨產線，因為真實的瀏覽紀錄本來就不會只有一條線，也順便跟上面的推薦區分開。 */
-function historyItems(excludeIds) {
-  const skip = new Set([DATA[S.line].anchor.id, ...(excludeIds || [])]);
-  const pool = [];
-  // 先放本產線的，再補其他線，順序固定，重繪不會跳來跳去
-  [S.line, ...Object.keys(DATA).filter((L) => L !== S.line)].forEach((L) => {
-    // 加購規格不單獨零售，前台看不到它的商品頁，當然也不會出現在瀏覽紀錄裡
-    DATA[L].items.forEach((x) => { if (!x.addon && !skip.has(x.id)) pool.push({ ...x, line: L }); });
+/* 右欄「為你推薦」：版位與卡片沿用真站原本那一欄（.recomm / .pitem），
+   只有標題與資料換掉。
+   - 登入而且推薦拿得到 → 放 discover（其他人常買）
+   - 未登入或拿不到     → 放營運手挑的那份（demo 用本產線熱門代表），所以不會空
+   真站一欄顯示幾個由 GetCategoryRecommend(productType).ShowCount 決定（存在 MongoDB），這裡固定 5 個 */
+function sideRecoBlock(items) {
+  const list5 = items.slice(0, 5);
+  if (!list5.length) return null;
+  const frag = document.createDocumentFragment();
+  frag.appendChild(regionTitle('為你推薦'));
+  const box = el('div', 'recommand-product-slick');
+  list5.forEach((it) => {
+    const multi = (it.specNames || []).length > 1;
+    const pitem = el('div', 'pitem');
+    pitem.innerHTML = `<a href="https://www.greenbox.tw/Products/ItemDetail/${it.id}" target="_blank" rel="noopener">
+      <div class="fruit_item">${img(it.pic, 'img-bg')}
+        <div class="product_detail">
+          <div class="p-item-name">${it.name}</div>
+          <div><span class="price">$${it.price.toLocaleString()}${multi ? ' 起' : ''}</span></div>
+        </div>
+      </div></a>`;
+    box.appendChild(pitem);
   });
-  const AGO = ['剛剛', '2 小時前', '今天稍早', '昨天', '昨天', '2 天前',
-    '3 天前', '3 天前', '4 天前', '5 天前', '6 天前', '上週',
-    '上週', '上週', '2 週前', '2 週前', '3 週前', '上個月'];
-  return pool.slice(0, AGO.length).map((x, i) => ({ ...x, _ago: AGO[i] }));
-}
-
-function historyBlock(excludeIds) {
-  const items = historyItems(excludeIds);
-  if (!items.length) return null;
-  const per = 6;
-  const pages = Math.max(1, Math.ceil(items.length / per));
-  if (S._histPage === undefined || S._histPage >= pages) S._histPage = 0;
-
-  const sec = el('section', 'gy-sec gy-history');
-  sec.appendChild(regionTitle('瀏覽紀錄'));
-
-  // 跟猜你喜歡同一套：一排五個多一點點，橫向捲動
-  const rail = el('div', 'gy-rail');
-  items.forEach((it) => rail.appendChild(card(it, 'history')));
-  sec.appendChild(rail);
-
-  const perPage = () => {
-    const peek = parseFloat(getComputedStyle(sec).getPropertyValue('--peek')) || 5.2;
-    return Math.max(1, Math.floor(peek));
-  };
-  const pageCount = () => Math.max(1, Math.ceil(items.length / perPage()));
-  if (S._histPage === undefined || S._histPage >= pageCount()) S._histPage = 0;
-
-  let dots = null;
-  const paintDots = () => { if (dots) [...dots.children].forEach((b, i) => b.classList.toggle('on', i === S._histPage)); };
-  const goPage = (i) => {
-    S._histPage = i;
-    const first = rail.children[i * perPage()];
-    if (first) rail.scrollTo({ left: first.offsetLeft - rail.offsetLeft, behavior: 'smooth' });
-    paintDots();
-  };
-  if (pageCount() > 1) {
-    dots = dotsRow(pageCount(), S._histPage, goPage);
-    sec.appendChild(dots);
-  }
-  rail.onscroll = () => {
-    const cw = rail.children[0] ? rail.children[0].offsetWidth + 12 : 1;
-    const p = Math.round(rail.scrollLeft / (cw * perPage()));
-    if (p !== S._histPage && p < pageCount()) { S._histPage = p; paintDots(); }
-  };
-  return sec;
+  frag.appendChild(box);
+  return frag;
 }
 
 /* 加價購長條形：勾選後跟主商品一起加進菜籃，所以它住在購買區、就在加入菜籃上方。
@@ -1642,40 +1666,19 @@ function inspectBlock() {
   return sec;
 }
 
-/* 區標題：兩區寬度不同，所以固定高度靠左裁切，兩邊才會一樣高 */
-function regionTitle(text) {
+/* 區標題。滿版的區塊（猜你喜歡）用 title3（1540x80 的長條），窄一點用 title_web、
+   手機用 title_mobile；右欄那種 1/3 寬的用 title2。切換寫在 CSS 的斷點裡 */
+function regionTitle(text, wide) {
   const as = LINE_ASSET[S.line];
   // 不帶 col-xs-12：那是 Bootstrap 的 float:left，會把旁邊的格線擠成 0 寬
-  return el('div', 'gy-regtitle',
-    `<img class="web-show" src="${MAT}title_web${as.t}.png" alt="">
+  const web = wide
+    ? `<img class="t-wide" src="${MAT}title3_web${as.t}.png" alt="">
+       <img class="t-mid" src="${MAT}title_web${as.t}.png" alt="">`
+    : `<img class="t-col" src="${MAT}title2_web${as.t}.png" alt="">`;
+  return el('div', 'gy-regtitle' + (wide ? ' is-wide' : ''),
+    `${web}
      <img class="mobile-show" src="${MAT}title_mobile${as.t}.png" alt="">
      <span class="productDescription">${text}</span>`);
-}
-
-/* B 版右欄的瀏覽紀錄：卡片照真站「為您推薦」那一欄的 .pitem 重畫，
-   只有標題換成「瀏覽紀錄」、多一行「多久以前看的」。真站一欄顯示幾個由
-   GetCategoryRecommend(productType).ShowCount 決定（存在 MongoDB），這裡固定 5 個 */
-function sideHistoryBlock(excludeIds) {
-  const items = historyItems(excludeIds).slice(0, 5);
-  if (!items.length) return null;
-  const frag = document.createDocumentFragment();
-  frag.appendChild(regionTitle('瀏覽紀錄'));
-  const list = el('div', 'recommand-product-slick');
-  items.forEach((it) => {
-    const multi = (it.specNames || []).length > 1;
-    const box = el('div', 'pitem');
-    box.innerHTML = `<a href="https://www.greenbox.tw/Products/ItemDetail/${it.id}" target="_blank" rel="noopener">
-      <div class="fruit_item">${img(it.pic, 'img-bg')}
-        <div class="product_detail">
-          <div class="p-item-name">${it.name}</div>
-          <div><span class="price">$${it.price.toLocaleString()}${multi ? ' 起' : ''}</span>
-            <span class="ago">您在 ${it._ago}看過</span></div>
-        </div>
-      </div></a>`;
-    list.appendChild(box);
-  });
-  frag.appendChild(list);
-  return frag;
 }
 
 /* 降級時用的本產線熱門。要 6 個，剛好填滿一排，不然六個洞會重複出現同一個商品 */
@@ -1695,6 +1698,8 @@ function renderPage() {
   document.querySelectorAll('.sub-title').forEach((e) => { e.style.color = color; });
   // 給 CSS 用：卡片 hover 的外框色與分頁點點的選中色都跟著產線走
   document.documentElement.style.setProperty('--line', color);
+  // 點點與箭頭的主色：粥寶寶粉紅、其他產線綠（2026-10-22 定）
+  document.documentElement.style.setProperty('--gy-accent', S.line === '粥寶寶' ? '#ef8e8e' : '#4ba83b');
 
   document.getElementById('tbTips').innerHTML = TIPS[S.line]
     .map((x) => `<div class="col-xs-12 p-0"><span class="col-xs-1-cus-1 p-0 font-16px">．</span><span class="col-xs-11 p-0 font-16px">${x}</span></div>`).join('');
@@ -1724,8 +1729,8 @@ function renderPage() {
     renderPage();
   };
 
-  const slotA = document.getElementById('tbSlotA'), slotC = document.getElementById('tbSlotC');
-  [slotA, slotC].forEach((n) => { n.innerHTML = ''; });
+  const slotA = document.getElementById('tbSlotA');
+  slotA.innerHTML = '';
   // 真站的益菓保不顯示無毒農檢驗（ItemDetail.cshtml 註解：益生菌不顯示無毒農檢驗）
   const insp = document.getElementById('tbInspect');
   if (insp) { insp.innerHTML = ''; if (S.line !== '益菓保') insp.appendChild(inspectBlock()); }
@@ -1738,46 +1743,39 @@ function renderPage() {
 
 
 
-  if (S.edge === 'loading') {
+  // 猜你喜歡：只給登入會員。未登入或推薦拿不到，整塊不顯示（串接說明 §2.3、§2.4）
+  const { rebuy, discover } = computeRecs();
+  rebuy.forEach((x) => { x._kind = 'rebuy'; });
+  discover.forEach((x) => { x._kind = 'discover'; });
+  const gotRecs = S.logged && S.edge !== 'timeout';
+
+  if (!gotRecs) {
+    stopRotate();
+    S._recIds = [];
+  } else if (S.edge === 'loading') {
     // 載入中：推薦還沒回來，先用骨架佔住位置
     stopRotate();
     slotA.appendChild(skeletonBlock());
     S._recIds = [];
   } else {
-    // 商品卡下方那一整塊都是猜你喜歡（加價購在購買區，見二之七）。
-    // 2026-10-21：益菓保也一樣。舊的「益菓保不顯示為您推薦」是那個舊區塊的例外，
-    // 新機制四條線統一，不沿用那個例外
-    const { rebuy, discover } = computeRecs();
-    rebuy.forEach((x) => { x._kind = 'rebuy'; });
-    discover.forEach((x) => { x._kind = 'discover'; });
-    let recs = [...rebuy, ...discover];
-    // 降級：未登入不呼叫推薦、推薦拿不到也一樣，整區換成本產線熱門、標題換成「為您推薦」
-    const degraded = !S.logged || S.edge === 'timeout';
-    if (degraded) recs = hotItems();
-    slotA.appendChild(slotsBlock([], recs, degraded ? '為您推薦' : '猜你喜歡'));
+    // 整份都放：自己常買的在前，接著其他人常買的，順序照推薦服務給的
+    const recs = [...rebuy, ...discover];
+    slotA.appendChild(slotsBlock([], recs, '猜你喜歡'));
     S._recIds = recs.map((x) => x.id);
   }
 
-  // 內容區版型：A 全寬、B 把原本「為您推薦」那一欄拿回來放瀏覽紀錄
-  const content = document.getElementById('tbContent');
+  // 右欄「為你推薦」：永遠都在，內容區維持 col-md-8。
+  // 登入拿得到就放 discover，否則放營運手挑的那份（demo 用本產線熱門代表）
   const side = document.getElementById('tbSide');
-  const isB = S.layout === 'b';
-  content.className = isB ? 'col-md-8 col-xs-12' : 'col-md-12 col-xs-12';
-  side.hidden = !isB;
   side.innerHTML = '';
-  if (isB) {
-    const sh = sideHistoryBlock(S._recIds);
-    if (sh) side.appendChild(sh);
-  }
+  const sideItems = (gotRecs && S.edge !== 'loading' && discover.length) ? discover : hotItems();
+  const sr = sideRecoBlock(sideItems);
+  if (sr) side.appendChild(sr);
 
-  // 下方腰帶（真站的內頁廣告(下)），接著瀏覽紀錄，再接商品評論。
-  // B 版的瀏覽紀錄已經在右欄了，這裡就不再放一次
+  // 下方腰帶（真站的內頁廣告(下)），接著商品評論。瀏覽紀錄 2026-10-22 整個拿掉了
   const adBot = document.getElementById('tbAdBottom');
   if (adBot) adBot.innerHTML = adBelt();
-  if (!isB) {
-    const hist = historyBlock(S._recIds);
-    if (hist) slotC.appendChild(hist);
-  }
+
   const rv = document.getElementById('tbReview');
   if (rv) {
     rv.innerHTML = '';
