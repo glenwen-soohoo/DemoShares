@@ -6,13 +6,13 @@
   DemoShares 交接對照 | 猜你喜歡 測試台（App 商品頁）
   改的是既有介面：App 商品詳情頁  fruit_app ProductDetailScreen
   這次要動的檔（改既有 1 支 ／ 新建 2 項 ／ 只參考 1 支）：
-    [改既有] fruit_app  src/screens/ProductDetail/ProductDetailScreen        插入猜你喜歡與瀏覽紀錄區塊（原生，不是 WebView）
+    [改既有] fruit_app  src/screens/ProductDetail/ProductDetailScreen        插入猜你喜歡區塊（原生，不是 WebView）
     [新建]   Product_Api  GET app/products/{id}/recommend                    App 取推薦清單（包官網同一支推薦服務）
-    [新建]   fruit_app  推薦區塊元件（橫向 FlatList）                         卡片與標籤，猜你喜歡與瀏覽紀錄共用
+    [新建]   fruit_app  推薦區塊元件（橫向 FlatList）                         卡片與標籤
     [只參考] fruit_app  ProductDetailWebView                                  只包商品描述那段 HTML，推薦區不要塞進去 ⚠
   ⚠ App 商品頁是「原生外殼＋WebView 只包商品描述」，推薦區必須做原生。
   ⚠ 版位與網頁版一致：加價購在購買區（App 的購買區＝底部固定 CTA，所以長條形排在商品資訊下面）、
-     猜你喜歡一塊、瀏覽紀錄排在商品評論之前。
+     猜你喜歡一塊。瀏覽紀錄 2026-10-22 整個功能取消，已移除。
   ⚠ 本頁是測試台，右邊的面板正式 App 不會有。
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -67,7 +67,7 @@
   .ap-addon-more{display:block;width:100%;padding:9px;background:#fafafa;border:0;border-top:1px solid #f1f2f7;
     color:#4ba83b;font-size:13px;font-family:inherit;cursor:pointer}
 
-  /* 推薦／瀏覽紀錄共用的橫向軌道。一排兩張多一點點，露出的那一角就是「右邊還有」的提示。
+  /* 推薦的橫向軌道。一排兩張多一點點，露出的那一角就是「右邊還有」的提示。
      手機能直接滑，所以不像網頁版那樣放點點 */
   .ap-rail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;
     margin:0 -16px;padding:0 16px 16px;scrollbar-width:none}
@@ -394,21 +394,8 @@ function computeRecs() {
 const hotItems = () => DATA[S.line].items.filter((x) => !x.addon).slice(0, 6)
   .map((x) => ({ ...x, line: S.line, bought: 0 }));
 
-/* 瀏覽紀錄：跟網頁版同一份假資料邏輯，標籤是「多久以前看的」 */
-function historyItems() {
-  const skip = new Set([DATA[S.line].anchor.id]);
-  const pool = [];
-  [S.line, ...Object.keys(DATA).filter((L) => L !== S.line)].forEach((L) => {
-    DATA[L].items.forEach((x) => { if (!x.addon && !skip.has(x.id)) pool.push({ ...x, line: L }); });
-  });
-  const AGO = ['剛剛', '2 小時前', '今天稍早', '昨天', '昨天', '2 天前',
-    '3 天前', '3 天前', '4 天前', '5 天前', '6 天前', '上週'];
-  return pool.slice(0, AGO.length).map((x, i) => ({ ...x, _ago: AGO[i] }));
-}
-
 /* 標籤兩色：買過的用產線主色，其餘灰色（跟網頁版同一個定案） */
 function tagOf(it, kind) {
-  if (kind === 'history') return [it._ago, false];
   if (it.bought > 0) return ['常買', true];
   if (it.line !== S.line) return ['熱門', false];
   return ['同類熱門', false];
@@ -543,7 +530,6 @@ function render() {
   }
 
   sc.appendChild(el('div', 'ap-omit', '商品描述 ／ 貼心叮嚀（WebView，相同版型，略）'));
-  sc.appendChild(section('瀏覽紀錄', rail(historyItems(), 'history')));
   sc.appendChild(el('div', 'ap-omit', '商品評論（相同版型，略）'));
 
   paintBuyBtn();
