@@ -7,8 +7,10 @@
   真相來源：D:\GreenBox\fruit_web 分支 dev（2026-10-21 對過）
     view       HuashanCRM/Views/Products/ItemDetail.cshtml
     controller HuashanCRM/Controllers/ProductsController.cs:76  ItemDetail(int id)
-  這次要動的檔（改既有 3 支共 4 處 ／ 新建 5 項 ／ 只參考 4 支）：
-    [改既有] fruit_web Views/Products/ItemDetail.cshtml:1272     購買區：加入菜籃上方插加價購長條形
+  ⚠ 加價購長條形**已經做好了**（DEV-3993，在 origin/feature/DEV-3993-product-addon，還沒併 dev）。
+     這一案只剩「把它從商品資訊下方搬到加入菜籃上方」＋ 標題文案兩項調整，不是新建。
+  這次要動的檔（改既有 4 支共 5 處 ／ 新建 4 項 ／ 只參考 6 支）：
+    [改既有] fruit_web Views/Products/ItemDetail.cshtml:1286     加價購區塊搬到加入菜籃上方、標題去掉件數與限購字樣
     [改既有] fruit_web Views/Products/ItemDetail.cshtml:1330     #Content 的 col-lg-8/col-lg-12 判斷式：
                                                                  條件從「是不是益菓保」換成「這一頁有沒有為您推薦」
                                                                  ⚠ 商品評論 :1659 用同一個條件，要一起改
@@ -17,7 +19,9 @@
     [新建]   猜你喜歡區塊容器                                      ItemDetail.cshtml 新增，別跟既有 .recommend-area 混用
     [新建]   瀏覽紀錄區塊                                          正式站整個 HuashanCRM grep 不到，全新；資料來源未定（B10）
     [新建]   官網自己的推薦 API  GET /Products/Recommend          用 Session 會員 Id 代呼叫 enzo-gb.net，別讓前端直接打外站
-    [新建]   ProductAddOnMapping 表                               主商品↔加購規格配對（同 2026-09-product-addon）
+    [只參考] fruit_web Scripts/Web/ProductAddOn.js                加購勾選與加入菜籃，DEV-3993 已完成，直接用
+    [只參考] fruit_web Areas/Api/ProductAddOns/ProductAddOnController.cs
+                                                                 GET api/ProductAddOn/Offers?productId= 已存在
     [新建]   前端非同步載入腳本                                    IntersectionObserver 捲到才要、逾時 3 秒不重試；
                                                                  載入前先放骨架佔住高度（原始需求 §2.4 是「必須」）
     [只參考] CartController.cs:269 /Cart/AddToShoppingCartByModule 既有加入菜籃 API，直接呼叫
@@ -371,8 +375,10 @@ img { vertical-align: middle; }
   真相來源：D:\GreenBox\fruit_web 分支 dev（2026-10-21 對過）
     view       HuashanCRM/Views/Products/ItemDetail.cshtml
     controller HuashanCRM/Controllers/ProductsController.cs:76  ItemDetail(int id)
-  這次要動的檔（改既有 3 支共 4 處 ／ 新建 5 項 ／ 只參考 4 支）：
-    [改既有] fruit_web Views/Products/ItemDetail.cshtml:1272     購買區：加入菜籃上方插加價購長條形
+  ⚠ 加價購長條形**已經做好了**（DEV-3993，在 origin/feature/DEV-3993-product-addon，還沒併 dev）。
+     這一案只剩「把它從商品資訊下方搬到加入菜籃上方」＋ 標題文案兩項調整，不是新建。
+  這次要動的檔（改既有 4 支共 5 處 ／ 新建 4 項 ／ 只參考 6 支）：
+    [改既有] fruit_web Views/Products/ItemDetail.cshtml:1286     加價購區塊搬到加入菜籃上方、標題去掉件數與限購字樣
     [改既有] fruit_web Views/Products/ItemDetail.cshtml:1330     #Content 的 col-lg-8/col-lg-12 判斷式：
                                                                  條件從「是不是益菓保」換成「這一頁有沒有為您推薦」
                                                                  ⚠ 商品評論 :1659 用同一個條件，要一起改
@@ -381,7 +387,9 @@ img { vertical-align: middle; }
     [新建]   猜你喜歡區塊容器                                      ItemDetail.cshtml 新增，別跟既有 .recommend-area 混用
     [新建]   瀏覽紀錄區塊                                          正式站整個 HuashanCRM grep 不到，全新；資料來源未定（B10）
     [新建]   官網自己的推薦 API  GET /Products/Recommend          用 Session 會員 Id 代呼叫 enzo-gb.net，別讓前端直接打外站
-    [新建]   ProductAddOnMapping 表                               主商品↔加購規格配對（同 2026-09-product-addon）
+    [只參考] fruit_web Scripts/Web/ProductAddOn.js                加購勾選與加入菜籃，DEV-3993 已完成，直接用
+    [只參考] fruit_web Areas/Api/ProductAddOns/ProductAddOnController.cs
+                                                                 GET api/ProductAddOn/Offers?productId= 已存在
     [新建]   前端非同步載入腳本                                    IntersectionObserver 捲到才要、逾時 3 秒不重試；
                                                                  載入前先放骨架佔住高度（原始需求 §2.4 是「必須」）
     [只參考] CartController.cs:269 /Cart/AddToShoppingCartByModule 既有加入菜籃 API，直接呼叫
@@ -415,29 +423,12 @@ img { vertical-align: middle; }
 .pd-gallery .thumbs img { flex: 1 1 0; min-width: 0; height: 68px; object-fit: cover; border: 2px solid transparent; cursor: pointer; }
 .pd-gallery .thumbs img.active { border-color: #4ba83b; }
 
-/* ===== 加價購區塊：沿用 2026-09-product-addon demo 的定版樣式，兩份 demo 保持一致 ===== */
-.addon { clear: both; margin: 24px 0 0; border: 1px solid #e5e5e5; border-radius: 6px; overflow: hidden; }
-.addon-head { background: linear-gradient(90deg,#4ba83b,#5bbd49); color: #fff; padding: 12px 16px; font-size: 17px; font-weight: 700; }
-.addon-list { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: #f0f0f0; }
-@media (max-width: 820px) { .addon-list { grid-template-columns: 1fr; } }
-.addon-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin: 0; background: #fff; }
-.addon-ck { width: 18px; height: 18px; accent-color: #4ba83b; flex: 0 0 auto; cursor: pointer; }
-.addon-thumb { width: 62px; height: 62px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e5e5; flex: 0 0 auto; }
-.addon-temp { display: inline-block; background: #4e9854; color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
-.addon-body { flex: 1; min-width: 0; }
-.addon-name { font-size: 15px; color: #333; font-weight: 500; }
-.addon-spec { font-size: 13px; color: #808080; margin-top: 2px; }
-.addon-price { flex: 0 0 auto; text-align: right; min-width: 78px; }
-.addon-price .orig { display: block; text-decoration: line-through; color: #aaa; font-size: 13px; }
-.addon-price .now { color: #dc4e43; font-size: 18px; font-weight: 700; }
-.addon-more { display: block; width: 100%; text-align: center; padding: 11px; background: #fafafa; border: 0; border-top: 1px solid #f0f0f0; color: #4ba83b; font-size: 15px; cursor: pointer; font-family: inherit; }
-
 /* ===== 猜你會喜歡（新功能，正式站尚無。卡片比照 .recommand-product-slick 的商品卡） ===== */
 .gy-sec { clear: both; margin: 32px 0 0; }
 .gy-card { flex: 0 0 184px; background: #fff; display: flex; flex-direction: column; }
 .gy-card .img-bg { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f1f2f7; display: block; margin-bottom: 5px; }
 .gy-card .noimg { width: 100%; aspect-ratio: 1/1; background: #f1f2f7; display: flex; align-items: center; justify-content: center; color: #b6bcc7; font-size: 13px; margin-bottom: 5px; }
-.gy-card .p-item-name { font-size: 15px; color: #333; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
+.gy-card .p-item-name { font-size: 16px; color: #333; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
 .gy-tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; margin-bottom: 4px; }
 .gy-ft { margin-top: auto; display: flex; align-items: center; gap: 8px; }
 .gy-price { font-size: 17px; color: #dc4e43; font-weight: 700; }
@@ -483,10 +474,6 @@ img { vertical-align: middle; }
   background: #fafafa; border: 1px solid #e5e5e5; border-radius: 4px; color: #4ba83b;
   font-size: 14px; cursor: pointer; font-family: inherit; }
 
-/* ===== 加購品改用跟推薦同一種卡片 ===== */
-.addon-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 12px; }
-.gy-card.is-addon .gy-price small.orig { text-decoration: line-through; color: #aaa; font-weight: 400; margin-left: 4px; }
-
 /* ===== 加入菜籃按鈕與已加入狀態 ===== */
 .gy-add { margin-left: auto; border: 1px solid #dc4e43; background: #dc4e43; color: #fff; border-radius: 4px;
   padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; }
@@ -494,7 +481,8 @@ img { vertical-align: middle; }
 .gy-ft { margin-top: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 /* ===== 多規格商品的規格選擇（真站是點進商品頁選，demo 用小窗讓流程可以走完） ===== */
-.sp-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9998; display: flex; align-items: center; justify-content: center; padding: 16px; }
+/* 10005：要比快速預覽彈窗（10000）高，不然在彈窗裡按「選規格」會開在彈窗底下，根本點不到 */
+.sp-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 10005; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .sp-box { background: #fff; border-radius: 8px; width: 100%; max-width: 380px; overflow: hidden; font-family: 'Noto Sans TC','Microsoft JhengHei',sans-serif; }
 .sp-hd { padding: 14px 16px; border-bottom: 1px solid #e5e5e5; font-size: 16px; font-weight: 700; color: #333; }
 .sp-nm { padding: 10px 16px 0; font-size: 14px; color: #808080; }
@@ -592,6 +580,25 @@ img { vertical-align: middle; }
 /* 下方腰帶上下都要留白（真站是 margin:5% auto）。只靠下一塊的 margin-top 會被 margin collapse 吃掉，
    實測間距是 0，所以這裡自己給上下 margin */
 #tbAdBottom { margin: 48px 0; }
+
+/* ===== B 版的右欄：原本「為您推薦」那一欄（.recomm），改放瀏覽紀錄。
+   尺寸照真站量（2026-10-21，粥寶寶商品頁）：欄寬 357、左右內距 15、上 40 下 30；
+   一張卡 .pitem 寬 326、左右內距 15、下外距 30，圖滿版 4:3，
+   品名 19.2px/21.12 粗體 #4e9854，價格 20.8px 600 #33435a ===== */
+.recomm { padding: 0 15px; margin: 40px 0 30px; }
+.recomm .gy-regtitle { margin-bottom: 0; }
+.recomm .pitem { padding: 0 15px; margin: 0 0 30px; }
+.recomm .pitem a { display: block; text-decoration: none; color: inherit; }
+.recomm .fruit_item img { width: 100%; display: block; margin-bottom: 5px; aspect-ratio: 4 / 3; object-fit: cover; }
+.recomm .p-item-name { margin: 10px 0 5px; font-size: 19.2px; line-height: 21.12px; font-weight: 700;
+  color: #4e9854; text-align: left; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
+.recomm .price { font-size: 20.8px; line-height: 29.7px; font-weight: 600; color: #33435a; }
+/* 瀏覽紀錄比「為您推薦」多這一行：這是偏離現況的，真站那張卡沒有 */
+.recomm .pitem .ago { display: block; margin-top: 2px; font-size: 13px; color: #9aa3ae; }
+@media (max-width: 991px) {
+  .recomm { margin-top: 32px; }
+}
 /* 商品評論：真站的 class 是 feedbackMessage-area / account / score-area / message /
    replyMessage / store-name / store-message / read-more-comment，照抄。
    真站 CSS 不一定能傳到 demo，所以這裡補一份一樣的視覺 */
@@ -666,6 +673,21 @@ img { vertical-align: middle; }
 /* 輪播控制放進標題列裡（絕對定位），不然在右區那種窄欄會把標題擠掉 */
 .gy-head { position: relative; display: block; margin-bottom: 12px; }
 .gy-head .gy-regtitle { margin-bottom: 0; }
+/* 一排「五個多一點點」：橫向捲動，卡片固定寬，最後露出下一張的一角。
+   為什麼不是整齊的六欄：六欄太擠（卡片只剩 160px），而且切齊邊界看起來就是「只有這些」，
+   露一角才看得出後面還有。點點仍然是頁碼，按了捲過去。
+   --peek＝一排看得到幾張（含那「一點點」） */
+.gy-rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; clear: both; padding-bottom: 2px;
+  scrollbar-width: none; -ms-overflow-style: none; }
+.gy-rail::-webkit-scrollbar { display: none; }
+.gy-rail > .gy-card { flex: 0 0 calc((100% - (var(--peek) - 1) * 12px) / var(--peek));
+  scroll-snap-align: start; }
+.gy-reg-r, .gy-history { --peek: 5.2; }
+@media (max-width: 1199px) { .gy-reg-r, .gy-history { --peek: 4.2; } }
+@media (max-width: 991px)  { .gy-reg-r, .gy-history { --peek: 3.2; } }
+@media (max-width: 680px)  { .gy-reg-r, .gy-history { --peek: 2.2; } }
+
 /* 分頁點點：取代原本標題列上的左右鍵。放在卡片下面置中 */
 .gy-dots { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; clear: both; }
 .gy-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: #d6d9de;
@@ -673,6 +695,10 @@ img { vertical-align: middle; }
 .gy-dots button:hover { background: #b6bcc7; }
 .gy-dots button.on { width: 20px; border-radius: 4px; background: var(--line, #4ba83b); }
 .gy-regtitle img { width: 100%; height: 100%; object-fit: cover; object-position: left center; display: block; }
+/* 標題疊字：真站靠 ItemDetail.css 定位，但列表頁與彈窗沒載那支，所以自己寫一份
+   （值照真站量的：絕對置中、白字、18px/26、700） */
+.gy-regtitle .productDescription { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: #fff; font-size: 18px; font-weight: 700; line-height: 26px; white-space: nowrap; margin: 0; }
 /* 卡片邊框統一：單層灰線，推薦也是 */
 .gy-card { border: 1px solid #e5e5e5; border-radius: 4px; padding: 8px; background: #fff; cursor: default; }
 /* 只有圖與品名可以點去商品頁，卡片其他地方（價格、標籤、留白）點了沒反應 */
@@ -716,7 +742,7 @@ img { vertical-align: middle; }
   border-top: 1px solid #f0f0f0; color: #4ba83b; font-size: 14px; cursor: pointer; font-family: inherit; }
 .addon-row[hidden] { display: none; }
 /* 窄欄位時一列排不下「勾選＋圖＋品名＋數量＋價格」。
-   數量不能藏——每項限購 3 件，藏掉等於手機只買得到 1 件——所以改成折到第二行，
+   數量不能藏（每項限購 3 件，藏掉等於手機只買得到 1 件），所以改成折到第二行，
    靠左內縮對齊品名，價格靠右。還是一個加購品一列，長條形的樣子不變 */
 @media (max-width: 560px) {
   .addon-thumb { width: 44px; height: 44px; }
@@ -805,12 +831,15 @@ img { vertical-align: middle; }
   <div class="row" style="margin-top:32px;">
     <!-- 既有區塊：內容區 #Content（ItemDetail.cshtml:1330）。
          正式站是 col-lg-8，益菓保因為不顯示為您推薦才是 col-lg-12。
-         這次要把條件換成「有沒有為您推薦」，所以 demo 直接用全寬 -->
+         A 版＝全寬（col-md-12），B 版＝維持現況的 col-md-8，右邊留給 #tbSide -->
     <div class="col-md-12 col-xs-12" id="tbContent">
       <!-- 既有區塊：無毒農檢驗。ItemDetail.cshtml:1400 的 CheckTest.png（益生菌不顯示） -->
       <div id="tbInspect"></div>
       <div class="gy-omit" style="margin-top:32px;">商品描述 ／ 產地故事 ／ 保存方式（相同版型，略）</div>
     </div>
+    <!-- B 版才出現：原本「為您推薦」那一欄（ItemDetail.cshtml:1569 的 .recommend-area，
+         真站 class 是 col-lg-4 col-md-4 col-sm-4 col-xs-12 m-t-40 recomm），改放瀏覽紀錄 -->
+    <div class="col-md-4 col-xs-12 recomm" id="tbSide" hidden></div>
   </div>
 
   <!-- 既有區塊：圖片腰帶（下）。ItemDetail.cshtml:1645 的 .adArea
@@ -978,6 +1007,35 @@ const REVIEWS = {
   ],
 };
 
+/* 產線列表頁（React，程式在 react-component-export）。
+   banner、子分類標籤、第一個子分類的標題與說明都取自正式站（2026-10-21 擷取） */
+const CATEGORY = {
+  產地直送: {
+    route: '/Products/ItemNew', view: 'ItemNew.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202608180858171.png',
+    tabs: ['新品快報', '人氣商品', '在地小農', '安心時蔬', '嚴選好物', '送禮專區', '水產直送'],
+    first: { t: '新品快報', d: '' },
+  },
+  冷凍超市: {
+    route: '/Products/FrozenFood', view: 'FrozenFood.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202607030341561.jpg',
+    tabs: ['驚喜特惠', '海鮮水產', '嚴選肉品', '限定好物', '冷凍蔬果', '惜食專區'],
+    first: { t: '驚喜特惠', d: '' },
+  },
+  粥寶寶: {
+    route: '/Products/Kitchenette', view: 'Kitchenette.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202610200611441.jpg',
+    tabs: ['免運專區', '乖乖聯名', '小寶寶', '中寶寶', '大寶寶', '一歲以上', '寶寶湯品', '手指食物'],
+    first: { t: '免運專區', d: '此區皆免運費！平日下午兩點前訂購，當天出貨、隔日到貨（遇假日出貨順延至上班日）' },
+  },
+  益菓保: {
+    route: '/Products/Eaglebabee', view: 'Eaglebabee.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202605180239561.png',
+    tabs: ['強打推薦', '功效益生菌', '關鍵營養', '晶亮有感', '組合優惠', '嚴選商品'],
+    first: { t: '強打推薦', d: '熱門推薦、活動優惠' },
+  },
+};
+
 /* 猜你喜歡測試台：狀態、產線切換列、開發者面板、畫面重繪 */
 const NOW_MONTH = 10; // 以 2026-10-20 為基準
 
@@ -1011,6 +1069,9 @@ const S = {
   // 版型定案的八項（版面、卡片、分不分排、區塊標題、買過的標籤、推薦理由、標籤配色、
   // 新舊推薦三案）已經直接寫進程式，不再留成可切換的狀態。理由見 A_UI/版面節奏與層級.md
   rotateSec: 6,
+  // A＝猜你喜歡佔掉原本的位置、內容區全寬，瀏覽紀錄排在評論之前（現況）
+  // B＝原本「為您推薦」那一欄拿回來，改放瀏覽紀錄，內容區回到 col-md-8
+  layout: 'a',
 };
 
 /* 這一頁有幾個加購品，由面板的滑桿決定（0~10）。
@@ -1035,6 +1096,7 @@ const PANEL = [
     ['edge', '例外情境', [['normal', '正常'], ['loading', '載入中'], ['timeout', '推薦拿不到'], ['noimg', '商品缺圖']]],
   ]],
   ['顯示細節', [
+    ['layout', '內容區版型', [['a', 'A：內容全寬'], ['b', 'B：右欄放瀏覽紀錄']]],
     ['rotate', '推薦自動換頁', [[true, '開（6 秒）'], [false, '關，只能自己點點點']]],
   ]],
 ];
@@ -1064,11 +1126,11 @@ const img = (src, cls) => `<img class="${cls}" src="${CDN}${src}" alt="" loading
 
 
 /* ---------- 開發者面板 ---------- */
-function renderPanel() {
+function renderPanel(panel) {
   const bd = document.getElementById('tbpBody');
   bd.innerHTML = '<h4>測試台開關</h4>'
     + '<p class="cap">撥開關看畫面怎麼變，重新整理就還原。規則已定案，這裡只切顯示。</p>';
-  PANEL.forEach(([grpName, fields]) => {
+  (panel || PANEL).forEach(([grpName, fields]) => {
     const g = el('div', 'grp');
     g.appendChild(el('label', null, grpName));
     fields.forEach(([key, label, opts]) => {
@@ -1078,7 +1140,7 @@ function renderPanel() {
         const seg = el('div', 'seg');
         opts.forEach(([val, txt]) => {
           const b = el('button', S[key] === val ? 'on' : null, txt);
-          b.onclick = () => { S[key] = val; renderPanel(); renderPage(); };
+          b.onclick = () => { S[key] = val; renderPanel(panel); (window.GY_RENDER || renderPage)(); };
           seg.appendChild(b);
         });
         f.appendChild(seg);
@@ -1093,7 +1155,7 @@ function renderPanel() {
           num.textContent = inp.value;
           const h = f.querySelector('.hint');
           if (h && opts.hint) h.textContent = opts.hint(S[key]);
-          renderPage();
+          (window.GY_RENDER || renderPage)();
         };
         row.appendChild(inp); row.appendChild(num);
         f.appendChild(row);
@@ -1110,7 +1172,7 @@ function renderPanel() {
 /* ---------- 推薦計算 ---------- */
 /* 模擬推薦服務 recommend_products_for_member 回什麼。
    2026-10-21 定案「規則不改了，拿到什麼用什麼」：官網端**不過濾、不重排**，
-   回來什麼就照順序顯示。所以這裡沒有溫層、產季、月齡、跨產線那幾條 ——
+   回來什麼就照順序顯示。所以這裡沒有溫層、產季、月齡、跨產線那幾條，
    服務端本來就沒有那些能力（原始需求 §0.5：溫層完全沒有用到、推薦不分產線）。
 
    照服務端的規格模擬：
@@ -1155,16 +1217,20 @@ function addToCart(it, spec, addonN) {
   CART.set(it.id, { name: it.name, spec: spec || '單一規格', price: it.price, qty: (had ? had.qty : 0) + 1 });
   badge();
   toast(addonN ? `已加入菜籃：${it.name} ＋ ${addonN} 項加購` : `已加入：${it.name}${spec ? '（' + spec + '）' : ''}`);
-  renderPage();
+  // 列表頁沒有商品頁那些元素，重畫要走該頁自己的 render，直接叫 renderPage 會噴錯
+  (window.GY_RENDER || renderPage)();
 }
 function removeFromCart(it) {
   CART.delete(it.id);
   badge();
   toast(`已移除：${it.name}`);
-  renderPage();
+  (window.GY_RENDER || renderPage)();
 }
 /* 多規格商品：真站是點進商品頁選規格，demo 用小窗讓流程走得完 */
 function openSpecPicker(it) {
+  // 一次只開一個：不然在快速預覽彈窗裡連按好幾張卡會一層疊一層
+  const prev = document.querySelector('.sp-mask');
+  if (prev) prev.remove();
   const names = it.specNames || ['單一規格'];
   let pick = 0;
   const mask = el('div', 'sp-mask');
@@ -1253,7 +1319,7 @@ function slotsBlock(addons, recs, recTitle) {
   // 列數由加購品的數量決定；加購品不夠填滿的格子就空著，不給推薦補（2026-10-20 截圖標註）。
   // 左區佔幾欄＝加購品數量，上限 4 欄（規則，不是開關）。
   // 不足 4 個就把空間讓給推薦，一個都沒有就整塊都是推薦。
-  // 益菓保這種沒有推薦的線，左區吃滿六欄，右區不產生
+  // 萬一真的沒有推薦可放（recs 空），左區吃滿六欄、右區不產生
   const noRecs = recs.length === 0;
   const aCols = Math.max(0, Math.min(noRecs ? 6 : 4, addons.length));
   const rCols = noRecs ? 0 : 6 - aCols;
@@ -1261,9 +1327,7 @@ function slotsBlock(addons, recs, recTitle) {
   if (S._slotsOpen === undefined) S._slotsOpen = false;
   const visibleRows = S._slotsOpen ? rows : 1;
   const aShow = addons.slice(0, visibleRows * aCols);
-  const recNeed = visibleRows * rCols;
-  const pages = Math.max(1, Math.ceil(recs.length / Math.max(1, recNeed)));
-  if (S._recPage === undefined || S._recPage >= pages) S._recPage = 0;
+  if (S._recPage === undefined) S._recPage = 0;
 
   const sec = el('section', 'gy-sec');
   const two = el('div', 'gy-two');
@@ -1272,7 +1336,7 @@ function slotsBlock(addons, recs, recTitle) {
     const more = el('button', 'gy-more',
       S._slotsOpen ? '收合 ∧' : `顯示更多 ∨（還有 ${addons.length - aCols} 個加價購）`);
     more.type = 'button';
-    more.onclick = () => { S._slotsOpen = !S._slotsOpen; renderPage(); };
+    more.onclick = () => { S._slotsOpen = !S._slotsOpen; (window.GY_RENDER || renderPage)(); };
     sec.appendChild(more);
   }
 
@@ -1299,41 +1363,55 @@ function slotsBlock(addons, recs, recTitle) {
   const head = el('div', 'gy-head');
   head.appendChild(regionTitle(recTitle || '猜你喜歡'));
   regR.appendChild(head);
-  const gridR = el('div', 'gy-reg-grid');
-  gridR.style.setProperty('--cols', rCols);
-  const holders = [];
-  for (let i = 0; i < recNeed; i++) { const hd = el('div'); gridR.appendChild(hd); holders.push(hd); }
-  regR.appendChild(gridR);
+
+  // 一排五個多一點點：所有推薦一次就排好，橫向捲動。
+  // 卡片只建一次，之後換頁是捲動不是重繪，所以圖片不會重新載入、不會閃
+  const rail = el('div', 'gy-rail');
+  recs.forEach((it) => rail.appendChild(card(it, 'mixedrail')));
+  regR.appendChild(rail);
   two.appendChild(regR);
   sec.appendChild(two);
 
+  // 一頁＝看得滿的那幾張（5.2 就是 5 張），點點數照這個算
+  const perPage = () => {
+    const peek = parseFloat(getComputedStyle(regR).getPropertyValue('--peek')) || 5.2;
+    return Math.max(1, Math.floor(peek));
+  };
+  const pageCount = () => Math.max(1, Math.ceil(recs.length / perPage()));
   let dots = null;
-  if (pages > 1) {
-    dots = dotsRow(pages, S._recPage, (i) => { S._recPage = i; paintRecs(); restart(); });
-    sec.appendChild(dots);
-  }
 
-  // 輪播只換推薦那幾張卡，不重繪整個區塊
-  function paintRecs() {
-    holders.forEach((hd, i) => {
-      const it = recs[(S._recPage * recNeed + i) % recs.length];
-      hd.innerHTML = '';
-      if (it) hd.appendChild(card(it, 'mixedrail'));
-    });
+  function goPage(i) {
+    S._recPage = i;
+    const first = rail.children[i * perPage()];
+    if (first) rail.scrollTo({ left: first.offsetLeft - rail.offsetLeft, behavior: 'smooth' });
+    paintDots();
+  }
+  function paintDots() {
     if (dots) [...dots.children].forEach((b, i) => b.classList.toggle('on', i === S._recPage));
   }
-  paintRecs();
+  if (pageCount() > 1) {
+    if (S._recPage >= pageCount()) S._recPage = 0;
+    dots = dotsRow(pageCount(), S._recPage, (i) => { goPage(i); restart(); });
+    sec.appendChild(dots);
+  }
+  // 手指滑動或滑鼠拖的時候，點點要跟著走
+  rail.onscroll = () => {
+    const cw = rail.children[0] ? rail.children[0].offsetWidth + 12 : 1;
+    const p = Math.round(rail.scrollLeft / (cw * perPage()));
+    if (p !== S._recPage && p < pageCount()) { S._recPage = p; paintDots(); }
+  };
+  const paintRecs = () => goPage(S._recPage);
 
   appendMore();
 
   let paused = false;
   function restart() {
     stopRotate();
-    if (!S.rotate || pages <= 1) return;
+    if (!S.rotate || pageCount() <= 1) return;
     ROT_TIMER = setInterval(() => {
       if (paused) return;
-      S._recPage = (S._recPage + 1) % pages;
-      paintRecs();
+      S._recPage = (S._recPage + 1) % pageCount();
+      goPage(S._recPage);
     }, S.rotateSec * 1000);
   }
   // 滑進區塊就暫停，但不在畫面上寫「已暫停」。滑過的那張卡自己換外框顏色，那就是回饋
@@ -1432,7 +1510,8 @@ function historyItems(excludeIds) {
   const pool = [];
   // 先放本產線的，再補其他線，順序固定，重繪不會跳來跳去
   [S.line, ...Object.keys(DATA).filter((L) => L !== S.line)].forEach((L) => {
-    DATA[L].items.forEach((x) => { if (!skip.has(x.id)) pool.push({ ...x, line: L }); });
+    // 加購規格不單獨零售，前台看不到它的商品頁，當然也不會出現在瀏覽紀錄裡
+    DATA[L].items.forEach((x) => { if (!x.addon && !skip.has(x.id)) pool.push({ ...x, line: L }); });
   });
   const AGO = ['剛剛', '2 小時前', '今天稍早', '昨天', '昨天', '2 天前',
     '3 天前', '3 天前', '4 天前', '5 天前', '6 天前', '上週',
@@ -1449,28 +1528,41 @@ function historyBlock(excludeIds) {
 
   const sec = el('section', 'gy-sec gy-history');
   sec.appendChild(regionTitle('瀏覽紀錄'));
-  const grid = el('div', 'gy-reg-grid');
-  grid.style.setProperty('--cols', per);
-  sec.appendChild(grid);
 
-  // 跟猜你喜歡同一套點點，差別是瀏覽紀錄不自動換：
-  // 客人是回來找剛剛看過的東西，自己跳掉會讓他找不到
-  let dots = null;
-  const paint = () => {
-    grid.innerHTML = '';
-    items.slice(S._histPage * per, S._histPage * per + per).forEach((it) => grid.appendChild(card(it, 'history')));
-    if (dots) [...dots.children].forEach((b, i) => b.classList.toggle('on', i === S._histPage));
+  // 跟猜你喜歡同一套：一排五個多一點點，橫向捲動
+  const rail = el('div', 'gy-rail');
+  items.forEach((it) => rail.appendChild(card(it, 'history')));
+  sec.appendChild(rail);
+
+  const perPage = () => {
+    const peek = parseFloat(getComputedStyle(sec).getPropertyValue('--peek')) || 5.2;
+    return Math.max(1, Math.floor(peek));
   };
-  if (pages > 1) {
-    dots = dotsRow(pages, S._histPage, (i) => { S._histPage = i; paint(); });
+  const pageCount = () => Math.max(1, Math.ceil(items.length / perPage()));
+  if (S._histPage === undefined || S._histPage >= pageCount()) S._histPage = 0;
+
+  let dots = null;
+  const paintDots = () => { if (dots) [...dots.children].forEach((b, i) => b.classList.toggle('on', i === S._histPage)); };
+  const goPage = (i) => {
+    S._histPage = i;
+    const first = rail.children[i * perPage()];
+    if (first) rail.scrollTo({ left: first.offsetLeft - rail.offsetLeft, behavior: 'smooth' });
+    paintDots();
+  };
+  if (pageCount() > 1) {
+    dots = dotsRow(pageCount(), S._histPage, goPage);
     sec.appendChild(dots);
   }
-  paint();
+  rail.onscroll = () => {
+    const cw = rail.children[0] ? rail.children[0].offsetWidth + 12 : 1;
+    const p = Math.round(rail.scrollLeft / (cw * perPage()));
+    if (p !== S._histPage && p < pageCount()) { S._histPage = p; paintDots(); }
+  };
   return sec;
 }
 
 /* 加價購長條形：勾選後跟主商品一起加進菜籃，所以它住在購買區、就在加入菜籃上方。
-   勾選狀態另外存（key → 件數），不進 CART —— 按下加入菜籃才一起進去。
+   勾選狀態另外存（key → 件數），不進 CART，按下加入菜籃才一起進去。
    每項限購 3 件，所以存的是數量不是布林 */
 const ADDON_PICK = new Map();
 
@@ -1560,6 +1652,32 @@ function regionTitle(text) {
      <span class="productDescription">${text}</span>`);
 }
 
+/* B 版右欄的瀏覽紀錄：卡片照真站「為您推薦」那一欄的 .pitem 重畫，
+   只有標題換成「瀏覽紀錄」、多一行「多久以前看的」。真站一欄顯示幾個由
+   GetCategoryRecommend(productType).ShowCount 決定（存在 MongoDB），這裡固定 5 個 */
+function sideHistoryBlock(excludeIds) {
+  const items = historyItems(excludeIds).slice(0, 5);
+  if (!items.length) return null;
+  const frag = document.createDocumentFragment();
+  frag.appendChild(regionTitle('瀏覽紀錄'));
+  const list = el('div', 'recommand-product-slick');
+  items.forEach((it) => {
+    const multi = (it.specNames || []).length > 1;
+    const box = el('div', 'pitem');
+    box.innerHTML = `<a href="https://www.greenbox.tw/Products/ItemDetail/${it.id}" target="_blank" rel="noopener">
+      <div class="fruit_item">${img(it.pic, 'img-bg')}
+        <div class="product_detail">
+          <div class="p-item-name">${it.name}</div>
+          <div><span class="price">$${it.price.toLocaleString()}${multi ? ' 起' : ''}</span>
+            <span class="ago">您在 ${it._ago}看過</span></div>
+        </div>
+      </div></a>`;
+    list.appendChild(box);
+  });
+  frag.appendChild(list);
+  return frag;
+}
+
 /* 降級時用的本產線熱門。要 6 個，剛好填滿一排，不然六個洞會重複出現同一個商品 */
 const hotItems = () => DATA[S.line].items.filter((x) => !x.addon).slice(0, 6).map((x) => ({ ...x, line: S.line, bought: 0 }));
 
@@ -1620,34 +1738,46 @@ function renderPage() {
 
 
 
-  if (S.edge === 'loading' && S.line !== '益菓保') {
+  if (S.edge === 'loading') {
     // 載入中：推薦還沒回來，先用骨架佔住位置
     stopRotate();
     slotA.appendChild(skeletonBlock());
     S._recIds = [];
-  } else if (S.line !== '益菓保') {
-    // 商品卡下方那一整塊都是猜你喜歡（加價購在購買區，見二之七）
+  } else {
+    // 商品卡下方那一整塊都是猜你喜歡（加價購在購買區，見二之七）。
+    // 2026-10-21：益菓保也一樣。舊的「益菓保不顯示為您推薦」是那個舊區塊的例外，
+    // 新機制四條線統一，不沿用那個例外
     const { rebuy, discover } = computeRecs();
     rebuy.forEach((x) => { x._kind = 'rebuy'; });
     discover.forEach((x) => { x._kind = 'discover'; });
-    // 照服務回傳的順序：rebuy 在前、discover 在後，官網端不重排
     let recs = [...rebuy, ...discover];
     // 降級：未登入不呼叫推薦、推薦拿不到也一樣，整區換成本產線熱門、標題換成「為您推薦」
     const degraded = !S.logged || S.edge === 'timeout';
     if (degraded) recs = hotItems();
     slotA.appendChild(slotsBlock([], recs, degraded ? '為您推薦' : '猜你喜歡'));
     S._recIds = recs.map((x) => x.id);
-  } else {
-    // 益菓保不出現推薦，而加價購已經在購買區，所以這一塊整個不產生
-    stopRotate();
-    S._recIds = [];
   }
 
-  // 下方腰帶（真站的內頁廣告(下)），接著瀏覽紀錄，再接商品評論
+  // 內容區版型：A 全寬、B 把原本「為您推薦」那一欄拿回來放瀏覽紀錄
+  const content = document.getElementById('tbContent');
+  const side = document.getElementById('tbSide');
+  const isB = S.layout === 'b';
+  content.className = isB ? 'col-md-8 col-xs-12' : 'col-md-12 col-xs-12';
+  side.hidden = !isB;
+  side.innerHTML = '';
+  if (isB) {
+    const sh = sideHistoryBlock(S._recIds);
+    if (sh) side.appendChild(sh);
+  }
+
+  // 下方腰帶（真站的內頁廣告(下)），接著瀏覽紀錄，再接商品評論。
+  // B 版的瀏覽紀錄已經在右欄了，這裡就不再放一次
   const adBot = document.getElementById('tbAdBottom');
   if (adBot) adBot.innerHTML = adBelt();
-  const hist = historyBlock(S._recIds);
-  if (hist) slotC.appendChild(hist);
+  if (!isB) {
+    const hist = historyBlock(S._recIds);
+    if (hist) slotC.appendChild(hist);
+  }
   const rv = document.getElementById('tbReview');
   if (rv) {
     rv.innerHTML = '';
@@ -1689,8 +1819,13 @@ document.body.appendChild(document.getElementById('tbp'));
 document.getElementById('tbpT').onclick = () => {
   document.getElementById('tbp').classList.toggle('is-open');
 };
-renderPanel();
-renderPage();
+// 產線列表頁共用這支檔案的卡片、軌道、點點與購物車，但它自己有一套 render 與開關，
+// 所以商品頁的 bootstrap 只在商品頁的 DOM 在的時候跑
+if (document.getElementById('tbSlotA')) {
+  window.GY_RENDER = renderPage;
+  renderPanel();
+  renderPage();
+}
 
 </script>
 
