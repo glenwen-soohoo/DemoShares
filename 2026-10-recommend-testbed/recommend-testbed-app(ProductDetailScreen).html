@@ -6,12 +6,14 @@
   DemoShares 交接對照 | 猜你喜歡 測試台（App 商品頁）
   改的是既有介面：App 商品詳情頁  fruit_app ProductDetailScreen
   這次要動的檔（改既有 1 支 ／ 新建 2 項 ／ 只參考 1 支）：
-    [改既有] fruit_app  src/screens/ProductDetail/ProductDetailScreen        在購買區下方插入推薦區塊（原生，不是 WebView）
-    [新建]   Product_Api  GET app/products/{id}/recommend                    App 取推薦清單
-    [新建]   fruit_app  推薦區塊元件（橫向 FlatList）                         卡片與標籤
+    [改既有] fruit_app  src/screens/ProductDetail/ProductDetailScreen        插入猜你喜歡與瀏覽紀錄區塊（原生，不是 WebView）
+    [新建]   Product_Api  GET app/products/{id}/recommend                    App 取推薦清單（包官網同一支推薦服務）
+    [新建]   fruit_app  推薦區塊元件（橫向 FlatList）                         卡片與標籤，猜你喜歡與瀏覽紀錄共用
     [只參考] fruit_app  ProductDetailWebView                                  只包商品描述那段 HTML，推薦區不要塞進去 ⚠
   ⚠ App 商品頁是「原生外殼＋WebView 只包商品描述」，推薦區必須做原生。
-  ⚠ 本頁是測試台，給四條產線撥開關做決定用，不是要上線的畫面。
+  ⚠ 版位與網頁版一致：加價購在購買區（App 的購買區＝底部固定 CTA，所以長條形排在商品資訊下面）、
+     猜你喜歡一塊、瀏覽紀錄排在商品評論之前。
+  ⚠ 本頁是測試台，右邊的面板正式 App 不會有。
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>猜你喜歡測試台 — App 商品頁 (demo)</title>
@@ -27,39 +29,74 @@
   .app-bar{height:52px;display:flex;align-items:center;justify-content:space-between;
     padding:0 12px;background:var(--line);color:#fff;flex:0 0 auto}
   .app-bar h1{font-size:16px;margin:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px}
-  .app-bar button{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer}
-  .app-scroll{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;background:#fff}
+  .app-bar button{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer;position:relative}
+  .app-bar .cnt{position:absolute;top:-2px;right:-6px;min-width:17px;height:17px;border-radius:9px;
+    background:#dc4e43;color:#fff;font-size:11px;line-height:17px;padding:0 4px}
+  .app-scroll{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;background:#fff;position:relative}
   .app-cta{flex:0 0 auto;padding:12px 16px 28px;background:#fff;border-top:1px solid #e5e5e5;display:flex;gap:8px;align-items:center}
   .app-cta b{font-size:19px;color:#dc4e43}
-  .app-cta button{flex:1;height:48px;border:0;border-radius:8px;background:#dc4e43;color:#fff;font-size:16px;font-weight:600;font-family:inherit}
+  .app-cta button{flex:1;height:48px;border:0;border-radius:8px;background:#dc4e43;color:#fff;
+    font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
   .ap-hero{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1f2f7;display:block}
   .ap-body{padding:16px}
   .ap-name{font-size:17px;font-weight:700;color:#33435a;margin:0 0 8px;line-height:1.5}
   .ap-meta{font-size:13px;color:#8a94a6;line-height:1.9}
   .ap-meta b{color:var(--line)}
   .ap-sec{margin-top:20px;border-top:8px solid #f1f2f7;padding:16px 16px 0}
-  .ap-sec > h2{font-size:15px;color:#33435a;margin:0 0 4px;display:flex;align-items:center;gap:6px}
+  .ap-sec > h2{font-size:15px;color:#33435a;margin:0 0 10px;display:flex;align-items:center;gap:6px}
   .ap-sec > h2::before{content:'';width:4px;height:15px;background:var(--line);border-radius:2px}
-  .ap-sec > p{margin:0 0 10px;font-size:12px;color:#8a94a6}
-  .ap-addon{border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;margin-top:8px}
-  .ap-addon-hd{background:#4ba83b;color:#fff;padding:8px 12px;font-size:14px;font-weight:700}
-  .ap-addon-row{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid #f1f2f7}
-  .ap-addon-row:last-child{border-bottom:0}
-  .ap-addon-row input{width:18px;height:18px;accent-color:#4ba83b}
-  .ap-addon-row img{width:48px;height:48px;object-fit:cover;border-radius:4px;background:#f1f2f7}
-  .ap-addon-nm{flex:1;min-width:0;font-size:13px;color:#33435a;line-height:1.5}
-  .ap-addon-pr{font-size:14px;color:#dc4e43;font-weight:700;white-space:nowrap}
-  .ap-rail{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;margin:0 -16px;padding-left:16px;padding-right:16px}
+
+  /* 加價購長條形：跟網頁版同一個版型。App 的購買區是底部固定 CTA，
+     長條形沒辦法真的壓在按鈕上方，所以排在商品資訊正下方、進到推薦之前 */
+  .ap-addon{border:1px solid #e5e5e5;border-radius:6px;overflow:hidden}
+  .ap-addon-hd{background:#4ba83b;color:#fff;padding:9px 12px;font-size:14px;font-weight:700;
+    display:flex;align-items:baseline;white-space:nowrap}
+  .ap-addon-hd .note{font-size:11px;font-weight:400;opacity:.92;margin-left:8px;overflow:hidden;text-overflow:ellipsis}
+  .ap-addon-row{display:flex;gap:8px;align-items:center;padding:9px 12px;border-top:1px solid #f1f2f7;background:#fff}
+  .ap-addon-row.checked{background:#f6fbf4}
+  .ap-addon-row[hidden]{display:none}
+  .ap-addon-row input{width:18px;height:18px;accent-color:#4ba83b;flex:0 0 18px;margin:0}
+  .ap-addon-row img{width:44px;height:44px;object-fit:cover;border-radius:4px;background:#f1f2f7;flex:0 0 44px}
+  .ap-addon-nm{flex:1 1 auto;min-width:0;font-size:12px;color:#33435a;line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ap-addon-qty{flex:0 0 46px;height:26px;border:1px solid #d9dce2;border-radius:4px;
+    font-size:12px;font-family:inherit;color:#33435a;background:#fff}
+  .ap-addon-pr{flex:0 0 auto;text-align:right;white-space:nowrap}
+  .ap-addon-pr .orig{display:block;font-size:11px;color:#b6bcc7;text-decoration:line-through}
+  .ap-addon-pr .now{font-size:14px;color:#dc4e43;font-weight:700}
+  .ap-addon-more{display:block;width:100%;padding:9px;background:#fafafa;border:0;border-top:1px solid #f1f2f7;
+    color:#4ba83b;font-size:13px;font-family:inherit;cursor:pointer}
+
+  /* 推薦／瀏覽紀錄共用的橫向軌道。一排兩張多一點點，露出的那一角就是「右邊還有」的提示。
+     手機能直接滑，所以不像網頁版那樣放點點 */
+  .ap-rail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;
+    margin:0 -16px;padding:0 16px 16px;scrollbar-width:none}
   .ap-rail::-webkit-scrollbar{display:none}
-  .ap-card{flex:0 0 136px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
-  .ap-card img,.ap-card .noimg{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1f2f7;display:block}
+  .ap-card{flex:0 0 calc((100% - 1.2 * 10px) / 2.2);scroll-snap-align:start;
+    border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;background:#fff}
+  .ap-imgwrap{position:relative}
+  .ap-card img,.ap-card .noimg{width:100%;aspect-ratio:4/3;object-fit:cover;background:#f1f2f7;display:block}
   .ap-card .noimg{display:flex;align-items:center;justify-content:center;color:#b6bcc7;font-size:12px}
-  .ap-card-bd{padding:8px;display:flex;flex-direction:column;gap:4px;flex:1}
-  .ap-card-nm{font-size:12px;color:#33435a;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .ap-tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px}
-  .ap-card-pr{margin-top:auto;font-size:14px;color:#dc4e43;font-weight:700}
-  .ap-fb{background:#fafafa;border:1px dashed #e5e5e5;border-radius:6px;padding:10px;font-size:12px;color:#8a94a6;line-height:1.6}
+  .ap-tag{position:absolute;left:6px;top:6px;font-size:11px;padding:1px 7px;border-radius:4px}
+  .ap-card-bd{padding:8px;display:flex;flex-direction:column;flex:1}
+  .ap-card-nm{font-size:13px;color:#33435a;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;
+    -webkit-box-orient:vertical;overflow:hidden;min-height:calc(1.45em * 2)}
+  .ap-card-pr{margin-top:auto;padding-top:6px;font-size:15px;color:#dc4e43;font-weight:700}
+
+  /* 載入中的骨架：直接拿真卡片來染灰（字透明、底灰），不另外寫一套版型。
+     兩邊各寫一套就會差幾像素，推薦填進來時版面就跳了（原始需求 §2.4 要求不跳） */
+  .ap-card.is-sk{border-color:#f0f1f3}
+  .ap-card.is-sk .ap-card-nm,
+  .ap-card.is-sk .ap-card-pr,
+  .ap-card.is-sk .noimg{color:transparent;background:#f0f1f3;border-radius:4px;
+    animation:apSk 1.2s ease-in-out infinite}
+  .ap-card.is-sk .ap-tag{display:none}
+  @keyframes apSk{0%,100%{opacity:1}50%{opacity:.45}}
+  @media (prefers-reduced-motion:reduce){.ap-card.is-sk *{animation:none}}
+
   .ap-omit{margin-top:20px;border-top:8px solid #f1f2f7;padding:16px;color:#b6bcc7;font-size:12px;line-height:2;text-align:center}
+  .ap-toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(51,67,90,.94);
+    color:#fff;font-size:13px;padding:8px 16px;border-radius:20px;z-index:5}
 
   /* 開發者面板：放在手機框外，一看就知道不是 App 畫面的一部分 */
   #tbp{position:fixed;left:0;top:0;width:264px;height:100vh;overflow-y:auto;background:#2b2f3a;color:#e8eaee;
@@ -72,6 +109,8 @@
   #tbp .seg button{flex:1 1 auto;min-width:40px;padding:5px 6px;border:1px solid #3a3f4c;background:#353a46;
        color:#b6bcc7;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit}
   #tbp .seg button.on{background:#4ba83b;border-color:#4ba83b;color:#fff}
+  #tbp input[type=range]{width:100%;accent-color:#4ba83b}
+  #tbp .hint{margin-top:4px;color:#8a94a6;font-size:12px;line-height:1.6}
   #tbp .tip{margin-top:12px;padding:8px 10px;background:#353a46;border-radius:4px;color:#b6bcc7;font-size:12px;line-height:1.7}
   @media (max-width:900px){ #tbp{display:none} }
   @media (max-width:480px){
@@ -86,9 +125,10 @@
 
 <div class="app-frame" id="frame">
   <div class="app-statusbar"><span>9:41</span><span>▂▄▆ 5G ▮</span></div>
-  <header class="app-bar"><button>‹</button><h1 id="apBar"></h1><button>⋯</button></header>
+  <header class="app-bar"><button>‹</button><h1 id="apBar"></h1>
+    <button id="apCart">🧺<span class="cnt" id="apCnt" hidden>0</span></button></header>
   <main class="app-scroll" id="apScroll"></main>
-  <div class="app-cta"><b id="apPrice"></b><button>加入購物車</button></div>
+  <div class="app-cta"><b id="apPrice"></b><button id="apBuy">加入菜籃</button></div>
 </div>
 
 <script>
@@ -237,94 +277,290 @@ const REVIEWS = {
   ],
 };
 
+/* 產線列表頁（React，程式在 react-component-export）。
+   banner、子分類標籤、第一個子分類的標題與說明都取自正式站（2026-10-21 擷取） */
+const CATEGORY = {
+  產地直送: {
+    route: '/Products/ItemNew', view: 'ItemNew.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202608180858171.png',
+    tabs: ['新品快報', '人氣商品', '在地小農', '安心時蔬', '嚴選好物', '送禮專區', '水產直送'],
+    first: { t: '新品快報', d: '' },
+  },
+  冷凍超市: {
+    route: '/Products/FrozenFood', view: 'FrozenFood.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202607030341561.jpg',
+    tabs: ['驚喜特惠', '海鮮水產', '嚴選肉品', '限定好物', '冷凍蔬果', '惜食專區'],
+    first: { t: '驚喜特惠', d: '' },
+  },
+  粥寶寶: {
+    route: '/Products/Kitchenette', view: 'Kitchenette.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202610200611441.jpg',
+    tabs: ['免運專區', '乖乖聯名', '小寶寶', '中寶寶', '大寶寶', '一歲以上', '寶寶湯品', '手指食物'],
+    first: { t: '免運專區', d: '此區皆免運費！平日下午兩點前訂購，當天出貨、隔日到貨（遇假日出貨順延至上班日）' },
+  },
+  益菓保: {
+    route: '/Products/Eaglebabee', view: 'Eaglebabee.cshtml',
+    banner: 'https://greenboxcdn.azureedge.net/upload/Banner/202605180239561.png',
+    tabs: ['強打推薦', '功效益生菌', '關鍵營養', '晶亮有感', '組合優惠', '嚴選商品'],
+    first: { t: '強打推薦', d: '熱門推薦、活動優惠' },
+  },
+};
+
 </script>
 <script>
-const S={line:'粥寶寶',logged:true,order:'addon',cross:2,rebuy:true,count:6,edge:'normal'};
-const PANEL=[
- ['line','產線',[['產地直送','產地直送'],['冷凍超市','冷凍超市'],['粥寶寶','粥寶寶'],['益菓保','益菓保']]],
- ['logged','登入狀態',[[true,'已登入'],[false,'未登入']]],
- ['order','版位順序',[['addon','加購品在上'],['rec','猜你喜歡在上']]],
- ['cross','推別條產線',[[0,'只推自己'],[2,'最多 2 個'],[99,'不限']]],
- ['rebuy','「可以再買」',[[true,'開'],[false,'關']]],
- ['count','推幾個',[[4,'4'],[6,'6'],[10,'10']]],
- ['edge','例外情境',[['normal','正常'],['timeout','逾時'],['empty','沒結果']]],
-];
-const el=(t,c,h)=>{const n=document.createElement(t);if(c)n.className=c;if(h!==undefined)n.innerHTML=h;return n;};
-const pic=(p,c)=>`<img class="${c||''}" src="${CDN}${p}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;noimg&quot;>商品圖</div>'">`;
+/* 規則已經定案為「拿到什麼用什麼」，所以面板只剩顯示相關的開關。
+   推薦怎麼算、推幾個、推不推別條產線，全部由推薦服務決定，App 端不過濾也不重排。 */
+const S = {
+  line: '粥寶寶',
+  logged: true,
+  addonCount: 6,
+  edge: 'normal',
+  limit: 18,     // 跟服務要幾個（規格：預設 10、上限 20，這裡撐滿好看版面）
+  addonOpen: false,
+};
 
-function renderPanel(){
-  const bd=document.getElementById('tbpBody');bd.innerHTML='';
-  PANEL.forEach(([k,label,opts])=>{
-    const f=el('div','f');f.appendChild(el('span',null,label));
-    const seg=el('div','seg');
-    opts.forEach(([v,t])=>{const b=el('button',S[k]===v?'on':null,t);b.onclick=()=>{S[k]=v;renderPanel();render();};seg.appendChild(b);});
-    f.appendChild(seg);bd.appendChild(f);
+const PANEL = [
+  ['line', '產線', [['產地直送', '產地直送'], ['冷凍超市', '冷凍超市'], ['粥寶寶', '粥寶寶'], ['益菓保', '益菓保']]],
+  ['logged', '登入狀態', [[true, '已登入'], [false, '未登入']]],
+  ['addonCount', '這個商品有幾個加價購', { min: 0, max: 10 }],
+  ['edge', '例外情境', [['normal', '正常'], ['loading', '載入中'], ['timeout', '推薦拿不到'], ['noimg', '商品缺圖']]],
+];
+
+function addonHint(n) {
+  if (n === 0) return '購買區不出現加價購';
+  if (n <= 2) return n + ' 筆，直接全部顯示';
+  return '預設顯示 2 筆，其餘 ' + (n - 2) + ' 筆收在「更多加價購商品」裡';
+}
+
+const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h !== undefined) n.innerHTML = h; return n; };
+const pic = (p, c) => '<img class="' + (c || '') + '" src="' + CDN + p + '" alt="" loading="lazy"'
+  + ' onerror="this.outerHTML=\'<div class=&quot;noimg&quot;>商品圖</div>\'">';
+
+function renderPanel() {
+  const bd = document.getElementById('tbpBody');
+  bd.innerHTML = '';
+  PANEL.forEach(([k, label, opts]) => {
+    const f = el('div', 'f');
+    f.appendChild(el('span', null, label));
+    if (Array.isArray(opts)) {
+      const seg = el('div', 'seg');
+      opts.forEach(([v, t]) => {
+        const b = el('button', S[k] === v ? 'on' : null, t);
+        b.onclick = () => { S[k] = v; renderPanel(); render(); };
+        seg.appendChild(b);
+      });
+      f.appendChild(seg);
+    } else {
+      const r = el('input');
+      r.type = 'range'; r.min = opts.min; r.max = opts.max; r.value = S[k];
+      r.oninput = () => { S[k] = Number(r.value); S.addonOpen = false; renderPanel(); render(); };
+      f.appendChild(r);
+      f.appendChild(el('div', 'hint', S[k] + ' 個 ／ ' + addonHint(S[k])));
+    }
+    bd.appendChild(f);
   });
-  const w=!S.logged?'未登入：不呼叫推薦，區塊標題變成「為您推薦」，顯示本產線熱門。'
-    :S.edge==='timeout'?'推薦逾時（3 秒）：降級顯示本產線熱門，App 其他部分不受影響。'
-    :S.edge==='empty'?'推薦回來是空的：行為跟逾時一樣，降級不留白。':null;
-  if(w)bd.appendChild(el('div','tip',w));
-  bd.appendChild(el('div','tip','手機框外的面板不是 App 畫面的一部分。用真手機打開這一頁，框會自動滿版、面板不顯示。'));
+
+  const w = S.edge === 'loading'
+    ? '推薦還沒回來：骨架佔住的高度跟填完一模一樣，所以推薦進來時版面不會跳（原始需求 §2.4，非同步是必須）。商品頁其他部分不等推薦。'
+    : !S.logged ? '未登入訪客：不呼叫推薦，區塊標題換成「為您推薦」，顯示既有的那份本產線清單。'
+    : S.edge === 'timeout' ? '推薦逾時或沒有結果：兩種畫面一樣，都降級成本產線熱門，不留白。'
+    : S.edge === 'noimg' ? '部分商品缺圖：卡片換成灰底佔位，高度不變。' : null;
+  if (w) bd.appendChild(el('div', 'tip', w));
+  bd.appendChild(el('div', 'tip', '手機框外的面板不是 App 畫面的一部分。用真手機打開這一頁，框會自動滿版、面板不顯示。'));
 }
-function recs(){
-  const d=DATA[S.line];
-  const own=d.items.filter(x=>!x.addon).map(x=>({...x,line:S.line}));
-  const nCross=S.cross===0?0:(S.cross===99?Math.floor(S.count/2):S.cross);
-  const cross=S.cross?CROSS[S.line].flatMap(l=>DATA[l].items.filter(x=>!x.addon).map(x=>({...x,line:l}))).filter(x=>!x.bought).slice(0,nCross):[];
-  const rebuy=S.logged&&S.rebuy?own.filter(x=>x.bought>0).sort((a,b)=>(b.due?1:0)-(a.due?1:0)).slice(0,5):[];
-  const ids=new Set(rebuy.map(x=>x.id));
-  const discover=[...own.filter(x=>!x.bought&&!ids.has(x.id)).slice(0,Math.max(0,S.count-cross.length)),...cross];
-  return {rebuy,discover};
+
+/* 這一頁有幾個加價購由滑桿決定。真資料每條產線只有 4~6 個，
+   要湊到 10 就把清單循環接下去，id 會重複所以另外給 _key */
+function addonsForPage() {
+  const src = ADDONS[S.line] || [];
+  const n = Math.max(0, Math.min(10, S.addonCount));
+  if (!src.length || n === 0) return [];
+  return Array.from({ length: n }, (_, i) => ({ ...src[i % src.length], _key: i }));
 }
-function tagOf(it,kind){
-  if(kind==='rebuy')return it.due?['該補貨了','#fff6e0']:['常買','#fdeef0'];
-  if(it.line!==S.line)return ['熱門','#f1f2f7'];
-  return ['一起買','#e9f4e5'];
+
+/* 推薦：照服務端回什麼就顯示什麼。本產線排前面不是 App 在篩，
+   是服務端的共購分數自然讓同類商品浮上來（原始需求 §0.1 模式 B） */
+function computeRecs() {
+  const lines = [S.line, ...Object.keys(DATA).filter((L) => L !== S.line)];
+  const pool = lines.flatMap((L) => DATA[L].items.filter((x) => !x.addon).map((x) => ({ ...x, line: L })));
+  const own = pool.filter((x) => x.line === S.line);
+  const rebuy = S.logged ? own.filter((x) => x.bought > 0).slice(0, 5) : [];  // 服務端上限就是 5
+  const ids = new Set(rebuy.map((x) => x.id));
+  const discover = pool.filter((x) => !x.bought && !ids.has(x.id)).slice(0, S.limit - rebuy.length);
+  const all = [...rebuy, ...discover];
+  if (S.edge === 'noimg') all.forEach((x, i) => { if (i % 3 === 1) x._noimg = true; });
+  return all;
 }
-function rail(list,kind){
-  const r=el('div','ap-rail');
-  list.forEach(it=>{
-    const [tag,bg]=tagOf(it,kind);
-    const c=el('div','ap-card');
-    c.innerHTML=`${pic(it.pic)}<div class="ap-card-bd"><div class="ap-card-nm">${it.name}</div>
-      <div><span class="ap-tag" style="background:${bg};color:#5a6372">${tag}</span></div>
-      <div class="ap-card-pr">$${it.price.toLocaleString()} <span style="font-size:11px;font-weight:400">起</span></div></div>`;
-    r.appendChild(c);
+const hotItems = () => DATA[S.line].items.filter((x) => !x.addon).slice(0, 6)
+  .map((x) => ({ ...x, line: S.line, bought: 0 }));
+
+/* 瀏覽紀錄：跟網頁版同一份假資料邏輯，標籤是「多久以前看的」 */
+function historyItems() {
+  const skip = new Set([DATA[S.line].anchor.id]);
+  const pool = [];
+  [S.line, ...Object.keys(DATA).filter((L) => L !== S.line)].forEach((L) => {
+    DATA[L].items.forEach((x) => { if (!x.addon && !skip.has(x.id)) pool.push({ ...x, line: L }); });
   });
+  const AGO = ['剛剛', '2 小時前', '今天稍早', '昨天', '昨天', '2 天前',
+    '3 天前', '3 天前', '4 天前', '5 天前', '6 天前', '上週'];
+  return pool.slice(0, AGO.length).map((x, i) => ({ ...x, _ago: AGO[i] }));
+}
+
+/* 標籤兩色：買過的用產線主色，其餘灰色（跟網頁版同一個定案） */
+function tagOf(it, kind) {
+  if (kind === 'history') return [it._ago, false];
+  if (it.bought > 0) return ['常買', true];
+  if (it.line !== S.line) return ['熱門', false];
+  return ['同類熱門', false];
+}
+function railCard(it, kind) {
+  const [tag, mine] = tagOf(it, kind);
+  const style = mine
+    ? 'background:color-mix(in srgb, ' + LINE_COLOR[S.line] + ' 16%, #fff);color:' + LINE_COLOR[S.line]
+    : 'background:rgba(255,255,255,.92);color:#6b7585';
+  const c = el('div', 'ap-card');
+  const imgHtml = it._noimg ? '<div class="noimg">商品圖</div>' : pic(it.pic);
+  c.innerHTML = '<div class="ap-imgwrap">' + imgHtml
+    + '<span class="ap-tag" style="' + style + '">' + tag + '</span></div>'
+    + '<div class="ap-card-bd"><div class="ap-card-nm">' + it.name + '</div>'
+    + '<div class="ap-card-pr">$' + it.price.toLocaleString()
+    + '<span style="font-size:11px;font-weight:400"> 起</span></div></div>';
+  return c;
+}
+function rail(list, kind) {
+  const r = el('div', 'ap-rail');
+  list.forEach((it) => r.appendChild(railCard(it, kind)));
   return r;
 }
-function render(){
-  const d=DATA[S.line],a=d.anchor;
-  document.getElementById('frame').style.setProperty('--line',LINE_COLOR[S.line]);
-  document.getElementById('apBar').textContent=S.line;
-  document.getElementById('apPrice').textContent='$'+a.price.toLocaleString();
-  const sc=document.getElementById('apScroll');sc.innerHTML='';
-  sc.appendChild(el('div',null,pic(a.pic,'ap-hero')));
-  sc.appendChild(el('div','ap-body',`<h2 class="ap-name">${a.name}</h2>
-    <div class="ap-meta">溫層配送：<b>${a.temp}</b><br>共 ${a.specs} 種規格可選<br>原產地：台灣</div>`));
-
-  const addon=el('section','ap-sec');
-  addon.innerHTML=`<h2>加價購</h2><div class="ap-addon"><div class="ap-addon-hd">優惠加購商品</div>
-    ${ADDONS[S.line].map(x=>`<div class="ap-addon-row"><input type="checkbox">${pic(x.pic)}
-      <div class="ap-addon-nm">${x.name}</div><div class="ap-addon-pr">$${x.price.toLocaleString()}</div></div>`).join('')}</div>`;
-
-  let rec=null;
-  if(S.line!=='益菓保'){
-    rec=el('section','ap-sec');
-    rec.appendChild(el('h2',null,'猜你會喜歡'));
-    if(!S.logged||S.edge!=='normal'){
-      rec.querySelector('h2').textContent='為您推薦';
-      rec.appendChild(rail(d.items.filter(x=>!x.addon).slice(0,4).map(x=>({...x,line:S.line,bought:0})),'hot'));
-    }else{
-      const {rebuy,discover}=recs();
-      if(rebuy.length){rec.appendChild(el('p',null,'您常買・可以再買'));rec.appendChild(rail(rebuy,'rebuy'));}
-      if(discover.length){rec.appendChild(el('p',null,'買這個的客人也常買'));rec.appendChild(rail(discover,'discover'));}
-    }
+function skeletonRail() {
+  const r = el('div', 'ap-rail');
+  // 用真卡片當骨架，所以高度一定跟填完一樣；CSS 再把字染透明、底染灰
+  const dummy = { name: '佔位商品名稱佔位商品名稱佔位', price: 0, pic: '', line: S.line, bought: 0, _noimg: true };
+  for (let i = 0; i < 4; i += 1) {
+    const c = railCard(dummy, 'rec');
+    c.classList.add('is-sk');
+    r.appendChild(c);
   }
-  (S.order==='addon'?[addon,rec]:[rec,addon]).forEach(b=>{if(b)sc.appendChild(b);});
-  sc.appendChild(el('div','ap-omit','商品描述 ／ 貼心叮嚀 ／ 評論（相同版型，略）'));
+  return r;
 }
-renderPanel();render();
+function section(title, node) {
+  const sec = el('section', 'ap-sec');
+  sec.appendChild(el('h2', null, title));
+  sec.appendChild(node);
+  return sec;
+}
+
+/* 勾起來的加價購另外存（_key → 件數），按下加入菜籃才一起進菜籃。
+   每項限購 3 件，所以存的是數量不是布林 */
+const ADDON_PICK = new Map();
+let CART_N = 0;
+
+function addonStrip() {
+  const items = addonsForPage();
+  if (!items.length) return null;
+  const shown = S.addonOpen ? items.length : Math.min(2, items.length);
+  const box = el('div', 'ap-addon');
+  box.innerHTML = '<div class="ap-addon-hd">加價購商品<span class="note">勾選後與主商品一併結帳</span></div>';
+
+  items.forEach((it, i) => {
+    const on = ADDON_PICK.has(it._key);
+    const qty = ADDON_PICK.get(it._key) || 1;
+    const row = el('label', 'ap-addon-row' + (on ? ' checked' : ''));
+    if (i >= shown) row.hidden = true;
+    row.innerHTML = '<input type="checkbox"' + (on ? ' checked' : '') + '>'
+      + pic(it.pic)
+      + '<div class="ap-addon-nm">' + it.name + '</div>'
+      + '<select class="ap-addon-qty">'
+      + [1, 2, 3].map((q) => '<option' + (q === qty ? ' selected' : '') + '>' + q + '</option>').join('')
+      + '</select>'
+      + '<div class="ap-addon-pr">'
+      + (it.orig ? '<span class="orig">$' + it.orig.toLocaleString() + '</span>' : '')
+      + '<span class="now">$' + it.price.toLocaleString() + '</span></div>';
+    const sel = row.querySelector('.ap-addon-qty');
+    row.querySelector('input').onchange = (e) => {
+      if (e.target.checked) ADDON_PICK.set(it._key, Number(sel.value));
+      else ADDON_PICK.delete(it._key);
+      row.classList.toggle('checked', e.target.checked);
+      paintBuyBtn();
+    };
+    // 數量下拉是自己的控制，點它不該連帶勾選整列
+    sel.onclick = (e) => e.stopPropagation();
+    sel.onchange = (e) => {
+      e.stopPropagation();
+      if (ADDON_PICK.has(it._key)) ADDON_PICK.set(it._key, Number(sel.value));
+    };
+    box.appendChild(row);
+  });
+
+  if (items.length > 2) {
+    const more = el('button', 'ap-addon-more',
+      S.addonOpen ? '▴ 收合加價購商品' : '▾ 更多加價購商品（還有 ' + (items.length - 2) + ' 項）');
+    more.type = 'button';
+    more.onclick = () => { S.addonOpen = !S.addonOpen; render(); };
+    box.appendChild(more);
+  }
+  return box;
+}
+
+/* 加入菜籃不是開關：按第二次是再加一次，不是移除，文案也始終是「加入菜籃」
+   （真站 ItemDetail.cshtml:1276 的 checkAndAddToCart 沒有任何移除分支） */
+function paintBuyBtn() {
+  const n = ADDON_PICK.size;
+  document.getElementById('apBuy').textContent = '加入菜籃' + (n ? '（含 ' + n + ' 項加購）' : '');
+}
+function toast(msg) {
+  const sc = document.getElementById('apScroll');
+  const old = sc.querySelector('.ap-toast');
+  if (old) old.remove();
+  const t = el('div', 'ap-toast', msg);
+  sc.appendChild(t);
+  setTimeout(() => t.remove(), 1800);
+}
+
+function render() {
+  const d = DATA[S.line];
+  const a = d.anchor;
+  document.getElementById('frame').style.setProperty('--line', LINE_COLOR[S.line]);
+  document.getElementById('apBar').textContent = S.line;
+  document.getElementById('apPrice').textContent = '$' + a.price.toLocaleString();
+
+  const sc = document.getElementById('apScroll');
+  sc.innerHTML = '';
+  sc.appendChild(el('div', null, pic(a.pic, 'ap-hero')));
+  sc.appendChild(el('div', 'ap-body', '<h2 class="ap-name">' + a.name + '</h2>'
+    + '<div class="ap-meta">溫層配送：<b>' + a.temp + '</b><br>共 ' + a.specs + ' 種規格可選<br>原產地：台灣</div>'));
+
+  const strip = addonStrip();
+  if (strip) sc.appendChild(section('加價購', strip));
+
+  // 猜你喜歡：一塊。四條產線都有（益菓保不顯示的舊例外不沿用，新機制統一）
+  const degraded = !S.logged || S.edge === 'timeout';
+  if (S.edge === 'loading') {
+    sc.appendChild(section('猜你喜歡', skeletonRail()));
+  } else {
+    sc.appendChild(section(degraded ? '為您推薦' : '猜你喜歡',
+      rail(degraded ? hotItems() : computeRecs(), 'rec')));
+  }
+
+  sc.appendChild(el('div', 'ap-omit', '商品描述 ／ 貼心叮嚀（WebView，相同版型，略）'));
+  sc.appendChild(section('瀏覽紀錄', rail(historyItems(), 'history')));
+  sc.appendChild(el('div', 'ap-omit', '商品評論（相同版型，略）'));
+
+  paintBuyBtn();
+}
+
+document.getElementById('apBuy').onclick = () => {
+  const picks = addonsForPage().filter((x) => ADDON_PICK.has(x._key));
+  const add = 1 + picks.reduce((s, x) => s + (ADDON_PICK.get(x._key) || 1), 0);
+  CART_N += add;
+  const cnt = document.getElementById('apCnt');
+  cnt.hidden = false;
+  cnt.textContent = CART_N;
+  toast(picks.length ? '已加入菜籃（含 ' + picks.length + ' 項加購）' : '已加入菜籃');
+};
+
+renderPanel();
+render();
 </script>
 </body>
 </html>
