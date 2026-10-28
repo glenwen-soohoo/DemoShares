@@ -22,7 +22,9 @@
   *{box-sizing:border-box}
   body{margin:0;background:#c9ccce;font-family:'Noto Sans TC','Microsoft JhengHei','微軟正黑體',sans-serif;
        display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:24px}
-  .app-frame{width:390px;height:min(812px,calc(100vh - 48px));display:flex;flex-direction:column;
+  /* position:relative 是給選規格小窗用的：小窗要蓋住整支手機（含底部 CTA），
+     而 .app-scroll 自己也是 relative，只掛在那邊會蓋不到底部那一條 */
+  .app-frame{width:390px;height:min(812px,calc(100vh - 48px));display:flex;flex-direction:column;position:relative;
     background:#fff;border-radius:40px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.22);--line:#ef8e8e}
   .app-statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;
     padding:0 24px;font-size:13px;color:#33435a;flex:0 0 auto}
@@ -83,6 +85,23 @@
     -webkit-box-orient:vertical;overflow:hidden;min-height:calc(1.45em * 2)}
   .ap-card-pr{margin-top:auto;padding-top:6px;font-size:15px;color:#dc4e43;font-weight:700}
 
+  /* 新增：本次需求（卡片購買鈕）。
+     配色與圓角照網頁版的 .gy-add（#dc4e43 底、已加入換成 #4ba83b 外框）。
+     網頁版在手機斷點本來就是價格與按鈕上下排、按鈕佔滿整列，App 直接沿用這個形狀 */
+  .ap-add{margin-top:6px;width:100%;border:1px solid #dc4e43;background:#dc4e43;color:#fff;
+    border-radius:4px;padding:6px 8px;font-size:13px;font-family:inherit;cursor:pointer}
+  .ap-add.is-in{background:#fff;color:#4ba83b;border-color:#4ba83b}
+
+  /* 選規格小窗。真 App 是 AddToCartModal，一樣從底部彈出 */
+  .ap-sheet{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;z-index:6}
+  .ap-sheet-bd{width:100%;background:#fff;border-radius:12px 12px 0 0;padding:16px;max-height:70%;overflow:auto}
+  .ap-sheet-nm{font-size:14px;color:#33435a;font-weight:700;line-height:1.45;margin-bottom:12px}
+  .ap-sheet-op{display:block;width:100%;text-align:left;border:1px solid #e5e5e5;background:#fff;
+    border-radius:4px;padding:10px 12px;font-size:13px;color:#33435a;font-family:inherit;
+    margin-bottom:8px;cursor:pointer}
+  .ap-sheet-cancel{display:block;width:100%;border:0;background:#f1f2f7;color:#6b7585;
+    border-radius:4px;padding:10px;font-size:13px;font-family:inherit;margin-top:4px;cursor:pointer}
+
   /* 載入中的骨架：直接拿真卡片來染灰（字透明、底灰），不另外寫一套版型。
      兩邊各寫一套就會差幾像素，推薦填進來時版面就跳了（原始需求 §2.4 要求不跳） */
   .ap-card.is-sk{border-color:#f0f1f3}
@@ -91,6 +110,9 @@
   .ap-card.is-sk .noimg{color:transparent;background:#f0f1f3;border-radius:4px;
     animation:apSk 1.2s ease-in-out infinite}
   .ap-card.is-sk .ap-tag{display:none}
+  /* 骨架的購買鈕一起染灰，不是隱藏：隱藏的話卡片會矮一截，推薦填進來版面就跳 */
+  .ap-card.is-sk .ap-add{color:transparent;background:#f0f1f3;border-color:#f0f1f3;
+    pointer-events:none;animation:apSk 1.2s ease-in-out infinite}
   @keyframes apSk{0%,100%{opacity:1}50%{opacity:.45}}
   @media (prefers-reduced-motion:reduce){.ap-card.is-sk *{animation:none}}
 
@@ -407,11 +429,21 @@ function railCard(it, kind) {
     : 'background:rgba(255,255,255,.92);color:#6b7585';
   const c = el('div', 'ap-card');
   const imgHtml = it._noimg ? '<div class="noimg">商品圖</div>' : pic(it.pic);
+  // 新增：本次需求。按鈕三態跟網頁版一致：已加入／選規格（多規格）／加入菜籃
+  const multi = (it.specNames || []).length > 1;
+  const inCart = CART.has(it.id);
   c.innerHTML = '<div class="ap-imgwrap">' + imgHtml
     + '<span class="ap-tag" style="' + style + '">' + tag + '</span></div>'
     + '<div class="ap-card-bd"><div class="ap-card-nm">' + it.name + '</div>'
     + '<div class="ap-card-pr">$' + it.price.toLocaleString()
-    + '<span style="font-size:11px;font-weight:400"> 起</span></div></div>';
+    + '<span style="font-size:11px;font-weight:400"> 起</span></div>'
+    + '<button class="ap-add' + (inCart ? ' is-in' : '') + '" type="button"'
+    + ' data-id="' + it.id + '" data-multi="' + (multi ? 1 : 0) + '">'
+    + (inCart ? '已加入' : (multi ? '選規格' : '加入菜籃')) + '</button></div>';
+  c.querySelector('.ap-add').onclick = (e) => {
+    e.stopPropagation();
+    if (multi) openSpecSheet(it); else addFromCard(it, null);
+  };
   return c;
 }
 function rail(list, kind) {
@@ -495,6 +527,49 @@ function paintBuyBtn() {
   const n = ADDON_PICK.size;
   document.getElementById('apBuy').textContent = '加入菜籃' + (n ? '（含 ' + n + ' 項加購）' : '');
 }
+/* 新增：本次需求。推薦卡片的加入菜籃。
+   跟底部 CTA 的規則一致：按第二次是再加一次，不是移除（真站 checkAndAddToCart 沒有移除分支）。
+   按鈕上的「已加入」只是看得出加過，不是開關。 */
+const CART = new Set();
+
+function paintCardBtns() {
+  document.querySelectorAll('.ap-add[data-id]').forEach((b) => {
+    const inCart = CART.has(Number(b.dataset.id));
+    b.classList.toggle('is-in', inCart);
+    b.textContent = inCart ? '已加入' : (b.dataset.multi === '1' ? '選規格' : '加入菜籃');
+  });
+}
+
+function addFromCard(it, spec) {
+  CART.add(it.id);
+  CART_N += 1;
+  const cnt = document.getElementById('apCnt');
+  cnt.hidden = false;
+  cnt.textContent = CART_N;
+  paintCardBtns();
+  toast('已加入菜籃：' + it.name + (spec ? '（' + spec + '）' : ''));
+}
+
+/* 多規格商品：真 App 會開 AddToCartModal 選規格，這裡做成同樣的底部小窗，
+   讓流程走得完。掛在 #frame 而不是捲動區，才蓋得住底部那條 CTA */
+function openSpecSheet(it) {
+  const sh = el('div', 'ap-sheet');
+  sh.innerHTML = '<div class="ap-sheet-bd"><div class="ap-sheet-nm">' + it.name + '</div>'
+    + it.specNames.map((s, i) =>
+      '<button class="ap-sheet-op" type="button" data-i="' + i + '">' + s + '</button>').join('')
+    + '<button class="ap-sheet-cancel" type="button">取消</button></div>';
+  sh.onclick = (e) => {
+    const op = e.target.closest('.ap-sheet-op');
+    if (op) {
+      sh.remove();
+      addFromCard(it, it.specNames[Number(op.dataset.i)]);
+      return;
+    }
+    if (e.target.closest('.ap-sheet-cancel') || e.target === sh) sh.remove();
+  };
+  document.getElementById('frame').appendChild(sh);
+}
+
 function toast(msg) {
   const sc = document.getElementById('apScroll');
   const old = sc.querySelector('.ap-toast');
