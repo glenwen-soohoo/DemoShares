@@ -5883,16 +5883,16 @@ body {
   function tagStatus(id) {
     const input=inputById(id);
     const available=hasStock(id);
-    const result={status:'normal',labelText:available?'':'已售完',buttonText:available?(Number(input.Type2)===6?'結束販售':'加入菜籃'):'已售完',canAddToCart:available&&Number(input.Type2)!==6,showInList:Number(input.Type2)!==6,showInSearch:true,showProductPage:true,seasonText:null,canNotify:false,notifyKind:null,notifyText:null};
+    const result={status:'normal',labelText:available?'':'已售完',buttonText:available?'加入菜籃':'已售完',canAddToCart:available,showInList:Number(input.Type2)!==6,showInSearch:true,showProductPage:true,seasonText:null,canNotify:false,notifyKind:null,notifyText:null};
     if(!input.Display) return {...result,status:'hidden',labelText:'',canAddToCart:false,showInList:false,showInSearch:false,showProductPage:false};
     if(!input.hasTag) return result;
     if(input.Status==='正常上架'||input.Status==='提早上架') return result;
     const reasons=input.reasons || [];
     if(reasons.some(r=>reasonPriority(r)===0)) return {...result,status:'discontinued',labelText:'本商品已停止販售',buttonText:'已停止販售',canAddToCart:false,showInList:false};
-    if(Number(input.Type2)!==6) {
-      if(reasons.some(r=>reasonPriority(r)===1)) return {...result,status:'weatherPaused',labelText:'氣候因素暫停接單',buttonText:'暫停販售',canAddToCart:false,showInList:true};
-      if(reasons.some(r=>reasonPriority(r)===2)) return {...result,status:'supplyPaused',labelText:'供貨不足，暫停接單',buttonText:'暫停販售',canAddToCart:false,showInList:true};
-    }
+    // 2026-11-02：拿掉原本包在外面的 if(Type2!==6)。「快速到貨-類別＝不顯示」只決定商品掛不掛在分區頁，
+    // 不再把氣候與供貨改判成產季結束。showInList 仍沿用預設值（Type2=6 本來就不在分區頁）。
+    if(reasons.some(r=>reasonPriority(r)===1)) return {...result,status:'weatherPaused',labelText:'氣候因素暫停接單',buttonText:'暫停販售',canAddToCart:false};
+    if(reasons.some(r=>reasonPriority(r)===2)) return {...result,status:'supplyPaused',labelText:'供貨不足，暫停接單',buttonText:'暫停販售',canAddToCart:false};
     const [y,m,d]=input.EventDate.split('-').map(Number);
     const event=Date.UTC(y,m-1,d);
     const boundary=event+30*86400000;
@@ -5911,13 +5911,12 @@ body {
   function purchaseState(id,specId,mode='detail'){
     const result=tagStatus(id),period=salePeriod(id),stock=specId===undefined?(hasStock(id)?1:0):stockForSpec(id,specId);
     const blocked=(text,code)=>withNotify({...result,status:code,buttonText:text,canAddToCart:false});
-    const hiddenCategory=()=>Number(inputById(id).Type2)===6;
+    // 2026-11-02 移除 hiddenCategory()：「快速到貨-類別＝不顯示」不再鎖購買、不再改狀態。
     if(result.status==='hidden')return result;
     if(mode==='card'){
       // 正式站順序：還沒開賣優先，再來才是產季類（快速到貨-類別＝不顯示）與售完、過期
       if(result.status!=='normal')return withNotify(result);
       if(period==='notStarted')return blocked('尚未開賣','saleNotStarted');
-      if(hiddenCategory())return blocked('結束販售','seasonEnded');
       if(stock<=0)return blocked('已售完','soldOut');
       if(period==='ended')return blocked('結束販售','saleEnded');
       return withNotify({...result,buttonText:'購買',canAddToCart:true});
@@ -5928,12 +5927,11 @@ body {
       if(result.status!=='normal')return plain(result);
       if(stock<=0)return plain({...result,status:'soldOut',buttonText:'已售完',canAddToCart:false});
       if(period==='notStarted')return plain({...result,status:'saleNotStarted',buttonText:'即將販售',canAddToCart:false});
-      if(period==='ended'||hiddenCategory())return plain({...result,status:'saleEnded',buttonText:'結束販售',canAddToCart:false});
+      if(period==='ended')return plain({...result,status:'saleEnded',buttonText:'結束販售',canAddToCart:false});
       return plain({...result,buttonText:'加入購物車',canAddToCart:true});
     }
     if(period==='notStarted')return blocked('倒數開放訂購','countdown');
     if(result.status!=='normal')return withNotify(result);
-    if(hiddenCategory())return blocked('結束販售','seasonEnded');
     if(period==='ended')return blocked('結束販售','saleEnded');
     // 只有這一個規格沒貨、別的規格還買得到時不給通知入口，跟正式站一樣顯示停用的「已售完」
     if(stock<=0)return blocked('已售完',hasStock(id)?'soldOutSpec':'soldOut');
@@ -6286,15 +6284,14 @@ body {
       const seasonal=Number(document.getElementById('Type2').value)===6;
       const tiers=new Map();
       selected.forEach(reason=>{
-        const priority=reasonPriority(reason),rank=seasonal&&priority!==0?3:priority;
+        const priority=reasonPriority(reason),rank=priority; // 2026-11-02：不再因為 Type2=6 把原因降到產季層
         const [category,name]=reason.split('|');
         const label=priority===0?category+'（'+name+'）':category;
         if(!tiers.has(rank))tiers.set(rank,new Set());tiers.get(rank).add(label);
       });
-      if(document.getElementById('hasTag').checked&&seasonal)tiers.set(.5,new Set(['快速到貨類別：不顯示']));
       const order=[...tiers].sort(([a],[b])=>a-b).map(([,labels])=>labels.size>1?'（'+[...labels].join(' = ')+'）':[...labels][0]);
       const result=status(fixedId);
-      const label=!inputsValid?'尚未填寫完畢':result.status==='hidden'?'下架不顯示':result.labelText||(seasonal?'結束販售':'正常販售');
+      const label=!inputsValid?'尚未填寫完畢':result.status==='hidden'?'下架不顯示':result.labelText||'正常販售';
       if(!document.getElementById('hasTag').checked)order.splice(0,order.length,'無產品標籤紀錄');
       if(!document.getElementById('Display').checked)order.unshift('未勾選上架');
       const summary=document.getElementById('picked-reasons');
@@ -6339,7 +6336,8 @@ body {
       patchCards(false,document.getElementById('product-category'));
       const q=document.getElementById('search-query').value.trim().toLowerCase();
       const matches=testIds.filter(id=>status(id).showInSearch&&(!q||productById(id).name.toLowerCase().includes(q)||id===q));
-      const normal=matches.filter(id=>status(id).showInList),unavailable=matches.filter(id=>!status(id).showInList);
+      // 2026-11-02：「缺貨中」的判準從 showInList（等於 Type2!==6）換成「現在買不買得到」。Type2=6 不再代表缺貨，沿用舊判準會把買得到的商品放進缺貨區。
+      const normal=matches.filter(id=>status(id).canAddToCart),unavailable=matches.filter(id=>!status(id).canAddToCart);
       document.getElementById('search-normal-grid').innerHTML=normal.map(id=>cardHtml(id)).join('');
       document.getElementById('search-unavailable-grid').innerHTML=unavailable.map(id=>cardHtml(id,true)).join('');
       document.getElementById('search-normal').hidden=normal.length===0;document.getElementById('search-unavailable').hidden=unavailable.length===0;
