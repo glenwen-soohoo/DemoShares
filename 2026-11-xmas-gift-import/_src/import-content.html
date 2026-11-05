@@ -1,0 +1,546 @@
+<style>
+  .xi-hint{ color:var(--gox-text-sub, #8c8c8c); font-size:13px; }
+  .xi-scope{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:4px 12px; border:1px solid #b7eb8f; background:#f6ffed;
+    border-radius:var(--gox-radius, 4px); font-size:13px; color:#237804;
+  }
+  .xi-scope b{ font-weight:600; }
+  .xi-diff{ font-size:13px; line-height:1.7; }
+  .xi-diff-row{ display:flex; gap:8px; align-items:baseline; }
+  .xi-diff-field{ flex:0 0 72px; color:#8c8c8c; }
+  .xi-old{ color:#8c8c8c; text-decoration:line-through; }
+  .xi-new{ color:#237804; font-weight:600; }
+  .xi-arrow{ color:#bfbfbf; }
+  .xi-empty{ color:#bfbfbf; }
+
+  /* 情境面板：刻意放在後台畫面外，讓人一看就知道不是後台的一部分 */
+  .xi-devpanel{
+    position:fixed; left:16px; bottom:16px; z-index:2000;
+    width:232px; padding:12px; border-radius:6px;
+    background:#1f1f1f; color:#f0f0f0;
+    font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; font-size:13px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  .xi-devpanel h4{ margin:0 0 8px; font-size:13px; font-weight:600; color:#fff; }
+  .xi-devpanel p{ margin:0 0 8px; font-size:12px; color:#bfbfbf; line-height:1.5; }
+  .xi-devpanel button{
+    display:block; width:100%; margin-bottom:4px; padding:8px;
+    border:1px solid #434343; border-radius:4px;
+    background:#2b2b2b; color:#f0f0f0; font-size:12px; text-align:left; cursor:pointer;
+    font-family:inherit;
+  }
+  .xi-devpanel button:hover{ border-color:#4ba83b; }
+  .xi-devpanel button.is-on{ background:#4ba83b; border-color:#4ba83b; color:#fff; }
+</style>
+
+<div id="gox-app"></div>
+
+<script type="text/babel">
+const {
+  Alert, Button, Card, Col, ConfigProvider, DatePicker, Divider, Input, Modal,
+  Popconfirm, Row, Select, Space, Statistic, Table, Tabs, Tag, Tooltip, message,
+} = antd;
+const { useState, useMemo } = React;
+
+const theme = {
+  token: {
+    colorPrimary: '#4ba83b',
+    borderRadius: 4,
+    fontFamily: "'Noto Sans TC','Microsoft JhengHei','微軟正黑體',sans-serif",
+  },
+};
+
+/* antd icon 套件沒有內嵌，這兩個用原尺寸 SVG 還原（上傳、說明） */
+const UploadIcon = () => (
+  <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor" aria-hidden="true">
+    <path d="M400 317.7h73.9V656c0 4.4 3.6 8 8 8h60c4.4 0 8-3.6 8-8V317.7H624c6.7 0 10.4-7.7 6.3-12.9L518.3 163a8 8 0 0 0-12.6 0l-112 141.7c-4.1 5.3-.4 13 6.3 13zM878 626h-60c-4.4 0-8 3.6-8 8v154H214V634c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v198c0 17.7 14.3 32 32 32h684c17.7 0 32-14.3 32-32V634c0-4.4-3.6-8-8-8z" />
+  </svg>
+);
+const HelpIcon = () => (
+  <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor" aria-hidden="true">
+    <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" />
+    <path d="M623.6 316.7C593.6 290.4 554 276 512 276s-81.6 14.5-111.6 40.7C369.2 344 352 380.7 352 420v7.6c0 4.4 3.6 8 8 8h48c4.4 0 8-3.6 8-8V420c0-44.1 43.1-80 96-80s96 35.9 96 80c0 31.1-22 59.6-56.1 72.7-21.2 8.1-39.2 22.3-52.1 40.9-13.1 19-19.9 41.8-19.9 64.9V620c0 4.4 3.6 8 8 8h48c4.4 0 8-3.6 8-8v-21.5a48.3 48.3 0 0 1 30.9-44.8c59-22.7 97.1-74.7 97.1-132.5.1-39.3-17.1-76-48.3-103.5zM472 732a40 40 0 1 0 80 0 40 40 0 1 0-80 0z" />
+  </svg>
+);
+
+/* ── 本檔活動（寫入範圍由活動設定決定，不由上傳者填年份） ───────────── */
+const CAMPAIGN = { label: '2026 聖誕傳情', ordersTime: '2026/12/25', endTime: '2027/02/01' };
+
+/* ── 列表假資料：真實一檔約 838 筆，這裡留各狀態的代表 ───────────────── */
+const SUMMARY = {
+  Total: 838, OnShelf: 210, Taken: 37, PendingRelist: 4,
+  NotStarted: 628, Hidden: 0, NextStartTime: '11/12 17:00',
+};
+
+const ITEMS = [
+  { id: 1, Name: 'AA0001 關愛之家-小宇-保溫杯', Start: '2026/11/05 17:00', Origin: 1, Stock: 0, Sold: 1, Pending: false, Display: true,  Pid: 78697, Pic: 'AA0001.webp' },
+  { id: 2, Name: 'AA0002 關愛之家-妞妞-故事書', Start: '2026/11/05 17:00', Origin: 1, Stock: 1, Sold: 0, Pending: false, Display: true,  Pid: 78698, Pic: 'AA0002.webp' },
+  { id: 3, Name: 'AA0003 關愛之家-阿哲-積木組', Start: '2026/11/05 17:00', Origin: 1, Stock: 0, Sold: 1, Pending: true,  Display: true,  Pid: 78699, Pic: 'AA0003.webp' },
+  { id: 4, Name: 'AB0014 忠義基金會-小葉-書包',   Start: '2026/11/05 17:00', Origin: 1, Stock: 1, Sold: 0, Pending: false, Display: true,  Pid: 78710, Pic: 'AB0014.webp' },
+  { id: 5, Name: 'AP0279 德蘭中心-阿均-球鞋',     Start: '2026/11/12 17:00', Origin: 1, Stock: 1, Sold: 0, Pending: false, Display: true,  Pid: 78975, Pic: 'AP0279.webp' },
+  { id: 6, Name: 'AP0280 德蘭中心-小婷-文具組',   Start: '2026/11/12 17:00', Origin: 1, Stock: 1, Sold: 0, Pending: false, Display: true,  Pid: 78976, Pic: 'AP0280.webp' },
+  { id: 7, Name: 'AX0519 信義育幼院-小剛-外套',   Start: '2026/11/19 17:00', Origin: 1, Stock: 1, Sold: 0, Pending: false, Display: true,  Pid: 79215, Pic: 'AX0519.webp' },
+  { id: 8, Name: 'BK0777 阿尼色弗-阿力-手套',     Start: '2026/11/26 17:00', Origin: 1, Stock: 1, Sold: 0, Pending: false, Display: true,  Pid: 79338, Pic: 'BK0777.webp' },
+  { id: 9, Name: 'BR0902 阿尼色弗-阿依-玩具車',   Start: '2026/11/26 17:00', Origin: 1, Stock: 1, Sold: 0, Pending: false, Display: true,  Pid: 79534, Pic: 'BR0902.webp' },
+  { id: 10, Name: 'AO1048 華興育幼院-小棠-睡衣',  Start: '2026/11/05 17:00', Origin: 1, Stock: 0, Sold: 1, Pending: false, Display: false, Pid: 78900, Pic: 'AO1048.webp' },
+];
+
+function statusOf(it) {
+  if (it.Pending) return 'pendingRelist';
+  if (it.Sold >= 1) return 'taken';
+  if (!it.Display) return 'hidden';
+  if (it.Start > '2026/11/05 18:00') return 'notStarted';
+  return 'onShelf';
+}
+function statusTag(s) {
+  if (s === 'taken') return <Tag color="default">已被認購</Tag>;
+  if (s === 'pendingRelist') return <Tag color="gold">等待重新上架</Tag>;
+  if (s === 'hidden') return <Tag color="red">已下架</Tag>;
+  if (s === 'notStarted') return <Tag color="orange">尚未開賣</Tag>;
+  return <Tag color="green">上架中</Tag>;
+}
+const canSelect = (it) => it.Sold < 1 || it.Pending;
+
+/* ── 匯入情境：四種結果，由畫面外的情境面板切換 ──────────────────────── */
+const FIELD_LABEL = { name: '品名', start: '開賣時間', image: '圖檔名' };
+
+const PREVIEW = {
+  mixed: {
+    fileName: '2026聖誕小禮物名單_1105修正.xlsx',
+    rows: 838, blank: 3,
+    added: [
+      { no: 'BR0903', name: '阿尼色弗兒童之家-阿翔-書包', start: '2026/11/26 17:00', image: 'BR0903.webp' },
+      { no: 'BR0904', name: '阿尼色弗兒童之家-小魚-水壺', start: '2026/11/26 17:00', image: 'BR0904.webp' },
+      { no: 'BR0905', name: '阿尼色弗兒童之家-阿諺-球鞋', start: '2026/11/26 17:00', image: 'BR0905.webp' },
+    ],
+    addedMore: 9,
+    identical: 790,
+    updated: [
+      { no: 'AA0002', name: '關愛之家-妞妞-故事書',
+        changes: [{ f: 'name', from: '關愛之家-妞妞-故事書', to: '關愛之家-妞妞-繪本組' }] },
+      { no: 'AP0279', name: '德蘭中心-阿均-球鞋',
+        changes: [{ f: 'start', from: '2026/11/12 17:00', to: '2026/11/19 17:00' }] },
+      { no: 'AX0519', name: '信義育幼院-小剛-外套',
+        changes: [
+          { f: 'name', from: '信義育幼院-小剛-外套', to: '信義育幼院-小剛-羽絨外套' },
+          { f: 'image', from: 'AX0519.webp', to: 'AX0519.jpg' },
+        ] },
+    ],
+    updatedMore: 30,
+    taken: [
+      { no: 'AA0001', name: '關愛之家-小宇-保溫杯', changes: [{ f: 'name', from: '關愛之家-小宇-保溫杯', to: '關愛之家-小宇-不鏽鋼保溫杯' }] },
+      { no: 'AA0003', name: '關愛之家-阿哲-積木組', changes: [{ f: 'start', from: '2026/11/05 17:00', to: '2026/11/12 17:00' }] },
+      { no: 'AO1048', name: '華興育幼院-小棠-睡衣', changes: [{ f: 'image', from: 'AO1048.webp', to: 'AO1048new.webp' }] },
+    ],
+    errors: [],
+  },
+  allNew: {
+    fileName: '2026聖誕小禮物名單.xlsx',
+    rows: 838, blank: 0,
+    added: [
+      { no: 'AA0001', name: '關愛之家-小宇-保溫杯', start: '2026/11/05 17:00', image: 'AA0001.webp' },
+      { no: 'AA0002', name: '關愛之家-妞妞-故事書', start: '2026/11/05 17:00', image: 'AA0002.webp' },
+      { no: 'AA0003', name: '關愛之家-阿哲-積木組', start: '2026/11/05 17:00', image: 'AA0003.webp' },
+    ],
+    addedMore: 835,
+    identical: 0, updated: [], updatedMore: 0, taken: [], errors: [],
+  },
+  allSame: {
+    fileName: '2026聖誕小禮物名單.xlsx',
+    rows: 838, blank: 0,
+    added: [], addedMore: 0,
+    identical: 838,
+    updated: [], updatedMore: 0, taken: [], errors: [],
+  },
+  error: {
+    fileName: '聖誕小禮物名單_協會版.xlsx',
+    rows: 0, blank: 0,
+    added: [], addedMore: 0, identical: 0, updated: [], updatedMore: 0, taken: [],
+    errors: [
+      '第3欄表頭應為「開始販售時間」，實際為「販售時間」，請改用最新的匯入範本',
+      '第 57 列 產品圖名稱格式有誤（AR0392-1.webp）',
+      '第 58 列 產品圖名稱與編號設定不同',
+      '以下圖檔尚未上傳至儲存空間：BR0903.webp、BR0904.webp。請先上傳圖檔再匯入。',
+    ],
+  },
+};
+
+const SCENARIOS = [
+  { key: 'mixed',   label: '混合：新增＋更新＋已認購' },
+  { key: 'allNew',  label: '全新增：整批都是新編號' },
+  { key: 'allSame', label: '全部相同：重傳同一份' },
+  { key: 'error',   label: '驗證未過：整批擋下' },
+];
+
+/* ── 變更明細 ─────────────────────────────────────────────────────────── */
+const DiffList = ({ changes }) => (
+  <div className="xi-diff">
+    {changes.map((c, i) => (
+      <div className="xi-diff-row" key={i}>
+        <span className="xi-diff-field">{FIELD_LABEL[c.f]}</span>
+        <span className="xi-old">{c.from}</span>
+        <span className="xi-arrow">→</span>
+        <span className="xi-new">{c.to}</span>
+      </div>
+    ))}
+  </div>
+);
+
+const diffColumns = [
+  { title: '編號', dataIndex: 'no', width: 96 },
+  { title: '品名', dataIndex: 'name', width: 230 },
+  { title: '將變更的欄位', render: (_, r) => <DiffList changes={r.changes} /> },
+];
+
+const addedColumns = [
+  { title: '編號', dataIndex: 'no', width: 96 },
+  { title: '品名', dataIndex: 'name', width: 230 },
+  { title: '開賣時間', dataIndex: 'start', width: 150 },
+  { title: '圖檔名', dataIndex: 'image' },
+];
+
+/* ── 預覽彈窗：上傳後先看要改什麼，按下確認才寫入 ─────────────────────── */
+const ImportPreviewModal = ({ data, open, onCancel, onConfirm, confirming }) => {
+  if (!data) return null;
+
+  const addedCount = data.added.length + data.addedMore;
+  const updatedCount = data.updated.length + data.updatedMore;
+  const takenCount = data.taken.length;
+  const willWrite = addedCount + updatedCount;
+
+  const tabs = [];
+  if (addedCount > 0) {
+    tabs.push({
+      key: 'added',
+      label: `新增 ${addedCount}`,
+      children: (
+        <Table rowKey="no" size="small" columns={addedColumns} dataSource={data.added}
+          pagination={false}
+          footer={data.addedMore ? () => <span className="xi-hint">另有 {data.addedMore} 筆新增未列出</span> : undefined} />
+      ),
+    });
+  }
+  if (updatedCount > 0) {
+    tabs.push({
+      key: 'updated',
+      label: `將更新 ${updatedCount}`,
+      children: (
+        <Table rowKey="no" size="small" columns={diffColumns} dataSource={data.updated}
+          pagination={false}
+          footer={data.updatedMore ? () => <span className="xi-hint">另有 {data.updatedMore} 筆變更未列出，確認後一併更新</span> : undefined} />
+      ),
+    });
+  }
+  if (takenCount > 0) {
+    tabs.push({
+      key: 'taken',
+      label: `不套用更新 ${takenCount}`,
+      children: (
+        <div>
+          <Alert type="warning" showIcon style={{ marginBottom: 12 }}
+            message="這幾筆已經有人認購，檔案裡的內容不會寫入" />
+          <Table rowKey="no" size="small" columns={diffColumns} dataSource={data.taken} pagination={false} />
+        </div>
+      ),
+    });
+  }
+  if (data.identical > 0) {
+    tabs.push({
+      key: 'identical',
+      label: `內容相同 ${data.identical}`,
+      children: (
+        <Alert type="success" showIcon
+          message={`${data.identical} 筆與現有資料完全相同，不會重複建立，也不會寫入。`} />
+      ),
+    });
+  }
+
+  return (
+    <Modal
+      open={open}
+      title="確認匯入內容"
+      width={880}
+      onCancel={onCancel}
+      footer={[
+        <Button key="cancel" onClick={onCancel}>取消，不寫入</Button>,
+        <Button key="ok" type="primary" loading={confirming} disabled={willWrite === 0} onClick={onConfirm}>
+          {willWrite === 0 ? '沒有要寫入的資料' : `確認寫入（更新 ${updatedCount}、新增 ${addedCount}）`}
+        </Button>,
+      ]}
+    >
+      <div style={{ marginBottom: 12 }}>
+        <Space size={8} wrap>
+          <span className="xi-hint">檔案</span>
+          <b>{data.fileName}</b>
+          <span className="xi-scope">寫入範圍 <b>{CAMPAIGN.label}</b>（出貨日 {CAMPAIGN.ordersTime}）</span>
+        </Space>
+      </div>
+
+      <Row gutter={12} style={{ marginBottom: 12 }}>
+        <Col span={5}>
+          <Card size="small"><Statistic title="讀取資料列" value={data.rows} /></Card>
+        </Col>
+        <Col span={5}>
+          <Card size="small">
+            <Statistic title="新增" value={addedCount} valueStyle={addedCount ? { color: '#237804' } : undefined} />
+          </Card>
+        </Col>
+        <Col span={5}>
+          <Card size="small">
+            <Statistic title="將更新" value={updatedCount} valueStyle={updatedCount ? { color: '#d48806' } : undefined} />
+          </Card>
+        </Col>
+        <Col span={5}>
+          <Card size="small">
+            <Statistic title="已認購不動" value={takenCount} valueStyle={takenCount ? { color: '#8c8c8c' } : undefined} />
+          </Card>
+        </Col>
+        <Col span={4}>
+          <Card size="small"><Statistic title="內容相同" value={data.identical} /></Card>
+        </Col>
+      </Row>
+
+      <Tabs items={tabs} size="small" />
+    </Modal>
+  );
+};
+
+/* ── 寫入結果 ─────────────────────────────────────────────────────────── */
+const ImportResultModal = ({ data, open, onClose }) => {
+  if (!data) return null;
+  return (
+    <Modal open={open} title="匯入完成" width={560} onCancel={onClose} onOk={onClose}
+      okText="知道了" cancelButtonProps={{ style: { display: 'none' } }}>
+      <Row gutter={12} style={{ marginBottom: 12 }}>
+        <Col span={8}><Card size="small"><Statistic title="已更新" value={data.updated} valueStyle={{ color: '#d48806' }} /></Card></Col>
+        <Col span={8}><Card size="small"><Statistic title="已新增" value={data.added} valueStyle={{ color: '#237804' }} /></Card></Col>
+        <Col span={8}><Card size="small"><Statistic title="未更動" value={data.untouched} /></Card></Col>
+      </Row>
+      <p className="xi-hint" style={{ margin: 0 }}>
+        每一筆變更都已留下異動紀錄（可在商品異動軌跡查到改了哪一欄、改之前是什麼）。前台下一次載入就會看到新內容。
+      </p>
+    </Modal>
+  );
+};
+
+/* ── 換圖彈窗：心願卡就是前台那張圖，預覽要看得清楚 ───────────────────── */
+const PictureModal = ({ item, open, onClose }) => {
+  if (!item) return null;
+  return (
+    <Modal open={open} width={620} title={`換圖：${item.Name}`} onCancel={onClose}
+      footer={[<Button key="close" onClick={onClose}>關閉</Button>,
+               <Button key="save" type="primary" onClick={onClose}>儲存</Button>]}>
+      <div style={{ marginBottom: 8, fontWeight: 600 }}>心願卡圖片（前台實際顯示的圖）</div>
+      <div style={{
+        width: 360, height: 360, marginBottom: 12, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8,
+        border: '1px solid #e6e6e6', borderRadius: 6, background: '#fafafa', color: '#8c8c8c', fontSize: 13,
+      }}>
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <circle cx="8.5" cy="10" r="1.5" />
+          <path d="M21 16l-5-5-4 4-2-2-4 4" />
+        </svg>
+        <span>{item.Pic}</span>
+      </div>
+      <Button icon={<UploadIcon />} onClick={() => message.success('已換上新的心願卡圖片')}>換一張圖</Button>
+      <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>
+        只有一張。支援 JPG、PNG、WebP，檔案大小上限約 2MB，上傳成功後立即生效
+      </div>
+    </Modal>
+  );
+};
+
+const SummaryCards = () => (
+  <Row gutter={16} style={{ marginBottom: 16 }}>
+    <Col span={3}><Card size="small"><Statistic title="總數" value={SUMMARY.Total} /></Card></Col>
+    <Col span={3}><Card size="small"><Statistic title="上架中" value={SUMMARY.OnShelf} /></Card></Col>
+    <Col span={3}><Card size="small"><Statistic title="已被認購" value={SUMMARY.Taken} /></Card></Col>
+    <Col span={3}>
+      <Card size="small">
+        <Tooltip title="名額被失敗／取消單卡住、尚未釋出的卡。已含在「已被認購」裡，不是另外加上去的。">
+          <Statistic title="等待重新上架" value={SUMMARY.PendingRelist} valueStyle={{ color: '#d48806' }} />
+        </Tooltip>
+      </Card>
+    </Col>
+    <Col span={3}><Card size="small"><Statistic title="尚未開賣" value={SUMMARY.NotStarted} /></Card></Col>
+    <Col span={3}><Card size="small"><Statistic title="已下架" value={SUMMARY.Hidden} /></Card></Col>
+    <Col span={6}><Card size="small"><Statistic title="下一批出現時間" value={SUMMARY.NextStartTime} /></Card></Col>
+  </Row>
+);
+
+const App = () => {
+  const [scenario, setScenario] = useState('mixed');
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [resultData, setResultData] = useState(null);
+  const [errors, setErrors] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [keyword, setKeyword] = useState('');
+  const [selectedKeys, setSelectedKeys] = useState([]);
+  const [startTime, setStartTime] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+
+  const runImport = () => {
+    const data = PREVIEW[scenario];
+    setIsImporting(true);
+    window.setTimeout(() => {
+      setIsImporting(false);
+      if (data.errors.length) {
+        setErrors(data.errors);
+      } else {
+        setPreviewData(data);
+        setPreviewOpen(true);
+      }
+    }, 450);
+  };
+
+  const confirmImport = () => {
+    setConfirming(true);
+    window.setTimeout(() => {
+      const d = previewData;
+      setConfirming(false);
+      setPreviewOpen(false);
+      setResultData({
+        updated: d.updated.length + d.updatedMore,
+        added: d.added.length + d.addedMore,
+        untouched: d.identical + d.taken.length,
+      });
+    }, 600);
+  };
+
+  const filteredItems = useMemo(() => ITEMS.filter((it) => {
+    if (statusFilter !== 'all' && statusOf(it) !== statusFilter) return false;
+    if (keyword.trim() && !it.Name.includes(keyword.trim())) return false;
+    return true;
+  }), [statusFilter, keyword]);
+
+  const selectableCount = filteredItems.filter(canSelect).length;
+
+  const columns = [
+    { title: '狀態', width: 110, render: (_, r) => statusTag(statusOf(r)) },
+    { title: '商品名稱', dataIndex: 'Name' },
+    { title: '開賣時間', dataIndex: 'Start', width: 170 },
+    { title: '庫存量', dataIndex: 'Origin', width: 100 },
+    { title: '剩餘', dataIndex: 'Stock', width: 80 },
+    { title: '商品編號', dataIndex: 'Pid', width: 100 },
+    { title: '操作', width: 90, render: (_, r) => <Button size="small" onClick={() => setEditingItem(r)}>換圖</Button> },
+  ];
+
+  return (
+    <ConfigProvider theme={theme}>
+      <SummaryCards />
+
+      {/* 批次作業：匯入整批小禮物、回收失敗名額 */}
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Button icon={<UploadIcon />} loading={isImporting} onClick={runImport}>批次匯入小禮物</Button>
+          <Tooltip title="沿用歷年的匯入檔（欄位：編號｜產品名稱｜開始販售時間｜產品圖檔名）。⛔ 圖片本身由技術端另外上傳，這裡只讀名單、並會檢查對應圖檔是否都已上傳。上傳後會先列出要新增與要更新的內容，確認才寫入。">
+            <span style={{ color: 'rgba(0,0,0,.45)', display: 'inline-flex' }}><HelpIcon /></span>
+          </Tooltip>
+          <span className="xi-scope">寫入範圍 <b>{CAMPAIGN.label}</b>（出貨日 {CAMPAIGN.ordersTime}）</span>
+
+          <Divider type="vertical" />
+
+          <Popconfirm title="重新上架失敗名額"
+            description="把付款失敗／逾期未付而卡住的名額釋放回架上，剩餘份數會一併重算。"
+            okText="確定執行" cancelText="取消"
+            onConfirm={() => message.success('已重新上架 4 筆失敗名額')}>
+            <Button>重新上架失敗名額</Button>
+          </Popconfirm>
+        </Space>
+      </Card>
+
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Tooltip title="小禮物是「時間到自己出現」，不需要有人按上架。改開賣時間後前台下一次載入就生效，「立即上架」等於把時間設成現在。標「等待重新上架」的品項可以勾選，改開賣時間會同時把名額放回去。真的被認購的不可調整，勾選框會直接停用。單張圖片有誤可用「換圖」修正，不必重新匯入整批。">
+            <span style={{ color: 'rgba(0,0,0,.45)', display: 'inline-flex' }}><HelpIcon /></span>
+          </Tooltip>
+          <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }}
+            options={[
+              { value: 'all', label: '全部' },
+              { value: 'onShelf', label: '上架中' },
+              { value: 'notStarted', label: '尚未開賣' },
+              { value: 'taken', label: '已被認購' },
+              { value: 'pendingRelist', label: '等待重新上架' },
+              { value: 'hidden', label: '已下架' },
+            ]} />
+          <Input.Search placeholder="搜尋商品名稱或編號" allowClear value={keyword}
+            onChange={(e) => setKeyword(e.target.value)} style={{ width: 240 }} />
+          <Button disabled={!selectableCount}
+            onClick={() => setSelectedKeys(filteredItems.filter(canSelect).map((it) => it.id))}>
+            選取篩選結果（{selectableCount} 筆可調整）
+          </Button>
+          <Button disabled={!selectedKeys.length} onClick={() => setSelectedKeys([])}>清除選取</Button>
+          <Button onClick={() => message.success('已重新載入')}>重新載入</Button>
+        </Space>
+      </Card>
+
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <strong>已選取 {selectedKeys.length} 筆</strong>
+          <DatePicker showTime={{ format: 'HH:mm' }} format="YYYY/MM/DD HH:mm"
+            value={startTime} onChange={setStartTime} placeholder="選擇開賣時間" />
+          <Button type="primary" disabled={!selectedKeys.length || !startTime}
+            onClick={() => message.success(`已將 ${selectedKeys.length} 筆改為此開賣時間`)}>
+            改為此開賣時間
+          </Button>
+          <Button danger disabled={!selectedKeys.length}
+            onClick={() => Modal.confirm({
+              title: `確定讓這 ${selectedKeys.length} 筆立即上架？`,
+              content: '開賣時間會設成現在，前台下一次載入就會出現。',
+              okText: '立即上架', cancelText: '取消',
+              onOk: () => message.success('已立即上架'),
+            })}>
+            立即上架
+          </Button>
+        </Space>
+      </Card>
+
+      <Table rowKey="id" size="small" columns={columns} dataSource={filteredItems}
+        pagination={{ pageSize: 100, showSizeChanger: true, showTotal: () => `共 ${SUMMARY.Total} 筆` }}
+        locale={{ emptyText: '沒有符合條件的小禮物' }}
+        rowSelection={{
+          selectedRowKeys: selectedKeys,
+          onChange: setSelectedKeys,
+          getCheckboxProps: (r) => ({ disabled: !canSelect(r) }),
+        }} />
+
+      <ImportPreviewModal data={previewData} open={previewOpen} confirming={confirming}
+        onCancel={() => setPreviewOpen(false)} onConfirm={confirmImport} />
+
+      <ImportResultModal data={resultData} open={resultData !== null} onClose={() => setResultData(null)} />
+
+      <PictureModal item={editingItem} open={editingItem !== null} onClose={() => setEditingItem(null)} />
+
+      {/* 驗證未過：整批擋下，一筆都沒進 */}
+      <Modal open={errors !== null} title="匯入未完成，請修正以下項目後重新匯入"
+        onCancel={() => setErrors(null)} onOk={() => setErrors(null)}
+        okText="我知道了" cancelButtonProps={{ style: { display: 'none' } }} width={640}>
+        <Alert type="warning" showIcon style={{ marginBottom: 12 }}
+          message="這批完全沒有匯入。以下每一項都修正後，再上傳同一份檔案即可。" />
+        <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+          <ul style={{ paddingLeft: 20, margin: 0 }}>
+            {(errors ?? []).map((e, i) => <li key={i} style={{ marginBottom: 4 }}>{e}</li>)}
+          </ul>
+        </div>
+      </Modal>
+
+      <div className="xi-devpanel">
+        <h4>情境切換</h4>
+        <p>先選這次要上傳的檔案內容，再按「批次匯入小禮物」。</p>
+        {SCENARIOS.map((s) => (
+          <button key={s.key} className={scenario === s.key ? 'is-on' : ''}
+            onClick={() => setScenario(s.key)}>{s.label}</button>
+        ))}
+      </div>
+    </ConfigProvider>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('gox-app')).render(<App />);
+</script>
