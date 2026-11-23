@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<!--
+  DemoShares 交接對照 | App 搜尋查無結果：大家最近都在買
+  改的是既有介面：App 搜尋結果畫面（原生 App）  畫面名 SearchResultScreen
+  這次要動的檔（改既有 5 支 ／ 新建 2 項）：
+    [改既有] fruit_app src/screens/SearchResultScreen.tsx        查無結果那一段改成「新文案＋新區塊」，並送 search_no_result
+    [改既有] fruit_app src/services/api.ts                        加 getPopularPicks，有 token 才帶 Authorization
+    [改既有] fruit_app src/utils/clarity.ts                       加 searchNoResult 事件
+    [改既有] fruit_web HuashanCRM/Controllers/Api/Products/ProductController.cs  在 Recommend 旁加 PopularPicks（App 用端點）
+    [新建]   fruit_app src/components/PopularPicksSection.tsx     本頁下半那一區（取資料、骨架、空的就不顯示）
+    [新建]   fruit_web HuashanCRM/Filters/OptionalJwtAuthFilter.cs 有 token 就認人、沒有就當訪客放行
+    [改既有] fruit_app src/screens/ProductDetailScreen/RecommendRail.tsx  把裡面那張卡抽成共用，純搬移、商品頁行為不變
+    [只參考] fruit_web GreenBox.Service/Implementation/Recommend/PopularPickService.cs  合併與去重規則，網站版已完成
+  規格：D:\Obsidian\GreenBox\02_一般需求\_202610-202612\202611_站內搜尋優化\1123_App版工程規格.md
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>App 搜尋查無結果 (demo)</title>
+<style>
+  :root{
+    --green:#4ba83b;
+    --text:#33435a;
+    --border:#e5e5e5;
+    --bg:#f1f2f7;
+    --red:#dc4e43;
+    --muted:#6b7585;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:24px 16px;
+    background:#c9ccce;
+    font-family:'Noto Sans TC','Microsoft JhengHei','微軟正黑體',sans-serif;
+    display:flex; justify-content:center; align-items:flex-start;
+  }
+
+  /* 手機外框 */
+  .app-frame{
+    width:390px; height:min(812px, calc(100vh - 48px));
+    display:flex; flex-direction:column;
+    background:#fff; border-radius:40px; overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,0,0,.22);
+  }
+  .app-statusbar{
+    flex:0 0 auto; height:38px;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0 24px; font-size:13px; color:var(--text);
+  }
+  .app-bar{
+    flex:0 0 auto; height:52px;
+    display:flex; align-items:center; gap:8px;
+    padding:0 12px; background:var(--green);
+  }
+  .app-back{
+    background:none; border:0; color:#fff; font-size:26px; line-height:1;
+    padding:0 4px; cursor:pointer;
+  }
+  .app-search{
+    flex:1; height:36px; border-radius:4px; border:0;
+    background:#fff; padding:0 12px; font-size:14px; color:var(--text);
+    font-family:inherit;
+  }
+  .app-scroll{ flex:1 1 auto; overflow-y:auto; background:#fff; }
+
+  /* 既有區塊：搜尋結果標題與產線篩選（照 SearchResultScreen 現況） */
+  .result-head{ padding:16px; font-size:18px; color:var(--text); }
+  .filters{
+    display:flex; flex-wrap:wrap; gap:12px;
+    padding:0 16px 16px;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:14px; color:var(--text); background:none; border:0;
+    padding:0; cursor:pointer; font-family:inherit;
+  }
+  .chip::before{
+    content:''; width:16px; height:16px; border-radius:9999px;
+    border:1px solid #b6bcc7; background:#fff;
+  }
+  .chip.is-on::before{ border-color:var(--green); background:var(--green); }
+
+  /* 新增：查無結果文案。撐滿畫面剩下的高度並垂直置中，讓「找不到」這件事
+     自己佔住一個畫面。下緣刻意留一點，讓下面那區的標題露出一截，
+     客人才知道還有東西可以往下看（全部推到看不見等於又把出口藏起來） */
+  .empty{
+    min-height:calc((100% - 190px) * 2 / 3);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:32px 24px; text-align:center;
+  }
+  .empty h2{
+    margin:0; font-size:18px; font-weight:bold; color:var(--text); line-height:1.5;
+  }
+  .empty p{
+    margin:12px 0 0; font-size:14px; color:var(--muted); line-height:1.6;
+  }
+
+  /* 新增：大家最近都在買（沿用商品頁猜你喜歡的卡片與橫向捲動） */
+  .picks{ background:#fff; margin-bottom:8px; }
+  .picks-head{
+    display:flex; align-items:center; gap:6px;
+    padding:24px 16px 0; margin-bottom:12px;
+  }
+  .picks-stripe{ width:4px; height:15px; border-radius:2px; background:var(--green); }
+  .picks-title{ font-size:15px; color:var(--text); font-weight:bold; }
+  /* 一列兩張、往下排，跟這一頁上方的搜尋結果列表、以及網站版的版面一致。
+     不用商品頁那種橫向捲動：那是「看商品時順便瞄一眼」的次要內容，
+     這裡沒有主要內容，這一區就是客人唯一的出口，藏起來的卡片等於沒有 */
+  .rail{
+    display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px 10px;
+    padding:0 16px 16px;
+  }
+  .card{
+    display:flex; flex-direction:column;
+    border:1px solid var(--border); border-radius:6px; overflow:hidden; background:#fff;
+  }
+  .card-img{
+    position:relative; width:100%; aspect-ratio:4 / 3; background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card-img span{ font-size:12px; color:#b6bcc7; }
+  .card-tag{
+    position:absolute; left:6px; top:6px;
+    padding:1px 7px; border-radius:4px; font-size:11px;
+  }
+  .card-tag.is-rebuy{ background:#dbeed6; color:#33435a; }
+  .card-tag.is-other{ background:rgba(255,255,255,.92); color:var(--muted); }
+  .card-info{ flex:1; padding:8px; display:flex; flex-direction:column; }
+  .card-name{
+    font-size:13px; color:var(--text); line-height:19px; min-height:38px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .card-price{
+    margin-top:auto; padding-top:6px;
+    font-size:15px; font-weight:bold; color:var(--red);
+  }
+  .card-price small{ font-size:11px; font-weight:normal; }
+  .card-btnwrap{ padding:0 8px 8px; }
+  .card-btn{
+    margin-top:6px; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--red); background:var(--red); color:#fff;
+    border-radius:4px; padding:6px 8px; font-size:13px; cursor:pointer;
+    font-family:inherit;
+  }
+  .card-btn.is-incart{ background:#fff; border-color:var(--green); color:var(--green); }
+
+  /* 開發者情境面板：刻意放在手機框外面 */
+  .devpanel{
+    position:fixed; left:16px; bottom:16px; z-index:50;
+    width:232px; padding:12px;
+    background:#fff; border:1px solid var(--border); border-radius:8px;
+    box-shadow:0 4px 16px rgba(0,0,0,.12);
+    font-size:13px; color:var(--text);
+  }
+  .devpanel h3{ margin:0 0 8px; font-size:13px; font-weight:bold; }
+  .devpanel .row{ margin-bottom:8px; }
+  .devpanel .row:last-child{ margin-bottom:0; }
+  .devpanel label{ display:block; margin-bottom:4px; color:var(--muted); font-size:12px; }
+  .devpanel select{
+    width:100%; height:32px; border:1px solid var(--border); border-radius:4px;
+    background:#fff; color:var(--text); font-size:13px; padding:0 8px; font-family:inherit;
+  }
+  .devpanel .note{ margin:8px 0 0; font-size:12px; color:var(--muted); line-height:1.5; }
+
+  /* 真的用手機打開就滿版 */
+  @media (max-width:480px){
+    body{ display:block; margin:0; padding:0; background:#fff; }
+    .app-frame{
+      width:100vw; height:100dvh; border-radius:0; box-shadow:none;
+    }
+    .app-statusbar{ display:none; }
+    .devpanel{ position:static; width:auto; margin:12px; box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-frame">
+  <div class="app-statusbar"><span>9:41</span><span>▂▄▆ 5G ▮</span></div>
+
+  <header class="app-bar">
+    <button class="app-back" type="button" aria-label="返回">&lsaquo;</button>
+    <input class="app-search" type="text" value="梨山蜜蘋果禮盒" aria-label="搜尋關鍵字">
+  </header>
+
+  <main class="app-scroll">
+    <!-- 既有區塊：來自 SearchResultScreen.tsx -->
+    <div class="result-head">搜尋結果</div>
+    <div class="filters">
+      <button class="chip" type="button">產地直送</button>
+      <button class="chip" type="button">冷凍超市</button>
+      <button class="chip" type="button">粥寶寶</button>
+      <button class="chip" type="button">益菓保</button>
+      <button class="chip" type="button">綠時光</button>
+    </div>
+
+    <!-- 新增：本次需求 -->
+    <div class="empty">
+      <h2 id="empty-title">找不到「梨山蜜蘋果禮盒」相關的商品</h2>
+      <p>試試看更短的關鍵字，例如「蘋果」而不是「梨山蜜蘋果禮盒」</p>
+    </div>
+
+    <!-- 新增：本次需求。卡片沿用商品頁猜你喜歡那張，排法改成一列兩張 -->
+    <section class="picks" id="picks">
+      <div class="picks-head">
+        <span class="picks-stripe"></span>
+        <span class="picks-title">大家最近都在買</span>
+      </div>
+      <div class="rail" id="rail"></div>
+    </section>
+  </main>
+</div>
+
+<aside class="devpanel">
+  <h3>情境切換</h3>
+  <div class="row">
+    <label for="sel-login">客人狀態</label>
+    <select id="sel-login">
+      <option value="in">已登入</option>
+      <option value="out">未登入</option>
+    </select>
+  </div>
+  <div class="row">
+    <label for="sel-count">熱門商品設定</label>
+    <select id="sel-count">
+      <option value="5">後台設了 5 個，都買得到</option>
+      <option value="2">只剩 2 個買得到</option>
+      <option value="0">都下架或賣完了</option>
+    </select>
+  </div>
+  <p class="note" id="dev-note"></p>
+</aside>
+
+<script>
+(function () {
+  var hot = [
+    { name: '【黑金酪梨】阿生蜜柑 1 盒', price: 699, specs: 1 },
+    { name: '【台灣黃金奇異果(獼猴桃)】維也納民宿農園', price: 759, specs: 3 },
+    { name: '芒果季【冬蜜芒果】小蜻蜓芒果園', price: 999, specs: 1 },
+    { name: '免運《水產直送》【雙木林泰園蝦】鮮凍蝦', price: 829, specs: 1 },
+    { name: '免運《水產直送》龜吼漁港直送萬里蟹', price: 700, specs: 2 }
+  ];
+  var guess = [
+    { name: '【日光小農】金鑽鳳梨 2 顆入', price: 420, specs: 1, tag: '該補貨了', rebuy: true },
+    { name: '粥寶寶 鮭魚野菜粥 6 入組', price: 528, specs: 2, tag: '常買', rebuy: true },
+    { name: '【雲林好蛋】友善放牧雞蛋 20 顆', price: 285, specs: 1, tag: '一起買', rebuy: false },
+    { name: '冷凍超市 舒肥嫩雞胸 原味 5 片', price: 390, specs: 1, tag: '熱門', rebuy: false },
+    { name: '【阿里山】高山烏龍茶葉 150g', price: 880, specs: 2, tag: '同類熱門', rebuy: false },
+    { name: '益菓保 綜合益生菌 30 包', price: 1180, specs: 1, tag: '該補貨了', rebuy: true },
+    { name: '【台東鹿野】有機紅烏龍冷泡包', price: 350, specs: 1, tag: '熱門', rebuy: false }
+  ];
+
+  var rail = document.getElementById('rail');
+  var picks = document.getElementById('picks');
+  var note = document.getElementById('dev-note');
+  var selLogin = document.getElementById('sel-login');
+  var selCount = document.getElementById('sel-count');
+
+  function cardHtml(item, isHot) {
+    var tag = '';
+    if (!isHot && item.tag) {
+      tag = '<span class="card-tag ' + (item.rebuy ? 'is-rebuy' : 'is-other') + '">' + item.tag + '</span>';
+    }
+    var price = '$' + item.price.toLocaleString();
+    var suffix = item.specs > 1 ? '<small> 起</small>' : '';
+    var btn = item.specs > 1 ? '選規格' : '加入購物車';
+    var btnClass = item.specs > 1 ? 'card-btn is-incart' : 'card-btn';
+    return '<article class="card">' +
+      '<div class="card-img"><span>商品圖</span>' + tag + '</div>' +
+      '<div class="card-info"><div class="card-name">' + item.name + '</div>' +
+      '<div class="card-price">' + price + suffix + '</div></div>' +
+      '<div class="card-btnwrap"><button type="button" class="' + btnClass + '">' + btn + '</button></div>' +
+      '</article>';
+  }
+
+  function render() {
+    var loggedIn = selLogin.value === 'in';
+    var hotCount = parseInt(selCount.value, 10);
+    var list = [];
+    var i;
+
+    for (i = 0; i < hotCount; i++) {
+      list.push({ item: hot[i], isHot: true });
+    }
+    if (loggedIn) {
+      for (i = 0; i < guess.length && list.length < 12; i++) {
+        list.push({ item: guess[i], isHot: false });
+      }
+    }
+
+    if (list.length === 0) {
+      picks.style.display = 'none';
+      note.textContent = '沒有任何商品可以顯示，整塊不出現，只留上面那段文字。';
+      return;
+    }
+
+    picks.style.display = '';
+    rail.innerHTML = list.map(function (x) { return cardHtml(x.item, x.isHot); }).join('');
+
+    var hotPart = hotCount + ' 張熱門商品';
+    var guessPart = loggedIn ? ('，後面接 ' + (list.length - hotCount) + ' 張猜你喜歡') : '，未登入所以沒有猜你喜歡';
+    note.textContent = '現在顯示 ' + list.length + ' 張：' + hotPart + guessPart + '。往下捲可以看完。';
+  }
+
+  selLogin.addEventListener('change', render);
+  selCount.addEventListener('change', render);
+  render();
+})();
+</script>
+
+</body>
+</html>
