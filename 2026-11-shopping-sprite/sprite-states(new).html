@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<!--
+  DemoShares 交接對照 | 無毒農小精靈・狀態圖鑑
+  全新頁面：正式站無對應（新建）。小精靈 11 個狀態與對應姿勢的參考圖鑑，非 1:1 還原頁。
+  這次要動的檔：無——本頁是企劃概念參考。
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>無毒農小精靈 · 狀態圖鑑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#4ba83b; --green-strong:#22ac38; --gold:#caa940; --red:#dc4e43; --orange:#e67e22;
+  --text:#33435a; --muted:#8a94a3; --line:#e4e7ec; --bg:#f6f8f4; --radius:4px;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);line-height:1.6;}
+.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 64px;}
+h1{font-size:24px;margin:0 0 4px;}
+.lead{color:var(--muted);margin:0 0 18px;max-width:680px;}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;font-size:13px;align-items:center;}
+.pill{padding:3px 10px;border-radius:9999px;font-weight:700;font-size:12px;}
+.p0{background:#eaf6e8;color:var(--green-strong);}
+.p1{background:#fef3e0;color:var(--orange);}
+.p2{background:#eef1f5;color:var(--muted);}
+.none{background:#eef1f5;color:var(--muted);}
+.needpill{background:#fdeceb;color:var(--red);}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.card.gap{border-color:#f3c9a6;background:#fffaf4;}
+.stage{background:var(--bg);border-radius:8px;height:150px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.stage img{max-height:132px;max-width:86%;object-fit:contain;}
+.stage img.dim{opacity:.4;filter:grayscale(.3);}
+.need-badge{position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px;}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.nm{font-size:16px;font-weight:700;}
+.say{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;min-height:36px;}
+.say.empty{color:var(--muted);font-style:italic;background:var(--bg);border-style:dashed;}
+.meta{font-size:12px;color:var(--muted);line-height:1.7;}
+.meta b{color:var(--text);font-weight:500;}
+.pose-tag{display:inline-block;font-size:11px;color:var(--green-strong);background:#eaf6e8;padding:1px 7px;border-radius:9999px;}
+.pose-tag.need{color:var(--red);background:#fdeceb;}
+
+/* 讓角色有一點生命感 */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.stage img:not(.dim){animation:float 3.4s ease-in-out infinite;}
+.confetti{position:absolute;top:8px;width:7px;height:12px;border-radius:2px;animation:fall 1.8s linear infinite;z-index:2;}
+@keyframes fall{0%{transform:translateY(-14px) rotate(0);opacity:1}100%{transform:translateY(140px) rotate(240deg);opacity:0}}
+
+.note{margin-top:28px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--green);border-radius:8px;padding:16px 18px;font-size:14px;}
+.note h3{margin:0 0 6px;font-size:15px;}
+.note p{margin:5px 0;}
+.note ul{margin:6px 0 0;padding-left:18px;}
+.note li{margin:2px 0;}
+
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>無毒農小精靈 · 狀態圖鑑</h1>
+  <p class="lead">用的是正式角色。這隻精靈<b>不靠換表情，而是靠「換姿勢＋道具＋對話框」</b>來表達狀態——臉就是肚子上的無毒農 logo，不會變。下面每一格是一個狀態：什麼時候出現、用哪個姿勢、講什麼、該不該出聲。</p>
+  <div class="legend">
+    <span class="pill p0">P0 必出</span>
+    <span class="pill p1">P1 該出</span>
+    <span class="pill p2">P2 能省則省</span>
+    <span class="pill none">— 不出聲</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="note">
+    <h3>姿勢來源</h3>
+    <p><b>原本的 5 個官方姿勢，撐起一半以上的狀態：</b>揮手打招呼、看手機待命、講電話介紹、歪頭問號、拿出貨單——直接對上打招呼、待命、推薦、售完勸阻、下單收尾。</p>
+    <p><b>原本缺的 4 個姿勢，已用 AI 以圖生圖補齊（鎖同一隻角色、乾淨去背）：</b></p>
+    <ul>
+      <li><b>加購成功</b>：比讚</li>
+      <li><b>已達免運</b>：雙手高舉慶祝</li>
+      <li><b>回購提醒</b>：側身探頭招手</li>
+      <li><b>低調模式</b>：抱膝縮起、斗笠蓋下休眠</li>
+    </ul>
+    <p>臉不變（肚子的無毒農 logo），全靠換姿勢＋道具＋對話框表達狀態，整組 9 個姿勢同一套 3D 風格。</p>
+  </div>
+</div>
+
+<script>
+const STATES=[
+ {nm:'待命',   pose:'pose-phone',    pri:'none', say:null, trigger:'平常沒事時，縮在角落', poseTxt:'看手機'},
+ {nm:'打招呼', pose:'pose-wave',     pri:'p2',   say:'嗨，我是無毒農小精靈！', trigger:'第一次進站、或被點一下', poseTxt:'耳麥揮手'},
+ {nm:'加購成功', pose:'pose-happy',  pri:'p0',   say:'幫你加進購物車囉　目前 3 樣', trigger:'使用者按「加入購物車」', poseTxt:'比讚'},
+ {nm:'湊免運', pose:'pose-call',     pri:'p1',   say:'再湊 $120 就免運，要不要加這些？', trigger:'小計接近門檻（會收運費的產線）', poseTxt:'講電話介紹'},
+ {nm:'已達免運', pose:'pose-celebrate', pri:'p2', say:'已經免運囉，賺到！', trigger:'小計跨過免運門檻', poseTxt:'雙手慶祝', confetti:true},
+ {nm:'售完勸阻', pose:'pose-question', pri:'p1', say:'這款剛好售完了，要不要看看類似的？', trigger:'點到已售完的商品', poseTxt:'歪頭問號'},
+ {nm:'預購提醒', pose:'pose-ship',   pri:'p1',   say:'現貨跟預購配送時間不同，建議分開結帳', trigger:'現貨與預購同時在購物車', poseTxt:'拿出貨單'},
+ {nm:'回購提醒', pose:'pose-peek',   pri:'p2',   say:'你上次買的高麗菜又到貨囉', trigger:'熟客、買過且商品回補', poseTxt:'探頭招手'},
+ {nm:'閒置主動', pose:'pose-question', pri:'p2', say:'需要我幫你找什麼嗎？', trigger:'停在同一頁很久沒動作', poseTxt:'歪頭問號'},
+ {nm:'下單收尾', pose:'pose-ship',   pri:'p0',   say:'訂單成立，會全程冷藏配送給你', trigger:'結帳完成', poseTxt:'拿出貨單＋箱子'},
+ {nm:'低調模式', pose:'pose-sleep',  pri:'none', say:'（安靜，只在加購／下單時才出聲）', trigger:'使用者連續關掉提醒 → 自動收斂', poseTxt:'睡著縮起'},
+];
+const priLabel={p0:'P0 必出',p1:'P1 該出',p2:'P2 能省則省',none:'— 不出聲'};
+document.getElementById('grid').innerHTML=STATES.map(s=>`
+  <div class="card ${s.gap?'gap':''}">
+    <div class="stage">
+      ${s.gap?`<span class="need-badge">待補繪：${s.need}</span>`:''}
+      ${s.confetti?['#dc4e43','#caa940','#4ba83b','#22ac38','#e67e22'].map((c,i)=>`<span class="confetti" style="left:${24+i*12}%;background:${c};animation-delay:${i*0.22}s"></span>`).join(''):''}
+      <img class="${s.gap?'dim':''}" src="poses/${s.pose}.png" alt="${s.nm}">
+    </div>
+    <div class="title-row">
+      <span class="nm">${s.nm}</span>
+      <span class="pill ${s.pri}">${priLabel[s.pri]}</span>
+    </div>
+    <div class="say ${s.say?'':'empty'}">${s.say||'不講話'}</div>
+    <div class="meta"><b>什麼時候：</b>${s.trigger}<br><b>姿勢：</b><span class="pose-tag ${s.gap?'need':''}">${s.gap?'暫借，待補繪':s.poseTxt}</span></div>
+  </div>`).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<!--
+  DemoShares 交接對照 | 無毒農小精靈・購物旅程互動 demo
+  全新頁面：正式站無對應（新建）。陪伴型小精靈的 UX 概念 demo，非 1:1 還原頁。
+  這次要動的檔：無——本頁是企劃概念驗證。掛點與產線架構見企劃規劃（D:\Obsidian\GreenBox\03_功能開發\無毒農小精靈\）。
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>無毒農小精靈 · 購物旅程互動 Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#4ba83b; --green-strong:#22ac38; --green-dark:#3d8c30; --gold:#caa940;
+  --red:#dc4e43; --text:#33435a; --muted:#8a94a3; --line:#e4e7ec; --bg-soft:#f6f8f4; --radius:4px;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;color:var(--text);background:#fff;font-size:14px;line-height:1.6;}
+a{color:inherit;text-decoration:none;}
+ul{list-style:none;padding:0;margin:0;}
+img{vertical-align:middle;}
+.icon{display:inline-block;width:1em;text-align:center;font-style:normal;line-height:1;}
+
+/* Header */
+.gb-head{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid rgba(211,211,211,.74);}
+.gb-head .top-bar{display:flex;align-items:center;padding:10px 20px;gap:14px;max-width:1200px;margin:0 auto;}
+.gb-head .logo-wrap img{height:36px;}
+.gb-head .search-box{flex:0 0 240px;display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid #ccc;border-radius:18px;font-size:13px;}
+.gb-head .search-box input{border:0;outline:0;background:transparent;flex:1;font-size:13px;font-family:inherit;}
+.gb-head .spacer{flex:1;}
+.gb-head .right-area{display:flex;align-items:center;gap:8px;}
+.gb-head .member-wrap-link{color:var(--green);font-size:15px;margin:0 4px;display:inline-flex;align-items:center;gap:4px;}
+.gb-head .cart-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 14px;border-radius:18px;background:var(--green);color:#fff;font-size:13px;position:relative;border:0;cursor:pointer;font-family:inherit;}
+.gb-head .cart-btn:hover{background:var(--green-dark);}
+.gb-head .cart-btn .badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:11px;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;}
+.gb-head .nav-row{display:flex;align-items:center;gap:16px;padding:10px 20px 8px;font-size:15px;font-weight:700;overflow-x:auto;white-space:nowrap;max-width:1200px;margin:0 auto;}
+.gb-head .nav-row a{color:var(--green);padding:4px 2px;}
+.gb-head .nav-row a:hover{color:var(--gold);}
+.gb-head .new-badge{color:red;margin-right:4px;font-weight:700;}
+
+/* 商品頁 */
+.page{max-width:1080px;margin:0 auto;padding:24px 20px 80px;}
+.breadcrumb{color:var(--muted);font-size:13px;margin-bottom:12px;}
+.breadcrumb b{color:var(--text);}
+.section-title{font-size:22px;font-weight:700;margin:0 0 4px;}
+.section-sub{color:var(--muted);margin:0 0 20px;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.card{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;display:flex;flex-direction:column;transition:box-shadow .15s;}
+.card:hover{box-shadow:0 4px 16px rgba(51,67,90,.1);}
+.card .thumb{aspect-ratio:4/3;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;position:relative;}
+.card .thumb img{max-height:78%;max-width:78%;}
+.card .tag{position:absolute;top:8px;left:8px;background:var(--green-strong);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:var(--radius);}
+.card .tag.pre{background:#f0932b;}
+.card .body{padding:12px 12px 16px;display:flex;flex-direction:column;flex:1;gap:4px;}
+.card .name{font-size:15px;font-weight:700;}
+.card .desc{font-size:12px;color:var(--muted);flex:1;}
+.card .price{font-size:18px;font-weight:700;color:var(--red);}
+.card .price small{font-size:12px;color:var(--muted);font-weight:400;}
+.btn-add{margin-top:8px;border:0;background:var(--green);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:8px 0;border-radius:var(--radius);cursor:pointer;}
+.btn-add:hover{background:var(--green-dark);}
+
+/* 購物車 */
+.cart-drawer{position:fixed;top:0;right:0;width:340px;max-width:88vw;height:100%;background:#fff;box-shadow:-4px 0 24px rgba(51,67,90,.18);z-index:40;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;}
+.cart-drawer.open{transform:translateX(0);}
+.cart-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.cart-head h3{margin:0;font-size:17px;}
+.cart-head .x{border:0;background:transparent;font-size:20px;cursor:pointer;color:var(--muted);}
+.cart-items{flex:1;overflow:auto;padding:8px 20px;}
+.cart-row{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center;}
+.cart-row .ci-thumb{width:44px;height:44px;border-radius:var(--radius);background:var(--bg-soft);display:flex;align-items:center;justify-content:center;}
+.cart-row .ci-thumb img{max-width:80%;max-height:80%;}
+.cart-row .ci-name{font-size:13px;font-weight:500;}
+.cart-row .ci-meta{font-size:12px;color:var(--muted);}
+.cart-row .ci-pre{color:#e67e22;font-weight:700;}
+.cart-empty{color:var(--muted);text-align:center;padding:40px 0;}
+.ship-bar{padding:14px 20px;background:var(--bg-soft);border-top:1px solid var(--line);}
+.ship-bar .track{height:8px;border-radius:9999px;background:#dfe5d8;overflow:hidden;margin:8px 0;}
+.ship-bar .fill{height:100%;background:var(--green-strong);width:0;transition:width .4s;}
+.ship-bar .ship-txt{font-size:12px;color:var(--text);}
+.ship-bar .ship-txt b{color:var(--green-strong);}
+.cart-foot{padding:16px 20px;border-top:1px solid var(--line);}
+.cart-foot .total{display:flex;justify-content:space-between;font-size:16px;font-weight:700;margin-bottom:10px;}
+.btn-checkout{width:100%;border:0;background:var(--green);color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:12px 0;border-radius:var(--radius);cursor:pointer;}
+.btn-checkout:hover{background:var(--green-dark);}
+.btn-checkout:disabled{background:#c7cdd4;cursor:not-allowed;}
+.overlay{position:fixed;inset:0;background:rgba(51,67,90,.35);z-index:35;opacity:0;pointer-events:none;transition:opacity .25s;}
+.overlay.show{opacity:1;pointer-events:auto;}
+
+/* Footer */
+.gb-footer{background:var(--green);color:#fff;padding:32px 20px 18px;}
+.gb-footer .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:24px;font-size:13px;line-height:1.9;}
+.gb-footer h4{font-size:15px;font-weight:700;margin:0 0 8px;color:#fff;}
+.gb-footer a{color:#fff;opacity:.9;display:block;}
+.gb-footer .social{display:flex;gap:8px;margin-bottom:8px;}
+.gb-footer .social img{width:28px;height:28px;}
+.gb-footer .info{font-size:12px;opacity:.9;line-height:1.7;margin-top:8px;}
+.gb-footer .bottom{max-width:1200px;margin:24px auto 0;padding-top:16px;border-top:1px solid rgba(255,255,255,.25);display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:.85;flex-wrap:wrap;gap:8px;}
+.gb-footer .bottom .slogan{display:flex;align-items:center;gap:12px;font-weight:700;}
+.gb-footer .bottom .slogan img{height:28px;}
+.gb-footer .bottom .legal p{margin:0;line-height:1.7;text-align:right;}
+
+/* ====== 小精靈（真角色） ====== */
+.sprite-wrap{position:fixed;right:20px;bottom:20px;z-index:50;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+.sprite-wrap.hidden{display:none;}
+.sprite-avatar{width:104px;height:104px;cursor:pointer;will-change:transform;}
+/* 內層圖：待命時輕輕呼吸 */
+.sprite-avatar img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 10px rgba(51,67,90,.22));animation:spriteBreathe 3.4s ease-in-out infinite;transform-origin:bottom center;}
+@keyframes spriteBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.015)}}
+/* 外層：一次性反應動作（加 class 觸發，播完移除可重播） */
+.sprite-avatar.react-enter{animation:reactEnter .6s cubic-bezier(.22,1.2,.36,1);}
+.sprite-avatar.react-attention{animation:reactAttention .55s ease-in-out;}
+.sprite-avatar.react-bounce{animation:reactBounce .62s cubic-bezier(.3,1.4,.5,1);}
+.sprite-avatar.react-jump{animation:reactJump .72s cubic-bezier(.3,1.5,.5,1);}
+.sprite-avatar.react-shake{animation:reactShake .6s ease-in-out;}
+.sprite-avatar.react-nod{animation:reactNod .6s ease-in-out;}
+@keyframes reactEnter{0%{transform:translateY(46px) scale(.8);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes reactAttention{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+@keyframes reactBounce{0%{transform:translateY(0) scaleY(1)}30%{transform:translateY(-22px) scaleY(1.06)}55%{transform:translateY(0) scaleY(.9)}75%{transform:translateY(-6px) scaleY(1.02)}100%{transform:translateY(0) scaleY(1)}}
+@keyframes reactJump{0%{transform:translateY(0)}22%{transform:translateY(-32px) rotate(-6deg)}48%{transform:translateY(0)}68%{transform:translateY(-14px) rotate(5deg)}100%{transform:translateY(0)}}
+@keyframes reactShake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-5px) rotate(-4deg)}40%{transform:translateX(5px) rotate(4deg)}60%{transform:translateX(-4px) rotate(-3deg)}80%{transform:translateX(3px) rotate(2deg)}}
+@keyframes reactNod{0%,100%{transform:translateY(0)}30%{transform:translateY(-12px)}60%{transform:translateY(2px)}}
+/* 慶祝彩帶 */
+.sprite-wrap .confetti{position:absolute;bottom:72px;right:46px;width:7px;height:12px;border-radius:2px;pointer-events:none;animation:confBurst 1.4s ease-out forwards;}
+@keyframes confBurst{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx,0),-96px) rotate(280deg);opacity:0}}
+/* 低調：縮小、調暗、停止呼吸 */
+.sprite-wrap.quiet .sprite-avatar{transform:scale(.82);transition:transform .3s;}
+.sprite-wrap.quiet .sprite-avatar img{opacity:.55;animation:none;}
+/* 佔位樣式：目前 9 個狀態都有正式圖，此塊保留備用（之後新增狀態、圖還沒生時可再啟用） */
+.sprite-ph{width:100%;height:100%;border:2px dashed var(--muted);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:11px;line-height:1.3;text-align:center;background:rgba(138,148,163,.07);padding:4px;}
+.sprite-ph b{font-size:12px;color:var(--text);}
+.sprite-ph .ph-tag{font-size:10px;letter-spacing:.5px;}
+
+.bubble{max-width:260px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(51,67,90,.2);padding:14px 14px 12px;opacity:0;transform:translateY(8px) scale(.96);pointer-events:none;transition:opacity .18s ease,transform .18s ease;transform-origin:bottom right;margin-right:4px;position:relative;}
+.bubble.show{opacity:1;pointer-events:auto;animation:bubblePop .34s cubic-bezier(.22,1.3,.4,1) forwards;}
+@keyframes bubblePop{0%{opacity:0;transform:translateY(12px) scale(.9)}60%{transform:translateY(-2px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.bubble::after{content:'';position:absolute;right:30px;bottom:-7px;width:13px;height:13px;background:#fff;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg);}
+.bubble .b-head{display:flex;align-items:flex-start;gap:8px;}
+.bubble .b-msg{font-size:14px;line-height:1.5;flex:1;}
+.bubble .b-close{border:0;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:0 2px;}
+.bubble .b-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.bubble .b-btn{border:1px solid var(--green);background:#fff;color:var(--green);font-family:inherit;font-size:13px;font-weight:500;padding:5px 10px;border-radius:9999px;cursor:pointer;}
+.bubble .b-btn.primary{background:var(--green);color:#fff;}
+.bubble .b-btn:hover{opacity:.85;}
+.bubble .b-recs{display:flex;gap:8px;margin-top:10px;}
+.bubble .b-rec{flex:1;border:1px solid var(--line);border-radius:var(--radius);padding:6px;text-align:center;cursor:pointer;}
+.bubble .b-rec:hover{border-color:var(--green);}
+.bubble .b-rec img{width:34px;height:34px;}
+.bubble .b-rec .rn{font-size:11px;display:block;margin-top:2px;}
+.bubble .b-rec .rp{font-size:11px;color:var(--red);font-weight:700;}
+.bubble .b-tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:var(--radius);margin-bottom:6px;}
+.bubble .b-tag.p0{background:#eaf6e8;color:var(--green-strong);}
+.bubble .b-tag.p1{background:#fef3e0;color:#e67e22;}
+.bubble .b-tag.p2{background:#eef1f5;color:var(--muted);}
+.quiet-note{font-size:11px;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:9999px;padding:4px 10px;}
+
+/* 開發者面板 */
+.devpanel{position:fixed;left:20px;bottom:20px;z-index:50;width:280px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(51,67,90,.16);font-size:13px;}
+.devpanel .dp-head{background:var(--text);color:#fff;padding:8px 12px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.devpanel .dp-body{padding:12px;display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow:auto;}
+.devpanel.collapsed .dp-body{display:none;}
+.dp-group{display:flex;flex-direction:column;gap:6px;}
+.dp-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;}
+.dp-btns{display:flex;flex-wrap:wrap;gap:6px;}
+.dp-btn{border:1px solid var(--line);background:#fff;color:var(--text);font-family:inherit;font-size:12px;padding:6px 9px;border-radius:var(--radius);cursor:pointer;text-align:left;}
+.dp-btn:hover{border-color:var(--green);color:var(--green);}
+.dp-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.dp-switch{position:relative;width:38px;height:22px;flex:0 0 38px;}
+.dp-switch input{opacity:0;width:0;height:0;}
+.dp-slider{position:absolute;inset:0;background:#c7cdd4;border-radius:9999px;transition:.2s;cursor:pointer;}
+.dp-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:9999px;transition:.2s;}
+.dp-switch input:checked + .dp-slider{background:var(--green);}
+.dp-switch input:checked + .dp-slider::before{transform:translateX(16px);}
+.dp-hint{font-size:11px;color:var(--muted);line-height:1.5;}
+
+@media (max-width:960px){.grid{grid-template-columns:repeat(2,1fr);}.gb-head .search-box{display:none;}.gb-footer .wrap{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:640px){
+  .grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .gb-footer .wrap{grid-template-columns:1fr;}
+  .devpanel{left:10px;right:10px;bottom:10px;width:auto;}
+  .sprite-wrap{right:12px;bottom:12px;}
+  .sprite-avatar{width:80px;height:80px;}
+  .bubble{max-width:70vw;}
+}
+</style>
+</head>
+<body>
+
+<header class="gb-head">
+  <div class="top-bar">
+    <div class="logo-wrap"><a href="#"><img src="https://fruitbox.blob.core.windows.net/pagematerials/shared/2022_logo.svg" alt="無毒農"></a></div>
+    <div class="search-box"><i class="icon">&#128269;</i><input type="text" placeholder="請輸入關鍵字"></div>
+    <div class="spacer"></div>
+    <div class="right-area">
+      <a class="member-wrap-link" href="#"><img src="https://fruitbox.blob.core.windows.net/pagematerials/home/about-Vip/2023/smallNormal.svg" width="16" alt=""><span class="username">會員中心</span></a>
+      <button class="cart-btn" type="button" id="cartBtn"><i class="icon">&#128722;</i><span class="badge" id="cartBadge">0</span></button>
+    </div>
+  </div>
+  <nav class="nav-row">
+    <a href="#">關於無毒農</a><a href="#">粥寶寶</a><a href="#">益菓保</a>
+    <a href="#"><span class="new-badge">NEW!</span>綠時光</a>
+    <a href="#" style="color:var(--gold)">冷凍超市</a>
+    <a href="#">產地直送(免運)</a><a href="#">等家寶寶</a><a href="#">部落格</a>
+  </nav>
+</header>
+
+<main class="page">
+  <div class="breadcrumb">首頁 ／ <b>冷凍超市</b></div>
+  <h1 class="section-title">冷凍超市 · 嚴選安心</h1>
+  <p class="section-sub">滿 $699 免運費 · 全程冷凍宅配</p>
+  <div class="grid" id="productGrid"></div>
+</main>
+
+<footer class="gb-footer">
+  <div class="wrap">
+    <div><h4>無毒農標準</h4><a href="#">安心檢驗日報</a><a href="#">PGS參與式驗證</a><a href="#">無毒農部落格</a></div>
+    <div><h4>安心選購</h4><a href="#">粥寶寶</a><a href="#">益菓保</a><a href="#">產地直送</a><a href="#">冷凍超市</a></div>
+    <div><h4>幫助/政策</h4><a href="#">常見問題</a><a href="#">隱私權政策</a><a href="#">退貨辦法</a><a href="#">會員制度/紅利積點</a></div>
+    <div><h4>認識無毒農</h4><a href="#">關於無毒農</a><a href="#">團隊介紹</a><a href="#">人才招募</a><a href="#">等家寶寶</a></div>
+    <div><h4>追蹤我們</h4>
+      <div class="social">
+        <a href="#"><img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/footer_facebook_icon_green.svg" alt="FB"></a>
+        <a href="#"><img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/footer_line_icon_green.svg" alt="LINE"></a>
+        <a href="#"><img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/footer_instagram_icon_green.svg" alt="IG"></a>
+      </div>
+      <div class="info">總部地址：106 臺北市大安區仁愛路四段 2 號 11 樓<br>電話：(02) 2771-2900</div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="slogan"><img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/logo_white_horizontal.svg" alt="無毒農"><span>用信任連結產地和餐桌</span></div>
+    <div class="legal"><p>舒果農企業有限公司／無毒農　統編：42829375</p><p>© 無毒農 All Rights Reserved.</p></div>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay"></div>
+<aside class="cart-drawer" id="cartDrawer">
+  <div class="cart-head"><h3>購物車</h3><button class="x" id="cartClose">&times;</button></div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="ship-bar">
+    <div class="ship-txt" id="shipTxt"></div>
+    <div class="track"><div class="fill" id="shipFill"></div></div>
+  </div>
+  <div class="cart-foot">
+    <div class="total"><span>小計</span><span id="cartTotal">$0</span></div>
+    <button class="btn-checkout" id="checkoutBtn" disabled>前往結帳</button>
+  </div>
+</aside>
+
+<!-- 小精靈（真角色，會依狀態換姿勢） -->
+<div class="sprite-wrap" id="spriteWrap">
+  <div class="quiet-note" id="quietNote" style="display:none;">精靈已進入低調模式，只在加購/下單時出聲</div>
+  <div class="bubble" id="bubble"></div>
+  <div class="sprite-avatar" id="spriteAvatar" title="無毒農小精靈">
+    <img id="spriteImg" src="poses/pose-phone.png" alt="無毒農小精靈">
+    <div id="spritePh" class="sprite-ph" style="display:none"></div>
+  </div>
+</div>
+
+<!-- 開發者面板 -->
+<div class="devpanel" id="devpanel">
+  <div class="dp-head" id="dpHead"><b>開發者面板 · 旅程切換</b><span id="dpToggleIcon">&#9660;</span></div>
+  <div class="dp-body">
+    <div class="dp-group">
+      <div class="dp-label">① 跟著旅程走（會自動觸發精靈）</div>
+      <div class="dp-btns">
+        <button class="dp-btn" data-act="reset">↺ 重置</button>
+        <button class="dp-btn" data-act="addOne">加一樣</button>
+        <button class="dp-btn" data-act="openCart">打開購物車</button>
+      </div>
+    </div>
+    <div class="dp-group">
+      <div class="dp-label">② 直接跳到某個情境（看它換姿勢）</div>
+      <div class="dp-btns">
+        <button class="dp-btn" data-sc="newAdd">加購成功</button>
+        <button class="dp-btn" data-sc="nearFree">差一點免運</button>
+        <button class="dp-btn" data-sc="hitFree">已達免運</button>
+        <button class="dp-btn" data-sc="mixPre">預購現貨混買</button>
+        <button class="dp-btn" data-sc="done">下單完成</button>
+        <button class="dp-btn" data-sc="repurchase">熟客回購提醒</button>
+        <button class="dp-btn" data-sc="greet">打招呼</button>
+      </div>
+    </div>
+    <div class="dp-group">
+      <div class="dp-label">③ 控制感（精靈的信任基礎）</div>
+      <div class="dp-toggle"><span>低調模式（只留加購/下單）</span><label class="dp-switch"><input type="checkbox" id="quietToggle"><span class="dp-slider"></span></label></div>
+      <div class="dp-toggle"><span>顯示精靈</span><label class="dp-switch"><input type="checkbox" id="showToggle" checked><span class="dp-slider"></span></label></div>
+      <div class="dp-hint">連按兩次泡泡右上的 ✕ 關掉提醒，精靈會自己進低調模式（會讀空氣）。9 個姿勢都有正式圖：原本 5 個官方姿勢＋AI 以圖生圖補齊的 4 個（加購比讚、已達免運慶祝、回購探頭、低調休眠）。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const IMG='https://greenboxcdn.azureedge.net/images/Shared/';
+const BAN='https://fruitbox.blob.core.windows.net/images/Shared/';
+const PRODUCTS=[
+  {id:'cabbage', name:'有機高麗菜', desc:'高山現採 · 清甜', price:120, img:IMG+'green.png',  type:'stock'},
+  {id:'banana',  name:'友善香蕉',   desc:'無套袋 · 自然熟成', price:90,  img:BAN+'banana.png', type:'stock'},
+  {id:'tomato',  name:'溫室小蕃茄', desc:'玉女品種 · 脆甜', price:220, img:IMG+'tomato.png', type:'stock'},
+  {id:'grape',   name:'巨峰葡萄（預購）', desc:'7 天後出貨', price:350, img:IMG+'grape.png', type:'preorder'},
+  {id:'orange',  name:'茂谷柑',     desc:'產地直送 · 多汁', price:180, img:IMG+'orange.png', type:'stock'},
+  {id:'apple',   name:'蜜蘋果',     desc:'爽脆 · 低甜不膩', price:260, img:IMG+'apple.png', type:'stock'},
+];
+const THRESHOLD=699;
+let cart=[], spriteOff=false, quietMode=false, shown={freeship:false}, closeStreak=0;
+const $=id=>document.getElementById(id);
+const grid=$('productGrid'), cartItems=$('cartItems'), bubble=$('bubble');
+
+grid.innerHTML=PRODUCTS.map(p=>`
+  <div class="card">
+    <div class="thumb">${p.type==='preorder'?'<span class="tag pre">預購</span>':'<span class="tag">現貨</span>'}<img src="${p.img}" alt="${p.name}"></div>
+    <div class="body">
+      <div class="name">${p.name}</div><div class="desc">${p.desc}</div>
+      <div class="price">$${p.price} <small>/ 份</small></div>
+      <button class="btn-add" data-add="${p.id}">加入購物車</button>
+    </div>
+  </div>`).join('');
+
+function prod(id){return PRODUCTS.find(p=>p.id===id);}
+function count(){return cart.reduce((s,c)=>s+c.qty,0);}
+function total(){return cart.reduce((s,c)=>s+prod(c.id).price*c.qty,0);}
+function hasType(t){return cart.some(c=>prod(c.id).type===t);}
+
+function renderCart(){
+  $('cartBadge').textContent=count();
+  $('cartTotal').textContent='$'+total();
+  $('checkoutBtn').disabled=cart.length===0;
+  const t=total(), remain=Math.max(0,THRESHOLD-t), pct=Math.min(100,Math.round(t/THRESHOLD*100));
+  $('shipFill').style.width=pct+'%';
+  $('shipTxt').innerHTML = t===0 ? `滿 $${THRESHOLD} 免運費` : remain>0 ? `再買 <b>$${remain}</b> 就免運費` : `<b>已達免運！</b>`;
+  cartItems.innerHTML = cart.length===0 ? '<div class="cart-empty">購物車是空的</div>'
+    : cart.map(c=>{const p=prod(c.id);return `
+      <div class="cart-row"><div class="ci-thumb"><img src="${p.img}" alt=""></div>
+        <div style="flex:1"><div class="ci-name">${p.name}</div><div class="ci-meta">$${p.price} × ${c.qty} ${p.type==='preorder'?'<span class="ci-pre">· 預購</span>':''}</div></div>
+        <div style="font-weight:700">$${p.price*c.qty}</div></div>`;}).join('');
+}
+
+// 換姿勢：9 個姿勢都有圖（含 AI 補繪的 happy / celebrate / peek / sleep）
+function setPose(pose){
+  const img=$('spriteImg'), ph=$('spritePh');
+  img.src='poses/pose-'+pose+'.png'; img.style.display=''; ph.style.display='none';
+}
+
+// 一次性動作：enter / attention / bounce / jump / shake / nod
+const REACTS=['enter','attention','bounce','jump','shake','nod'];
+function playReact(name){
+  const el=$('spriteAvatar');
+  REACTS.forEach(r=>el.classList.remove('react-'+r));
+  void el.offsetWidth; // 強制重排，才能重播同一個動作
+  el.classList.add('react-'+name);
+}
+function fireConfetti(){
+  const w=$('spriteWrap'), cols=['#dc4e43','#caa940','#4ba83b','#22ac38','#e67e22'];
+  for(let i=0;i<10;i++){
+    const s=document.createElement('span'); s.className='confetti';
+    s.style.right=(30+Math.random()*50)+'px';
+    s.style.background=cols[i%cols.length];
+    s.style.setProperty('--dx',(Math.random()*120-60)+'px');
+    s.style.animationDelay=(Math.random()*.15)+'s';
+    w.appendChild(s); setTimeout(()=>s.remove(),1500);
+  }
+}
+
+function addToCart(id){
+  const existing=cart.find(c=>c.id===id), p=prod(id);
+  const hadStock=hasType('stock'), hadPre=hasType('preorder');
+  if(existing) existing.qty++; else cart.push({id,qty:1});
+  renderCart();
+  speak('p0','幫你加進購物車囉　目前 '+count()+' 樣',[], null, 'happy','bounce');  // 加購成功
+  if(p.type==='preorder'&&hadStock || p.type==='stock'&&hadPre){
+    setTimeout(()=>speak('p1','這籃有現貨也有預購，配送時間不同，建議分開結帳喔',
+      [{t:'分開結帳',primary:true,act:()=>openCart()},{t:'先這樣',act:closeBubble}], null, 'question'),1500);
+    return;
+  }
+  const remain=THRESHOLD-total();
+  if(remain>0&&remain<=200) setTimeout(()=>speakFreeShip(remain),1400);
+  else if(remain<=0&&!shown.freeship){ shown.freeship=true;
+    setTimeout(()=>speak('p2','已經免運囉，賺到！接下來就可以安心結帳',[{t:'前往結帳',primary:true,act:()=>openCart()}], null,'celebrate','jump'),1400); }
+}
+function speakFreeShip(remain){
+  const recs=PRODUCTS.filter(p=>p.type==='stock'&&!cart.find(c=>c.id===p.id)).slice(0,2);
+  const recHtml=`<div class="b-recs">${recs.map(r=>`<div class="b-rec" data-rec="${r.id}"><img src="${r.img}"><span class="rn">${r.name}</span><span class="rp">$${r.price}</span></div>`).join('')}</div>`;
+  speak('p1',`再湊 <b style="color:#e67e22">$${remain}</b> 就免運，要不要加這些？`,[],recHtml,'call');
+}
+
+const DEF_REACT={wave:'bounce',call:'attention',ship:'nod',question:'shake',phone:'attention',happy:'bounce',celebrate:'jump',peek:'bounce',sleep:'attention'};
+function speak(priority,msg,actions,extraHtml,pose,react){
+  if(spriteOff) return;
+  if(quietMode&&priority!=='p0') return;
+  if(pose) setPose(pose);
+  const r=react||DEF_REACT[pose]||'attention';
+  playReact(r);
+  if(r==='jump') fireConfetti();
+  const tagText={p0:'即時回饋',p1:'貼心提醒',p2:'順便一提'}[priority];
+  bubble.innerHTML=`
+    <div class="b-head">
+      <div class="b-msg"><span class="b-tag ${priority}">${tagText}</span><br>${msg}</div>
+      <button class="b-close" title="關掉這則" data-close="1">&times;</button>
+    </div>
+    ${extraHtml||''}
+    ${actions&&actions.length?`<div class="b-actions">${actions.map((a,i)=>`<button class="b-btn ${a.primary?'primary':''}" data-ai="${i}">${a.t}</button>`).join('')}</div>`:''}`;
+  bubble._actions=actions||[];
+  bubble.classList.add('show');
+}
+function closeBubble(){ bubble.classList.remove('show'); setPose('phone'); } // 回待命
+
+function openCart(){$('cartDrawer').classList.add('open');$('overlay').classList.add('show');closeBubble();$('spriteWrap').classList.add('hidden');}
+function closeCart(){$('cartDrawer').classList.remove('open');$('overlay').classList.remove('show');if(!spriteOff)$('spriteWrap').classList.remove('hidden');}
+
+document.addEventListener('click',e=>{
+  const add=e.target.closest('[data-add]'); if(add){addToCart(add.dataset.add);return;}
+  const rec=e.target.closest('[data-rec]'); if(rec){addToCart(rec.dataset.rec);return;}
+  if(e.target.closest('[data-close]')){ closeBubble();
+    const tag=bubble.querySelector('.b-tag');
+    if(tag&&!tag.classList.contains('p0')){ closeStreak++; if(closeStreak>=2&&!quietMode) setQuiet(true); }
+    return; }
+  const ab=e.target.closest('[data-ai]'); if(ab){const a=bubble._actions[+ab.dataset.ai]; if(a&&a.act)a.act(); return;}
+});
+$('cartBtn').onclick=openCart;
+$('cartClose').onclick=closeCart;
+$('overlay').onclick=closeCart;
+$('spriteAvatar').onclick=()=>{ bubble.classList.contains('show')?closeBubble():speak('p2','嗨！我會在你購物時幫忙看一下運費跟推薦，需要的話隨時關掉我就好',[],null,'wave','attention'); };
+$('checkoutBtn').onclick=()=>{ closeCart(); cart=[]; renderCart(); shown.freeship=false;
+  setTimeout(()=>speak('p0','訂單成立，會全程冷凍配送給你　謝謝支持無毒農！',[],null,'ship'),300); };
+
+$('dpHead').onclick=()=>{$('devpanel').classList.toggle('collapsed');$('dpToggleIcon').innerHTML=$('devpanel').classList.contains('collapsed')?'&#9650;':'&#9660;';};
+function setQuiet(v){quietMode=v;$('quietToggle').checked=v;$('quietNote').style.display=v?'block':'none';$('spriteWrap').classList.toggle('quiet',v);if(v){setPose('sleep');}else closeStreak=0;}
+$('quietToggle').onchange=e=>setQuiet(e.target.checked);
+$('showToggle').onchange=e=>{spriteOff=!e.target.checked;$('spriteWrap').classList.toggle('hidden',spriteOff);};
+
+document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+  const a=b.dataset.act;
+  if(a==='reset'){cart=[];shown={freeship:false};setQuiet(false);closeStreak=0;closeBubble();renderCart();closeCart();}
+  if(a==='addOne'){addToCart('cabbage');}
+  if(a==='openCart'){openCart();}
+});
+document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>{
+  const sc=b.dataset.sc; cart=[]; shown={freeship:false}; closeBubble();
+  if(sc==='newAdd'){addToCart('cabbage');}
+  if(sc==='nearFree'){cart=[{id:'tomato',qty:1},{id:'orange',qty:1},{id:'cabbage',qty:1}];renderCart();speakFreeShip(THRESHOLD-total());}
+  if(sc==='hitFree'){cart=[{id:'apple',qty:1},{id:'grape',qty:1},{id:'tomato',qty:1}];renderCart();shown.freeship=true;speak('p2','已經免運囉，賺到！接下來就可以安心結帳',[{t:'前往結帳',primary:true,act:()=>openCart()}],null,'celebrate','jump');}
+  if(sc==='mixPre'){cart=[{id:'cabbage',qty:1}];renderCart();addToCart('grape');}
+  if(sc==='done'){cart=[];renderCart();speak('p0','訂單成立，會全程冷凍配送給你　謝謝支持無毒農！',[],null,'ship');}
+  if(sc==='repurchase'){cart=[];renderCart();speak('p2','你上次買的有機高麗菜又到貨囉，要不要再來一份？',[{t:'看看',primary:true,act:()=>addToCart('cabbage')},{t:'不用',act:closeBubble}],null,'peek');}
+  if(sc==='greet'){cart=[];renderCart();speak('p2','嗨，我是無毒農小精靈，逛的時候我會在旁邊幫你顧一下運費跟推薦',[],null,'wave','attention');}
+});
+
+// 動作播完就移除 class，讓同一個動作下次能重播
+$('spriteAvatar').addEventListener('animationend',()=>{ REACTS.forEach(r=>$('spriteAvatar').classList.remove('react-'+r)); });
+
+renderCart();
+playReact('enter'); // 入場：從角落滑上來
+setTimeout(()=>speak('p2','嗨，我是無毒農小精靈，逛的時候我會在旁邊幫你顧一下運費跟推薦',[],null,'wave','attention'),900);
+</script>
+</body>
+</html>
