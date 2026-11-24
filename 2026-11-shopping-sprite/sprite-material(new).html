@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<!--
+  DemoShares 交接對照 | 無毒農小精靈「圓圓寶」・材質試做
+  全新頁面：正式站無對應（新建）。同一個 3D 基準模型換成塑膠、羊毛氈、陶瓷、黏土四種材質並排比較，附網站上實際大小的縮圖。
+  這次要動的檔：無——本頁是選材質用的比較頁。材質程式：yyb/skins.js；模型：yyb/yyb.js
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圓圓寶 · 材質試做</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--green:#4ba83b;--text:#33435a;--muted:#8a94a3;--line:#e4e7ec;--bg:#f6f8f4;}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);line-height:1.6;}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 20px 64px;}
+h1{font-size:24px;margin:0 0 4px;}
+.lead{color:var(--muted);margin:0 0 16px;max-width:780px;}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:24px;position:sticky;top:8px;z-index:5;}
+.bar .lbl{font-size:13px;color:var(--muted);margin-right:4px;}
+.bar button{font-family:inherit;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:9999px;padding:4px 16px;cursor:pointer;}
+.bar button.on{background:var(--green);border-color:var(--green);color:#fff;}
+.bar label{font-size:13px;display:flex;gap:4px;align-items:center;margin-left:auto;}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+.card canvas.main{display:block;width:100%;height:380px;}
+.info{padding:12px 16px 16px;display:flex;gap:16px;align-items:flex-start;justify-content:space-between;}
+.info h2{font-size:17px;margin:0 0 2px;}
+.info p{margin:0;font-size:13px;color:var(--muted);}
+.tiny{display:flex;gap:12px;align-items:flex-end;flex:none;}
+.tiny figure{margin:0;text-align:center;}
+.tiny canvas{display:block;border-radius:4px;}
+.tiny figcaption{font-size:11px;color:var(--muted);}
+.card.base{opacity:.92;}
+@media(max-width:860px){.grid{grid-template-columns:1fr;}.card canvas.main{height:320px;}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="wrap">
+  <h1>圓圓寶 · 材質試做</h1>
+  <p class="lead">同一個模型，只換表面材質與擺放環境。實體感來自三件事：表面映出環境的反光、落在地上的真實陰影、表面的細微質地。每張卡片右下是網站上的實際大小，材質差異在小尺寸還看不看得出來，也要一起看。</p>
+  <div class="bar" id="bar">
+    <span class="lbl">姿勢</span>
+    <button data-a="idleB" class="on">待命</button>
+    <button data-a="addcart">加購成功</button>
+    <button data-a="done">已達免運</button>
+    <button data-a="greet">打招呼</button>
+    <button data-a="low">低調模式</button>
+    <label><input type="checkbox" id="spin" checked> 慢慢轉</label>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+<script type="module">
+import { THREE, YYB, Player } from './yyb/yyb.js';
+import { SKINS, applySkin, makeStudio, setupRenderer } from './yyb/skins.js';
+
+const ORDER = ['plastic', 'felt', 'ceramic', 'clay', 'base'];
+const grid = document.getElementById('grid');
+const views = ORDER.map(kind => {
+  const card = document.createElement('div'); card.className = 'card ' + kind;
+  card.innerHTML = `<canvas class="main"></canvas>
+    <div class="info"><div><h2>${SKINS[kind].name}</h2><p>${SKINS[kind].note}</p></div>
+    <div class="tiny"><figure><canvas class="t96"></canvas><figcaption>桌機 96px</figcaption></figure><figure><canvas class="t64"></canvas><figcaption>手機 64px</figcaption></figure></div></div>`;
+  grid.appendChild(card);
+  const cv = card.querySelector('canvas.main');
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+  renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+  if (kind !== 'base') setupRenderer(renderer);
+  const scene = makeStudio(renderer, kind);
+  const cam = new THREE.PerspectiveCamera(30, 1.5, 0.1, 100); cam.position.set(0, 2.3, 8.2); cam.lookAt(0, 1.35, 0);
+  const yyb = new YYB(); scene.add(yyb.group);
+  if (kind !== 'base') {
+    const orig = yyb.prop.bind(yyb);
+    yyb.prop = n => { const o = orig(n); o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); return o; };
+    applySkin(yyb, kind);
+  }
+  const player = new Player(yyb); player.play('idleB');
+  return { kind, cv, renderer, scene, cam, yyb, player, t96: card.querySelector('.t96'), t64: card.querySelector('.t64') };
+});
+function size() {
+  for (const v of views) { const w = v.cv.clientWidth, h = v.cv.clientHeight; v.renderer.setSize(w, h, false); v.cam.aspect = w / h; v.cam.updateProjectionMatrix(); }
+}
+addEventListener('resize', size); size();
+document.getElementById('bar').addEventListener('click', e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  document.querySelectorAll('#bar button').forEach(x => x.classList.toggle('on', x === b));
+  views.forEach(v => v.player.play(b.dataset.a));
+});
+const spin = document.getElementById('spin');
+// 實際大小縮圖：用鏡頭把角色頭頂與腳底投影到畫面，算出角色在畫面上幾 px 高，再等比縮成 96px、64px
+const top = new THREE.Vector3(), foot = new THREE.Vector3();
+function tiny(v, canvas, px) {
+  top.set(0, 2.75, 0).project(v.cam); foot.set(0, 0, 0).project(v.cam);
+  const H = v.cv.height, charPx = Math.abs(top.y - foot.y) / 2 * H;
+  const k = px * (devicePixelRatio > 1 ? 2 : 1) / charPx, w = Math.round(v.cv.width * k), h = Math.round(v.cv.height * k);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; canvas.style.width = (w / (devicePixelRatio > 1 ? 2 : 1)) + 'px'; canvas.style.height = (h / (devicePixelRatio > 1 ? 2 : 1)) + 'px'; }
+  const g = canvas.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(v.cv, 0, 0, w, h);
+}
+let last = performance.now(), frame = 0;
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; frame++;
+  for (const v of views) {
+    const r = v.cv.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) continue;
+    if (spin.checked) v.yyb.group.rotation.y = Math.sin(now / 1000 * 0.35) * 0.6;
+    v.player.update(dt); v.renderer.render(v.scene, v.cam);
+    if (frame % 6 === 0) { tiny(v, v.t96, 96); tiny(v, v.t64, 64); }
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+window.__mat = views;
+</script>
+</body>
+</html>

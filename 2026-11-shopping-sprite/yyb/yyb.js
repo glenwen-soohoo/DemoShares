@@ -654,4 +654,6 @@ export function makeScene() {
 export function makeCamera(aspect = 1.25) {
   const cam = new THREE.PerspectiveCamera(26, aspect, 0.1, 100); cam.position.set(0, 2.6, 9.8); cam.lookAt(0, 1.62, 0); return cam;
 }
+// 給材質模組（skins.js）用：拿到角色共用的材質，依材質種類換掉身體、手套、斗笠、骨架、logo
+export function baseMaterials() { return res().mat; }
 export { THREE };
