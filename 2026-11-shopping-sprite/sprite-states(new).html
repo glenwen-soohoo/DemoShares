@@ -2,13 +2,13 @@
 <html lang="zh-Hant">
 <head>
 <!--
-  DemoShares 交接對照 | 無毒農小精靈・狀態圖鑑
-  全新頁面：正式站無對應（新建）。小精靈 11 個狀態與對應姿勢的參考圖鑑，非 1:1 還原頁。
-  這次要動的檔：無——本頁是企劃概念參考。
+  DemoShares 交接對照 | 無毒農小精靈「圓圓寶」・狀態圖鑑
+  全新頁面：正式站無對應（新建）。18 個狀態與共用動作，每張卡用 3D 基準模型（yyb/yyb.js）實際播放該狀態的動作。非 1:1 還原頁。
+  這次要動的檔：無——本頁是企劃概念參考。動作規格見 D:\Obsidian\GreenBox\03_功能開發\無毒農小精靈\圓圓寶動作規劃.md
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>無毒農小精靈 · 狀態圖鑑</title>
+<title>圓圓寶 · 狀態圖鑑</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -19,105 +19,202 @@
 }
 *,*::before,*::after{box-sizing:border-box;}
 body{margin:0;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);line-height:1.6;}
-.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 64px;}
+.wrap{max-width:1120px;margin:0 auto;padding:32px 20px 64px;}
 h1{font-size:24px;margin:0 0 4px;}
-.lead{color:var(--muted);margin:0 0 18px;max-width:680px;}
-.legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;font-size:13px;align-items:center;}
-.pill{padding:3px 10px;border-radius:9999px;font-weight:700;font-size:12px;}
+.lead{color:var(--muted);margin:0 0 16px;max-width:760px;}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px;font-size:13px;align-items:center;}
+.pill{padding:2px 8px;border-radius:9999px;font-weight:700;font-size:12px;white-space:nowrap;}
 .p0{background:#eaf6e8;color:var(--green-strong);}
 .p1{background:#fef3e0;color:var(--orange);}
 .p2{background:#eef1f5;color:var(--muted);}
 .none{background:#eef1f5;color:var(--muted);}
-.needpill{background:#fdeceb;color:var(--red);}
+.lv{background:#fff;border:1px solid var(--line);color:var(--text);font-weight:500;}
+.lv.full{border-color:var(--green);color:var(--green);}
+.lv.small{border-color:var(--orange);color:var(--orange);}
+
+.phase{margin-bottom:40px;}
+.phase-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--green);}
+.phase.ph2 .phase-head{border-bottom-color:var(--orange);}
+.phase.ph3 .phase-head{border-bottom-color:var(--gold);}
+.phase.common .phase-head{border-bottom-color:var(--muted);}
+.phase-head h2{font-size:20px;margin:0;}
+.phase-head .cnt{font-size:13px;font-weight:500;color:var(--muted);margin-left:8px;}
+.phase-head .need{font-size:13px;color:var(--muted);}
 
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;}
-.card.gap{border-color:#f3c9a6;background:#fffaf4;}
-.stage{background:var(--bg);border-radius:8px;height:150px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
-.stage img{max-height:132px;max-width:86%;object-fit:contain;}
-.stage img.dim{opacity:.4;filter:grayscale(.3);}
-.need-badge{position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px;}
-.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.stage{background:var(--bg);border-radius:8px;height:240px;position:relative;}
+.stage .btns{position:absolute;left:8px;bottom:8px;display:flex;gap:4px;z-index:20;}
+.stage button{font-family:inherit;font-size:12px;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:9999px;padding:2px 12px;cursor:pointer;}
+.stage button:hover{border-color:var(--green);color:var(--green);}
+.stage button.on{background:var(--green);border-color:var(--green);color:#fff;}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
 .nm{font-size:16px;font-weight:700;}
-.say{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;min-height:36px;}
-.say.empty{color:var(--muted);font-style:italic;background:var(--bg);border-style:dashed;}
+.chips{display:flex;gap:4px;flex-wrap:wrap;}
+.say{background:#fff;border:1px solid var(--line);border-radius:12px;padding:4px 12px;font-size:13px;}
+.say.empty{color:var(--muted);background:var(--bg);border-style:dashed;}
+.act{font-size:14px;font-weight:700;}
+.steps{margin:0;padding:0;list-style:none;font-size:12px;color:var(--text);}
+.steps li{display:grid;grid-template-columns:36px 1fr;gap:4px;padding:2px 0;}
+.steps li b{color:var(--muted);font-weight:500;}
 .meta{font-size:12px;color:var(--muted);line-height:1.7;}
 .meta b{color:var(--text);font-weight:500;}
-.pose-tag{display:inline-block;font-size:11px;color:var(--green-strong);background:#eaf6e8;padding:1px 7px;border-radius:9999px;}
-.pose-tag.need{color:var(--red);background:#fdeceb;}
+.newpill{background:var(--green);color:#fff;font-size:11px;padding:1px 8px;}
 
-/* 讓角色有一點生命感 */
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.stage img:not(.dim){animation:float 3.4s ease-in-out infinite;}
-.confetti{position:absolute;top:8px;width:7px;height:12px;border-radius:2px;animation:fall 1.8s linear infinite;z-index:2;}
-@keyframes fall{0%{transform:translateY(-14px) rotate(0);opacity:1}100%{transform:translateY(140px) rotate(240deg);opacity:0}}
+.note{margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;font-size:14px;}
+.note h3{margin:0 0 4px;font-size:15px;}
+.note p{margin:4px 0;}
 
-.note{margin-top:28px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--green);border-radius:8px;padding:16px 18px;font-size:14px;}
-.note h3{margin:0 0 6px;font-size:15px;}
-.note p{margin:5px 0;}
-.note ul{margin:6px 0 0;padding-left:18px;}
-.note li{margin:2px 0;}
-
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr);}}
+#gl{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+@media(max-width:960px){.grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:600px){.grid{grid-template-columns:1fr;}}
 </style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 </head>
 <body>
+<canvas id="gl"></canvas>
 <div class="wrap">
-  <h1>無毒農小精靈 · 狀態圖鑑</h1>
-  <p class="lead">用的是正式角色。這隻精靈<b>不靠換表情，而是靠「換姿勢＋道具＋對話框」</b>來表達狀態——臉就是肚子上的無毒農 logo，不會變。下面每一格是一個狀態：什麼時候出現、用哪個姿勢、講什麼、該不該出聲。</p>
+  <h1>圓圓寶 · 狀態圖鑑</h1>
+  <p class="lead">每張卡片都是圓圓寶在那個狀態實際會做的動作，捲到卡片時會播一次，按「重播」可以再看。動作大小跟重要程度連動：要給客人回饋的做完整動態，提醒做小動作，閒聊只換姿勢加呼吸。同一次購物裡重複出現時改播精簡版，按「重複時」可以看。</p>
   <div class="legend">
-    <span class="pill p0">P0 必出</span>
-    <span class="pill p1">P1 該出</span>
-    <span class="pill p2">P2 能省則省</span>
-    <span class="pill none">— 不出聲</span>
+    <span class="pill p0">P0 必出</span><span class="pill p1">P1 該出</span><span class="pill p2">P2 能省則省</span><span class="pill none">— 不出聲</span>
+    <span style="color:var(--muted)">｜</span>
+    <span class="pill lv full">完整動態</span><span class="pill lv small">小動態</span><span class="pill lv">靜態加呼吸</span>
+    <span class="pill newpill">新</span><span style="color:var(--muted)">這次新增的狀態</span>
   </div>
-
-  <div class="grid" id="grid"></div>
-
+  <div id="phases"></div>
   <div class="note">
-    <h3>姿勢來源</h3>
-    <p><b>原本的 5 個官方姿勢，撐起一半以上的狀態：</b>揮手打招呼、看手機待命、講電話介紹、歪頭問號、拿出貨單——直接對上打招呼、待命、推薦、售完勸阻、下單收尾。</p>
-    <p><b>原本缺的 4 個姿勢，已用 AI 以圖生圖補齊（鎖同一隻角色、乾淨去背）：</b></p>
-    <ul>
-      <li><b>加購成功</b>：比讚</li>
-      <li><b>已達免運</b>：雙手高舉慶祝</li>
-      <li><b>回購提醒</b>：側身探頭招手</li>
-      <li><b>低調模式</b>：抱膝縮起、斗笠蓋下休眠</li>
-    </ul>
-    <p>臉不變（肚子的無毒農 logo），全靠換姿勢＋道具＋對話框表達狀態，整組 9 個姿勢同一套 3D 風格。</p>
+    <h3>這組動作怎麼做出來的</h3>
+    <p>全部由同一個 3D 模型擺出來，所以每個動作裡的圓圓寶都是同一隻。這個模型是之後所有圖素的基準：要出靜態圖、要出關鍵影格，都從這個模型輸出。</p>
+    <p>同一個小竹籃串起整段購物：待命時提著空籃，加購時東西放進籃子，湊免運時籃子快滿，達標時籃子滿到冒出來，下單時倒進保冷箱。</p>
   </div>
 </div>
 
-<script>
-const STATES=[
- {nm:'待命',   pose:'pose-phone',    pri:'none', say:null, trigger:'平常沒事時，縮在角落', poseTxt:'看手機'},
- {nm:'打招呼', pose:'pose-wave',     pri:'p2',   say:'嗨，我是無毒農小精靈！', trigger:'第一次進站、或被點一下', poseTxt:'耳麥揮手'},
- {nm:'加購成功', pose:'pose-happy',  pri:'p0',   say:'幫你加進購物車囉　目前 3 樣', trigger:'使用者按「加入購物車」', poseTxt:'比讚'},
- {nm:'湊免運', pose:'pose-call',     pri:'p1',   say:'再湊 $120 就免運，要不要加這些？', trigger:'小計接近門檻（會收運費的產線）', poseTxt:'講電話介紹'},
- {nm:'已達免運', pose:'pose-celebrate', pri:'p2', say:'已經免運囉，賺到！', trigger:'小計跨過免運門檻', poseTxt:'雙手慶祝', confetti:true},
- {nm:'售完勸阻', pose:'pose-question', pri:'p1', say:'這款剛好售完了，要不要看看類似的？', trigger:'點到已售完的商品', poseTxt:'歪頭問號'},
- {nm:'預購提醒', pose:'pose-ship',   pri:'p1',   say:'現貨跟預購配送時間不同，建議分開結帳', trigger:'現貨與預購同時在購物車', poseTxt:'拿出貨單'},
- {nm:'回購提醒', pose:'pose-peek',   pri:'p2',   say:'你上次買的高麗菜又到貨囉', trigger:'熟客、買過且商品回補', poseTxt:'探頭招手'},
- {nm:'閒置主動', pose:'pose-question', pri:'p2', say:'需要我幫你找什麼嗎？', trigger:'停在同一頁很久沒動作', poseTxt:'歪頭問號'},
- {nm:'下單收尾', pose:'pose-ship',   pri:'p0',   say:'訂單成立，會全程冷藏配送給你', trigger:'結帳完成', poseTxt:'拿出貨單＋箱子'},
- {nm:'低調模式', pose:'pose-sleep',  pri:'none', say:'（安靜，只在加購／下單時才出聲）', trigger:'使用者連續關掉提醒 → 自動收斂', poseTxt:'睡著縮起'},
+<script type="module">
+import { THREE, YYB, Player, makeScene, makeCamera } from './yyb/yyb.js';
+
+const PHASES = [
+ { cls:'ph1', no:'第一階段', name:'回饋閉環', need:'只用購物車資料，不推任何商品。', states:[
+  { nm:'待命', pri:'none', lv:'靜態加呼吸', a:'idle', alt:['idleB','籃子有菜'], say:null, act:'側提小竹籃站著',
+    steps:[['畫面','手臂勾著小竹籃，身體偏向網頁內容那一側']], len:'呼吸一輪 3.4 秒，循環', rep:'購物車有東西時，籃子裡露出蔬菜' },
+  { nm:'加購成功', pri:'p0', lv:'完整動態', a:'addcart', lite:'addcartLite', say:'幫你加進購物車囉，目前 3 樣', act:'接住商品，放進菜籃',
+    steps:[['起手','往上看、雙手張開準備接'],['高點','雙手在胸前捧住飛來的商品'],['收尾','把菜籃捧到身前，籃裡多了菜']], len:'1.2 秒', rep:'第 3 次起只輕點一下頭' },
+  { nm:'數量加碼', pri:'p0', lv:'精簡版', a:'qty', say:'這樣 2 份囉，共 4 樣', act:'捧著菜籃輕彈，「×2」標籤跳出', isnew:true,
+    steps:[['動作','用加購成功的收尾畫面，整隻輕彈一下'],['標籤','「×N」從籃口彈出，停 0.6 秒後淡出']], len:'0.5 秒', rep:'每次都播這個精簡版' },
+  { nm:'湊免運', pri:'p1', lv:'小動態', a:'near', say:'再湊 $120 就免運喔', act:'捧著八分滿的菜籃往裡看、掂一掂',
+    steps:[['動作','雙手捧籃在身前，身體前傾、斗笠歪向籃子'],['小動態','整隻往上掂兩下，像在秤重']], len:'0.7 秒', rep:'只換姿勢不動；第二階段起對話窗多 2 張湊單商品卡' },
+  { nm:'已達免運', pri:'p2', lv:'完整動態', a:'done', lite:'doneLite', say:'已經免運囉，賺到！', act:'蹲下蓄力、跳起雙手高舉、撒彩帶',
+    steps:[['起手','蹲低、雙拳收在身側，滿籃放在腳邊'],['高點','跳起來雙手高舉，斗笠微微飄起，彩帶噴出'],['收尾','落地站穩，一手比讚']], len:'1.6 秒', rep:'小計掉下又跨回門檻時：輕彈一下、彩帶減量' },
+  { nm:'下單收尾', pri:'p0', lv:'完整動態', a:'order', say:'訂單成立，會全程冷藏配送給你', act:'把菜倒進保冷箱、封箱、揮手',
+    steps:[['起手','彎腰把菜籃倒向打開的保冷箱'],['高點','蓋上箱蓋、貼好封箱膠帶'],['收尾','一手扶箱頂，另一手揮手']], len:'1.8 秒', rep:'每筆訂單都播完整版' },
+  { nm:'低調模式', pri:'none', lv:'靜止', a:'low', say:'（安靜，只在加購、下單時出聲）', act:'抱膝縮起、斗笠拉低',
+    steps:[['畫面','縮到 85%，斗笠蓋住 logo 上半，不呼吸'],['觸發','連關 2 則非 P0 提醒；設定裡也能永久關閉']], len:'進入 0.8 秒，之後靜止', rep:'不適用' },
+ ]},
+ { cls:'ph2', no:'第二階段', name:'規則提醒＋商品推薦', need:'多用商品狀態：庫存、現貨或預購、溫層，加上推薦商品的來源。', states:[
+  { nm:'售完勸阻', pri:'p1', lv:'小動態', a:'soldout', say:'這款剛好售完了，看看這兩樣類似的？', act:'看一眼空木箱，轉身指向替代商品',
+    steps:[['起手','低頭看空木箱，手心朝上（沒了）'],['收尾','轉向對話窗那側，手往左上比（這邊有）']], len:'0.9 秒', rep:'只顯示收尾畫面' },
+  { nm:'現貨×預購混買', pri:'p1', lv:'小動態', a:'mixed', say:'配送時間不同，建議分開結帳喔', act:'站在兩個箱子中間，把它們往兩邊分開',
+    steps:[['道具','左箱貼葉子（現在有貨），右箱貼月曆（之後才到）'],['小動態','雙手平舉，兩箱同時往外滑開']], len:'0.6 秒', rep:'箱子直接在分開的位置' },
+  { nm:'冷鏈配送提醒', pri:'p1', lv:'小動態', a:'cold', say:'低溫宅配，記得留人在家收冰', act:'抱著冒冷氣的保冷箱，打個冷顫', isnew:true,
+    steps:[['道具','保冷箱縫隙冒出冷氣'],['小動態','左右快速抖兩下，是好玩的冷顫，不是慌張']], len:'0.8 秒', rep:'只換姿勢，冷氣不播' },
+  { nm:'即將售完', pri:'p1', lv:'小動態', a:'lowstock', say:'這款剩最後 3 件囉', act:'捧著只剩幾顆的竹篩，低頭數一數', isnew:true,
+    steps:[['畫面','一手托竹篩，一手指著，斗笠微低'],['小動態','慢慢點頭兩下，像在數「一、二」']], len:'0.8 秒', rep:'只換姿勢；不跑不跳、不用紅色、不出現時鐘' },
+ ]},
+ { cls:'ph3', no:'第三階段', name:'個人化與喚回', need:'要用會員資料：購買紀錄、優惠券、回訪與瀏覽行為。', states:[
+  { nm:'購物車救回', pri:'p1', lv:'小動態', a:'cartback', say:'上次的購物車還幫你留著，共 3 樣', act:'從身後拿出蓋著布巾的菜籃', isnew:true,
+    steps:[['起手','身體往右轉，手伸到背後'],['收尾','轉回來，提出蓋著格紋布巾的菜籃']], len:'0.8 秒', rep:'只顯示收尾畫面' },
+  { nm:'回購提醒', pri:'p2', lv:'靜態加呼吸', a:'repurchase', say:'你常買的有機高麗菜該補貨囉', act:'看著手寫採買清單',
+    steps:[['畫面','一手拿採買清單，一手指著清單；清單不寫真字']], len:'換圖 0.2 秒', rep:'同第一次' },
+  { nm:'優惠券可用', pri:'p1', lv:'小動態', a:'coupon', say:'你有一張 $50 折價券可以用喔', act:'把折價券舉起來給客人看', isnew:true,
+    steps:[['畫面','一手把綠色折價券舉到斗笠邊，另一手扶腰；券面不印金額'],['小動態','整隻往上彈一下']], len:'0.6 秒', rep:'只換姿勢不動' },
+  { nm:'首購優惠', pri:'p2', lv:'靜態加呼吸', a:'firstbuy', say:'第一次買有首購優惠，從這兩樣開始挑？', act:'雙手往前遞出小菜籃', isnew:true,
+    steps:[['畫面','身體前傾，籃裡一綠一紅兩樣，對應對話窗的 2 張商品卡']], len:'換圖 0.2 秒', rep:'同第一次' },
+  { nm:'閒置主動', pri:'p2', lv:'靜態加呼吸', a:'idleQ', say:'需要我幫你找什麼嗎？', act:'歪頭，旁邊一個問號',
+    steps:[['畫面','身體歪一邊，問號用品牌綠']], len:'換圖 0.2 秒', rep:'同第一次' },
+  { nm:'打招呼', pri:'p2', lv:'靜態加呼吸', a:'greet', say:'嗨，我是圓圓寶！', act:'一手抬斗笠邊、一手揮手',
+    steps:[['畫面','像農夫打招呼一樣抬一下斗笠，另一手揮']], len:'換圖 0.2 秒', rep:'同第一次' },
+  { nm:'結帳卡關挽留', pri:'p1', lv:'小動態', a:'checkout', say:'哪裡卡住了嗎？可以看常見問題或找客服', act:'戴上客服耳麥揮手', isnew:true,
+    steps:[['畫面','整組唯一戴耳麥的狀態，對應「聯絡客服」按鈕'],['小動態','整隻左右輕擺一次']], len:'0.6 秒', rep:'只換姿勢不動' },
+ ]},
+ { cls:'common', no:'共用動作', name:'每個狀態都會經過', need:'不屬於任何單一狀態，用模型加程式做，不需要另外畫圖。', common:true, states:[
+  { nm:'入場', lv:'—', a:'enter', act:'從角落下方滑上來，落地壓扁再回彈', steps:[['規則','同一次購物只播一次，換頁不再播']], len:'0.6 秒' },
+  { nm:'被點一下', lv:'—', a:'tap', act:'輕跳一下、轉向客人，接著出打招呼', steps:[['規則','第 3 次點起只輕跳，不再出對話窗']], len:'0.4 秒' },
+  { nm:'購物車打開時讓位', lv:'—', a:'yieldTo', act:'往下沉出畫面，抽屜關上後升回原位', steps:[['規則','抽屜開著時發生的 P0 不補播']], len:'下沉 0.25 秒、升回 0.3 秒' },
+  { nm:'進入低調模式', lv:'—', a:'toLow', act:'從待命縮成抱膝、縮小', steps:[['規則','之後完全靜止、不呼吸']], len:'0.8 秒' },
+  { nm:'恢復提醒', lv:'—', a:'restore', act:'從抱膝站起來，輕彈一下回到待命', steps:[['規則','客人按「恢復提醒」時播']], len:'0.6 秒' },
+ ]},
 ];
-const priLabel={p0:'P0 必出',p1:'P1 該出',p2:'P2 能省則省',none:'— 不出聲'};
-document.getElementById('grid').innerHTML=STATES.map(s=>`
-  <div class="card ${s.gap?'gap':''}">
-    <div class="stage">
-      ${s.gap?`<span class="need-badge">待補繪：${s.need}</span>`:''}
-      ${s.confetti?['#dc4e43','#caa940','#4ba83b','#22ac38','#e67e22'].map((c,i)=>`<span class="confetti" style="left:${24+i*12}%;background:${c};animation-delay:${i*0.22}s"></span>`).join(''):''}
-      <img class="${s.gap?'dim':''}" src="poses/${s.pose}.png" alt="${s.nm}">
-    </div>
-    <div class="title-row">
-      <span class="nm">${s.nm}</span>
-      <span class="pill ${s.pri}">${priLabel[s.pri]}</span>
-    </div>
-    <div class="say ${s.say?'':'empty'}">${s.say||'不講話'}</div>
-    <div class="meta"><b>什麼時候：</b>${s.trigger}<br><b>姿勢：</b><span class="pose-tag ${s.gap?'need':''}">${s.gap?'暫借，待補繪':s.poseTxt}</span></div>
-  </div>`).join('');
+
+const priLabel = { p0:'P0 必出', p1:'P1 該出', p2:'P2 能省則省', none:'— 不出聲' };
+const lvCls = l => l === '完整動態' ? 'full' : (l === '小動態' ? 'small' : '');
+let n = 0;
+document.getElementById('phases').innerHTML = PHASES.map(ph => `
+  <section class="phase ${ph.cls}">
+    <div class="phase-head"><h2>${ph.no}・${ph.name}<span class="cnt">${ph.common ? ph.states.length + ' 個動作' : ph.states.length + ' 個狀態'}</span></h2><span class="need">${ph.need}</span></div>
+    <div class="grid">${ph.states.map(s => { const id = n++; return `
+      <div class="card">
+        <div class="stage" data-view="${id}">
+          <div class="btns">
+            <button data-play="${id}">重播</button>
+            ${s.lite ? `<button data-lite="${id}">重複時</button>` : ''}
+            ${s.alt ? `<button data-alt="${id}">${s.alt[1]}</button>` : ''}
+          </div>
+        </div>
+        <div class="title-row">
+          <span class="nm">${s.nm}${s.isnew ? ' <span class="pill newpill">新</span>' : ''}</span>
+          <span class="chips">${s.pri ? `<span class="pill ${s.pri}">${priLabel[s.pri]}</span>` : ''}${s.lv !== '—' ? `<span class="pill lv ${lvCls(s.lv)}">${s.lv}</span>` : ''}</span>
+        </div>
+        ${ph.common ? '' : `<div class="say ${s.say ? '' : 'empty'}">${s.say || '不講話'}</div>`}
+        <div class="act">${s.act}</div>
+        <ul class="steps">${s.steps.map(([k, v]) => `<li><b>${k}</b><span>${v}</span></li>`).join('')}</ul>
+        <div class="meta"><b>長度：</b>${s.len}${s.rep ? `<br><b>重複時：</b>${s.rep}` : ''}</div>
+      </div>`; }).join('')}</div>
+  </section>`).join('');
+
+// 一個繪圖區畫全部卡片：每一格各自有場景與鏡頭，只畫看得到的那幾格
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setClearColor(0x000000, 0);
+const flat = PHASES.flatMap(p => p.states);
+const views = [...document.querySelectorAll('[data-view]')].map(el => {
+  const s = flat[+el.dataset.view];
+  const scene = makeScene(), cam = makeCamera(1.3), yyb = new YYB(); scene.add(yyb.group);
+  const player = new Player(yyb);
+  const rest = s.a === 'addcart' || s.a === 'qty' ? s.a : s.a; // 起始畫面
+  player.play(s.a); player.t = 99; player.update(0);         // 先停在收尾畫面
+  return { el, s, scene, cam, yyb, player, played: false };
+});
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return; const v = views.find(x => x.el === e.target);
+  if (v && !v.played) { v.played = true; v.player.play(v.s.a); }
+}), { threshold: 0.6 });
+views.forEach(v => io.observe(v.el));
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const id = b.dataset.play ?? b.dataset.lite ?? b.dataset.alt; if (id == null) return;
+  const v = views[+id]; v.el.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+  if (b.dataset.play != null) v.player.play(v.s.a);
+  if (b.dataset.lite != null) { v.player.play(v.s.lite); b.classList.add('on'); }
+  if (b.dataset.alt != null) { const on = v.player.name !== v.s.alt[0]; v.player.play(on ? v.s.alt[0] : v.s.a); if (on) b.classList.add('on'); }
+});
+function resize() { renderer.setSize(innerWidth, innerHeight, false); }
+addEventListener('resize', resize); resize();
+let last = performance.now();
+renderer.setAnimationLoop(now => {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  renderer.setScissorTest(false); renderer.clear(); renderer.setScissorTest(true);
+  const H = innerHeight;
+  for (const v of views) {
+    const r = v.el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > H || r.right < 0 || r.left > innerWidth) continue;
+    v.player.update(dt);
+    const w = r.width, h = r.height, bottom = H - r.bottom;
+    renderer.setViewport(r.left, bottom, w, h); renderer.setScissor(r.left, bottom, w, h);
+    v.cam.aspect = w / h; v.cam.updateProjectionMatrix();
+    renderer.render(v.scene, v.cam);
+  }
+});
+window.__views = views;
 </script>
 </body>
 </html>

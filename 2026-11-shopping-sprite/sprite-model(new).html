@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<!--
+  DemoShares 交接對照 | 無毒農小精靈「圓圓寶」・3D 基準模型
+  全新頁面：正式站無對應（新建）。圓圓寶的 Three.js 3D 模型，之後所有姿勢與動作都以這個模型為準。
+  這次要動的檔：無——本頁是角色基準參考。模型程式：yyb/yyb.js
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圓圓寶 · 3D 基準模型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--green:#4ba83b;--text:#33435a;--muted:#8a94a3;--line:#e4e7ec;--bg:#f6f8f4;}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 48px;}
+h1{font-size:24px;margin:0 0 4px;}
+.lead{color:var(--muted);margin:0 0 16px;}
+.viewer{display:grid;grid-template-columns:1fr 240px;gap:16px;}
+#stage{background:#fff;border:1px solid var(--line);border-radius:8px;height:560px;position:relative;overflow:hidden;}
+#stage canvas{display:block;}
+.side{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:560px;overflow:auto;}
+.side h3{font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:500;}
+.side button{font-family:inherit;font-size:13px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:4px;padding:8px 12px;cursor:pointer;color:var(--text);}
+.side button.on{border-color:var(--green);color:var(--green);font-weight:700;}
+.side label{font-size:13px;display:flex;gap:8px;align-items:center;}
+@media(max-width:760px){.viewer{grid-template-columns:1fr;}#stage{height:420px;}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="wrap">
+  <h1>圓圓寶 · 3D 基準模型</h1>
+  <p class="lead">拖曳可旋轉、滾輪可縮放。所有姿勢與動作都由這個模型擺出來，長相只有這一個來源。</p>
+  <div class="viewer">
+    <div id="stage"></div>
+    <div class="side" id="side">
+      <label><input type="checkbox" id="spin" checked> 自動旋轉</label>
+      <h3>播放動作</h3>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { THREE, YYB, Player, makeScene, makeCamera } from './yyb/yyb.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+stage.appendChild(renderer.domElement);
+const scene = makeScene(), cam = makeCamera(1);
+const yyb = new YYB(); scene.add(yyb.group);
+const player = new Player(yyb);
+const ctl = new OrbitControls(cam, renderer.domElement); ctl.target.set(0, 1.25, 0); ctl.enableDamping = true; ctl.update();
+function size() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix(); }
+addEventListener('resize', size); size();
+const LIST = [['idle','待命'],['idleB','待命（籃子有菜）'],['addcart','加購成功'],['addcartLite','加購成功（第 3 次起）'],['qty','數量加碼'],['near','湊免運'],['done','已達免運'],['doneLite','已達免運（重複時）'],['order','下單收尾'],['low','低調模式'],['soldout','售完勸阻'],['mixed','現貨×預購混買'],['cold','冷鏈配送提醒'],['lowstock','即將售完'],['cartback','購物車救回'],['repurchase','回購提醒'],['coupon','優惠券可用'],['firstbuy','首購優惠'],['idleQ','閒置主動'],['greet','打招呼'],['checkout','結帳卡關挽留'],['enter','入場'],['tap','被點一下'],['yieldTo','購物車打開時讓位'],['toLow','進入低調模式'],['restore','恢復提醒']];
+const side = document.getElementById('side');
+const btns = LIST.map(([k, t]) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => { player.play(k); btns.forEach(x => x.classList.toggle('on', x === b)); }; side.appendChild(b); return b; });
+btns[0].classList.add('on');
+const spin = document.getElementById('spin');
+let last = performance.now();
+renderer.setAnimationLoop(now => {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (spin.checked) yyb.group.rotation.y += dt * 0.5;
+  player.update(dt); ctl.update(); renderer.render(scene, cam);
+});
+window.__yyb = { yyb, player, ctl, cam, spin, renderer, scene };
+</script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<!--
+  DemoShares 交接對照 | 無毒農小精靈「圓圓寶」・旅程流程圖
+  全新頁面：正式站無對應（新建）。圓圓寶在購物流程的 13 條旅程，依三個階段分段，畫出每個發話點的對話窗與推薦邏輯。非 1:1 還原頁。
+  這次要動的檔：無——本頁是企劃概念參考。企劃全文見 D:\Obsidian\GreenBox\03_功能開發\無毒農小精靈\無毒農小精靈 UX 規劃.md
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圓圓寶 · 旅程流程圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#4ba83b; --green-strong:#22ac38; --gold:#caa940; --red:#dc4e43; --orange:#e67e22;
+  --text:#33435a; --muted:#8a94a3; --line:#e4e7ec; --bg:#f6f8f4; --radius:4px;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);line-height:1.6;}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 72px;}
+h1{font-size:24px;margin:0 0 4px;}
+.lead{color:var(--muted);margin:0 0 24px;max-width:760px;}
+
+/* 三階段總覽 */
+.overview{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.ph-card{display:block;background:#fff;border:1px solid var(--line);border-top:4px solid var(--green);border-radius:8px;padding:16px;text-decoration:none;color:inherit;}
+.ph-card.ph2{border-top-color:var(--orange);}
+.ph-card.ph3{border-top-color:var(--gold);}
+.ph-card:hover{border-color:var(--green);}
+.ph-no{font-size:12px;font-weight:700;color:var(--muted);}
+.ph-name{font-size:17px;font-weight:700;margin:0 0 4px;}
+.ph-need{font-size:13px;color:var(--muted);margin-bottom:8px;}
+.ph-count{font-size:13px;margin-bottom:8px;}
+.ph-count b{font-size:20px;color:var(--text);}
+.ph-states{display:flex;flex-wrap:wrap;gap:4px;}
+.ph-states span{font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:9999px;padding:0 8px;}
+.ph-states span.up{border-style:dashed;}
+
+/* 圖例 */
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:32px;font-size:13px;}
+.lg{display:flex;align-items:center;gap:8px;}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;}
+.sw.sw-user{background:#cdd4de;}
+.sw.p0{background:#eaf6e8;border:1px solid var(--green-strong);}
+.sw.p1{background:#fef3e0;border:1px solid var(--orange);}
+.sw.p2{background:#eef1f5;border:1px solid var(--muted);}
+.sw.logic{background:#fff;border:1px solid var(--line);border-left:3px solid var(--green);}
+
+/* 階段段落 */
+.phase{margin-bottom:48px;scroll-margin-top:16px;}
+.phase-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--green);}
+.phase.ph2 .phase-head{border-bottom-color:var(--orange);}
+.phase.ph3 .phase-head{border-bottom-color:var(--gold);}
+.phase-head h2{font-size:20px;margin:0;}
+.phase-head .need{font-size:13px;color:var(--muted);}
+
+/* 旅程卡 */
+.journey{background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px 24px 24px;margin-bottom:20px;}
+.jtitle{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.jnum{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--text);color:#fff;font-size:12px;font-weight:700;flex:none;}
+.jctx{color:var(--muted);font-size:13px;margin:4px 0 16px 32px;}
+
+/* 流程 */
+.flow{display:flex;flex-direction:column;}
+.conn{height:20px;width:2px;background:var(--line);margin:4px 0 4px 24px;position:relative;}
+.conn::after{content:"";position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #cdd4de;}
+.user{background:var(--bg);border:1px solid var(--line);border-left:4px solid #aab3c0;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:500;}
+.endn{background:#fff;border:1px dashed #cdd4de;color:var(--muted);font-size:13px;border-radius:8px;padding:8px 12px;}
+.noten{background:#f0f7ef;border:1px solid #d6e9d2;color:#3d6b34;font-size:13px;border-radius:8px;padding:8px 12px;}
+.blabel{font-size:12px;color:var(--muted);margin:0 0 8px 0;}
+.branches{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.path{border:1px dashed var(--line);border-radius:8px;padding:12px;background:#fcfdfc;min-width:0;}
+.cond{font-size:12px;font-weight:700;background:#fff;border:1px solid var(--line);border-radius:9999px;padding:2px 12px;display:inline-block;margin-bottom:8px;}
+
+/* 圓圓寶發話列：左邊對話窗、右邊推薦邏輯或要用的資料 */
+.say-row{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
+.say-row.solo{grid-template-columns:320px;}
+.path .say-row,.path .say-row.solo{grid-template-columns:1fr;}
+.state-chip{font-size:12px;color:var(--muted);margin-bottom:4px;}
+.state-chip b{color:var(--text);font-weight:700;}
+.stage{background:#eef1ec;border-radius:8px;padding:16px 12px 8px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.stage .av3d{width:136px;height:128px;cursor:pointer;}
+.stage.quiet .av3d{opacity:.55;}
+#gl{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+
+/* 對話窗本體：跟互動 demo 同一套樣式 */
+.bubble{width:100%;max-width:272px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(51,67,90,.16);padding:12px 12px 12px;position:relative;margin-right:8px;}
+.bubble::after{content:'';position:absolute;right:28px;bottom:-7px;width:12px;height:12px;background:#fff;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg);}
+.b-head{display:flex;align-items:flex-start;gap:8px;}
+.b-msg{font-size:14px;line-height:1.5;flex:1;}
+.b-msg b{color:var(--orange);}
+.b-close{color:var(--muted);font-size:16px;line-height:1;padding:0 2px;}
+.b-tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:var(--radius);margin-bottom:4px;}
+.b-tag.p0{background:#eaf6e8;color:var(--green-strong);}
+.b-tag.p1{background:#fef3e0;color:var(--orange);}
+.b-tag.p2{background:#eef1f5;color:var(--muted);}
+.b-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.b-btn{border:1px solid var(--green);background:#fff;color:var(--green);font-size:12px;font-weight:500;padding:4px 12px;border-radius:9999px;}
+.b-btn.primary{background:var(--green);color:#fff;}
+.b-recs{display:flex;gap:8px;margin-top:8px;}
+.b-rec{flex:1;border:1px solid var(--line);border-radius:var(--radius);padding:4px 4px 8px;text-align:center;position:relative;min-width:0;}
+.b-rec img{width:36px;height:36px;object-fit:contain;}
+.b-rec .rn{font-size:11px;display:block;line-height:1.4;}
+.b-rec .rp{font-size:11px;color:var(--red);font-weight:700;display:block;}
+.b-rec .ra{display:inline-block;margin-top:4px;font-size:11px;color:#fff;background:var(--green);border-radius:9999px;padding:0 8px;}
+.b-rec .badge{position:absolute;top:4px;left:4px;font-size:10px;background:var(--orange);color:#fff;border-radius:2px;padding:0 4px;}
+.b-cart{display:flex;gap:8px;align-items:center;margin-top:8px;padding:8px;background:var(--bg);border-radius:var(--radius);}
+.b-cart img{width:32px;height:32px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:var(--radius);}
+.b-cart span{font-size:12px;color:var(--muted);}
+.quiet-note{font-size:12px;color:var(--muted);background:#fff;border:1px dashed #cdd4de;border-radius:8px;padding:4px 8px;margin-right:8px;}
+.quiet-note .restore{color:var(--green);font-weight:700;margin-left:4px;text-decoration:underline;}
+
+/* 推薦邏輯／要用的資料 */
+.side{background:#fff;border:1px solid var(--line);border-left:4px solid var(--green);border-radius:8px;padding:12px 16px;font-size:13px;}
+.side.data{border-left-color:#aab3c0;}
+.side .st{font-size:13px;font-weight:700;margin-bottom:8px;}
+.side dl{display:grid;grid-template-columns:64px 1fr;gap:4px 12px;margin:0;}
+.side dt{color:var(--muted);font-weight:500;}
+.side dd{margin:0;}
+.side .why{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted);}
+
+@media(max-width:860px){
+  .overview{grid-template-columns:1fr;}
+  .say-row,.say-row.solo{grid-template-columns:1fr;}
+  .branches{grid-template-columns:1fr;}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="wrap">
+  <h1>圓圓寶 · 旅程流程圖</h1>
+  <p class="lead">把圓圓寶在購物流程裡的每一條旅程畫出來，每個發話點都是它實際會跳出的對話窗。會推商品的地方，旁邊寫推薦邏輯：從哪挑、濾掉什麼、怎麼排。旅程依「要用到什麼資料才做得出來」分成三個階段。</p>
+
+  <div class="overview" id="overview"></div>
+
+  <div class="legend">
+    <span class="lg"><span class="sw sw-user"></span>客人的動作</span>
+    <span class="lg"><span class="sw p0"></span>即時回饋（P0 必出）</span>
+    <span class="lg"><span class="sw p1"></span>貼心提醒（P1 該出）</span>
+    <span class="lg"><span class="sw p2"></span>順便一提（P2 能省則省）</span>
+    <span class="lg"><span class="sw logic"></span>推薦邏輯／要用的資料</span>
+  </div>
+
+  <div id="phases"></div>
+</div>
+
+<script>
+const IMG='https://greenboxcdn.azureedge.net/images/Shared/';
+const BAN='https://fruitbox.blob.core.windows.net/images/Shared/';
+const P={
+  cabbage:{name:'有機高麗菜',price:120,img:IMG+'green.png'},
+  banana:{name:'友善香蕉',price:90,img:BAN+'banana.png'},
+  tomato:{name:'溫室小蕃茄',price:220,img:IMG+'tomato.png'},
+  tomatoB:{name:'玉女小蕃茄',price:240,img:IMG+'tomato.png'},
+  tomatoC:{name:'黃金小蕃茄',price:260,img:IMG+'tomato.png'},
+  orange:{name:'茂谷柑',price:180,img:IMG+'orange.png'},
+  apple:{name:'蜜蘋果',price:260,img:IMG+'apple.png'},
+};
+const TAG={p0:'即時回饋',p1:'貼心提醒',p2:'順便一提'};
+/* 狀態 → 3D 基準模型的動作（對應〈圓圓寶動作規劃〉） */
+const ACT={'加購成功':'addcart','數量加碼':'qty','湊免運':'near','湊免運＋湊單推薦':'near','已達免運':'done','下單收尾':'order','低調模式':'low','售完勸阻':'soldout','現貨×預購混買':'mixed','冷鏈配送提醒':'cold','即將售完':'lowstock','購物車救回':'cartback','回購提醒':'repurchase','優惠券可用':'coupon','首購優惠':'firstbuy','閒置主動':'idleQ','打招呼':'greet','結帳卡關挽留':'checkout'};
+
+/* 湊單推薦的邏輯，第二、三階段都會用到 */
+const LOGIC_FILL={title:'推薦邏輯｜湊單推薦',rows:[
+  ['從哪挑','官網自己的商品資料：同產線、同溫層、在架現貨'],
+  ['濾掉','已在購物車、售完、預購、加購品、不同溫層'],
+  ['怎麼排','單價大於差額且最接近的排前面（一件就補到），補不到的依最接近差額排，同分看熱銷'],
+  ['推幾個','2 個'],
+  ['挑不到','只講差額，不附商品卡'],
+],why:'不用現有推薦服務：它沒有溫層也不分產線。冷凍超市推到常溫商品會拆成兩箱各自算運費，湊了也拿不到免運。'};
+
+const PHASES=[
+ {id:'phase1',cls:'ph1',no:'第一階段',name:'回饋閉環',need:'只用購物車資料：件數、小計、免運門檻',
+  states:['待命','加購成功','數量加碼','湊免運（只講差額）','已達免運','下單收尾','低調模式'],count:'7 個狀態，不推任何商品',
+  journeys:[
+   {title:'加購到下單（主線）',ctx:'客人在會收運費的產線（例：冷凍超市）從加購走到下單。這一階段圓圓寶只講購物車本身的事，不推商品。',steps:[
+     {t:'user',text:'按「加入購物車」'},
+     {t:'say',state:'加購成功',pri:'p0',pose:'happy',msg:'幫你加進購物車囉，目前 3 樣',btns:[['看購物車',0]]},
+     {t:'user',text:'同一件商品再加一份'},
+     {t:'say',state:'數量加碼',pri:'p0',pose:'happy',msg:'這樣 2 份囉，共 4 樣',btns:[['看購物車',0]]},
+     {t:'branch',label:'圓圓寶看購物車小計，跟免運門檻比',paths:[
+       {cond:'還差 $120',steps:[
+         {t:'say',state:'湊免運',pri:'p1',pose:'call',msg:'再湊 <b>$120</b> 就免運喔',btns:[['看購物車',0]]},
+         {t:'end',text:'同一個購物車狀態只講一次，差額變了才更新'}]},
+       {cond:'已跨過門檻',steps:[
+         {t:'say',state:'已達免運',pri:'p2',pose:'celebrate',msg:'已經免運囉，賺到！',btns:[['去結帳',1]]},
+         {t:'end',text:'一次購物只講一次'}]},
+     ]},
+     {t:'user',text:'完成訂單'},
+     {t:'say',state:'下單收尾',pri:'p0',pose:'ship',msg:'訂單成立，會全程冷藏配送給你',btns:[['查看訂單',0]]},
+   ]},
+   {title:'連續被關 → 自動低調 → 永久關閉（控制機制）',ctx:'這條不是推銷，是圓圓寶的底線。第一階段就要一起上，客人能隨時趕走它，才敢讓它留著。',steps:[
+     {t:'user',text:'連續關掉 2 則「非 P0」的提醒'},
+     {t:'quiet',state:'低調模式',pose:'sleep',note:'圓圓寶已進入低調模式，只在加購、下單時出聲 <span class="restore">恢復提醒</span>'},
+     {t:'branch',label:'低調模式之後',paths:[
+       {cond:'客人又加購',steps:[
+         {t:'say',state:'加購成功',pri:'p0',pose:'happy',msg:'幫你加進購物車囉，目前 5 樣',btns:[['看購物車',0]]},
+         {t:'end',text:'P0 照常出，其他提醒都收起來'}]},
+       {cond:'客人在設定裡永久關閉',steps:[
+         {t:'end',text:'圓圓寶不再出現，連 P0 都不出。登入者記在帳號，未登入記在瀏覽器'}]},
+     ]},
+   ]},
+  ]},
+ {id:'phase2',cls:'ph2',no:'第二階段',name:'規則提醒＋商品推薦',need:'多用商品狀態：庫存、現貨或預購、溫層，加上推薦商品的來源',
+  states:['售完勸阻','現貨×預購混買','冷鏈配送提醒','即將售完'],upgrades:['湊免運加上湊單推薦'],count:'4 個新狀態，湊免運開始附商品卡',
+  journeys:[
+   {title:'湊單推薦（湊免運升級）',ctx:'第一階段的湊免運只講差額；到這一階段，泡泡裡多 2 張商品卡，點了就加進購物車。',steps:[
+     {t:'user',text:'購物車小計差 $120 到免運門檻'},
+     {t:'say',state:'湊免運＋湊單推薦',pri:'p1',pose:'call',msg:'再湊 <b>$120</b> 就免運，要不要加這些？',recs:['cabbage','orange'],side:LOGIC_FILL},
+     {t:'branch',label:'',paths:[
+       {cond:'點「加入」有機高麗菜',steps:[
+         {t:'say',state:'已達免運',pri:'p2',pose:'celebrate',msg:'這樣就免運囉，賺到！',btns:[['去結帳',1]]}]},
+       {cond:'按 ✕ 關掉',steps:[
+         {t:'end',text:'同一個購物車狀態不再提，算一次「連關」'}]},
+     ]},
+   ]},
+   {title:'點到售完商品',ctx:'與其讓客人撞牆，順手遞上能替代的東西，或讓他登記開賣通知。',steps:[
+     {t:'user',text:'點到「溫室小蕃茄」，已售完'},
+     {t:'say',state:'售完勸阻',pri:'p1',pose:'question',msg:'這款剛好售完了，看看這兩樣類似的？',recs:['tomatoB','tomatoC'],btns:[['開賣通知我',0]],side:{title:'推薦邏輯｜售完替代',rows:[
+       ['從哪挑','同子分類、在架的商品'],
+       ['濾掉','售完、加購品、已在購物車'],
+       ['怎麼排','品名相近的優先，再看同子分類熱銷'],
+       ['推幾個','2 個，加一顆「開賣通知我」'],
+       ['挑不到','只給「開賣通知我」'],
+     ],why:'要的是「能替代」，不是「常一起買」。現有推薦服務的「買這個的客人也常買」是搭配品，所以不用它。'}},
+   ]},
+   {title:'現貨 × 預購 混買',ctx:'生鮮有現貨和預購，到貨時間不同，先講比事後客訴好。',steps:[
+     {t:'user',text:'購物車裡同時有現貨和預購商品'},
+     {t:'say',state:'現貨×預購混買',pri:'p1',pose:'ship',msg:'配送時間不同，建議分開結帳喔',btns:[['分開結帳',1],['看配送時間',0]],side:{title:'要用到的資料',data:true,rows:[
+       ['判斷','購物車每件商品是現貨還是預購'],
+       ['不推商品','只提醒；客人不分開結帳也不再堅持'],
+     ]}},
+   ]},
+   {title:'即將售完',ctx:'只在真的快沒了才講，避免變成每頁都在催。',steps:[
+     {t:'user',text:'看商品頁，這款只剩 3 件'},
+     {t:'say',state:'即將售完',pri:'p1',pose:'call',msg:'這款剩最後 3 件囉',btns:[['加入購物車',1]],side:{title:'要用到的資料',data:true,rows:[
+       ['判斷','即時庫存，低於門檻才出（門檻待定）'],
+       ['不推商品','只講眼前這一件，不推別的'],
+     ]}},
+   ]},
+   {title:'冷鏈配送提醒',ctx:'冷凍、冷藏商品沒人收會壞，結帳前提醒一次。',steps:[
+     {t:'user',text:'進入結帳頁，購物車裡有冷凍商品'},
+     {t:'say',state:'冷鏈配送提醒',pri:'p1',pose:'ship',msg:'低溫宅配，記得留人在家收冰',btns:[['知道了',0]],side:{title:'要用到的資料',data:true,rows:[
+       ['判斷','購物車裡有沒有冷凍或冷藏商品'],
+       ['位置','不擋結帳鈕，一次結帳只講一次'],
+     ]}},
+   ]},
+  ]},
+ {id:'phase3',cls:'ph3',no:'第三階段',name:'個人化與喚回',need:'要用會員資料：購買紀錄、優惠券、回訪與瀏覽行為',
+  states:['購物車救回','回購提醒','優惠券可用','首購優惠','閒置主動','打招呼','結帳卡關挽留'],count:'7 個狀態，要認得「這位客人是誰」',
+  journeys:[
+   {title:'購物車救回（回訪未結帳）',ctx:'客人離開又回來，車裡還有沒結的商品，這是最容易撿回來的一筆。',steps:[
+     {t:'user',text:'回訪時，購物車還有 3 樣上次沒結帳（隔多久回訪才算，門檻待定）'},
+     {t:'say',state:'購物車救回',pri:'p1',pose:'peek',msg:'上次的購物車還幫你留著，共 3 樣',cart:['banana','apple'],cartCount:3,btns:[['回到購物車',1]],side:{title:'推薦邏輯｜購物車救回',rows:[
+       ['從哪挑','不推新商品，只把上次留下的購物車帶回來'],
+       ['顯示','前 2 樣縮圖加總件數，縮圖不帶「加入」'],
+       ['濾掉','已售完或下架的品項標示出來，不從購物車刪'],
+       ['要用到','跨 session 保留的購物車、回訪判斷'],
+     ]}},
+     {t:'branch',label:'',paths:[
+       {cond:'按「回到購物車」',steps:[{t:'end',text:'打開購物車抽屜，圓圓寶讓位'}]},
+       {cond:'按 ✕ 關掉',steps:[{t:'end',text:'這次瀏覽不再提'}]},
+     ]},
+   ]},
+   {title:'熟客回購',ctx:'熟客最怕被打斷，所以只挑一件真的該補的。',steps:[
+     {t:'user',text:'熟客登入，常買的商品差不多該補了'},
+     {t:'say',state:'回購提醒',pri:'p2',pose:'peek',msg:'你常買的有機高麗菜該補貨囉',recs:['cabbage'],badge:'該補貨了',side:{title:'推薦邏輯｜回購',rows:[
+       ['從哪挑','現有推薦服務的「您常買・可以再買」'],
+       ['怎麼排','優先挑有「該補貨了」標的'],
+       ['推幾個','1 個'],
+       ['濾掉','加購品（推薦服務那邊要先修好）'],
+     ],why:'這裡可以直接接現有推薦服務，它本來就是依客人自己的回購節奏在算。'}},
+   ]},
+   {title:'優惠券可用',ctx:'客人手上有券卻忘了用，或差一點就能用。',steps:[
+     {t:'user',text:'客人手上有一張「滿 $1,200 折 $50」的券'},
+     {t:'branch',label:'圓圓寶比對購物車小計和券的門檻',paths:[
+       {cond:'已達門檻',steps:[
+         {t:'say',state:'優惠券可用',pri:'p1',pose:'call',msg:'你有一張 $50 折價券可以用喔',btns:[['去結帳用券',1]]}]},
+       {cond:'還差 $150',steps:[
+         {t:'say',state:'優惠券可用',pri:'p1',pose:'call',msg:'再 <b>$150</b> 就能用你的折價券',recs:['orange','apple'],side:{title:'推薦邏輯',rows:[['同一套','跟湊單推薦一樣，差額換成「券門檻減小計」']]}}]},
+     ]},
+   ]},
+   {title:'首購優惠',ctx:'新客還沒下過單，給一個開始的理由。',steps:[
+     {t:'user',text:'新客，還沒下過任何一筆訂單'},
+     {t:'say',state:'首購優惠',pri:'p2',pose:'wave',msg:'第一次買有首購優惠，從這兩樣開始挑？',recs:['apple','orange'],btns:[['看首購優惠',0]],side:{title:'推薦邏輯｜首購',rows:[
+       ['從哪挑','現有推薦服務的全站熱門'],
+       ['推幾個','2 個入門商品'],
+       ['濾掉','售完、加購品'],
+     ]}},
+   ]},
+   {title:'打招呼與閒置主動',ctx:'這兩個是純閒聊，放到最後一階段，而且嚴格節流。',steps:[
+     {t:'user',text:'第一次進站'},
+     {t:'say',state:'打招呼',pri:'p2',pose:'wave',msg:'嗨，我是圓圓寶！'},
+     {t:'user',text:'停在同一頁很久，沒有任何動作'},
+     {t:'say',state:'閒置主動',pri:'p2',pose:'question',msg:'需要我幫你找什麼嗎？',btns:[['看熱銷',0],['看當季',0]],side:{title:'推薦邏輯｜閒置',rows:[
+       ['從哪挑','不直接推商品，給兩個入口讓客人自己選'],
+       ['節流','同一次瀏覽只出一次'],
+     ]}},
+   ]},
+   {title:'結帳卡關挽留',ctx:'結帳表單停很久沒動，可能是配送時間或付款方式卡住。',steps:[
+     {t:'user',text:'結帳頁的表單停很久沒動'},
+     {t:'say',state:'結帳卡關挽留',pri:'p1',pose:'question',msg:'哪裡卡住了嗎？可以看常見問題或找客服',btns:[['看常見問題',1],['聯絡客服',0]],side:{title:'要用到的資料',data:true,rows:[
+       ['判斷','結帳頁的停留時間與欄位填寫狀況'],
+       ['節流','一次結帳只出一次，不擋送出鈕'],
+     ]}},
+   ]},
+  ]},
+];
+
+function bubbleHtml(s){
+  let h=`<div class="bubble"><div class="b-head"><div class="b-msg"><span class="b-tag ${s.pri}">${TAG[s.pri]}</span><br>${s.msg}</div><span class="b-close">&times;</span></div>`;
+  if(s.recs) h+=`<div class="b-recs">${s.recs.map(k=>{const p=P[k];return `<div class="b-rec">${s.badge?`<span class="badge">${s.badge}</span>`:''}<img src="${p.img}" alt=""><span class="rn">${p.name}</span><span class="rp">$${p.price}</span><span class="ra">加入</span></div>`}).join('')}</div>`;
+  if(s.cart) h+=`<div class="b-cart">${s.cart.map(k=>`<img src="${P[k].img}" alt="">`).join('')}<span>共 ${s.cartCount} 樣</span></div>`;
+  if(s.btns) h+=`<div class="b-actions">${s.btns.map(([t,pr])=>`<span class="b-btn ${pr?'primary':''}">${t}</span>`).join('')}</div>`;
+  return h+'</div>';
+}
+function sideHtml(sd){
+  if(!sd) return '';
+  return `<div class="side ${sd.data?'data':''}"><div class="st">${sd.title}</div><dl>${sd.rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>${sd.why?`<div class="why">${sd.why}</div>`:''}</div>`;
+}
+function stepHtml(s){
+  if(s.t==='user') return `<div class="user">${s.text}</div>`;
+  if(s.t==='end')  return `<div class="endn">${s.text}</div>`;
+  if(s.t==='note') return `<div class="noten">${s.text}</div>`;
+  if(s.t==='quiet') return `<div class="say-row solo"><div><div class="state-chip">狀態：<b>${s.state}</b></div><div class="stage quiet"><div class="quiet-note">${s.note}</div><div class="av3d" data-a="${ACT[s.state]||'idle'}"></div></div></div></div>`;
+  if(s.t==='say') return `<div class="say-row ${s.side?'':'solo'}"><div><div class="state-chip">狀態：<b>${s.state}</b></div><div class="stage">${bubbleHtml(s)}<div class="av3d" data-a="${ACT[s.state]||'idle'}"></div></div></div>${sideHtml(s.side)}</div>`;
+  if(s.t==='branch') return `${s.label?`<div class="blabel">${s.label}</div>`:''}<div class="branches">${s.paths.map(p=>`<div class="path"><span class="cond">${p.cond}</span>${flowHtml(p.steps)}</div>`).join('')}</div>`;
+  return '';
+}
+function flowHtml(steps){
+  return `<div class="flow">${steps.map((s,i)=>(i?'<div class="conn"></div>':'')+stepHtml(s)).join('')}</div>`;
+}
+
+document.getElementById('overview').innerHTML=PHASES.map(ph=>`
+  <a class="ph-card ${ph.cls}" href="#${ph.id}">
+    <div class="ph-no">${ph.no}</div>
+    <div class="ph-name">${ph.name}</div>
+    <div class="ph-need">${ph.need}</div>
+    <div class="ph-count">${ph.count}</div>
+    <div class="ph-states">${ph.states.map(x=>`<span>${x}</span>`).join('')}${(ph.upgrades||[]).map(x=>`<span class="up">${x}</span>`).join('')}</div>
+  </a>`).join('');
+
+let n=0;
+document.getElementById('phases').innerHTML=PHASES.map(ph=>`
+  <section class="phase ${ph.cls}" id="${ph.id}">
+    <div class="phase-head"><h2>${ph.no}・${ph.name}</h2><span class="need">${ph.need}</span></div>
+    ${ph.journeys.map(j=>`
+      <div class="journey">
+        <div class="jtitle"><span class="jnum">${++n}</span>${j.title}</div>
+        <div class="jctx">${j.ctx}</div>
+        ${flowHtml(j.steps)}
+      </div>`).join('')}
+  </section>`).join('');
+</script>
+<script type="module">
+// 每個對話窗旁的圓圓寶都由 3D 基準模型播放該狀態的動作：捲到時播一次，點圓圓寶重播
+import { THREE, YYB, Player, makeScene, makeCamera } from './yyb/yyb.js';
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setClearColor(0x000000, 0);
+const views = [...document.querySelectorAll('.av3d')].map(el => {
+  const scene = makeScene(), cam = makeCamera(1), yyb = new YYB(); scene.add(yyb.group);
+  cam.position.set(0, 2.6, 11); cam.lookAt(0, 1.62, 0);
+  const player = new Player(yyb), a = el.dataset.a; player.play(a); player.t = 99; player.update(0);
+  el.addEventListener('click', () => player.play(a));
+  return { el, a, scene, cam, player, played: false };
+});
+const io = new IntersectionObserver(es => es.forEach(e => {
+  const v = views.find(x => x.el === e.target); if (e.isIntersecting && v && !v.played) { v.played = true; v.player.play(v.a); }
+}), { threshold: 0.8 });
+views.forEach(v => io.observe(v.el));
+function resize() { renderer.setSize(innerWidth, innerHeight, false); }
+addEventListener('resize', resize); resize();
+let last = performance.now();
+renderer.setAnimationLoop(now => {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  renderer.setScissorTest(false); renderer.clear(); renderer.setScissorTest(true);
+  const H = innerHeight;
+  for (const v of views) {
+    const r = v.el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > H || r.width === 0) continue;
+    v.player.update(dt);
+    const b = H - r.bottom;
+    renderer.setViewport(r.left, b, r.width, r.height); renderer.setScissor(r.left, b, r.width, r.height);
+    v.cam.aspect = r.width / r.height; v.cam.updateProjectionMatrix(); renderer.render(v.scene, v.cam);
+  }
+});
+</script>
+</body>
+</html>
