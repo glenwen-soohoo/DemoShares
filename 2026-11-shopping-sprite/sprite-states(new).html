@@ -32,7 +32,10 @@ h1{font-size:24px;margin:0 0 4px;}
 .lv.full{border-color:var(--green);color:var(--green);}
 .lv.small{border-color:var(--orange);color:var(--orange);}
 
-.phase{margin-bottom:40px;}
+.phase{margin-bottom:40px;scroll-margin-top:16px;}
+.jump{display:flex;gap:8px;flex-wrap:wrap;margin:-16px 0 32px;}
+.jump a{font-size:13px;color:var(--text);text-decoration:none;border:1px solid var(--line);background:#fff;border-radius:9999px;padding:2px 12px;}
+.jump a:hover{border-color:var(--green);color:var(--green);}
 .phase-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--green);}
 .phase.ph2 .phase-head{border-bottom-color:var(--orange);}
 .phase.ph3 .phase-head{border-bottom-color:var(--gold);}
@@ -82,6 +85,7 @@ h1{font-size:24px;margin:0 0 4px;}
     <span class="pill lv full">完整動態</span><span class="pill lv small">小動態</span><span class="pill lv">靜態加呼吸</span>
     <span class="pill newpill">新</span><span style="color:var(--muted)">這次新增的狀態</span>
   </div>
+  <nav class="jump" id="jump"></nav>
   <div id="phases"></div>
   <div class="note">
     <h3>這組動作怎麼做出來的</h3>
@@ -94,7 +98,7 @@ h1{font-size:24px;margin:0 0 4px;}
 import { THREE, YYB, Player, makeScene, makeCamera } from './yyb/yyb.js';
 
 const PHASES = [
- { cls:'ph1', no:'第一階段', name:'回饋閉環', need:'只用購物車資料，不推任何商品。', states:[
+ { id:'phase1', cls:'ph1', no:'第一階段', name:'回饋閉環', need:'只用購物車資料，不推任何商品。', states:[
   { nm:'待命', pri:'none', lv:'靜態加呼吸', a:'idle', alt:['idleB','籃子有菜'], say:null, act:'側提小竹籃站著',
     steps:[['畫面','手臂勾著小竹籃，身體偏向網頁內容那一側']], len:'呼吸一輪 3.4 秒，循環', rep:'購物車有東西時，籃子裡露出蔬菜' },
   { nm:'加購成功', pri:'p0', lv:'完整動態', a:'addcart', lite:'addcartLite', say:'幫你加進購物車囉，目前 3 樣', act:'接住商品，放進菜籃',
@@ -110,7 +114,7 @@ const PHASES = [
   { nm:'低調模式', pri:'none', lv:'靜止', a:'low', say:'（安靜，只在加購、下單時出聲）', act:'抱膝縮起、斗笠拉低',
     steps:[['畫面','縮到 85%，斗笠蓋住 logo 上半，不呼吸'],['觸發','連關 2 則非 P0 提醒；設定裡也能永久關閉']], len:'進入 0.8 秒，之後靜止', rep:'不適用' },
  ]},
- { cls:'ph2', no:'第二階段', name:'規則提醒＋商品推薦', need:'多用商品狀態：庫存、現貨或預購、溫層，加上推薦商品的來源。', states:[
+ { id:'phase2', cls:'ph2', no:'第二階段', name:'規則提醒＋商品推薦', need:'多用商品狀態：庫存、現貨或預購、溫層，加上推薦商品的來源。', states:[
   { nm:'售完勸阻', pri:'p1', lv:'小動態', a:'soldout', say:'這款剛好售完了，看看這兩樣類似的？', act:'看一眼空木箱，轉身指向替代商品',
     steps:[['起手','低頭看空木箱，手心朝上（沒了）'],['收尾','轉向對話窗那側，手往左上比（這邊有）']], len:'0.9 秒', rep:'只顯示收尾畫面' },
   { nm:'現貨×預購混買', pri:'p1', lv:'小動態', a:'mixed', say:'配送時間不同，建議分開結帳喔', act:'站在兩個箱子中間，把它們往兩邊分開',
@@ -120,7 +124,7 @@ const PHASES = [
   { nm:'即將售完', pri:'p1', lv:'小動態', a:'lowstock', say:'這款剩最後 3 件囉', act:'捧著只剩幾顆的竹篩，低頭數一數', isnew:true,
     steps:[['畫面','一手托竹篩，一手指著，斗笠微低'],['小動態','慢慢點頭兩下，像在數「一、二」']], len:'0.8 秒', rep:'只換姿勢；不跑不跳、不用紅色、不出現時鐘' },
  ]},
- { cls:'ph3', no:'第三階段', name:'個人化與喚回', need:'要用會員資料：購買紀錄、優惠券、回訪與瀏覽行為。', states:[
+ { id:'phase3', cls:'ph3', no:'第三階段', name:'個人化與喚回', need:'要用會員資料：購買紀錄、優惠券、回訪與瀏覽行為。', states:[
   { nm:'購物車救回', pri:'p1', lv:'小動態', a:'cartback', say:'上次的購物車還幫你留著，共 3 樣', act:'從身後拿出蓋著布巾的菜籃', isnew:true,
     steps:[['起手','身體往右轉，手伸到背後'],['收尾','轉回來，提出蓋著格紋布巾的菜籃']], len:'0.8 秒', rep:'只顯示收尾畫面' },
   { nm:'回購提醒', pri:'p2', lv:'靜態加呼吸', a:'repurchase', say:'你常買的有機高麗菜該補貨囉', act:'看著手寫採買清單',
@@ -136,14 +140,14 @@ const PHASES = [
   { nm:'結帳卡關挽留', pri:'p1', lv:'小動態', a:'checkout', say:'哪裡卡住了嗎？可以看常見問題或找客服', act:'戴上客服耳麥揮手', isnew:true,
     steps:[['畫面','整組唯一戴耳麥的狀態，對應「聯絡客服」按鈕'],['小動態','整隻左右輕擺一次']], len:'0.6 秒', rep:'只換姿勢不動' },
  ]},
- { cls:'common', no:'共用動作', name:'每個狀態都會經過', need:'不屬於任何單一狀態，用模型加程式做，不需要另外畫圖。', common:true, states:[
+ { id:'common', cls:'common', no:'共用動作', name:'每個狀態都會經過', need:'不屬於任何單一狀態，用模型加程式做，不需要另外畫圖。', common:true, states:[
   { nm:'入場', lv:'—', a:'enter', act:'從角落下方滑上來，落地壓扁再回彈', steps:[['規則','同一次購物只播一次，換頁不再播']], len:'0.6 秒' },
   { nm:'被點一下', lv:'—', a:'tap', act:'輕跳一下、轉向客人，接著出打招呼', steps:[['規則','第 3 次點起只輕跳，不再出對話窗']], len:'0.4 秒' },
   { nm:'購物車打開時讓位', lv:'—', a:'yieldTo', act:'往下沉出畫面，抽屜關上後升回原位', steps:[['規則','抽屜開著時發生的 P0 不補播']], len:'下沉 0.25 秒、升回 0.3 秒' },
   { nm:'進入低調模式', lv:'—', a:'toLow', act:'從待命縮成抱膝、縮小', steps:[['規則','之後完全靜止、不呼吸']], len:'0.8 秒' },
   { nm:'恢復提醒', lv:'—', a:'restore', act:'從抱膝站起來，輕彈一下回到待命', steps:[['規則','客人按「恢復提醒」時播']], len:'0.6 秒' },
  ]},
- { cls:'common', no:'彩蛋舞步', name:'連點圓圓寶時隨機跳一段', need:'3 秒內連點 5 下觸發，三段隨機挑一段，跳完回到待命。不出對話窗，低調模式與永久關閉時不觸發。', common:true, states:[
+ { id:'easter-egg', cls:'common', no:'彩蛋舞步', name:'連點圓圓寶時隨機跳一段', need:'3 秒內連點 5 下觸發，三段隨機挑一段，跳完回到待命。不出對話窗，低調模式與永久關閉時不觸發。', common:true, states:[
   { nm:'閃身步', lv:'—', a:'shanshen', act:'站定，突然往一側閃、壓低、身體歪過去、手甩，彈回再換另一側', steps:[['參考','安徽花鼓燈的閃身步，重點是靜止與突然一閃的反差']], len:'3.0 秒' },
   { nm:'浪子踢球', lv:'—', a:'kick', act:'雙手平舉保持平衡，左右腳輪流往後外側踢，每踢一次小跳', steps:[['參考','雙手張開、身體前傾、像踢毽子一樣把腳往後踢']], len:'2.8 秒' },
   { nm:'狗熊哆嗦毛', lv:'—', a:'bear', act:'先面無表情站著不動，突然開腿壓低、雙手高舉、全身連斗笠一起狂抖', steps:[['參考','山東鼓子秧歌的狗熊哆嗦毛，重點是先靜止再爆發']], len:'3.4 秒' },
@@ -154,7 +158,7 @@ const priLabel = { p0:'P0 必出', p1:'P1 該出', p2:'P2 能省則省', none:'�
 const lvCls = l => l === '完整動態' ? 'full' : (l === '小動態' ? 'small' : '');
 let n = 0;
 document.getElementById('phases').innerHTML = PHASES.map(ph => `
-  <section class="phase ${ph.cls}">
+  <section class="phase ${ph.cls}" id="${ph.id}">
     <div class="phase-head"><h2>${ph.no}・${ph.name}<span class="cnt">${ph.common ? ph.states.length + ' 個動作' : ph.states.length + ' 個狀態'}</span></h2><span class="need">${ph.need}</span></div>
     <div class="grid">${ph.states.map(s => { const id = n++; return `
       <div class="card">
@@ -175,6 +179,11 @@ document.getElementById('phases').innerHTML = PHASES.map(ph => `
         <div class="meta"><b>長度：</b>${s.len}${s.rep ? `<br><b>重複時：</b>${s.rep}` : ''}</div>
       </div>`; }).join('')}</div>
   </section>`).join('');
+
+// 段落跳轉：每一段都有錨點（例如 #easter-egg 直接到彩蛋舞步）
+document.getElementById('jump').innerHTML = PHASES.map(ph => `<a href="#${ph.id}">${ph.no}</a>`).join('');
+// 段落是程式產生的，瀏覽器原本的錨點跳轉發生在產生之前會落空，所以產生完再捲一次
+if (location.hash) requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' }));
 
 // 一個繪圖區畫全部卡片：每一格各自有場景與鏡頭，只畫看得到的那幾格
 const canvas = document.getElementById('gl');
