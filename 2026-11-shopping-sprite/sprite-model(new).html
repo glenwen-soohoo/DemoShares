@@ -56,7 +56,7 @@ const player = new Player(yyb);
 const ctl = new OrbitControls(cam, renderer.domElement); ctl.target.set(0, 1.25, 0); ctl.enableDamping = true; ctl.update();
 function size() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix(); }
 addEventListener('resize', size); size();
-const LIST = [['idle','待命'],['idleB','待命（籃子有菜）'],['addcart','加購成功'],['addcartLite','加購成功（第 3 次起）'],['qty','數量加碼'],['near','湊免運'],['done','已達免運'],['doneLite','已達免運（重複時）'],['order','下單收尾'],['low','低調模式'],['soldout','售完勸阻'],['mixed','現貨×預購混買'],['cold','冷鏈配送提醒'],['lowstock','即將售完'],['cartback','購物車救回'],['repurchase','回購提醒'],['coupon','優惠券可用'],['firstbuy','首購優惠'],['idleQ','閒置主動'],['greet','打招呼'],['checkout','結帳卡關挽留'],['enter','入場'],['tap','被點一下'],['yieldTo','購物車打開時讓位'],['toLow','進入低調模式'],['restore','恢復提醒']];
+const LIST = [['idle','待命'],['idleB','待命（籃子有菜）'],['addcart','加購成功'],['addcartLite','加購成功（第 3 次起）'],['qty','數量加碼'],['near','湊免運'],['done','已達免運'],['doneLite','已達免運（重複時）'],['order','下單收尾'],['low','低調模式'],['soldout','售完勸阻'],['mixed','現貨×預購混買'],['cold','冷鏈配送提醒'],['lowstock','即將售完'],['cartback','購物車救回'],['repurchase','回購提醒'],['coupon','優惠券可用'],['firstbuy','首購優惠'],['idleQ','閒置主動'],['greet','打招呼'],['checkout','結帳卡關挽留'],['enter','入場'],['tap','被點一下'],['yieldTo','購物車打開時讓位'],['toLow','進入低調模式'],['restore','恢復提醒'],['shanshen','彩蛋：閃身步'],['kick','彩蛋：浪子踢球'],['bear','彩蛋：狗熊哆嗦毛']];
 const side = document.getElementById('side');
 const btns = LIST.map(([k, t]) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => { player.play(k); btns.forEach(x => x.classList.toggle('on', x === b)); }; side.appendChild(b); return b; });
 btns[0].classList.add('on');

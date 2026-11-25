@@ -289,7 +289,7 @@ img{vertical-align:middle;}
       <div class="dp-label">③ 控制感（精靈的信任基礎）</div>
       <div class="dp-toggle"><span>低調模式（只留加購/下單）</span><label class="dp-switch"><input type="checkbox" id="quietToggle"><span class="dp-slider"></span></label></div>
       <div class="dp-toggle"><span>顯示精靈</span><label class="dp-switch"><input type="checkbox" id="showToggle" checked><span class="dp-slider"></span></label></div>
-      <div class="dp-hint">連按兩次泡泡右上的 ✕ 關掉提醒，圓圓寶會自己進低調模式（會讀空氣）。圓圓寶的動作由 3D 基準模型播放，同一件商品再加一份會播「數量加碼」，第 3 次加購起改播精簡版。</div>
+      <div class="dp-hint">連按兩次泡泡右上的 ✕ 關掉提醒，圓圓寶會自己進低調模式（會讀空氣）。圓圓寶的動作由 3D 基準模型播放，同一件商品再加一份會播「數量加碼」，第 3 次加購起改播精簡版。3 秒內連點圓圓寶 5 下，會隨機跳一段彩蛋舞。</div>
     </div>
   </div>
 </div>
@@ -426,7 +426,15 @@ document.addEventListener('click',e=>{
 $('cartBtn').onclick=openCart;
 $('cartClose').onclick=closeCart;
 $('overlay').onclick=closeCart;
-$('spriteAvatar').onclick=()=>{ bubble.classList.contains('show')?closeBubble():speak('p2','嗨！我會在你購物時幫忙看一下運費跟推薦，需要的話隨時關掉我就好',[],null,'wave','attention'); };
+// 點圓圓寶：第 1、2 下照常（開／關打招呼的對話窗）；3 秒內第 3、4 下只輕跳，不再出對話窗；
+// 3 秒內連點到第 5 下觸發彩蛋，隨機跳一段舞（閃身步、浪子踢球、狗熊哆嗦毛）
+let taps=[];
+$('spriteAvatar').onclick=()=>{
+  const now=Date.now(); taps=taps.filter(t=>now-t<3000); taps.push(now);
+  if(taps.length>=5&&window.YYB3D&&!quietMode){ taps=[]; closeBubble(); window.YYB3D.dance({quiet:quietMode,cartN:cart.length}); return; }
+  if(taps.length>=3&&window.YYB3D){ window.YYB3D.tap(); return; }
+  bubble.classList.contains('show')?closeBubble():speak('p2','嗨！我會在你購物時幫忙看一下運費跟推薦，需要的話隨時關掉我就好',[],null,'wave','attention');
+};
 $('checkoutBtn').onclick=()=>{ closeCart(); cart=[]; renderCart(); shown.freeship=false;
   setTimeout(()=>speak('p0','訂單成立，會全程冷凍配送給你　謝謝支持無毒農！',[],null,'ship'),300); };
 
@@ -461,7 +469,7 @@ setTimeout(()=>speak('p2','嗨，我是圓圓寶，逛的時候我會在旁邊�
 </script>
 <script type="module">
 // 圓圓寶 3D：右下角的角色由基準模型播放動作
-import { THREE, YYB, Player, makeScene, makeCamera } from './yyb/yyb.js';
+import { THREE, YYB, Player, makeScene, makeCamera, ACTIONS } from './yyb/yyb.js';
 const cv = document.getElementById('spriteGL');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setClearColor(0x000000, 0);
@@ -479,6 +487,17 @@ window.YYB3D = {
     if (pose === 'happy') { adds++; a = adds > 2 ? 'addcartLite' : 'addcart'; }
     if (pose === 'phone') a = ctx.quiet ? 'low' : (ctx.cartN ? 'idleB' : 'idle');
     if (a) player.play(a);
+  },
+  // 被點一下：輕跳轉向客人
+  tap() { player.play('tap'); },
+  // 彩蛋：連點圓圓寶時隨機跳一段舞，跳完回到待命
+  dance(ctx = {}) {
+    const list = ['shanshen', 'kick', 'bear'], a = list[Math.floor(Math.random() * list.length)];
+    player.play(a);
+    const dur = ACTIONS[a].dur;
+    clearTimeout(this._back);
+    this._back = setTimeout(() => player.play(ctx.quiet ? 'low' : (ctx.cartN ? 'idleB' : 'idle')), dur * 1000 + 400);
+    return a;
   },
 };
 player.play('enter');

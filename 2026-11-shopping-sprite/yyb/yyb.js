@@ -340,6 +340,8 @@ export const BASE = {
   y: 0, sx: 1, sy: 1, scale: 1, rotY: -0.26, lean: 0, tilt: 0, sit: 0, hatX: 0, hatZ: 0, hatY: 0,
   'aL.fwd': 0.1, 'aL.out': 0.32, 'aL.tw': 0, 'aR.fwd': 0.1, 'aR.out': 0.32, 'aR.tw': 0,
   'wL.x': 0, 'wL.y': 0, 'wL.z': 0, 'wR.x': 0, 'wR.y': 0, 'wR.z': 0, lL: 0, lR: 0,
+  // x：整隻左右移動；lLz／lRz：腳往外側張開（正值 = 往外），給舞步用
+  x: 0, lLz: 0, lRz: 0,
   hL: 'fist', hR: 'fist', pL: 'in', pR: 'in', vis: '', fill: 'empty', cloth: 0, lid: 0, tape: 0,
 };
 const PALM = { front: [0, 0, 1], back: [0, 0, -1], up: [0, 1, 0], down: [0, -1, 0] };
@@ -406,7 +408,7 @@ export class YYB {
   apply(s) {
     this.state = s;
     const sc = s.scale;
-    this.root.position.y = s.y; this.root.scale.set(s.sx * sc, s.sy * sc, s.sx * sc); this.root.rotation.y = s.rotY;
+    this.root.position.set(s.x, s.y, 0); this.root.scale.set(s.sx * sc, s.sy * sc, s.sx * sc); this.root.rotation.y = s.rotY;
     // 坐下：身體只降到肚底剛好離地，腳往前伸出來，避免身體陷進地面、腳埋進身體
     this.torso.position.y = 1.22 - s.sit * 0.18; this.torso.rotation.set(s.lean, 0, s.tilt);
     this.hatInner.position.y = s.hatY; this.hat.rotation.set(0.02 + s.hatX, 0, -0.07 + s.hatZ);
@@ -418,6 +420,7 @@ export class YYB {
       for (const n in A.hand.shapes) A.hand.shapes[n].visible = (n === hs);
     }
     this.legs.L.rotation.x = -(s.lL + s.sit * 1.45); this.legs.R.rotation.x = -(s.lR + s.sit * 1.45);
+    this.legs.L.rotation.z = -s.lLz; this.legs.R.rotation.z = s.lRz;
     this.legs.L.position.y = this.legs.R.position.y = 0.47 - s.sit * 0.18;
     this.legs.L.position.z = this.legs.R.position.z = s.sit * 0.28;
     const vis = (s.vis || '').split(',').filter(Boolean);
@@ -508,6 +511,12 @@ const NEAR = { vis: 'basket', fill: 'full', rotY: -0.38, lean: 0.12, hatZ: -0.12
 const SIT = { sit: 1, scale: 0.85, 'aL.fwd': 0.95, 'aL.out': -0.2, 'aR.fwd': 0.95, 'aR.out': -0.2, hatY: 0, hatX: 0.1, rotY: -0.1, vis: '' };
 const WAVE_R = { 'aR.out': 2.55, 'aR.fwd': 0.15, hR: 'open', pR: 'front' };
 const OPEN_DOWN_L = { hL: 'open', pL: 'down' };
+// 舞步用的姿勢：d=1 往畫面右邊閃，d=-1 往左邊
+const DODGE = d => d > 0
+  ? { x: 0.45, y: -0.08, sy: 0.9, sx: 1.06, tilt: -0.35, lRz: 0.6, lLz: 0.1, 'aR.out': 1.3, 'aR.fwd': 0.2, hR: 'open', pR: 'front', 'aL.fwd': 1.0, 'aL.out': -0.45, hatZ: 0.18 }
+  : { x: -0.45, y: -0.08, sy: 0.9, sx: 1.06, tilt: 0.35, lLz: 0.6, lRz: 0.1, 'aL.out': 1.3, 'aL.fwd': 0.2, hL: 'open', pL: 'front', 'aR.fwd': 1.0, 'aR.out': -0.45, hatZ: -0.18 };
+const KICK = { 'aL.out': 1.45, 'aR.out': 1.45, 'aL.fwd': 0.1, 'aR.fwd': 0.1, hL: 'open', hR: 'open', pL: 'down', pR: 'down', lean: 0.15 };
+const BEAR = { y: -0.1, sy: 0.9, sx: 1.08, lLz: 0.55, lRz: 0.55, 'aL.out': 2.75, 'aR.out': 2.75, 'aL.fwd': 0.15, 'aR.fwd': 0.15, hL: 'open', hR: 'open', pL: 'front', pR: 'front' };
 
 export const ACTIONS = {
   idle: { dur: 0.01, base: IDLE, keys: [{ t: 0 }] },
@@ -592,6 +601,41 @@ export const ACTIONS = {
   checkout: {
     dur: 0.6, base: { vis: 'headset', ...WAVE_R },
     keys: [{ t: 0 }, { t: 0.6 }], osc: [{ key: 'tilt', amp: 0.07, freq: 1.67, t0: 0, t1: 0.6 }],
+  },
+  // 彩蛋舞步（參考民間舞教材的閃身步、浪子踢球、狗熊哆嗦毛，做成圓圓寶的公仔版）
+  // 閃身步：站定 → 突然往一側閃、壓低、身體歪過去、手甩 → 彈回 → 換另一側
+  shanshen: {
+    dur: 3.0, base: { rotY: 0 }, keys: [
+      { t: 0 }, { t: 0.5 },
+      { t: 0.62, ...DODGE(1), ease: 'out' }, { t: 0.95, ...DODGE(1), hatZ: 0.1 },
+      { t: 1.12, ease: 'out' }, { t: 1.85 },
+      { t: 1.97, ...DODGE(-1), ease: 'out' }, { t: 2.3, ...DODGE(-1), hatZ: -0.1 },
+      { t: 2.47, ease: 'out' }, { t: 3.0 },
+    ],
+  },
+  // 浪子踢球：雙手張開平衡、身體前傾，腳往後外側踢，一邊小跳一邊左右輪流
+  kick: {
+    dur: 2.8, base: { rotY: 0 }, keys: [
+      { t: 0 }, { t: 0.3, ...KICK },
+      { t: 0.55, ...KICK, y: 0.14, lR: -0.8, lRz: 0.6, tilt: 0.08 }, { t: 0.8, ...KICK },
+      { t: 1.05, ...KICK, y: 0.14, lL: -0.8, lLz: 0.6, tilt: -0.08 }, { t: 1.3, ...KICK },
+      { t: 1.55, ...KICK, y: 0.14, lR: -0.8, lRz: 0.6, tilt: 0.08 }, { t: 1.8, ...KICK },
+      { t: 2.05, ...KICK, y: 0.14, lL: -0.8, lLz: 0.6, tilt: -0.08 }, { t: 2.3, ...KICK },
+      { t: 2.8 },
+    ], osc: [{ key: 'hatY', amp: 0.04, freq: 4, t0: 0.3, t1: 2.3 }],
+  },
+  // 狗熊哆嗦毛：先完全靜止 → 突然開腿壓低、雙手高舉，身體、手、斗笠一起狂抖，中間抬一下腳 → 收回站好
+  bear: {
+    dur: 3.4, base: { rotY: 0 }, keys: [
+      { t: 0 }, { t: 1.2 },
+      { t: 1.32, ...BEAR, ease: 'out' }, { t: 2.0, ...BEAR, lL: 0.5 }, { t: 2.15, ...BEAR }, { t: 2.9, ...BEAR },
+      { t: 3.1, ease: 'out' }, { t: 3.4 },
+    ], osc: [
+      { key: 'tilt', amp: 0.16, freq: 7, t0: 1.3, t1: 2.95 }, { key: 'rotY', amp: 0.22, freq: 5, t0: 1.3, t1: 2.95 },
+      { key: 'y', amp: 0.05, freq: 11, t0: 1.3, t1: 2.95 }, { key: 'hatZ', amp: 0.2, freq: 8, t0: 1.3, t1: 3.0 },
+      { key: 'aL.tw', amp: 0.5, freq: 9, t0: 1.3, t1: 2.95 }, { key: 'aR.tw', amp: 0.5, freq: 9, t0: 1.3, t1: 2.95 },
+      { key: 'aL.out', amp: 0.25, freq: 6, t0: 1.3, t1: 2.95 }, { key: 'aR.out', amp: 0.25, freq: 6.5, t0: 1.3, t1: 2.95 },
+    ],
   },
   // 共用動作
   enter: { dur: 0.6, base: IDLE, keys: [{ t: 0, y: -1.6 }, { t: 0.36, y: 0.12, ease: 'out' }, { t: 0.46, y: 0, sy: 0.86, sx: 1.1 }, { t: 0.6 }] },
