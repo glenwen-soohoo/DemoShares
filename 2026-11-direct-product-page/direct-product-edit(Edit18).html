@@ -20,8 +20,16 @@
     [只參考] fruit_web HuashanCRM/Areas/GoX/Controllers/ProductController.cs:332、397
                Edit18 的 GET／POST
 
-  這一頁是什麼：**只有現況，沒有這次需求的新區塊。**
+  這一頁是什麼：現況 1:1 的底，加上這次需求的新區塊。
   markup 與 class 逐字來自 Edit18.cshtml，Razor 換成靜態值（資料用梨山蜜蘋果 74987）。
+
+  ⚠ 新區塊沒有照原需求的擺法。原需求是副標題放產品名稱下面、產季放產地小農下面、
+     大小對照放產季下面，三塊散在卡片各處。這一版改成一個可收合的「產地直送設定」：
+       收進去的欄位：產地、小農、食農卡片（既有）＋ 副標題、產季、大小對照（新）
+       類別＝產地直送 → 展開；選別條產線 → 收合並轉灰，欄位留在 DOM 裡，資料保留
+       「前台重點區預覽」同一套開合規則，位置留在它要讀的三個欄位之後
+     理由是產地直送專屬的欄位集中在一起，別條產線的人不用一路捲過用不到的欄位。
+     這是 demo 的提案，需求端要確認。
   樣式是那一頁實際載的 10 支 CSS，整包放在 assets/：
     01 Bootstrap 3.1.1（GoX 版型用）        Scripts/plugin/bootstrap/css/bootstrap.css
     02 bootstrap-reset                      Content/Admin/Bucket/bootstrap-reset.css
@@ -86,6 +94,94 @@
   .rb-input input { flex: 1 1 auto; min-width: 0; border: 1px solid #d9d9d9; border-radius: 0 6px 6px 0; padding: 4px 11px; font: inherit; font-size: 14px; background: rgba(0,0,0,.04); color: rgba(0,0,0,.25); }
   .rb-total { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 10%; background: #f5f5f5; padding: 8px 16px; }
   .rb-btn { font: inherit; font-size: 14px; padding: 5px 16px; border: 1px solid #d9d9d9; border-radius: 6px; background: rgba(0,0,0,.04); color: rgba(0,0,0,.25); cursor: not-allowed; white-space: nowrap; }
+
+  /* ───── 產地直送設定：這次新增的收合區塊 ─────
+     色票取自 Content/SCSS/Admin/Component/_variables.scss，
+     產季四級的綠沿用前台色條同一組。 */
+  .ds {
+    --ds-green: #67c23a; --ds-green-dark: #1da93b; --ds-green-soft: #d7f4da;
+    --ds-border: #dcdfe6; --ds-text: #606266; --ds-muted: #909399;
+    --s0: #dfe5e1; --s1: #d6ebd4; --s2: #9ccf9f; --s3: #3f9d46;
+    border: 1px solid var(--ds-green); border-radius: 6px; margin: 0 0 16px; background: #fff;
+  }
+  .ds > summary {
+    list-style: none; cursor: pointer; padding: 8px 16px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    background: var(--ds-green-soft); border-radius: 4px 4px 0 0;
+  }
+  .ds:not([open]) > summary { border-radius: 4px; }
+  .ds > summary::-webkit-details-marker { display: none; }
+  .ds-caret { color: var(--ds-green-dark); transition: transform .15s; display: inline-block; }
+  .ds[open] .ds-caret { transform: rotate(90deg); }
+  .ds-title { font-size: 15px; font-weight: 700; color: var(--ds-green-dark); }
+  .ds-sub { font-size: 13px; color: var(--ds-text); }
+  .ds-hint { margin-left: auto; font-size: 13px; color: var(--ds-muted); }
+  .ds-body { padding: 16px 16px 4px; }
+  /* details 收合時內容要消失，這條明確寫出來不要靠瀏覽器的預設行為。
+     這一頁同時載了 Bootstrap 3 與 4，實測 UA 的隱式收合在這裡沒生效。 */
+  .ds:not([open]) > .ds-body { display: none; }
+  /* 不是產地直送的時候整塊轉灰，一眼看得出這些欄位現在用不到 */
+  .ds.is-off { border-color: var(--ds-border); }
+  .ds.is-off > summary { background: #f4f4f5; }
+  .ds.is-off .ds-title, .ds.is-off .ds-caret { color: var(--ds-muted); }
+
+  .ds label { font-size: 14px; }
+  .ds-ck { display: inline-flex; align-items: center; gap: 4px; margin: 0 0 0 12px; font-weight: 400; cursor: pointer; }
+  .ds-ck input { width: 14px; height: 14px; margin: 0; }
+  .ds-count, .ds-src { margin-left: 12px; font-size: 12px; color: var(--ds-muted); font-weight: 400; }
+  .ds-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .ds small { display: block; margin-top: 4px; }
+
+  /* 預覽框 */
+  .ds-pv { background: #f7f9f7; border: 1px solid #ebeef5; border-radius: 8px; padding: 12px; height: 100%; }
+  .ds-pv-k { font-size: 11px; color: var(--ds-muted); margin-bottom: 8px; }
+  .ds-pv-sub { display: flex; align-items: center; gap: 6px; color: #c62828; font-size: 16px; min-height: 24px; }
+  .ds-pv-sub img { height: 20px; }
+  .ds-pv-v { font-size: 15px; font-weight: 700; color: #263029; }
+  .ds-pv-empty { color: var(--ds-muted); font-size: 13px; }
+  .ds-pv-bar { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; margin-top: 8px; }
+  .ds-pv-bar i { height: 8px; border-radius: 2px; background: var(--s0); }
+  .ds-pv-bar i[data-lv="1"] { background: var(--s1); }
+  .ds-pv-bar i[data-lv="2"] { background: var(--s2); }
+  .ds-pv-bar i[data-lv="3"] { background: var(--s3); }
+  .ds-pv-sizes { display: flex; align-items: flex-end; gap: 4px; }
+  .ds-pv-size { flex: 1; min-width: 0; text-align: center; font-size: 11px; color: var(--ds-muted); background: #fff; border-radius: 6px; padding: 8px 2px; }
+  .ds-pv-size img { display: block; margin: 0 auto 4px; }
+  .ds-pv-size b { display: block; color: #263029; font-size: 12px; }
+
+  /* 產季 12 格 */
+  .ds-months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; max-width: 560px; margin-top: 4px; }
+  .ds-mon { border: 1px solid var(--ds-border); border-radius: 4px; background: #fff; padding: 0; cursor: pointer; font: inherit; overflow: hidden; }
+  .ds-mon:hover { border-color: var(--ds-green); }
+  .ds-mon em { display: block; font-style: normal; font-size: 11px; color: var(--ds-muted); padding: 2px 0; }
+  .ds-mon i { display: block; height: 20px; background: var(--s0); }
+  .ds-mon[data-lv="1"] i { background: var(--s1); }
+  .ds-mon[data-lv="2"] i { background: var(--s2); }
+  .ds-mon[data-lv="3"] i { background: var(--s3); }
+  .ds-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--ds-muted); margin-top: 8px; }
+  .ds-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; background: var(--s0); border: 1px solid rgba(0,0,0,.08); }
+  .ds-legend i[data-lv="1"] { background: var(--s1); }
+  .ds-legend i[data-lv="2"] { background: var(--s2); }
+  .ds-legend i[data-lv="3"] { background: var(--s3); }
+
+  /* 大小對照 */
+  .ds-icons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .ds-icon { width: 40px; height: 40px; border: 1px solid var(--ds-border); border-radius: 4px; background: #fff; cursor: pointer; display: grid; place-items: center; padding: 4px; }
+  .ds-icon.on { border-color: var(--ds-green); box-shadow: 0 0 0 2px var(--ds-green-soft); }
+  .ds-icon img { max-width: 100%; max-height: 100%; }
+  .ds-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .ds-table th { text-align: left; font-weight: 400; color: var(--ds-muted); font-size: 12px; padding: 0 4px 4px; }
+  .ds-table td { padding: 0 4px 8px; vertical-align: top; }
+
+  /* 重點區預覽的明細 */
+  .ds-preview .ds-body { padding: 8px 16px 12px; }
+  .ds-catch { border-top: 1px solid #ebeef5; padding: 8px 0; display: grid; grid-template-columns: 20px 120px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 13px; }
+  .ds-catch b { font-weight: 700; }
+  .ds-catch.ok b { color: var(--ds-green-dark); }
+  .ds-catch.no b { color: #f56c6c; }
+  .ds-catch .nm { color: var(--ds-muted); }
+  .ds-catch.no .val { color: #f56c6c; }
+  .ds-catch .fix { color: var(--ds-muted); font-size: 12px; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -150,18 +246,8 @@
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group d-inline-flex col-6">
-            <div class="col-6 pl-0">
-              <label for="Place">產地</label>
-              <input class="form-control" id="Place" name="Place" type="text" value="台中和平（梨山）">
-            </div>
-            <div class="col-6 pr-0">
-              <label for="CreateUser">小農</label>
-              <input class="form-control" id="CreateUser" name="CreateUser" type="text" value="雲頂果園">
-            </div>
-          </div>
-        </div>
+        <!-- 產地與小農原本在這裡（Edit18.cshtml:126-136）。
+             這一版把它們跟這次新增的三塊一起收進下面的「產地直送設定」區塊。 -->
 
         <div class="form-row">
           <div class="form-group d-inline-flex col-6">
@@ -234,31 +320,136 @@
           </div>
         </div>
 
-        <!-- 既有區塊：食農卡片，來自 Areas/GoX/Views/Product/_FoodCardPicker.cshtml（新增頁、編輯頁共用）
-             一個商品可綁多張卡；選卡後顯示縮圖，點縮圖開原圖，「平台 ↗」直達食農卡片平台的編輯頁。
-             存檔由 ProductModel.SaveProductFoodCards 比對 OriginalFoodCardIds 與 FoodCardIds，只增刪差異。 -->
-        <div class="form-row" id="foodcard-picker" data-edit-base="https://enzo-gb.net/FoodCard/Edit/">
-          <div class="form-group col-12">
-            <label class="mb-1">食農卡片</label>
-            <a href="javascript:void(0)" class="ml-3 js-foodcard-add">＋加一張</a>
-            <a href="https://enzo-gb.net/FoodCard" target="_blank" rel="noopener noreferrer" class="ml-3">到食農卡片平台查看 ↗</a>
-            <input type="hidden" name="OriginalFoodCardIds" value="">
-            <div class="d-flex flex-wrap js-foodcard-slots">
-              <div class="d-flex align-items-center mr-4 mb-2 js-foodcard-slot">
-                <select name="FoodCardIds" class="form-control fix-h-34 js-foodcard-select" style="width: 260px;">
-                  <option value="" selected>不綁定</option>
-                  <option value="101" data-img="https://greenboxcdn.azureedge.net/upload/Product_3033/202511180747401.jpg">梨山蜜蘋果・雲頂果園</option>
-                  <option value="102" data-img="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg">高山水蜜桃・武陵</option>
-                </select>
-                <a class="ml-2 js-foodcard-thumb" target="_blank" rel="noopener" style="display: none;">
-                  <img alt="食農卡片縮圖" style="height: 80px; width: auto;">
-                </a>
-                <a class="ml-2 js-foodcard-edit" target="_blank" rel="noopener noreferrer" style="display: none;">平台 ↗</a>
-                <button type="button" class="ml-2 btn btn-sm btn-outline-secondary js-foodcard-remove" title="移除這張">×</button>
+        <!-- 新增：本次需求，但沒有照原需求的擺法。
+             Jimmy 的原需求是副標題放產品名稱下面、產季放產地小農下面、大小對照放產季下面，
+             三塊散在卡片各處。這一版改成：產地直送才有的欄位集中成一個可收合的區塊，
+             「類別」選產地直送就展開，選別條產線就收起來（資料保留，標題還在，手動可以打開）。
+             產地與小農是既有欄位（Edit18.cshtml:126-136），一起搬進來。 -->
+        <details class="ds" id="dsBlock" open>
+          <summary>
+            <span class="ds-caret">▸</span>
+            <span class="ds-title">產地直送設定</span>
+            <span class="ds-sub" id="dsSub">產地、小農、食農卡片、副標題、產季、大小對照</span>
+            <span class="ds-hint" id="dsHint"></span>
+          </summary>
+          <div class="ds-body">
+
+            <!-- 既有欄位：產地、小農 -->
+            <div class="form-row">
+              <div class="form-group col-3">
+                <label for="Place">產地</label>
+                <input class="form-control" id="Place" name="Place" type="text" value="台中和平（梨山）">
+              </div>
+              <div class="form-group col-3">
+                <label for="CreateUser">小農</label>
+                <input class="form-control" id="CreateUser" name="CreateUser" type="text" value="雲頂果園">
+              </div>
+            </div>
+
+            <!-- 既有區塊：食農卡片，來自 Areas/GoX/Views/Product/_FoodCardPicker.cshtml（新增頁、編輯頁共用）
+                 原本在排序下面，這一版跟著收進產地直送設定（卡片綁的是產地直送的商品）。
+               一個商品可綁多張卡；選卡後顯示縮圖，點縮圖開原圖，「平台 ↗」直達食農卡片平台的編輯頁。
+               存檔由 ProductModel.SaveProductFoodCards 比對 OriginalFoodCardIds 與 FoodCardIds，只增刪差異。 -->
+          <div class="form-row" id="foodcard-picker" data-edit-base="https://enzo-gb.net/FoodCard/Edit/">
+            <div class="form-group col-12">
+              <label class="mb-1">食農卡片</label>
+              <a href="javascript:void(0)" class="ml-3 js-foodcard-add">＋加一張</a>
+              <a href="https://enzo-gb.net/FoodCard" target="_blank" rel="noopener noreferrer" class="ml-3">到食農卡片平台查看 ↗</a>
+              <input type="hidden" name="OriginalFoodCardIds" value="">
+              <div class="d-flex flex-wrap js-foodcard-slots">
+                <div class="d-flex align-items-center mr-4 mb-2 js-foodcard-slot">
+                  <select name="FoodCardIds" class="form-control fix-h-34 js-foodcard-select" style="width: 260px;">
+                    <option value="" selected>不綁定</option>
+                    <option value="101" data-img="https://greenboxcdn.azureedge.net/upload/Product_3033/202511180747401.jpg">梨山蜜蘋果・雲頂果園</option>
+                    <option value="102" data-img="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg">高山水蜜桃・武陵</option>
+                  </select>
+                  <a class="ml-2 js-foodcard-thumb" target="_blank" rel="noopener" style="display: none;">
+                    <img alt="食農卡片縮圖" style="height: 80px; width: auto;">
+                  </a>
+                  <a class="ml-2 js-foodcard-edit" target="_blank" rel="noopener noreferrer" style="display: none;">平台 ↗</a>
+                  <button type="button" class="ml-2 btn btn-sm btn-outline-secondary js-foodcard-remove" title="移除這張">×</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+
+            <!-- 新欄位：Product.Subtitle nvarchar(20) -->
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label for="Subtitle">副標題<span class="ds-count" id="subCount">0 / 20</span></label>
+                <input class="form-control" id="Subtitle" name="Subtitle" maxlength="20" placeholder="選填，沒填前台整行不出現">
+                <small class="text-muted">顯示在前台商品名稱下方，紅字一行，左邊有小芽圖示</small>
+              </div>
+              <div class="form-group col-6">
+                <div class="ds-pv">
+                  <div class="ds-pv-k">前台長這樣</div>
+                  <div class="ds-pv-sub" id="pvSub"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 新欄位：Product.SeasonMonths char(12)、Product.SeasonHidden bit -->
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label>產季
+                  <label class="ds-ck"><input type="checkbox" id="SeasonHidden" name="SeasonHidden"><span>前台不顯示產季</span></label>
+                  <span class="ds-src">資料來源：<b id="seasonSrc">由銷售資料補入</b></span>
+                </label>
+                <div class="ds-months" id="monGrid"></div>
+                <div class="ds-legend">
+                  <span><i data-lv="3"></i>盛產</span><span><i data-lv="2"></i>產季</span>
+                  <span><i data-lv="1"></i>少量</span><span><i data-lv="0"></i>沒有</span>
+                  <span class="text-muted">點月份切換等級</span>
+                </div>
+                <div class="ds-btns">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCopySeason">從其他商品複製產季</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" id="btnClearSeason">全部清空</button>
+                </div>
+                <small class="text-muted">勾了不顯示資料會保留。既有商品一次性補入時全部預設勾起來，採購確認一個取消一個</small>
+              </div>
+              <div class="form-group col-6">
+                <div class="ds-pv">
+                  <div class="ds-pv-k">前台長這樣</div>
+                  <div class="ds-pv-v" id="pvSeasonV"></div>
+                  <div class="ds-pv-bar" id="pvSeasonBar"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 新欄位：Product.SizeGuide nvarchar(MAX)，建議存 JSON -->
+            <div class="form-row">
+              <div class="form-group col-8">
+                <label>大小對照
+                  <label class="ds-ck"><input type="checkbox" id="SizeHidden"><span>前台不顯示大小</span></label>
+                  <span class="ds-count" id="sizeCount">0 / 6 列</span>
+                </label>
+                <div class="ds-icons" id="iconPick"></div>
+                <div class="ds-btns">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="btnUploadIcon">上傳自訂圖示</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetIcon">改回預設圖示</button>
+                </div>
+                <table class="ds-table">
+                  <thead><tr><th style="width:20%">規格</th><th>說明 1</th><th>說明 2</th><th>說明 3</th><th style="width:40px"></th></tr></thead>
+                  <tbody id="sizeBody"></tbody>
+                </table>
+                <div class="ds-btns">
+                  <button type="button" class="btn btn-sm btn-primary" id="btnAddRow">＋ 新增一列</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDerive">從規格說明帶入</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" id="btnClearSize">全部刪除</button>
+                </div>
+                <small class="text-muted">規格沒填的列前台不顯示；所有說明都沒填時前台只顯示規格。圖示由小到大依序放大</small>
+              </div>
+              <div class="form-group col-4">
+                <div class="ds-pv">
+                  <div class="ds-pv-k">前台長這樣</div>
+                  <div class="ds-pv-sizes" id="pvSizes"></div>
+                  <div class="ds-pv-empty" id="pvSizeEmpty" hidden></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </details>
 
         <div class="form-row">
           <div class="form-group d-inline-flex flex-column col-6">
@@ -436,13 +627,25 @@
           </div>
         </div>
 
+        <!-- 新增：本次需求。前台重點區預覽，不是新欄位，讀上面的保存方法、貼心叮嚀、多盒優惠。
+             跟「產地直送設定」一樣只在類別為產地直送時展開。放在這裡是因為它要讀的三個欄位在上面。 -->
+        <details class="ds ds-preview" id="dashPv">
+          <summary>
+            <span class="ds-caret">▸</span>
+            <span class="ds-title">前台重點區預覽</span>
+            <span class="ds-sub">抓到 <b id="catchN">0</b> / 5 項</span>
+            <span class="ds-hint ds-toggle"></span>
+          </summary>
+          <div class="ds-body" id="catchBody"></div>
+        </details>
+
       </div>
     </div>
   </div>
 
-  <div class="demo-placeholder">產品標籤・上下架果況紀錄（_ProductTagBlock.cshtml）— 不在這次需求範圍，未還原</div>
-  <div class="demo-placeholder">產品規格設定（product-detail-settings，React 掛載點）— 不在這次需求範圍，未還原</div>
-  <div class="demo-placeholder">產品圖片、商品描述、產地故事、追蹤碼設定 四張卡 — 不在這次需求範圍，未還原</div>
+  <div class="demo-placeholder">產品標籤（略）</div>
+  <div class="demo-placeholder">產品規格設定（略）</div>
+  <div class="demo-placeholder">產品圖片、商品描述、產地故事、追蹤碼設定（略）</div>
 </form>
 </main>
 </div><!-- /gox-body -->
@@ -464,6 +667,275 @@ document.getElementById('none_radio').addEventListener('change', function () {
 document.getElementById('firstBuy_radio').addEventListener('change', function () {
   document.getElementById('vipLevel_constraint_block').style.display = 'none';
 });
+
+/* ───── 產地直送設定：這一區全部是本次需求新增的互動 ─────
+   工程端要的是行為定義，不是照抄這段。真正實作時：
+   - 產季存 Product.SeasonMonths（12 碼字串），顯示與否存 Product.SeasonHidden
+   - 大小對照存 Product.SizeGuide（建議 JSON）
+   - 副標題存 Product.Subtitle nvarchar(20)
+   - 重點區預覽不是新欄位，讀保存方法、貼心叮嚀、多盒優惠 */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var half = function (t) { return String(t).replace(/[０-９]/g, function (c) {
+    return String.fromCharCode(c.charCodeAt(0) - 0xfee0); }).replace(/～/g, '~'); };
+  var lines = function (s) { return String(s || '').split(/\r?\n/)
+    .map(function (t) { return t.trim(); }).filter(Boolean); };
+  var ZH = { 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+  var num = function (t) { var h = half(t); return /^\d+$/.test(h) ? +h : (ZH[h] !== undefined ? ZH[h] : h); };
+  var MAX_ROWS = 6;
+  var nowMonth = new Date(Date.now() + 8 * 3600000).getUTCMonth() + 1;
+
+  const SIZE_ICONS = {
+    round: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDE0Yy0zLTMtMTItMy0xNSA0LTMgOCAxIDIwIDggMjMgMyAxIDUgMCA3LTEgMiAxIDQgMiA3IDEgNy0zIDExLTE1IDgtMjMtMy03LTEyLTctMTUtNHoiIGZpbGw9IiNlMDU3NGYiLz48cGF0aCBkPSJNMjQgMTRjLTMtMy0xMi0zLTE1IDQtMSAzLTEgNiAwIDkgMi04IDgtMTEgMTUtOXoiIGZpbGw9IiNmMDhhODAiIG9wYWNpdHk9Ii42Ii8+PHBhdGggZD0iTTI0IDE1YzAtNCAxLTcgMy05IiBzdHJva2U9IiM2YjRhMmIiIHN0cm9rZS13aWR0aD0iMi4yIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjcgOWMzLTMgOC0zIDEwLTEtMiAzLTcgNC0xMCAxeiIgZmlsbD0iIzVhYTg0NSIvPjwvc3ZnPgo=',
+    citrus: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGNpcmNsZSBjeD0iMjQiIGN5PSIyNyIgcj0iMTciIGZpbGw9IiNmMzlhMmIiLz48Y2lyY2xlIGN4PSIxOSIgY3k9IjIxIiByPSI2IiBmaWxsPSIjZjhiZDZiIiBvcGFjaXR5PSIuNTUiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiM2YjhmMmEiLz48cGF0aCBkPSJNMjUgMTBjMy00IDktNSAxMS0zLTIgNC04IDUtMTEgM3oiIGZpbGw9IiM1YWE4NDUiLz48ZyBmaWxsPSIjZDk3ZTE3IiBvcGFjaXR5PSIuNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMSIgcj0iMSIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iMzMiIHI9IjEiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjM4IiByPSIxIi8+PGNpcmNsZSBjeD0iMzUiIGN5PSIyNCIgcj0iMSIvPjwvZz48L3N2Zz4K',
+    long: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDljLTUgMC03IDUtOCAxMC0xIDQtNiA3LTYgMTQgMCA3IDYgMTEgMTQgMTFzMTQtNCAxNC0xMWMwLTctNS0xMC02LTE0LTEtNS0zLTEwLTgtMTB6IiBmaWxsPSIjOWNjYzRhIi8+PHBhdGggZD0iTTE4IDIyYy0yIDMtNCA2LTQgMTAgMCAzIDEgNSAzIDctMS03IDAtMTIgMS0xN3oiIGZpbGw9IiNjNGUyODQiIG9wYWNpdHk9Ii43Ii8+PHBhdGggZD0iTTI0IDlWNCIgc3Ryb2tlPSIjNmI0YTJiIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI1IDZjMy0zIDgtMiA5IDAtMyAzLTcgMy05IDB6IiBmaWxsPSIjNWFhODQ1Ii8+PC9zdmc+Cg==',
+    crab: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGcgc3Ryb2tlPSIjYzk0NzJmIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj48cGF0aCBkPSJNMTIgMzBsLTYgM00xMiAzNGwtNSA1TTM2IDMwbDYgM00zNiAzNGw1IDVNMTQgMjZsLTYtMU0zNCAyNmw2LTEiLz48cGF0aCBkPSJNMTUgMjJsLTQtOE0zMyAyMmw0LTgiLz48L2c+PHBhdGggZD0iTTcgMTJjMC00IDQtNiA2LTRsLTIgMyA0IDFjMCAzLTMgNS02IDQtMSAwLTItMi0yLTR6TTQxIDEyYzAtNC00LTYtNi00bDIgMy00IDFjMCAzIDMgNSA2IDQgMSAwIDItMiAyLTR6IiBmaWxsPSIjZTI2MDNmIi8+PGVsbGlwc2UgY3g9IjI0IiBjeT0iMjkiIHJ4PSIxMyIgcnk9IjEwIiBmaWxsPSIjZTI2MDNmIi8+PGVsbGlwc2UgY3g9IjIxIiBjeT0iMjYiIHJ4PSI2IiByeT0iMy41IiBmaWxsPSIjZjA4YTZhIiBvcGFjaXR5PSIuNiIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjIiIGZpbGw9IiMzMzMiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIwIiByPSIyIiBmaWxsPSIjMzMzIi8+PC9zdmc+Cg==',
+    fish: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTQgMjRjNi05IDE2LTEyIDI2LThsOC03djMwbC04LTdDMjAgMzYgMTAgMzMgNCAyNHoiIGZpbGw9IiM0ZjhmYzAiLz48cGF0aCBkPSJNOCAyNGM2LTYgMTMtOCAyMC02LTcgMC0xMyAyLTIwIDZ6IiBmaWxsPSIjOGJiYmUwIiBvcGFjaXR5PSIuOCIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMjIiIHI9IjIiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjIyIiByPSIxIiBmaWxsPSIjMjIzIi8+PHBhdGggZD0iTTIwIDE5YzIgMyAyIDcgMCAxMCIgc3Ryb2tlPSIjM2E3OGE4IiBzdHJva2Utd2lkdGg9IjEuNiIgZmlsbD0ibm9uZSIvPjwvc3ZnPgo=',
+    box: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTYgMTZsMTgtOCAxOCA4LTE4IDh6IiBmaWxsPSIjZTdjMDhhIi8+PHBhdGggZD0iTTYgMTZ2MjBsMTggOFYyNHoiIGZpbGw9IiNjOTlhNWIiLz48cGF0aCBkPSJNNDIgMTZ2MjBsLTE4IDhWMjR6IiBmaWxsPSIjYjU4NjRhIi8+PHBhdGggZD0iTTE1IDEybDE4IDh2NmwtNC0ydi00TDExIDE0eiIgZmlsbD0iI2YzZGNiNCIvPjwvc3ZnPgo=',
+  };
+
+  const SUB_ICON = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLnN0MCB7IGZpbGw6ICNhZDc2MmQ7IH0KICAgICAgLnN0MSB7IGZpbGw6ICM1N2ExMWI7IH0KICAgICAgLnN0MiB7IGZpbGw6ICM0MDk5MTE7IH0KICAgICAgLnN0MyB7IGZpbGw6ICM5MzVmMjc7IH0KICAgICAgLnN0NCB7IGZpbGw6ICNhMDY5Mjc7IH0KICAgICAgLnN0NSB7IGZpbGw6ICM2NmFkMjE7IH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxnPgogICAgPHBhdGggY2xhc3M9InN0MSIgZD0iTTc2LDExLjNjLS4yLS4zLS40LS43LS42LTEtNi44LS44LTE0LjEsMi4xLTE5LjIsOC40cy00LjksOC4xLTUuNSwxMmMtLjctMy45LTEuNS03LjgtNC43LTExLjUtOC4yLTkuNC0yMi41LTEwLjgtMjkuNi01LjItNyw1LjYtNS4xLDE2LjMsNC4zLDIzLjgsNS4yLDQuMiwxMy45LDUuOSwyMC41LDYuNSw3LjgtMS43LDE1LjUtNC41LDIyLjgtOSw4LTUsMTUtMTMsMTItMjRaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QyIiBkPSJNODUsMTRjLTIuNS0yLTUuOS0zLjMtOS42LTMuNy4yLjMuNC43LjYsMSwzLDExLTQsMTktMTIsMjQtNy4zLDQuNS0xNSw3LjMtMjIuOCw5LDIuMy4yLDQuMy4zLDUuOS40bC00LjQsNDcuMWgxNi4ybC00LjctNDcuMWM2LjEtLjIsMTkuNS0xLjIsMjYuNi02LjksOS40LTcuNSwxMS4zLTE4LjEsNC4zLTIzLjhaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNjYuNCw3NS45Yy01LTEuOC0xMC41LTIuOS0xNi40LTIuOS0xNC4zLDAtMjYuOCw2LjEtMzQsMTUuNC0uNS43LS44LDEuNC0uOCwyLjEsMTksLjgsMzguNS0zLjcsNTEuMi0xNC43WiIvPgogICAgPHBhdGggY2xhc3M9InN0NCIgZD0iTTc0LjksODAuMmMtMi42LTEuNy01LjUtMy4yLTguNi00LjMtMTIuNywxMS0zMi4xLDE1LjQtNTEuMiwxNC43LS4xLDIuNCwyLjEsNC42LDUuMyw0LjZoNDMuOGM0LjktNCw4LjktOC45LDEwLjctMTVaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNODQsODguNGMtMi40LTMuMS01LjUtNS45LTktOC4yLTEuOCw2LjEtNS45LDEwLjktMTAuNywxNWgxNS4zYzQuMiwwLDYuNy0zLjgsNC40LTYuN1oiLz4KICAgIDxlbGxpcHNlIGNsYXNzPSJzdDUiIGN4PSIyMyIgY3k9IjE2LjkiIHJ4PSI1LjIiIHJ5PSIzLjQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0zLjggNy4xKSByb3RhdGUoLTE2LjEpIi8+CiAgICA8ZWxsaXBzZSBjbGFzcz0ic3Q1IiBjeD0iMTcuNSIgY3k9IjIzLjQiIHJ4PSIxLjkiIHJ5PSIxLjgiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC01LjggNS44KSByb3RhdGUoLTE2LjEpIi8+CiAgPC9nPgo8L3N2Zz4=';
+
+  var ICON_LIST = [
+    { k: 'round', n: '圓形果' }, { k: 'citrus', n: '柑橘' }, { k: 'long', n: '長形果' },
+    { k: 'crab', n: '螃蟹' }, { k: 'fish', n: '魚' }, { k: 'box', n: '通用盒' }
+  ];
+
+  /* 這一頁的狀態。真站是從 Product 那幾個欄位讀進來的 */
+  var levels = '000000003332'.split('').map(Number);   // 梨山蜜蘋果：9-11 盛產、12 產季
+  var seasonSource = '由銷售資料補入';
+  var sizeIcon = 'round';
+  var iconCustom = false;
+  var sizeRows = [
+    { label: '6A', lines: ['3.8~4.6 兩/顆', '每盒 18 粒', '每顆約 $82'] },
+    { label: '7A', lines: ['4.6~5.4 兩/顆', '每盒 15 粒', '每顆約 $111'] },
+    { label: '8A', lines: ['5.4~6.2 兩/顆', '每盒 15 粒', '每顆約 $119'] }
+  ];
+  /* 「從其他商品複製產季」的來源，真站是查商品名稱或編號 */
+  var OTHERS = [
+    { label: '紅妃木瓜', code: '223222202332' },
+    { label: '無花果', code: '000003332222' },
+    { label: '茂谷柑（跨年產季）', code: '320000000023' }
+  ];
+
+  /* ── 類別連動：產地直送展開，其他產線收起來 ── */
+  function syncByType() {
+    var isDirect = $('Type').value === '0';
+    [$('dsBlock'), $('dashPv')].forEach(function (d) {
+      if (!d) return;
+      d.open = isDirect;
+      d.classList.toggle('is-off', !isDirect);
+    });
+    var hint = $('dsHint');
+    if (hint) hint.textContent = isDirect ? '' : '這條產線沒有這些欄位，資料保留著';
+  }
+
+  /* ── 副標題 ── */
+  function renderSubtitle() {
+    var v = $('Subtitle').value;
+    $('subCount').textContent = Array.from(v).length + ' / 20';
+    $('pvSub').innerHTML = v
+      ? '<img src="' + SUB_ICON + '" alt=""><span>' + esc(v) + '</span>'
+      : '<span class="ds-pv-empty">沒填，前台整行不出現</span>';
+  }
+
+  /* ── 產季：12 碼字串，0 沒有 1 少量 2 產季 3 盛產 ── */
+  function renderSeason() {
+    $('monGrid').innerHTML = levels.map(function (lv, i) {
+      return '<button type="button" class="ds-mon" data-lv="' + lv + '" data-m="' + i + '"><em>' + (i + 1) + '</em><i></i></button>';
+    }).join('');
+    $('seasonSrc').textContent = seasonSource;
+
+    var hidden = $('SeasonHidden').checked;
+    var any = levels.some(function (v) { return v > 0; });
+    var bar = $('pvSeasonBar'), v = $('pvSeasonV');
+    if (hidden || !any) {
+      bar.innerHTML = '';
+      v.innerHTML = '<span class="ds-pv-empty">' + (hidden ? '勾了不顯示，前台整格不出現' : '12 個月都是「沒有」，前台整格不出現') + '</span>';
+      return;
+    }
+    bar.innerHTML = levels.map(function (lv) { return '<i data-lv="' + lv + '"></i>'; }).join('');
+    var ms = Array.from({ length: 12 }, function (_, i) { return i + 1; });
+    var allYear = levels.every(function (x) { return x >= 1; });
+    if (allYear) {
+      var top = ms.filter(function (m) { return levels[m - 1] === 3; });
+      v.textContent = top.length ? '全年都有，' + top.join('、') + ' 月量最多' : '全年都有';
+    } else {
+      var lv = levels[nowMonth - 1];
+      var state = lv === 3 ? '盛產中' : (lv >= 1 ? '產季中' : '非產季');
+      var last = Math.max.apply(null, [0].concat(ms.filter(function (m) { return levels[m - 1] >= 1 && m >= nowMonth; })));
+      v.textContent = nowMonth + ' 月：' + state + (lv >= 1 && last ? '，產季到 ' + last + ' 月' : '');
+    }
+  }
+
+  /* ── 大小對照 ── */
+  function readRows() {
+    sizeRows = Array.prototype.map.call($('sizeBody').querySelectorAll('tr'), function (tr) {
+      return {
+        label: tr.querySelector('.s-label').value,
+        lines: [tr.querySelector('.s-l0').value, tr.querySelector('.s-l1').value, tr.querySelector('.s-l2').value]
+      };
+    });
+  }
+  function renderSizes() {
+    $('sizeBody').innerHTML = sizeRows.map(function (r, i) {
+      return '<tr data-i="' + i + '">'
+        + '<td><input class="form-control s-label" value="' + esc(r.label) + '" placeholder="例：6A"></td>'
+        + '<td><input class="form-control s-l0" value="' + esc(r.lines[0]) + '"></td>'
+        + '<td><input class="form-control s-l1" value="' + esc(r.lines[1]) + '"></td>'
+        + '<td><input class="form-control s-l2" value="' + esc(r.lines[2]) + '"></td>'
+        + '<td><button type="button" class="btn btn-sm btn-outline-danger s-del" aria-label="刪除這一列">×</button></td></tr>';
+    }).join('');
+    $('sizeCount').textContent = sizeRows.length + ' / ' + MAX_ROWS + ' 列';
+    $('btnAddRow').disabled = sizeRows.length >= MAX_ROWS;
+
+    $('iconPick').innerHTML = ICON_LIST.map(function (o) {
+      return '<button type="button" class="ds-icon' + (!iconCustom && o.k === sizeIcon ? ' on' : '') + '" data-icon="' + o.k + '" title="' + o.n + '"><img src="' + SIZE_ICONS[o.k] + '" alt="' + o.n + '"></button>';
+    }).join('') + (iconCustom ? '<span class="text-muted" style="align-self:center;font-size:12px">使用自訂圖示</span>' : '');
+
+    var items = $('SizeHidden').checked ? [] : sizeRows.filter(function (r) { return r.label.trim(); });
+    $('pvSizes').hidden = items.length === 0;
+    $('pvSizeEmpty').hidden = items.length !== 0;
+    if (!items.length) {
+      $('pvSizeEmpty').textContent = $('SizeHidden').checked ? '勾了不顯示，前台整格不出現' : '沒有填規格，前台整格不出現';
+      $('pvSizes').innerHTML = '';
+      return;
+    }
+    var icon = SIZE_ICONS[sizeIcon] || SIZE_ICONS.box;
+    var anyLine = items.some(function (it) { return it.lines.some(function (l) { return l.trim(); }); });
+    $('pvSizes').innerHTML = items.map(function (it, i) {
+      var px = items.length === 1 ? 30 : Math.round(18 + 14 * (i / (items.length - 1)));
+      var ls = anyLine ? it.lines.filter(function (l) { return l.trim(); }).map(esc).join('<br>') : '';
+      return '<div class="ds-pv-size"><img src="' + icon + '" style="width:' + px + 'px;height:' + px + 'px"><b>' + esc(it.label) + '</b>' + ls + '</div>';
+    }).join('');
+  }
+
+  /* 從規格說明帶入。⚠ 需求沒寫這條規則，這是提案版，認得三種行首寫法。
+     紅妃木瓜那種分「夏季/秋冬」兩段寫的，會帶出重複的規格名，需求要定案怎麼處理。 */
+  function deriveSizes(specText) {
+    var out = [];
+    lines(specText).forEach(function (raw) {
+      if (out.length >= MAX_ROWS) return;
+      var line = half(raw), label = '', rest = '', m;
+      if ((m = line.match(/^【(.+?)】(.*)$/))) { label = m[1]; rest = m[2]; }
+      else if ((m = line.match(/^([0-9]{1,2}[A-Za-z]{1,2})\((.+?)\)[-\u2212\uFF0D]?(.*)$/))) { label = m[1]; rest = m[2] + '，' + m[3]; }
+      else if ((m = line.match(/^(\d+\s*[斤台公兩克]{0,2}裝|\d+[A-Za-z]{1,2})(.*)$/))) { label = m[1].replace(/\s/g, ''); rest = m[2]; }
+      else return;
+      var parts = rest.split(/[，,、]/).map(function (s) {
+        return s.replace(/[()（）]/g, '').replace(/^[-\u2212\uFF0D±\s]+/, '').trim();
+      }).filter(Boolean).slice(0, 3);
+      if (label) out.push({ label: label, lines: [parts[0] || '', parts[1] || '', parts[2] || ''] });
+    });
+    return out;
+  }
+
+  /* ── 重點區預覽：五條抓字規則，跟前台同一套 ── */
+  function catches() {
+    var st = half(lines($('Remarks').value).join(''));
+    var rm = half(lines($('Remind').value).join(''));
+    var mu = half($('LargeDiscount').value);
+    var out = [];
+    var act = st.match(/收到(?:貨)?後[^，。]*?(冷藏|冷凍|蒸煮|蒸熟)/);
+    out.push({ nm: '保存：動作', ok: !!act,
+      val: act ? { 冷藏: '收到後立刻冷藏', 冷凍: '收到後立刻冷凍', 蒸煮: '收到後馬上蒸煮', 蒸熟: '收到後馬上蒸熟' }[act[1]] : '沒抓到',
+      fix: '保存方法要有「收到後…冷藏」這種寫法，而且「收到後」跟動作之間不能隔逗號或句號。' });
+    var keep = [];
+    var re = /(常溫|冷藏|冷凍)[則可保存約\s]*([一二兩三四五六七八九十\d]+)\s*(週|天|日)/g, mm;
+    while ((mm = re.exec(st))) keep.push(mm[1] + '約 ' + num(mm[2]) + ' ' + (mm[3] === '週' ? '週' : '天'));
+    out.push({ nm: '保存：可放多久', ok: keep.length > 0, val: keep.length ? keep.join('、') : '沒抓到',
+      fix: '保存方法要寫「常溫可保存約一週」「冷藏則可保存約兩週」這種句型。' });
+    var best = st.match(/(\d+\s*[~-]\s*\d+|\d+)\s*天內享用/);
+    var within = st.match(/([一二兩三\d]+)\s*日內食用/);
+    out.push({ nm: '保存：吃完期限', ok: !!(best || within),
+      val: best ? best[1].replace(/\s/g, '') + ' 天內最好吃' : (within ? num(within[1]) + ' 天內吃完' : '沒抓到'),
+      fix: '保存方法要寫「3～5 天內享用」或「2 日內食用」。寫成「3天內食用完畢」抓不到。' });
+    var hrs = rm.match(/(\d+)\s*小時內/), pics = rm.match(/(\d+)\s*張/);
+    out.push({ nm: '叮嚀重點', ok: !!hrs,
+      val: hrs ? '收到有損傷：' + hrs[1] + ' 小時內傳官方 LINE' + (pics ? '，附 ' + pics[1] + ' 張照片' : '') : '沒抓到',
+      fix: '貼心叮嚀要有「24 小時內」跟「3 張」這兩個數字。' });
+    var mb = mu.match(/(\d+)\s*(組|箱|盒)以上/), tel = mu.match(/0\d[\d-]{7,}/);
+    out.push({ nm: '多盒重點', ok: !!mb,
+      val: mb ? '一次買 ' + mb[1] + ' ' + mb[2] + '以上另有優惠' + (tel ? '（' + tel[0] + '）' : '') : '沒抓到',
+      fix: '多盒優惠要寫「10 組以上」這種句型，電話一起寫在同一欄。' });
+    return out;
+  }
+  function renderCatches() {
+    var list = catches();
+    $('catchN').textContent = list.filter(function (c) { return c.ok; }).length;
+    $('catchBody').innerHTML = list.map(function (c) {
+      return '<div class="ds-catch ' + (c.ok ? 'ok' : 'no') + '"><b>' + (c.ok ? '✓' : '✕') + '</b>'
+        + '<span class="nm">' + c.nm + '</span><span><span class="val">' + esc(c.val) + '</span>'
+        + (c.ok ? '' : '<div class="fix">怎麼改：' + esc(c.fix) + '</div>') + '</span></div>';
+    }).join('');
+  }
+
+  /* ── 綁事件 ── */
+  $('Type').addEventListener('change', syncByType);
+  $('Subtitle').addEventListener('input', renderSubtitle);
+  $('SeasonHidden').addEventListener('change', renderSeason);
+  $('SizeHidden').addEventListener('change', renderSizes);
+  ['Remarks', 'Remind', 'LargeDiscount'].forEach(function (id) {
+    var el = $(id); if (el) el.addEventListener('input', renderCatches);
+  });
+
+  $('monGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('.ds-mon'); if (!b) return;
+    var i = +b.dataset.m;
+    levels[i] = (levels[i] + 1) % 4;
+    seasonSource = '營運手動設定';
+    renderSeason();
+  });
+  $('btnClearSeason').addEventListener('click', function () {
+    if (!confirm('把 12 個月全部設成「沒有」？')) return;
+    levels = Array(12).fill(0); seasonSource = '營運手動設定'; renderSeason();
+  });
+  $('btnCopySeason').addEventListener('click', function () {
+    var list = OTHERS.map(function (o, i) { return (i + 1) + '. ' + o.label; }).join('\n');
+    var pick = prompt('輸入商品名稱或編號，帶入它的產季：\n' + list);
+    if (!pick) return;
+    var n = parseInt(pick, 10);
+    var found = (n >= 1 && n <= OTHERS.length) ? OTHERS[n - 1]
+      : OTHERS.filter(function (o) { return o.label.indexOf(pick.trim()) !== -1; })[0];
+    if (!found) { alert('找不到這個商品'); return; }
+    levels = found.code.split('').map(Number);
+    seasonSource = '營運手動設定';
+    renderSeason();
+  });
+
+  $('sizeBody').addEventListener('input', function () { readRows(); renderSizes(); });
+  $('sizeBody').addEventListener('click', function (e) {
+    if (!e.target.closest('.s-del')) return;
+    var tr = e.target.closest('tr');
+    readRows(); sizeRows.splice(+tr.dataset.i, 1); renderSizes();
+  });
+  $('btnAddRow').addEventListener('click', function () {
+    readRows(); if (sizeRows.length >= MAX_ROWS) return;
+    sizeRows.push({ label: '', lines: ['', '', ''] }); renderSizes();
+  });
+  $('btnClearSize').addEventListener('click', function () {
+    if (!confirm('刪掉所有列？圖示與顯示設定會保留。')) return;
+    sizeRows = []; renderSizes();
+  });
+  $('btnDerive').addEventListener('click', function () {
+    var got = deriveSizes($('Specification').value);
+    if (!got.length) { alert('規格說明看不出規格，請按「＋ 新增一列」手動填。'); return; }
+    sizeRows = got; renderSizes();
+  });
+  $('iconPick').addEventListener('click', function (e) {
+    var b = e.target.closest('.ds-icon'); if (!b) return;
+    sizeIcon = b.dataset.icon; iconCustom = false; renderSizes();
+  });
+  $('btnUploadIcon').addEventListener('click', function () { iconCustom = true; renderSizes(); });
+  $('btnResetIcon').addEventListener('click', function () { iconCustom = false; renderSizes(); });
+
+  syncByType();
+  renderSubtitle();
+  renderSeason();
+  renderSizes();
+  renderCatches();
+})();
 
 /* 食農卡片：照 _FoodCardPicker.cshtml 裡那段 script 的行為。
    選到卡片就顯示縮圖與「平台 ↗」，選「不綁定」就兩個都藏起來；
