@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | App 信用卡改走 TapPay demo・portal 入口
+  portal 無對應正式站畫面（純 demo 索引頁，工程不需照抄）。
+  連到的子頁（各頁檔頭有自己的對照）：app-checkout.html、app-card-payment.html、app-checkout-result.html、app-order-detail.html
+  共用：assets/app.css（App 樣式 token＋新增 .tp-*）、assets/app.js（demo 工具與假資料）
+-->
+<meta charset="UTF-8">
+<title>App 信用卡改走 TapPay demo 索引</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; padding:56px 20px; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;
+        font-size:16px; line-height:1.7; color:#1a1a1a; background:#fafbfb; }
+  .wrap{ max-width:960px; margin:0 auto; }
+  h1{ font-size:30px; margin:0 0 4px; color:#4ba83b; }
+  .sub{ color:#999; font-size:14px; margin:0 0 32px; }
+
+  .side{ margin-bottom:40px; }
+  .side>h2{ font-size:20px; font-weight:700; color:#1a1a1a; margin:0 0 16px; padding-left:12px; border-left:4px solid #4ba83b; }
+
+  .entries{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width:760px){ .entries{ grid-template-columns:1fr; } }
+
+  .entry{ display:flex; flex-direction:column; background:#fff; border:1px solid #e0e4e6; border-radius:4px;
+          padding:20px; text-decoration:none; color:inherit; transition:border-color .15s, box-shadow .15s, transform .15s; }
+  .entry.ready:hover{ border-color:#4ba83b; box-shadow:0 4px 14px rgba(0,0,0,.08); transform:translateY(-2px); }
+  .entry .name{ font-size:16px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+  .entry.ready .name{ color:#4ba83b; }
+  .entry .desc{ font-size:13px; color:#595757; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>App 信用卡改走 TapPay・demo</h1>
+  <p class="sub">2026-10</p>
+
+  <div class="side">
+    <h2>App</h2>
+    <div class="entries">
+      <a class="entry ready" href="app-checkout.html">
+        <span class="name">APP 結帳頁｜信用卡選項與分期提示</span>
+        <span class="desc">存卡選擇、滿 3,000 分期提示，付款方式加 Apple Pay／Google Pay。</span>
+      </a>
+      <a class="entry ready" href="app-card-payment.html?amt=7245">
+        <span class="name">APP 信用卡付款頁｜期數與卡號</span>
+        <span class="desc">取代綠界刷卡頁：選期數、填卡號、自動辨識發卡行、記住這張卡。</span>
+      </a>
+      <a class="entry ready" href="app-card-payment.html?amt=3980&amp;s=3d">
+        <span class="name">APP 信用卡付款頁｜失敗與 3D 驗證</span>
+        <span class="desc">銀行拒絕時留在本頁重試；需要 3D 的單開驗證頁，取消或逾時導回。</span>
+      </a>
+      <a class="entry ready" href="app-checkout-result.html?status=fail">
+        <span class="name">APP 結帳完成頁｜付款失敗重新付款</span>
+        <span class="desc">付款失敗按「重新付款」進新的信用卡付款頁；分期單顯示期數。</span>
+      </a>
+      <a class="entry ready" href="app-order-detail.html">
+        <span class="name">APP 訂單明細｜重新付款入口</span>
+        <span class="desc">建單 1 小時內未付款可重新付款，改進新的信用卡付款頁。</span>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

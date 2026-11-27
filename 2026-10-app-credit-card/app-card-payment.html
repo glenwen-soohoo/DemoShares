@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | APP 信用卡付款頁（新頁，取代綠界 SDK 內建刷卡頁）
+  真相來源：D:\GreenBox\fruit_app（main 53429b9）
+  現況：信用卡由 utils/ecPay.ts createECPayPayment 叫綠界 SDK 自帶刷卡頁（ios/ecpay/ECPayModule.swift、android/.../ecpay/ECPayModule.kt）
+  本頁為新 screen（RN 端尚無，class .tp-* 為 demo 自取），三個入口都導來這裡：
+    結帳送出（CheckoutScreen.tsx:572-579）、結帳結果頁「重新付款」（CheckoutResultScreen.tsx:214-220）、訂單明細「重新付款」（MemberOrderDetailScreen.tsx:206-215）
+  卡號／有效期限／安全碼：TapPay Direct Pay 原生欄位（iOS/Android 各一段橋接，仿 ios/linepay/LinePayModule.swift）
+  後端：Api/Orders/OrderController.cs TapPayCreditCard（現寫死 LINE Pay），要加信用卡分支：帶 instalment（0／3／6）、remember、PaymentGateWayType=2
+  規則沿用官網分期 PRD v1.0：
+    期數：實付 < 3,000 只有一次付清；≥ 3,000 一次付清／3 期；≥ 6,000 再加 6 期；每期 = 無條件捨去(總額÷期數)，餘數併入首期
+    發卡行：三欄填完（canGetPrime）自動 getPrime 取 card_info.issuer 判斷；僅玉山／中國信託／台新可分期，其他自動切回一次付清
+    3D：沿用現行風控（首單且 ≥ 5,000、24h 內有失敗、美國運通），分期不額外觸發
+    「記住這張卡」：照官網 FillOrderInfo，需要 3D 驗證的訂單不提供
+-->
+<meta charset="UTF-8">
+<title>APP 信用卡付款頁 — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/app.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="statusbar"><span>9:41</span><span class="icons">▂▄▆ 5G ▮</span></div>
+  <header class="appbar">
+    <button class="back" type="button" id="backBtn" aria-label="返回"><i data-ion="chevron-back"></i></button>
+    <div class="title">信用卡付款</div>
+  </header>
+
+  <main class="scroll bg-green" id="scroll">
+    <div class="wrap">
+      <!-- 付款失敗（未觸發 3D 的授權失敗、3D 取消／逾時）：留在本頁，已填資料保留 -->
+      <div class="tp-err" id="errBox" hidden>
+        <div class="h">付款未成功</div>
+        <p id="errMsg"></p>
+      </div>
+
+      <!-- 訂單資訊 -->
+      <div class="card">
+        <div class="row"><span class="t">訂單編號</span><span class="v" id="orderNo"></span></div>
+        <div class="row"><span class="t">付款金額</span><span class="v" id="amountText" style="color:var(--price-red)"></span></div>
+      </div>
+
+      <!-- 付款期數：實付 ≥ 3,000 才出現 -->
+      <div class="card" id="instCard" hidden>
+        <div class="tp-sec-h"><span>付款期數</span><span class="tp-zero">零利率</span></div>
+        <div id="instOpts"></div>
+        <div class="tp-foot">分期僅限玉山、中國信託、台新發卡的信用卡。分期不支援部分退款，如需退款將全額退回。</div>
+      </div>
+
+      <!-- 信用卡資訊（TapPay 欄位） -->
+      <div class="card">
+        <div class="tp-sec-h"><span>信用卡資訊</span></div>
+        <div class="row bt"><span class="t">卡號</span>
+          <span class="tp-brand" id="brand"></span>
+          <input class="v" id="fNumber" inputmode="numeric" autocomplete="off" placeholder="請輸入卡號" aria-label="卡號"></div>
+        <div class="row"><span class="t">有效期限</span>
+          <input class="v" id="fExp" inputmode="numeric" autocomplete="off" placeholder="MM/YY" aria-label="有效期限"></div>
+        <div class="row"><span class="t">安全碼</span>
+          <input class="v" id="fCvc" inputmode="numeric" autocomplete="off" placeholder="卡片背面末三碼" aria-label="安全碼"></div>
+        <div class="tp-issuer" id="issuer" hidden></div>
+        <div class="tp-remember" id="rememberRow">
+          <div>
+            <div class="t">記住這張卡，下次快速結帳</div>
+            <div class="s" id="rememberSub" hidden></div>
+          </div>
+          <button class="sw" type="button" role="switch" aria-checked="false" id="rememberSw" aria-label="記住這張卡"></button>
+        </div>
+      </div>
+    </div>
+    <div class="spacer-100"></div>
+  </main>
+
+  <div class="bottomtab">
+    <button class="btn" type="button" id="payBtn" disabled><span id="btnLeft"></span><span id="btnRight">確認付款</span></button>
+  </div>
+
+  <!-- 3D 驗證：App 內開 WebView 載入發卡行驗證頁（frontend_redirect_url 導回） -->
+  <div class="tp-web" id="web">
+    <div class="tp-web-bar">
+      <button class="x" type="button" id="webClose" aria-label="關閉"><i data-ion="close"></i></button>
+      <div class="ttl"><b>信用卡驗證</b></div>
+    </div>
+    <div class="tp-web-body">
+      <div class="bank">
+        <h2>網路交易身分驗證</h2>
+        <dl>
+          <dt>商店名稱</dt><dd>無毒農</dd>
+          <dt>交易金額</dt><dd id="bankAmt"></dd>
+          <dt>卡號</dt><dd id="bankCard"></dd>
+        </dl>
+        <label for="otp">請輸入簡訊驗證碼（已傳送至 09••-•••-123）</label>
+        <input id="otp" inputmode="numeric" maxlength="6" autocomplete="off">
+        <button class="go" type="button" id="otpGo" disabled>確認</button>
+        <small>驗證碼 5 分鐘內有效。</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ISSUERS = { esun: '玉山銀行', ctbc: '中國信託', taishin: '台新銀行', other: '國泰世華' };
+  var S = {
+    plat: TP.q('plat', 'ios'),
+    amt: TP.q('amt', '3980'),
+    card: TP.q('card', 'none'),           // none | saved | legacy（決定「記住」的預設與說明）
+    from: TP.q('from', 'checkout'),       // checkout | result | detail
+    issuer: 'esun',
+    threeD: TP.q('s') === '3d' ? 'yes' : 'no',
+    threeDResult: 'ok',                   // ok | timeout
+    auth: TP.q('s') === 'decline' ? 'decline' : 'ok',
+    inst: 0,
+    recog: null                           // null | wait | ok | ng
+  };
+  if (!TP.CARTS[S.amt]) S.amt = '3980';
+  var total = TP.cartTotal(S.amt).total;
+  var plans = TP.instalmentPlans(total);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fN = $('fNumber'), fE = $('fExp'), fC = $('fCvc'), rememberSw = $('rememberSw');
+
+  // 綠界舊卡（官網預設選「其他信用卡（並加入快速結帳）」）→ 預設開；其他情況預設關
+  if (S.card === 'legacy') { rememberSw.classList.add('on'); rememberSw.setAttribute('aria-checked', 'true'); }
+  TP.bindSwitch(rememberSw);
+
+  $('orderNo').textContent = TP.ORDER_NO;
+  $('amountText').textContent = TP.money(total);
+  $('bankAmt').textContent = 'NT$ ' + total.toLocaleString('en-US');
+
+  // ---- 卡號欄位 ----
+  function digits(s) { return s.replace(/\D/g, ''); }
+  function brandOf(d) {
+    if (/^4/.test(d)) return 'VISA';
+    if (/^(5[1-5]|2[2-7])/.test(d)) return 'MASTER';
+    if (/^35/.test(d)) return 'JCB';
+    if (/^3[47]/.test(d)) return 'AMEX';
+    if (/^62/.test(d)) return '銀聯';
+    return '';
+  }
+  fN.addEventListener('input', function () {
+    var d = digits(fN.value).slice(0, 19);
+    fN.value = d.replace(/(\d{4})(?=\d)/g, '$1 ');
+    $('brand').textContent = brandOf(d);
+    onFieldsChange();
+  });
+  fE.addEventListener('input', function () {
+    var d = digits(fE.value).slice(0, 4);
+    fE.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+    onFieldsChange();
+  });
+  fC.addEventListener('input', function () { fC.value = digits(fC.value).slice(0, 4); onFieldsChange(); });
+
+  function complete() {
+    var d = digits(fN.value), e = digits(fE.value), c = digits(fC.value);
+    var amex = brandOf(d) === 'AMEX';
+    var mm = +e.slice(0, 2), yy = +e.slice(2);
+    return d.length >= (amex ? 15 : 16) && e.length === 4 && mm >= 1 && mm <= 12 && yy >= 26 && c.length >= (amex ? 4 : 3);
+  }
+  // TPDirect.card.onUpdate：canGetPrime 轉 true 時自動 getPrime 取 card_info，不用客人多按按鈕
+  var recogTimer = null;
+  function onFieldsChange() {
+    clearTimeout(recogTimer);
+    if (!complete()) { S.recog = null; render(); return; }
+    if (!plans.length) { S.recog = 'skip'; render(); return; }
+    S.recog = 'wait'; render();
+    recogTimer = setTimeout(function () {
+      S.recog = S.issuer === 'other' ? 'ng' : 'ok';
+      if (S.recog === 'ng') S.inst = 0;
+      render();
+    }, 600);
+  }
+
+  // ---- 畫面 ----
+  function render() {
+    // 期數
+    $('instCard').hidden = !plans.length;
+    var opts = [{ n: 0, t: '一次付清', r: TP.money(total) }];
+    plans.forEach(function (n) {
+      var p = TP.perPeriod(total, n);
+      opts.push({ n: n, t: n + ' 期', s: p.first !== p.each ? '首期 ' + TP.money(p.first) + '，其餘每期 ' + TP.money(p.each) : '每期 ' + TP.money(p.each), r: '' });
+    });
+    $('instOpts').innerHTML = opts.map(function (o) {
+      var dis = o.n > 0 && S.recog === 'ng';
+      return '<div class="tp-opt flat' + (S.inst === o.n ? ' on' : '') + (dis ? ' dis' : '') + '" data-n="' + o.n + '" role="radio" aria-checked="' + (S.inst === o.n) + '">' +
+        '<div class="main"><div class="t">' + o.t + '</div>' + (o.s ? '<div class="s">' + o.s + '</div>' : '') + '</div>' +
+        (o.r ? '<span class="r">' + o.r + '</span>' : '') + '<span class="chk">' + TP.ion('checkmark') + '</span></div>';
+    }).join('');
+    $('instOpts').querySelectorAll('.tp-opt').forEach(function (el) {
+      el.addEventListener('click', function () {
+        if (el.classList.contains('dis')) return;
+        S.inst = +el.dataset.n; render();
+      });
+    });
+
+    // 發卡行辨識結果
+    var iss = $('issuer');
+    iss.hidden = !(plans.length && S.recog && S.recog !== 'skip');
+    iss.className = 'tp-issuer ' + (S.recog || '');
+    if (S.recog === 'wait') iss.innerHTML = '<span>辨識發卡銀行中…</span>';
+    if (S.recog === 'ok') iss.innerHTML = TP.ion('checkmark-circle') + '<span>已辨識為' + ISSUERS[S.issuer] + '信用卡，可使用分期</span>';
+    if (S.recog === 'ng') iss.innerHTML = TP.ion('alert-circle') + '<span>這張卡不支援分期，已為您改為一次付清 ' + TP.money(total) + '；如需分期請改用玉山、中國信託、台新的卡片</span>';
+
+    // 記住這張卡：需要 3D 驗證的訂單不提供
+    $('rememberRow').hidden = S.threeD === 'yes';
+    var sub = $('rememberSub');
+    sub.hidden = S.card !== 'saved';
+    sub.textContent = '會取代上次交易的信用卡（' + TP.SAVED_CARD.brand + ' 末四碼 ' + TP.SAVED_CARD.last4 + '）';
+
+    // 底部按鈕
+    $('btnLeft').textContent = '付款金額：' + total;
+    $('payBtn').disabled = !(complete() && S.recog !== 'wait');
+  }
+
+  function showError(msg) {
+    $('errMsg').textContent = msg;
+    $('errBox').hidden = false;
+    $('scroll').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function resetBtn() { $('btnRight').textContent = '確認付款'; render(); }
+  function goResult(status) {
+    var remembered = !$('rememberRow').hidden && rememberSw.classList.contains('on');
+    location.href = TP.url('app-checkout-result.html', {
+      plat: S.plat, amt: S.amt, pay: 'cc', inst: S.inst, status: status,
+      card: status === 'success' && remembered ? 'saved' : S.card, total: total
+    });
+  }
+  function afterAuth() {
+    if (S.auth === 'decline') {
+      resetBtn();
+      showError(S.inst ? '銀行未核准這筆分期交易，建議改一次付清，或換一張卡再試一次。' : '銀行未核准這筆交易，請確認卡片資訊，或換一張卡再試一次。');
+      return;
+    }
+    goResult('success');
+  }
+
+  $('payBtn').addEventListener('click', function () {
+    $('errBox').hidden = true;
+    $('payBtn').disabled = true;
+    $('btnRight').innerHTML = '<span class="spin"></span>';
+    setTimeout(function () {
+      if (S.threeD === 'yes') { openWeb(); return; }
+      afterAuth();
+    }, 1000);
+  });
+
+  // ---- 3D 驗證 WebView ----
+  var web = $('web');
+  function openWeb() {
+    var d = digits(fN.value);
+    $('bankCard').textContent = d.slice(0, 4) + ' •••• •••• ' + d.slice(-4);
+    $('otp').value = ''; $('otpGo').disabled = true;
+    web.classList.add('show');
+    setTimeout(function () { web.classList.add('up'); document.querySelector('.app').classList.add('web-open'); }, 30);
+  }
+  function closeWeb(cb) {
+    web.classList.remove('up');
+    document.querySelector('.app').classList.remove('web-open');
+    setTimeout(function () { web.classList.remove('show'); if (cb) cb(); }, 300);
+  }
+  $('otp').addEventListener('input', function () {
+    this.value = digits(this.value).slice(0, 6);
+    $('otpGo').disabled = this.value.length !== 6;
+  });
+  $('otpGo').addEventListener('click', function () {
+    var btn = this; btn.disabled = true; btn.textContent = '驗證中…';
+    setTimeout(function () {
+      btn.textContent = '確認';
+      if (S.threeDResult === 'timeout') { closeWeb(function () { resetBtn(); showError('信用卡驗證未完成（逾時），請再試一次。'); }); return; }
+      closeWeb(afterAuth);
+    }, 1200);
+  });
+  $('webClose').addEventListener('click', function () {
+    closeWeb(function () { resetBtn(); showError('信用卡驗證未完成，請再試一次。'); });
+  });
+
+  // ---- 返回：訂單已成立，離開＝這次沒付款 ----
+  $('backBtn').addEventListener('click', function () {
+    TP.alert({
+      title: '要離開付款頁嗎？', message: '訂單已成立但還沒付款，1 小時內可以到訂單明細重新付款。',
+      buttons: [
+        { text: '離開', onPress: function () {
+          if (S.from === 'detail') { location.href = TP.url('app-order-detail.html', { plat: S.plat, amt: S.amt }); return; }
+          location.href = TP.url('app-checkout-result.html', { plat: S.plat, amt: S.amt, pay: 'cc', status: 'fail', card: S.card, total: total });
+        } },
+        { text: '繼續付款', style: 'strong' }
+      ]
+    });
+  });
+
+  // ---- 情境面板 ----
+  TP.devPanel({
+    groups: [
+      { label: '訂單金額（實付）', value: S.amt, options: [['2480', '2,480'], ['3980', '3,980'], ['7245', '7,245']], onChange: function (v) {
+        location.href = TP.url('app-card-payment.html', { plat: S.plat, amt: v, card: S.card, from: S.from }); } },
+      { label: '卡片發卡銀行', value: S.issuer, options: [['esun', '玉山'], ['ctbc', '中信'], ['taishin', '台新'], ['other', '其他銀行']], onChange: function (v) {
+        S.issuer = v; onFieldsChange(); } },
+      { label: '這筆訂單要 3D 驗證', value: S.threeD, options: [['no', '不需要'], ['yes', '需要']], onChange: function (v) { S.threeD = v; render(); } },
+      { label: '3D 驗證結果', value: S.threeDResult, options: [['ok', '完成'], ['timeout', '逾時']], onChange: function (v) { S.threeDResult = v; } },
+      { label: '銀行授權', value: S.auth, options: [['ok', '核准'], ['decline', '拒絕']], onChange: function (v) { S.auth = v; } },
+      { label: '會員存卡', value: S.card, options: [['none', '沒有'], ['saved', '有記住的卡'], ['legacy', '綠界舊卡']], onChange: function (v) { S.card = v; render(); } }
+    ],
+    buttons: [
+      { label: '一鍵填入測試卡', onClick: function () { fN.value = '4111 1111 1111 1111'; fE.value = '12/28'; fC.value = '123'; $('brand').textContent = 'VISA'; onFieldsChange(); } },
+      { label: '清空卡號', onClick: function () { fN.value = fE.value = fC.value = ''; $('brand').textContent = ''; $('errBox').hidden = true; onFieldsChange(); } }
+    ],
+    note: '發卡銀行＝填完三欄後 TapPay 回傳的結果；切「其他銀行」看不支援分期。'
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | APP 結帳完成頁・付款失敗重新付款（React Native）
+  真相來源：D:\GreenBox\fruit_app（main 53429b9）
+  對應正式站：
+    screen : src/screens/CheckoutResultScreen/CheckoutResultScreen.tsx（headerTitle「結帳完成」、底色預設 #F2F2F2）
+    成功判斷 L144-147：afterPay || ecPayIsSuccess（RtnCode 1）|| tapPayIsSuccess（status 0）
+    頭像 Avatar L48-90（寬 0.426w；失敗 assets/card_error.png，角標 V.png／X.png 40×40）
+    訂單卡 CheckoutResultOrder.tsx（訂單編號可收合：訂購日期／物流方式／付款方式／訂購商品）
+    按鈕 L359-379：失敗「重新付款」、成功「查看訂單」；「回首頁」
+  本次改動：
+    「重新付款」信用卡改導到新的信用卡付款頁（現況 apiRePayCheckout → 綠界 SDK，L214-220）；LINE Pay 維持 sendToLinePay
+    付款方式文字：分期單顯示「信用卡（分期 N 期）」（後端 orderSummary.paymentType 要帶出期數）；新增 Apple Pay／Google Pay
+-->
+<meta charset="UTF-8">
+<title>APP 結帳完成頁 — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/app.js"></script>
+<style>
+  /* CheckoutResultScreen styles（L406-520） */
+  .res{ margin:0 16px 48px; }
+  .avatar{ margin:16px 0; display:flex; flex-direction:column; align-items:center; }
+  .avatar .pic{ position:relative; width:166px; height:166px; }
+  .avatar .pic img.main{ width:100%; height:100%; object-fit:contain; }
+  .avatar .pic .ph{ width:100%; height:100%; border-radius:50%; background:#C6C6C6; }
+  .avatar .pic img.badge{ position:absolute; right:0; bottom:0; width:40px; height:40px; }
+  .headline{ margin-top:16px; text-align:center; font-size:18px; color:var(--primary); }
+  .headline div + div{ margin-top:4px; }
+  .order{ padding:0 16px; min-height:40px; background:#fff; border-radius:20px; overflow:hidden; margin-top:8px; }
+  .order-hd{ display:flex; justify-content:space-between; align-items:center; padding:12px 0; cursor:pointer; font-size:17px; line-height:22px; }
+  .order-hd .ion{ font-size:20px; color:var(--grey); }
+  .order.open .order-hd span:first-child{ color:var(--primary); }
+  .order-bd{ display:none; }
+  .order.open .order-bd{ display:block; }
+  .order-bd div{ margin-bottom:8px; font-size:14px; line-height:22px; color:var(--sub); }
+  .atm{ margin-top:8px; padding:16px; background:#fff; border-radius:20px; font-size:14px; line-height:22px; color:var(--sub); }
+  .atm div{ margin-bottom:8px; display:flex; gap:8px; align-items:center; }
+  .atm div:last-child{ margin-bottom:0; }
+  .atm .ion{ font-size:20px; color:var(--grey); }
+  .rbtn{ display:flex; justify-content:center; align-items:center; height:40px; border-radius:20px; margin-top:8px; width:100%;
+    font-size:16px; line-height:19px; font-weight:600; cursor:pointer; border:0; }
+  .rbtn.fill{ background:var(--primary); color:#fff; }
+  .rbtn.line{ background:#fff; color:var(--primary); border:1px solid var(--primary); }
+  .foot-t{ margin-top:16px; text-align:center; font-size:16px; color:var(--primary); }
+  .foot-t div + div{ margin-top:8px; }
+  .foot-c{ margin-top:16px; text-align:center; font-size:12px; color:#C4C4C4; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="statusbar"><span>9:41</span><span class="icons">▂▄▆ 5G ▮</span></div>
+  <header class="appbar">
+    <button class="back" type="button" aria-label="返回"><i data-ion="chevron-back"></i></button>
+    <div class="title">結帳完成</div>
+  </header>
+
+  <main class="scroll bg-result">
+    <div class="res">
+      <div class="avatar">
+        <div class="pic" id="pic"></div>
+        <div class="headline" id="headline"></div>
+      </div>
+
+      <div class="order" id="order">
+        <div class="order-hd" id="orderHd"><span>訂單編號：<span id="orderNo"></span></span><span id="orderIcon"></span></div>
+        <div class="order-bd">
+          <div>訂購日期：2026/10/08</div>
+          <div>物流方式：宅配到府</div>
+          <div>付款方式：<span id="payText"></span></div>
+          <div>訂購商品：<span id="prodText"></span></div>
+        </div>
+      </div>
+
+      <div class="atm" id="atm" hidden>
+        <div>銀行代碼: 822</div>
+        <div>匯款帳號: 91035280112245</div>
+        <div>繳費期限: 2026/10/11</div>
+      </div>
+
+      <button class="rbtn fill" type="button" id="primaryBtn"></button>
+      <button class="rbtn line" type="button" id="homeBtn">回首頁</button>
+
+      <div class="foot-t"><div>如果有任何問題皆可向我們聯繫</div><div>感謝您為臺灣農業盡一份心力</div></div>
+      <div class="foot-c">客服專線：(02)2771-2900<br>週一至五 09:00～18:00/週六10:00～18:00<br>午休時間12:00～13:00<br>(不含國定假日)</div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var S = {
+    plat: TP.q('plat', 'ios'),
+    amt: TP.q('amt', '3980'),
+    pay: TP.q('pay', 'cc'),            // cc | token | applepay | googlepay | 1 | 2 | 8
+    inst: +TP.q('inst', '0'),
+    status: TP.q('status', 'fail'),
+    card: TP.q('card', 'none')
+  };
+  if (!TP.CARTS[S.amt]) S.amt = '3980';
+  var $ = function (id) { return document.getElementById(id); };
+  var PAY = { cc: '信用卡', token: '信用卡', applepay: 'Apple Pay', googlepay: 'Google Pay', '1': 'ATM轉帳', '2': '貨到付款', '8': 'LINE Pay' };
+
+  $('orderNo').textContent = TP.ORDER_NO;
+  $('prodText').textContent = TP.CARTS[S.amt].items.map(function (i) { return i.name; }).join('、');
+  var order = $('order');
+  $('orderHd').addEventListener('click', function () { order.classList.toggle('open'); icon(); });
+  function icon() { $('orderIcon').innerHTML = TP.ion(order.classList.contains('open') ? 'chevron-up' : 'chevron-down'); }
+
+  function render() {
+    var ok = S.status === 'success';
+    $('pic').innerHTML = (ok ? '<div class="ph"></div>' : '<img class="main" src="assets/img/card_error.png" alt="">') +
+      '<img class="badge" src="assets/img/' + (ok ? 'V' : 'X') + '.png" alt="">';
+    $('headline').innerHTML = ok ? '<div>客服部 小禾</div><div>恭喜您訂購完成</div>' : '<div>付款失敗</div><div>請重新付款或聯繫發卡機構</div>';
+    $('payText').textContent = PAY[S.pay] + (S.pay === 'cc' && S.inst ? '（分期 ' + S.inst + ' 期）' : '');
+    $('atm').hidden = !(ok && S.pay === '1');
+    $('primaryBtn').textContent = ok ? '查看訂單' : '重新付款';
+    icon();
+  }
+
+  $('primaryBtn').addEventListener('click', function () {
+    if (S.status === 'success') {
+      location.href = TP.url('app-order-detail.html', { plat: S.plat, amt: S.amt, paid: 1, inst: S.pay === 'cc' ? S.inst : 0 });
+      return;
+    }
+    // 信用卡（含上次交易的信用卡失敗）重新付款 → 新的信用卡付款頁
+    location.href = TP.url('app-card-payment.html', { plat: S.plat, amt: S.amt, card: S.card, from: 'result' });
+  });
+  $('homeBtn').addEventListener('click', function () { location.href = 'index.html'; });
+
+  TP.devPanel({
+    groups: [
+      { label: '付款結果', value: S.status, options: [['success', '成功'], ['fail', '失敗']], onChange: function (v) { S.status = v; render(); } },
+      { label: '付款方式', value: S.pay === 'cc' && S.inst ? 'cc' + S.inst : S.pay, options: [['cc', '信用卡'], ['cc3', '分期 3 期'], ['token', '上次交易的卡'], [S.plat === 'android' ? 'googlepay' : 'applepay', S.plat === 'android' ? 'Google Pay' : 'Apple Pay']],
+        onChange: function (v) { if (v === 'cc3') { S.pay = 'cc'; S.inst = 3; } else { S.pay = v; S.inst = 0; } render(); } }
+    ],
+    note: '失敗時按「重新付款」會進新的信用卡付款頁。'
+  });
+  render();
+})();
+</script>
+</body>
+</html>

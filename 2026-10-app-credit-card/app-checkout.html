@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | APP 結帳頁・信用卡選項與分期提示（React Native）
+  真相來源：D:\GreenBox\fruit_app（main 53429b9）
+  對應正式站：
+    screen   : src/screens/CheckoutScreen/CheckoutScreen.tsx（headerTitle「結帳」、綠底 theme.primary）
+    區塊順序 : CheckoutProductList → CheckoutInformation → CheckoutComment → CheckoutInvoice → CheckoutPayment → CheckoutBottomTab
+    付款方式 : CheckoutPayment.tsx「付款方式」PickerSelect，選項來自後端 shippingAndPaymentOptions（payments[].name），
+               付款別 enum utils/constant.ts:285-290（creditCard 0／atm 1／afterPay 2／linePay 8）
+  本次新增（RN 端尚無，class .tp-* 為 demo 自取）：
+    (1) 付款方式加 Apple Pay（iOS）／Google Pay（Android）選項；enum 值待定，demo 用字串 applepay／googlepay
+    (2) 選「信用卡」且會員有記住的卡（TapPayCards）：上次交易的信用卡／其他信用卡（同官網 FillOrderInfo CardAction 1／2）
+    (3) 綠界時代存過卡、還沒存過 TapPay 卡：紅字說明（同官網 showLegacyEcPayNotice 文案）
+    (4) 實付總額 ≥ 3,000 且選「信用卡」：分期提示（同官網 PRD v1.0 §4.1；期數在下一頁選）
+    「記住這張卡」開關放在下一頁信用卡付款頁（記住旗標隨 TapPayCreditCard API 一起送）
+-->
+<meta charset="UTF-8">
+<title>APP 結帳頁 — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/app.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="statusbar"><span>9:41</span><span class="icons">▂▄▆ 5G ▮</span></div>
+  <header class="appbar">
+    <button class="back" type="button" aria-label="返回"><i data-ion="chevron-back"></i></button>
+    <div class="title">結帳</div>
+  </header>
+
+  <main class="scroll bg-green" id="scroll">
+    <div class="wrap">
+      <!-- 商品列表（CheckoutProductList，預設收合） -->
+      <div class="plist" id="plist">
+        <div class="plist-hd" id="plistHd"><span>商品列表</span><span id="plistIcon"></span></div>
+        <div class="plist-bd" id="plistBd"></div>
+      </div>
+
+      <!-- 訂購資訊（CheckoutInformation） -->
+      <div class="card">
+        <div class="row"><span class="t">訂購人</span><input class="v" value="林小農" aria-label="訂購人"></div>
+        <div class="row"><span class="t">物流方式</span>
+          <button class="picker" type="button" data-pick='["宅配到府","全家取貨"]'><span class="lbl">宅配到府</span><i data-ion="chevron-forward"></i></button></div>
+        <div class="row addr"><span class="t">收件資料</span>
+          <div class="addr-info"><span class="n">林小農</span><span class="s">0912-000-123</span><span class="s">台北市中正區示範路 100 號</span></div>
+          <span style="color:var(--grey);font-size:20px;margin-left:4px;display:flex"><i data-ion="chevron-forward"></i></span>
+        </div>
+        <div class="row"><span class="t">配達時段</span>
+          <button class="picker" type="button" data-pick='["不指定","13:00 前","14:00 - 18:00"]'><span class="lbl">不指定</span><i data-ion="chevron-forward"></i></button></div>
+      </div>
+
+      <!-- 備註（CheckoutComment） -->
+      <div class="card">
+        <div class="row"><span class="t">管理員代收</span><button class="sw" type="button" role="switch" aria-checked="false"></button></div>
+        <div class="row"><span class="t">請務必聯繫收件人</span><button class="sw" type="button" role="switch" aria-checked="false"></button></div>
+        <div class="row"><span class="t">送禮不顯示金額</span><button class="sw" type="button" role="switch" aria-checked="false"></button></div>
+        <div class="row" style="align-items:flex-start;padding-top:11px;padding-bottom:11px"><span class="t">備註</span><input class="v" placeholder="請留言..." aria-label="備註"></div>
+      </div>
+
+      <!-- 發票（CheckoutInvoice） -->
+      <div class="card">
+        <div class="row"><span class="t">發票開立</span>
+          <button class="picker" type="button" data-pick='["捐贈-等家寶寶","個人電子發票","三聯式(電子發票)"]'><span class="lbl">個人電子發票</span><i data-ion="chevron-forward"></i></button></div>
+        <div class="row"><span class="t">Email</span><input class="v" value="nong@example.com" aria-label="Email"></div>
+        <div class="row"><span class="t">載具類型</span>
+          <button class="picker" type="button" data-pick='["無載具","手機載具","自然人載具"]'><span class="lbl">無載具</span><i data-ion="chevron-forward"></i></button></div>
+      </div>
+
+      <!-- 付款＋總金額（CheckoutPayment） -->
+      <div class="card" id="payCard">
+        <div class="row"><span class="t">付款方式</span>
+          <button class="picker" type="button" id="payPicker"><span class="lbl" id="payLabel">信用卡</span><i data-ion="chevron-forward"></i></button></div>
+
+        <!-- 本次新增：選「信用卡」時才出現 -->
+        <div id="ccBlock">
+          <!-- 綠界舊卡失效說明 -->
+          <div class="tp-notice" id="legacyNotice" hidden></div>
+
+          <!-- 有記住的卡：上次交易的信用卡／其他信用卡 -->
+          <div id="cardChoice" hidden>
+            <div class="tp-opt" data-use="saved" role="radio">
+              <div class="main">
+                <div class="t">上次交易的信用卡</div>
+                <div class="s" id="savedCardText"></div>
+                <button class="tp-unbind" type="button" id="unbindBtn">取消綁定</button>
+              </div>
+              <span class="chk"><i data-ion="checkmark"></i></span>
+            </div>
+            <div class="tp-opt" data-use="new" role="radio">
+              <div class="main">
+                <div class="t">其他信用卡</div>
+                <div class="s">下一步輸入卡號</div>
+              </div>
+              <span class="chk"><i data-ion="checkmark"></i></span>
+            </div>
+          </div>
+
+          <!-- 分期提示：實付總額 ≥ 3,000 才出現 -->
+          <div class="tp-inst" id="instHint" hidden>
+            <div class="tp-inst-h">本筆可使用分期<span class="tp-zero">零利率</span></div>
+            <p id="instLine1"></p>
+            <p id="instLineSaved" hidden>使用分期請改選「其他信用卡」，下一步重新輸入卡號。</p>
+            <p>分期僅限<b>玉山、中國信託、台新</b>發卡的信用卡。</p>
+          </div>
+        </div>
+
+        <div class="row bt"><span class="t">總金額</span></div>
+        <div class="totals" id="totals"></div>
+      </div>
+    </div>
+    <div class="spacer-100"></div>
+  </main>
+
+  <!-- CheckoutBottomTab -->
+  <div class="bottomtab">
+    <button class="btn" type="button" id="submitBtn"><span id="btnTotal"></span><span id="btnRight">送出訂單</span></button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var S = {
+    plat: TP.q('plat', 'ios'),
+    amt: TP.q('amt', '3980'),
+    card: TP.q('card', 'saved'),       // none | saved | legacy
+    use: 'saved',                      // saved | new（有記住的卡時）
+    pay: '0',                          // 0 信用卡 / 1 ATM / 2 貨到付款 / 8 LINE Pay / applepay / googlepay
+    token: TP.q('token', 'ok')         // 快速結帳（上次交易的信用卡）結果：ok | fail
+  };
+  if (!TP.CARTS[S.amt]) S.amt = '3980';
+
+  function payOptions() {
+    var o = [{ value: '0', label: '信用卡' }];
+    o.push(S.plat === 'android' ? { value: 'googlepay', label: 'Google Pay' } : { value: 'applepay', label: 'Apple Pay' });
+    o.push({ value: '1', label: 'ATM轉帳' }, { value: '2', label: '貨到付款' }, { value: '8', label: 'LINE Pay' });
+    return o;
+  }
+  function afterPayFee() { return S.pay === '2' ? 30 : 0; }
+  function totals() { var t = TP.cartTotal(S.amt); t.afterPay = afterPayFee(); t.total += t.afterPay; return t; }
+
+  // ---- 商品列表 ----
+  var plist = document.getElementById('plist');
+  document.getElementById('plistHd').addEventListener('click', function () { plist.classList.toggle('open'); renderPlistIcon(); });
+  function renderPlistIcon() { document.getElementById('plistIcon').innerHTML = TP.ion(plist.classList.contains('open') ? 'chevron-up' : 'chevron-down'); }
+  function renderProducts() {
+    document.getElementById('plistBd').innerHTML = TP.CARTS[S.amt].items.map(function (i) {
+      return '<div class="pitem"><div class="img"></div><div class="bd"><div class="nm">' + i.name + '</div>' +
+        '<div class="sp">規格：' + i.spec + '</div><div class="pr"><b>$' + i.price + '</b><span>數量：' + i.qty + '</span></div></div></div>';
+    }).join('');
+    renderPlistIcon();
+  }
+
+  // ---- 付款區 ----
+  function render() {
+    var t = totals();
+    var isCC = S.pay === '0';
+    document.getElementById('payLabel').textContent = payOptions().filter(function (o) { return o.value === S.pay; })[0].label;
+
+    document.getElementById('ccBlock').hidden = !isCC;
+    var legacy = document.getElementById('legacyNotice');
+    legacy.hidden = !(isCC && S.card === 'legacy');
+    legacy.textContent = '您先前綁定的信用卡（末四碼 ' + TP.LEGACY_LAST4 + '）因付款系統升級，綁定已失效，請於下一步重新輸入卡號完成付款，維持開啟「記住這張卡」即可恢復快速結帳。';
+
+    var hasSaved = S.card === 'saved';
+    document.getElementById('cardChoice').hidden = !(isCC && hasSaved);
+    document.getElementById('savedCardText').textContent = TP.SAVED_CARD.brand + ' 末四碼 ' + TP.SAVED_CARD.last4;
+    document.querySelectorAll('.tp-opt[data-use]').forEach(function (el) {
+      var on = el.dataset.use === S.use;
+      el.classList.toggle('on', on);
+      el.setAttribute('aria-checked', on);
+    });
+
+    var plans = TP.instalmentPlans(t.total);
+    var hint = document.getElementById('instHint');
+    hint.hidden = !(isCC && plans.length);
+    if (plans.length) {
+      var periods = plans.length > 1 ? '3 期或 6 期' : '3 期';
+      document.getElementById('instLine1').innerHTML = '訂單金額 ' + TP.money(t.total) + '，可選擇 <b>' + periods + '</b>零利率分期，於下一步輸入卡號時選擇期數。';
+    }
+    document.getElementById('instLineSaved').hidden = !(hasSaved && S.use === 'saved');
+    // 有提示框時，「總金額」列上方的分隔線由提示框區隔，維持原本 .5 線
+    renderTotals(t);
+    document.getElementById('btnTotal').textContent = '訂單總金額：' + t.total;
+  }
+  function renderTotals(t) {
+    var h = '<div class="tr"><span>商品總金額</span><span>' + t.products + '</span></div>';
+    h += '<div class="tr"><span>運費' + (t.shipping > 0 ? '<span class="help">' + TP.ion('help-circle') + '</span>' : '') + '</span><span>' + t.shipping + '</span></div>';
+    if (t.discount > 0) h += '<div class="tr"><span>優惠方案</span><span>-' + t.discount + '</span></div>';
+    if (t.afterPay > 0) h += '<div class="tr"><span>物流代收費</span><span>' + t.afterPay + '</span></div>';
+    h += '<div class="tr total"><span>訂單總金額</span><span>' + t.total + '</span></div>';
+    document.getElementById('totals').innerHTML = h;
+  }
+
+  document.getElementById('payPicker').addEventListener('click', function () {
+    TP.picker({ platform: S.plat, options: payOptions(), value: S.pay, onPick: function (v) { S.pay = String(v); render(); } });
+  });
+  document.querySelectorAll('.tp-opt[data-use]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      if (e.target.closest('#unbindBtn')) return;
+      S.use = el.dataset.use; render();
+    });
+  });
+  document.getElementById('unbindBtn').addEventListener('click', function () {
+    TP.alert({
+      title: '取消綁定這張卡？', message: '取消後，下次結帳需要重新輸入卡號。',
+      buttons: [{ text: '取消' }, { text: '取消綁定', style: 'danger', onPress: function () { S.card = 'none'; S.use = 'new'; dev.set(2, 'none'); render(); } }]
+    });
+  });
+
+  // 其他 PickerSelect（物流方式、配達時段、發票…）：只換顯示文字
+  document.querySelectorAll('.picker[data-pick]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var labels = JSON.parse(b.dataset.pick), cur = b.querySelector('.lbl').textContent;
+      TP.picker({
+        platform: S.plat, value: cur, options: labels.map(function (l) { return { value: l, label: l }; }),
+        onPick: function (v) { b.querySelector('.lbl').textContent = v; }
+      });
+    });
+  });
+  document.querySelectorAll('.sw').forEach(function (s) { TP.bindSwitch(s); });
+
+  // ---- 送出訂單 ----
+  var btn = document.getElementById('submitBtn');
+  btn.addEventListener('click', function () {
+    var t = totals();
+    btn.disabled = true;
+    document.getElementById('btnRight').innerHTML = '<span class="spin"></span>';
+    setTimeout(function () {
+      var common = { plat: S.plat, amt: S.amt };
+      if (S.pay === '0' && !(S.card === 'saved' && S.use === 'saved')) {
+        // 新卡：訂單已成立 → 進信用卡付款頁
+        location.href = TP.url('app-card-payment.html', Object.assign(common, { card: S.card, from: 'checkout' }));
+        return;
+      }
+      var pay = S.pay === '0' ? 'token' : S.pay;
+      var status = (pay === 'token' && S.token === 'fail') ? 'fail' : 'success';
+      location.href = TP.url('app-checkout-result.html', Object.assign(common, { pay: pay, status: status, card: S.card, total: t.total }));
+    }, 900);
+  });
+
+  // ---- 情境面板 ----
+  var dev = TP.devPanel({
+    groups: [
+      { label: '平台', value: S.plat, options: [['ios', 'iOS'], ['android', 'Android']], onChange: function (v) {
+        S.plat = v; if (S.pay === 'applepay' || S.pay === 'googlepay') S.pay = v === 'android' ? 'googlepay' : 'applepay'; render(); } },
+      { label: '訂單金額（實付）', value: S.amt, options: [['2480', '2,480'], ['3980', '3,980'], ['7245', '7,245']], onChange: function (v) { S.amt = v; renderProducts(); render(); } },
+      { label: '會員存卡', value: S.card, options: [['none', '沒有存卡'], ['saved', '有記住的卡'], ['legacy', '綠界舊卡']], onChange: function (v) {
+        S.card = v; S.use = v === 'saved' ? 'saved' : 'new'; render(); } },
+      { label: '用上次交易的卡付款', value: S.token, options: [['ok', '成功'], ['fail', '失敗']], onChange: function (v) { S.token = v; } }
+    ],
+    note: '切平台看 Apple Pay／Google Pay；切金額看分期提示的門檻（未滿 3,000 不出現）。'
+  });
+
+  if (S.card !== 'saved') S.use = 'new';
+  renderProducts();
+  render();
+})();
+</script>
+</body>
+</html>

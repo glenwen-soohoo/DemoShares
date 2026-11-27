@@ -1,0 +1,226 @@
+/* ==========================================================================
+   App 信用卡改走 TapPay — demo 共用樣式
+   真相來源：D:\GreenBox\fruit_app（React Native，iOS/Android 同一套）
+     theme（src/utils/constant.ts:6-17）：primary #4BA83B、red #FF4040、bgColor #F2F2F2
+     卡片（CheckoutPayment.tsx containerCard）：白底、radius 20、marginTop 8
+     列（containerCardTitle）：minHeight 44、marginLeft 16、paddingRight 16、分隔線 .5 #C6C6C8
+     列標題 17/22；右側值 17 #8A8A8E；小字 14 #8A8A8E／#666666；提示紅 #FF4444
+     header（navigators/AppNavigator.tsx:120-129）：綠底、白字、chevron-back 28
+   本次新增的 class 一律 .tp-* 前綴（TapPay 新 UI，RN 端尚無對應元件）
+   ========================================================================== */
+:root{
+  --primary:#4BA83B;
+  --red:#FF4040;          /* theme.red：底部送出鈕 */
+  --hint-red:#FF4444;     /* 提示紅：付款失敗文字、訂單明細重新付款鈕 */
+  --price-red:#FF0000;    /* 商品價格紅 */
+  --grey:#8A8A8E;         /* 列右側值、icon */
+  --sub:#666666;          /* 金額明細 */
+  --line:#C6C6C8;         /* 分隔線、停用 */
+  --blue:#007AFF;         /* iOS 系統藍（ActionSheet、Alert 按鈕；全家提醒同色） */
+  --tint:#F5FAF1;         /* 淺綠底：沿用 2026-09 App 加購品 demo */
+  --tint-line:#E2EFD8;
+  --green-d:#3D8C30;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+[hidden]{ display:none !important; }
+body{ margin:0; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; color:#000;
+  background:#c9ccce; display:flex; justify-content:center; padding:24px 0; min-height:100vh; }
+button{ font-family:inherit; }
+svg.ion{ width:1em; height:1em; display:inline-block; vertical-align:middle; flex:0 0 auto; }
+
+/* ---------- 手機框（DemoShares-shell 殼三） ---------- */
+.app{ width:390px; height:min(812px, calc(100vh - 48px)); background:#fff; border-radius:28px; overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,.22); position:relative; display:flex; flex-direction:column; }
+.statusbar{ height:34px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 24px;
+  font-size:13px; font-weight:700; background:var(--primary); color:#fff; }
+.statusbar .icons{ display:flex; gap:4px; font-size:12px; letter-spacing:1px; }
+.appbar{ height:44px; flex:0 0 auto; display:flex; align-items:center; background:var(--primary); color:#fff; position:relative; }
+.appbar .back{ width:44px; height:44px; padding:0 0 0 8px; border:0; background:none; color:#fff; font-size:28px;
+  display:flex; align-items:center; cursor:pointer; }
+.appbar .title{ position:absolute; left:64px; right:64px; text-align:center; font-size:17px; font-weight:600; pointer-events:none; }
+.scroll{ flex:1 1 auto; overflow-y:auto; position:relative; scrollbar-width:none; }   /* showsVerticalScrollIndicator={false} */
+.scroll::-webkit-scrollbar{ display:none; }
+.scroll.bg-green{ background:var(--primary); }
+.scroll.bg-result{ background:#F2F2F2; }
+.scroll.bg-detail{ background:#F6F6F6; }
+.wrap{ margin:8px 16px 0; }
+.spacer-100{ height:100px; }
+
+/* ---------- 卡片與列 ---------- */
+.card{ background:#fff; border-radius:20px; overflow:hidden; margin-top:8px; }
+.row{ min-height:44px; margin-left:16px; padding-right:16px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.row + .row, .bt{ border-top:.5px solid var(--line); }
+.row .t{ font-size:17px; line-height:22px; flex:0 0 auto; }
+.row .v{ font-size:17px; line-height:22px; color:var(--grey); text-align:right; }
+.row.addr{ padding-top:11px; padding-bottom:11px; align-items:center; }
+.row.addr .t{ align-self:flex-start; }
+.addr-info{ flex:1; display:flex; flex-direction:column; align-items:flex-end; min-width:0; }
+.addr-info .n{ font-size:17px; line-height:22px; color:var(--grey); }
+.addr-info .s{ margin-top:4px; font-size:14px; line-height:18px; color:var(--grey); text-align:right; }
+.row input.v{ border:0; outline:0; background:none; flex:1; min-width:0; font-family:inherit; padding:0; }
+.row input.v::placeholder{ color:#C7C7CD; }
+
+/* PickerSelect：右側灰字＋chevron-forward 20 #8A8A8E */
+.picker{ display:flex; align-items:center; justify-content:flex-end; gap:4px; border:0; background:none; padding:0 0 0 0;
+  cursor:pointer; color:var(--grey); font-size:17px; line-height:22px; min-width:0; }
+.picker .lbl{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.picker .ion{ font-size:20px; }
+
+/* 商品列表（CheckoutProductList） */
+.plist{ background:#fff; border-radius:20px; overflow:hidden; margin-top:8px; padding:0 16px; }
+.plist-hd{ display:flex; justify-content:space-between; align-items:center; margin:12px 0; cursor:pointer;
+  font-size:17px; line-height:22px; }
+.plist-hd .ion{ font-size:20px; color:var(--grey); }
+.plist-bd{ padding-bottom:4px; }
+.plist:not(.open) .plist-bd{ display:none; }
+.pitem{ display:flex; padding:8px 0; }
+.pitem + .pitem{ border-top:.5px solid #C6C6C6; }
+.pitem .img{ width:88px; height:74px; border-radius:8px; background:#C6C6C6; margin-right:8px; flex:0 0 auto; }
+.pitem .bd{ flex:1; min-width:0; }
+.pitem .nm{ font-size:16px; margin-right:4px; }
+.pitem .sp{ padding:4px 0; color:var(--grey); font-size:14px; }
+.pitem .pr{ display:flex; justify-content:space-between; align-items:center; }
+.pitem .pr b{ color:var(--price-red); font-size:18px; font-weight:400; }
+.pitem .pr span{ color:var(--sub); font-size:14px; }
+
+/* iOS Switch（RN Switch 預設：開＝綠 #34C759，此 app 未覆寫 trackColor） */
+.sw{ width:51px; height:31px; border-radius:16px; background:#E9E9EA; position:relative; cursor:pointer; flex:0 0 auto; transition:background .2s; border:0; padding:0; }
+.sw::after{ content:''; position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff;
+  box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s; }
+.sw.on{ background:#34C759; }
+.sw.on::after{ left:22px; }
+
+/* 金額明細（containerTotals marginLeft 48） */
+.totals{ margin:0 16px 0 48px; }
+.totals .tr{ display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:14px; line-height:22px; color:var(--sub); }
+.totals .tr:first-child{ margin-top:0; }
+.totals .tr.total{ margin-top:8px; margin-bottom:12px; font-size:16px; color:#000; }
+.totals .help{ color:var(--line); font-size:14px; margin-left:2px; }
+
+/* 底部送出（CheckoutBottomTab：72 高、半透明白＋模糊、紅膠囊 radius 20 高 40） */
+.bottomtab{ position:absolute; left:0; right:0; bottom:0; height:72px; padding-bottom:16px;
+  background:rgba(255,255,255,.5); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); z-index:5; }
+.bottomtab .btn{ display:flex; justify-content:space-between; align-items:center; height:40px; margin:8px 16px; padding:0 16px;
+  border-radius:20px; background:var(--red); color:#fff; font-size:17px; font-weight:600; border:0; width:calc(100% - 32px); cursor:pointer; }
+.bottomtab .btn[disabled]{ background:grey; cursor:default; }
+.spin{ width:20px; height:20px; border-radius:50%; border:2px solid rgba(208,208,208,.35); border-top-color:#D0D0D0; animation:spin .8s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ---------- 系統元件：iOS ActionSheet／Android 選單對話框／Alert（收在框內） ---------- */
+.layer{ position:absolute; inset:0; z-index:50; display:none; }
+.layer.show{ display:block; }
+.layer .mask{ position:absolute; inset:0; background:rgba(0,0,0,.4); }
+.sheet{ position:absolute; left:8px; right:8px; bottom:24px; }
+.sheet-grp{ background:rgba(249,249,249,.94); border-radius:12px; overflow:hidden; }
+.sheet-grp button{ display:block; width:100%; height:56px; border:0; background:none; color:var(--blue); font-size:20px; cursor:pointer; }
+.sheet-grp button + button{ border-top:.5px solid rgba(60,60,67,.29); }
+.sheet-cancel{ margin-top:8px; }
+.sheet-cancel button{ font-weight:600; }
+.adialog{ position:absolute; left:32px; right:32px; top:50%; transform:translateY(-50%); background:#fff; border-radius:4px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3); padding:8px 0; }
+.adialog button{ display:flex; align-items:center; gap:24px; width:100%; height:48px; padding:0 24px; border:0; background:none; font-size:16px; color:#212121; cursor:pointer; text-align:left; }
+.adialog .radio{ width:20px; height:20px; border-radius:50%; border:2px solid #757575; flex:0 0 auto; position:relative; }
+.adialog .on .radio{ border-color:var(--primary); }
+.adialog .on .radio::after{ content:''; position:absolute; inset:3px; border-radius:50%; background:var(--primary); }
+.alert{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:270px; background:rgba(242,242,242,.97); border-radius:14px; overflow:hidden; text-align:center; }
+.alert .at{ padding:20px 16px 0; font-size:17px; font-weight:600; line-height:22px; }
+.alert .am{ padding:4px 16px 20px; font-size:13px; line-height:18px; }
+.alert .ab{ display:flex; border-top:.5px solid rgba(60,60,67,.29); }
+.alert .ab button{ flex:1; height:44px; border:0; background:none; color:var(--blue); font-size:17px; cursor:pointer; }
+.alert .ab button + button{ border-left:.5px solid rgba(60,60,67,.29); }
+.alert .ab button.strong{ font-weight:600; }
+.alert .ab button.danger{ color:#FF3B30; }
+
+/* ==========================================================================
+   本次新增（TapPay 信用卡、分期、記住卡片）— .tp-*
+   ========================================================================== */
+/* 付款方式下的子選項（縮排對齊金額明細 48） */
+.tp-opt{ margin-left:48px; padding:11px 16px 11px 0; border-top:.5px solid var(--line); display:flex; align-items:center; gap:8px; cursor:pointer; }
+.tp-opt .main{ flex:1; min-width:0; }
+.tp-opt .t{ font-size:17px; line-height:22px; }
+.tp-opt .s{ font-size:14px; line-height:20px; color:var(--grey); margin-top:2px; }
+.tp-opt .chk{ font-size:22px; color:var(--primary); visibility:hidden; }
+.tp-opt.on .chk{ visibility:visible; }
+.tp-opt.dis{ cursor:default; }
+.tp-opt.dis .t, .tp-opt.dis .s{ color:var(--line); }
+.tp-opt.flat{ margin-left:16px; }
+.tp-opt .r{ font-size:17px; line-height:22px; color:var(--grey); flex:0 0 auto; }
+.tp-opt.dis .r{ color:var(--line); }
+.tp-unbind{ border:0; background:none; padding:4px 0; margin-top:4px; font-size:14px; line-height:20px; color:var(--primary); cursor:pointer; }
+
+/* 分期提示框（結帳頁） */
+.tp-inst{ margin:4px 16px 12px; padding:12px; background:var(--tint); border:1px solid var(--tint-line); border-radius:8px; }
+.tp-inst-h{ display:flex; align-items:center; gap:8px; font-size:15px; font-weight:600; color:var(--green-d); line-height:22px; }
+.tp-zero{ background:var(--primary); color:#fff; font-size:12px; font-weight:500; line-height:16px; padding:2px 8px; border-radius:9999px; }
+.tp-inst p{ margin:4px 0 0; font-size:14px; line-height:22px; color:var(--sub); }
+.tp-inst p b{ color:#000; font-weight:600; }
+
+/* 紅字說明（綠界舊卡失效） */
+.tp-notice{ margin:0 16px; padding:11px 0; border-top:.5px solid var(--line); font-size:14px; line-height:22px; color:var(--hint-red); }
+
+/* 信用卡付款頁 */
+.tp-sec-h{ min-height:44px; margin-left:16px; padding-right:16px; display:flex; align-items:center; justify-content:space-between; font-size:17px; line-height:22px; }
+.tp-sec-h .tp-zero{ font-size:12px; }
+.tp-foot{ margin:0 16px; padding:8px 0 12px; border-top:.5px solid var(--line); font-size:14px; line-height:22px; color:var(--grey); }
+.tp-brand{ font-size:12px; line-height:16px; color:var(--grey); border:1px solid var(--grey); border-radius:4px; padding:0 4px; flex:0 0 auto; font-weight:600; letter-spacing:.5px; }
+.tp-brand:empty{ display:none; }
+.tp-issuer{ margin:0 16px; padding:11px 0; border-top:.5px solid var(--line); font-size:14px; line-height:22px; display:flex; gap:4px; align-items:flex-start; }
+.tp-issuer .ion{ font-size:18px; margin-top:2px; }
+.tp-issuer.ok{ color:var(--primary); }
+.tp-issuer.ng{ color:var(--hint-red); }
+.tp-issuer.wait{ color:var(--grey); }
+.tp-remember{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-left:16px; padding:11px 16px 11px 0; border-top:.5px solid var(--line); }
+.tp-remember .t{ font-size:17px; line-height:22px; }
+.tp-remember .s{ font-size:14px; line-height:20px; color:var(--grey); margin-top:2px; }
+.tp-err{ background:#fff; border-radius:20px; margin-top:8px; padding:12px 16px; }
+.tp-err .h{ font-size:17px; line-height:22px; color:var(--hint-red); }
+.tp-err p{ margin:4px 0 0; font-size:14px; line-height:22px; color:var(--sub); }
+
+/* 3D 驗證（App 內開 WebView 載入發卡行頁面；內容為發卡行所有，demo 只示意） */
+.tp-web{ position:absolute; left:0; right:0; top:34px; bottom:0; z-index:40; background:#fff; display:none; flex-direction:column;
+  transform:translateY(100%); transition:transform .3s ease; }
+.tp-web.show{ display:flex; }
+.app.web-open .statusbar{ background:#fff; color:#000; transition:background .3s; }
+.tp-web.up{ transform:translateY(0); }
+.tp-web-bar{ height:44px; flex:0 0 auto; display:flex; align-items:center; border-bottom:.5px solid var(--line); position:relative; }
+.tp-web-bar .x{ width:44px; height:44px; border:0; background:none; font-size:26px; color:#000; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.tp-web-bar .ttl{ position:absolute; left:56px; right:56px; text-align:center; }
+.tp-web-bar .ttl b{ display:block; font-size:15px; line-height:20px; }
+.tp-web-bar .ttl span{ display:block; font-size:11px; line-height:14px; color:var(--grey); }
+.tp-web-body{ flex:1; overflow-y:auto; background:#EEF0F2; padding:24px 16px; font-family:Arial,'Microsoft JhengHei',sans-serif; }
+.bank{ background:#fff; border:1px solid #D5D9DD; border-radius:4px; padding:20px 16px; color:#333; }
+.bank h2{ margin:0 0 16px; font-size:17px; color:#1F3B57; }
+.bank dl{ margin:0 0 16px; display:grid; grid-template-columns:auto 1fr; gap:8px 12px; font-size:14px; }
+.bank dt{ color:#6B7580; }
+.bank dd{ margin:0; }
+.bank label{ display:block; font-size:14px; margin-bottom:8px; }
+.bank input{ width:100%; height:40px; border:1px solid #B8C0C8; border-radius:2px; padding:0 12px; font-size:16px; letter-spacing:4px; }
+.bank .go{ display:block; width:100%; height:40px; margin-top:16px; border:0; border-radius:2px; background:#1F3B57; color:#fff; font-size:15px; cursor:pointer; }
+.bank .go:disabled{ background:#9AA6B2; }
+.bank small{ display:block; margin-top:12px; color:#6B7580; font-size:12px; line-height:18px; }
+
+/* ---------- 開發者面板（框外左下；DemoShares-scenario 慣例） ---------- */
+.devpanel{ position:fixed; bottom:14px; left:14px; z-index:9999; width:248px; background:#2b2f33; color:#e8eaed; border-radius:6px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25); font-size:13px; overflow:hidden; font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif; }
+.devpanel-hd{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#1f2225; font-weight:700; }
+.devpanel-hd button{ background:none; border:0; color:#e8eaed; font-size:16px; cursor:pointer; }
+.devpanel-bd{ padding:12px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 80px); overflow-y:auto; }
+.devpanel.collapsed .devpanel-bd{ display:none; }
+.devgrp > span{ display:block; margin-bottom:4px; }
+.devseg{ display:flex; flex-wrap:wrap; gap:4px; }
+.devseg button{ flex:1 1 auto; padding:4px 6px; background:#3a3f44; color:#e8eaed; border:1px solid #4a5057; border-radius:4px; cursor:pointer; font-size:12px; }
+.devseg button.on{ background:#4ba83b; border-color:#4ba83b; color:#fff; }
+.devbtn{ padding:6px 8px; background:#3a3f44; color:#e8eaed; border:1px solid #4a5057; border-radius:4px; cursor:pointer; font-size:12px; text-align:left; }
+.devbtn:hover{ border-color:#4ba83b; }
+.devnote{ margin:0; color:#9aa0a6; font-size:11px; line-height:1.5; }
+
+/* ---------- 真手機：滿版 ---------- */
+@media (max-width:480px){
+  body{ display:block; margin:0; padding:0; background:#fff; }
+  .app{ width:100vw; height:100dvh; border-radius:0; box-shadow:none; }
+  .statusbar{ display:none; }
+  .tp-web{ top:0; }
+  .devpanel{ width:200px; bottom:8px; left:8px; }
+  .devpanel:not(.collapsed){ opacity:.96; }
+}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<!--
+  DemoShares 交接對照 | APP 訂單明細・重新付款入口（React Native）
+  真相來源：D:\GreenBox\fruit_app（main 53429b9）
+  對應正式站：
+    screen : src/screens/MemberOrderDetailScreen/MemberOrderDetailScreen.tsx（headerTitle「訂單明細」、底色 #F6F6F6）
+    紅字 Commemts L45-60：未付款且信用卡 →「付款失敗，請重新付款」（#FF4444 14px）
+    重新付款鈕 L365-369：canRetryPayment（L292-298）＝未付款(PaymentStatus 1) ＆ 信用卡或 LINE Pay(PaymentType 0／8) ＆ 建單 1 小時內
+      樣式 containerBtn：#FF4444、radius 20、高 40、字 18/600 白
+    付款卡：付款方式（PAYMENT_TYPES L135-145）／付款狀態／發票號碼／總金額明細
+  本次改動：
+    信用卡「重新付款」改導到新的信用卡付款頁（現況 apiRePayCheckout → 綠界 SDK，L206-215）；LINE Pay 不變
+    已付款的分期單：付款方式顯示「信用卡（分期 N 期）」（明細 API 要帶出期數，資料來自 TapPayResultRecord.Instalment／InstalmentInfo）
+-->
+<meta charset="UTF-8">
+<title>APP 訂單明細 — demo</title>
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/app.js"></script>
+<style>
+  /* MemberOrderDetailScreen styles（L540-700） */
+  .od{ margin:8px 16px 0; padding-bottom:32px; }
+  .od-order{ margin:11px 16px; }
+  .od-order .no{ font-size:17px; line-height:22px; color:#343439; margin-bottom:3px; }
+  .od-order .dt{ font-size:14px; line-height:22px; color:var(--grey); margin-top:8px; }
+  .od-order .alertpay{ font-size:14px; line-height:22px; color:var(--hint-red); }
+  .repay{ display:flex; justify-content:center; align-items:center; width:100%; height:40px; margin-top:8px; border:0; border-radius:20px;
+    background:var(--hint-red); color:#fff; font-size:18px; line-height:22px; font-weight:600; cursor:pointer; }
+  .od .row{ margin-right:16px; padding-right:4px; height:44px; min-height:0; }
+  .od .row.addr{ height:auto; padding-right:16px; margin-right:0; }
+  .od .totals .tr.total{ margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="statusbar"><span>9:41</span><span class="icons">▂▄▆ 5G ▮</span></div>
+  <header class="appbar">
+    <button class="back" type="button" aria-label="返回"><i data-ion="chevron-back"></i></button>
+    <div class="title">訂單明細</div>
+  </header>
+
+  <main class="scroll bg-detail">
+    <div class="od">
+      <div class="card">
+        <div class="od-order">
+          <div class="no">訂單編號：<span id="orderNo"></span></div>
+          <div class="dt">訂購日期：2026/10/08</div>
+          <div class="alertpay" id="alertPay">付款失敗，請重新付款</div>
+          <div class="dt" id="shipDate" hidden>預計出貨日期：2026/10/12-2026/10/14</div>
+        </div>
+      </div>
+
+      <button class="repay" type="button" id="repayBtn">重新付款</button>
+
+      <div class="plist" id="plist">
+        <div class="plist-hd" id="plistHd"><span>商品列表</span><span id="plistIcon"></span></div>
+        <div class="plist-bd" id="plistBd"></div>
+      </div>
+
+      <div class="card">
+        <div class="row"><span class="t">物流方式</span><span class="v">宅配到府</span></div>
+        <div class="row addr bt"><span class="t">收件資料</span>
+          <div class="addr-info"><span class="n">林小農</span><span class="s">0912-000-123</span><span class="s">台北市中正區示範路 100 號</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row"><span class="t">付款方式</span><span class="v" id="payType"></span></div>
+        <div class="row"><span class="t">付款狀態</span><span class="v" id="payStatus"></span></div>
+        <div class="row" id="invoiceRow" hidden><span class="t">發票號碼</span><span class="v">QX20481736</span></div>
+        <div class="row"><span class="t">總金額</span></div>
+        <div class="totals" id="totals"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var S = {
+    plat: TP.q('plat', 'ios'),
+    amt: TP.q('amt', '3980'),
+    paid: TP.q('paid', '0'),
+    inst: +TP.q('inst', '0')
+  };
+  if (!TP.CARTS[S.amt]) S.amt = '3980';
+  var $ = function (id) { return document.getElementById(id); };
+  var t = TP.cartTotal(S.amt);
+
+  $('orderNo').textContent = TP.ORDER_NO;
+  var plist = $('plist');
+  $('plistHd').addEventListener('click', function () { plist.classList.toggle('open'); plIcon(); });
+  function plIcon() { $('plistIcon').innerHTML = TP.ion(plist.classList.contains('open') ? 'chevron-up' : 'chevron-down'); }
+  $('plistBd').innerHTML = TP.CARTS[S.amt].items.map(function (i) {
+    return '<div class="pitem"><div class="img"></div><div class="bd"><div class="nm">' + i.name + '</div>' +
+      '<div class="sp">規格：' + i.spec + '</div><div class="pr"><b>$' + i.price + '</b><span>數量：' + i.qty + '</span></div></div></div>';
+  }).join('');
+
+  var h = '<div class="tr"><span>商品總金額</span><span>' + t.products + '</span></div>';
+  h += '<div class="tr"><span>運費</span><span>' + t.shipping + '</span></div>';
+  if (t.discount > 0) h += '<div class="tr"><span>優惠方案</span><span>-' + t.discount + '</span></div>';
+  h += '<div class="tr total"><span>訂單總金額</span><span>' + t.total + '</span></div>';
+  $('totals').innerHTML = h;
+
+  function render() {
+    var paid = S.paid === '1';
+    $('alertPay').hidden = paid;
+    $('shipDate').hidden = !paid;
+    $('repayBtn').hidden = paid;
+    $('invoiceRow').hidden = !paid;
+    $('payType').textContent = '信用卡' + (paid && S.inst ? '（分期 ' + S.inst + ' 期）' : '');
+    $('payStatus').textContent = paid ? '已付款' : '未付款';
+    plIcon();
+  }
+
+  $('repayBtn').addEventListener('click', function () {
+    location.href = TP.url('app-card-payment.html', { plat: S.plat, amt: S.amt, card: 'none', from: 'detail' });
+  });
+
+  TP.devPanel({
+    groups: [
+      { label: '訂單狀態', value: S.paid, options: [['0', '付款失敗（1 小時內）'], ['1', '已付款']], onChange: function (v) { S.paid = v; render(); } },
+      { label: '已付款的付款方式', value: String(S.inst), options: [['0', '一次付清'], ['3', '分期 3 期']], onChange: function (v) { S.inst = +v; render(); } }
+    ],
+    note: '「重新付款」會進新的信用卡付款頁。'
+  });
+  render();
+})();
+</script>
+</body>
+</html>
