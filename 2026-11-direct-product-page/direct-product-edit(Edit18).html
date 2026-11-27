@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!--
-  DemoShares 交接對照 | 後台產品基本資訊・現況 1:1 還原
+  DemoShares 交接對照 | 後台產品基本資訊・分區提案
   改的是既有介面：產品編輯頁（GoX 後台）  route /GoX/Product/Edit18?fun_id={fun_id}&id={id}
   真相來源：D:\GreenBox\fruit_web 分支 origin/dev（9dce60758）
            HuashanCRM/Areas/GoX/Views/Product/Edit18.cshtml:105-462「產品基本資訊」卡
@@ -20,16 +20,29 @@
     [只參考] fruit_web HuashanCRM/Areas/GoX/Controllers/ProductController.cs:332、397
                Edit18 的 GET／POST
 
-  這一頁是什麼：現況 1:1 的底，加上這次需求的新區塊。
+  這一頁是什麼：現況 1:1 的底，加上這次需求的新欄位，再把整張卡照用途重新分區。
   markup 與 class 逐字來自 Edit18.cshtml，Razor 換成靜態值（資料用梨山蜜蘋果 74987）。
 
-  ⚠ 新區塊沒有照原需求的擺法。原需求是副標題放產品名稱下面、產季放產地小農下面、
-     大小對照放產季下面，三塊散在卡片各處。這一版改成一個可收合的「產地直送設定」：
-       收進去的欄位：產地、小農、食農卡片（既有）＋ 副標題、產季、大小對照（新）
-       類別＝產地直送 → 展開；選別條產線 → 收合並轉灰，欄位留在 DOM 裡，資料保留
-       「前台重點區預覽」同一套開合規則，位置留在它要讀的三個欄位之後
-     理由是產地直送專屬的欄位集中在一起，別條產線的人不用一路捲過用不到的欄位。
-     這是 demo 的提案，需求端要確認。
+  ⚠ 這張卡整個重新分區了，而且新區塊沒有照原需求的擺法。以下都是 demo 的提案，需求端要確認。
+
+     (1) 新區塊的擺法：原需求是副標題放產品名稱下面、產季放產地小農下面、大小對照放產季下面，
+         三塊散在卡片各處。這一版改成一個可收合的「產地直送設定」：
+           收進去的欄位：產地、小農、食農卡片、上架提醒事項（既有）＋ 副標題、產季、大小對照（新）
+           類別＝產地直送 → 展開；選別條產線 → 收合並轉灰，欄位留在 DOM 裡，資料保留
+           「前台重點區預覽」同一套開合規則，位置留在它要讀的三個欄位之後
+         理由是產地直送專屬的欄位集中在一起，別條產線的人不用一路捲過用不到的欄位。
+
+     (2) 其餘欄位也照用途分成八組，每一組是一個可收合的區塊，綠框＝產地直送才用得到、灰框＝都要填：
+           基本／產地直送設定／檢驗報告／商品文案／販售規則／通知文案／物流與倉儲／前台顯示
+         分區不改任何欄位的 name、型別或存檔行為，ViewModel 與 ProductModel 都不用動。
+         三件順手解掉的事：規格說明與保存方法（同一個 Product.Remarks 的前後段）並排了；
+         「溫層配送」與「配送溫層」拆到不同區塊；上架提醒事項從 display:none 的容器裡拿出來。
+
+     (3) 拿掉兩項：A/B Test副產品Id（OptimizeTestProductIdList，只進不出，沒有任何地方讀它）、
+         電腦版／手機版圖側文字（真站已經整組 display:none）。
+         A/B Test 那一欄正式拿掉之前，要先查資料表裡有幾筆非空值。
+
+     分區的完整對照表在 _交接對照.md 的 D 節。
   樣式是那一頁實際載的 10 支 CSS，整包放在 assets/：
     01 Bootstrap 3.1.1（GoX 版型用）        Scripts/plugin/bootstrap/css/bootstrap.css
     02 bootstrap-reset                      Content/Admin/Bucket/bootstrap-reset.css
@@ -61,7 +74,7 @@
     RemindText      ↔ RemindText        上架提醒事項（前台「預計 X 採收」用這個）
   完整名稱對照見同資料夾 _交接對照.md
 -->
-<title>後台產品基本資訊・現況</title>
+<title>後台產品基本資訊・分區提案</title>
 <link rel="stylesheet" href="assets/01-bootstrap3.css">
 <link rel="stylesheet" href="assets/02-bootstrap-reset.css">
 <link rel="stylesheet" href="assets/03-bucket-style.css">
@@ -124,6 +137,13 @@
   .ds.is-off { border-color: var(--ds-border); }
   .ds.is-off > summary { background: #f4f4f5; }
   .ds.is-off .ds-title, .ds.is-off .ds-caret { color: var(--ds-muted); }
+
+  /* 一般分組用灰框，跟「選了產地直送才用得到」的綠框分開 */
+  .ds.ds-grp { border-color: var(--ds-border); }
+  .ds.ds-grp > summary { background: #f5f7fa; }
+  .ds.ds-grp .ds-title { color: #303133; }
+  .ds.ds-grp .ds-caret { color: var(--ds-muted); }
+  .fs-narrow { max-width: 180px; }
 
   .ds label { font-size: 14px; }
   .ds-ck { display: inline-flex; align-items: center; gap: 4px; margin: 0 0 0 12px; font-weight: 400; cursor: pointer; }
@@ -220,116 +240,59 @@
       <div class="card-header bg-success text-white">產品基本資訊</div>
       <div class="card-body">
 
-        <div class="form-row">
-          <div class="form-group col-6">
-            <span class="star">*</span><label for="Name">產品名稱</label>
-            <input class="form-control" placeholder="品名" id="Name" name="Name" type="text" value="蘋果季【梨山蜜蘋果】雲頂果園">
-          </div>
-          <div class="form-group col-3">
-            <span class="star">*</span><label for="Type">類別</label>
-            <select class="form-control fix-h-34" id="Type" name="Type">
-              <option value="0" selected>產地直送</option>
-              <option value="1">冷凍超市</option>
-              <option value="2">蔬果乾貨</option>
-              <option value="5">週配水果箱</option>
-              <option value="9">粥寶寶</option>
-            </select>
-          </div>
-          <div class="form-group col-3">
-            <label for="Type2">快速到貨-類別</label>
-            <select class="form-control fix-h-34" id="Type2" name="Type2">
-              <option value="0" selected>不分類</option>
-              <option value="1">水果</option>
-              <option value="2">水產</option>
-              <option value="6">不顯示</option>
-            </select>
-          </div>
-        </div>
+        <!-- 分區：這一版把「產品基本資訊」卡裡散著的欄位照用途分組，每一組是一個可收合的區塊。
+             分組不改任何欄位的名稱、型別或存檔行為，只改擺放位置與加上群組標題。
+             綠框＝選了產地直送才用得到；灰框＝每條產線都要填。
+             這一版拿掉兩項：
+               A/B Test副產品Id（OptimizeTestProductIdList）——只進不出，前台、Service、API、
+                 react-component-export 都沒有任何地方讀它，填了不會發生事。
+               電腦版／手機版圖側文字（ImgSideContextWeb / ImgSideContextMobile）——真站已經整組藏起來。 -->
 
-        <!-- 產地與小農原本在這裡（Edit18.cshtml:126-136）。
-             這一版把它們跟這次新增的三塊一起收進下面的「產地直送設定」區塊。 -->
-
-        <div class="form-row">
-          <div class="form-group d-inline-flex col-6">
-            <div class="col-6 pr-0">
-              <label for="TestReportsCreate">第三方檢驗報告</label>
-              <br>
-              <div class="report_banner"></div>
-              <input class="form-control-file" accept="image/*" multiple="multiple" id="TestReportsCreate" name="TestReportsCreate" type="file">
-              <button id="Remove-TextReport-Url" style="float:right; background-color:red;color:white" type="button">移除第三方檢驗報告</button>
-              <br>
-              <label for="TestReportExpiredTime">第三方檢驗到期日</label>
-              <input class="date_search form-control" id="test_report_expired_time" name="TestReportExpiredTime" type="text" value="">
-              <br>
-            </div>
-          </div>
-          <div class="form-group d-inline-flex flex-wrap align-content-start col-6">
-            <!-- 既有區塊：DEV-3977 無毒農檢驗報告。標籤三種狀態之一，這裡示意「前台顯示檢驗紀錄」 -->
-            <style>
-              .self-report { --admin-success: #67c23a; --admin-primary: #409eff; --admin-danger: #f56c6c; --admin-text: #606266; --admin-text-muted: #909399; --admin-border: #dcdfe6; --admin-radius: 4px; }
-              .self-report .srn-tag { display: inline-block; margin-left: 8px; padding: 0 8px; border: 1px solid; border-radius: var(--admin-radius); font-size: 13px; line-height: 22px; font-weight: 400; }
-              .self-report .srn-tag.is-record { color: var(--admin-success); border-color: var(--admin-success); background: #f0f9eb; }
-              .self-report .srn-tag.is-manual { color: var(--admin-primary); border-color: var(--admin-primary); background: #ecf5ff; }
-              .self-report .srn-tag.is-off { color: var(--admin-text-muted); border-color: var(--admin-border); background: #f4f4f5; }
-              .self-report .srn-why { margin-left: 8px; color: var(--admin-text-muted); font-size: 13px; font-weight: 400; }
-              .self-report .srn-box { border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 12px; font-size: 14px; line-height: 1.7; color: var(--admin-text); }
-              .self-report .srn-box-ttl { font-weight: 700; color: #212529; }
-              .self-report .srn-box-line { margin-top: 4px; }
-              .self-report .srn-box-item + .srn-box-item { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--admin-border); }
-              .self-report .srn-box-item.is-expired { color: var(--admin-text-muted); }
-              .self-report .srn-fail { color: var(--admin-danger); font-weight: 700; }
-              .self-report .srn-box a { color: var(--admin-primary); margin-right: 12px; }
-              .self-report .srn-hint { font-size: 13px; color: var(--admin-text-muted); margin-top: 4px; }
-              .self-report .srn-readonly { background: #e9ecef; }
-            </style>
-            <div class="col-12 pr-0 self-report">
-              <label for="SelfTestReportsCreate">無毒農檢驗報告</label><span id="self_report_note"><span class="srn-tag is-record">前台顯示檢驗紀錄</span></span>
-            </div>
-            <div class="col-6 pr-0 self-report">
-              <div class="srn-box">
-                <div class="srn-box-ttl">後台檢驗紀錄</div>
-                <div class="srn-box-item">
-                  <div class="srn-box-line">檢驗紀錄 R2026110045</div>
-                  <div class="srn-box-line">檢驗 2026/11/05・有效至 2027/05/05</div>
-                </div>
-                <div class="srn-box-line">
-                  <a href="#" target="_blank">看前台報告</a><a href="#" target="_blank">到檢驗紀錄頁</a>
-                </div>
+        <details class="ds ds-grp" open>
+          <summary>
+            <span class="ds-caret">&#9656;</span>
+            <span class="ds-title">基本</span>
+            <span class="ds-sub">產品名稱、類別、快速到貨-類別、排序</span>
+          </summary>
+          <div class="ds-body">
+            <div class="form-row">
+              <div class="form-group col-5">
+                <span class="star">*</span><label for="Name">產品名稱</label>
+                <input class="form-control" placeholder="品名" id="Name" name="Name" type="text" value="蘋果季【梨山蜜蘋果】雲頂果園">
+              </div>
+              <div class="form-group col-3">
+                <span class="star">*</span><label for="Type">類別</label>
+                <select class="form-control fix-h-34" id="Type" name="Type">
+                  <option value="0" selected>產地直送</option>
+                  <option value="1">冷凍超市</option>
+                  <option value="2">蔬果乾貨</option>
+                  <option value="5">週配水果箱</option>
+                  <option value="9">粥寶寶</option>
+                </select>
+              </div>
+              <div class="form-group col-2">
+                <label for="Type2">快速到貨-類別</label>
+                <select class="form-control fix-h-34" id="Type2" name="Type2">
+                  <option value="0" selected>不分類</option>
+                  <option value="1">水果</option>
+                  <option value="2">水產</option>
+                  <option value="6">不顯示</option>
+                </select>
+              </div>
+              <div class="form-group col-2">
+                <label for="Sort">排序</label>
+                <br>
+                <input class="form-control" id="Sort" name="Sort" type="text" value="0">
               </div>
             </div>
-            <div class="col-6 pr-0 self-report" id="self_report_upload" data-state="record">
-              <div class="report_banner_self"></div>
-              <input class="form-control-file" accept="image/*" multiple="multiple" id="SelfTestReportsCreate" name="SelfTestReportsCreate" type="file">
-              <button id="Remove-TextReportSelf-Url" style="float:right; background-color:red;color:white" type="button">移除無毒農檢驗報告</button>
-              <br>
-              <label for="SelfTestReportExpiredTime">無毒農檢驗到期日</label>
-              <input type="text" class="form-control srn-readonly" id="self_test_report_expired_time" name="SelfTestReportExpiredTime" readonly value="2027/05/05">
-              <div class="srn-hint" id="self_test_report_expired_hint">跟著檢驗紀錄的有效日期，上架時自動寫入</div>
-              <br>
-            </div>
           </div>
-        </div>
+        </details>
 
-        <div class="form-row">
-          <div class="form-group d-inline-flex col-6">
-            <div class="col-6 p1-0">
-              <label for="Sort">排序</label>
-              <br>
-              <input class="form-control" id="Sort" name="Sort" type="text" value="0">
-            </div>
-          </div>
-        </div>
-
-        <!-- 新增：本次需求，但沒有照原需求的擺法。
-             Jimmy 的原需求是副標題放產品名稱下面、產季放產地小農下面、大小對照放產季下面，
-             三塊散在卡片各處。這一版改成：產地直送才有的欄位集中成一個可收合的區塊，
-             「類別」選產地直送就展開，選別條產線就收起來（資料保留，標題還在，手動可以打開）。
-             產地與小農是既有欄位（Edit18.cshtml:126-136），一起搬進來。 -->
         <details class="ds" id="dsBlock" open>
           <summary>
             <span class="ds-caret">▸</span>
             <span class="ds-title">產地直送設定</span>
-            <span class="ds-sub" id="dsSub">產地、小農、食農卡片、副標題、產季、大小對照</span>
+            <span class="ds-sub" id="dsSub">產地、小農、食農卡片、副標題、產季、大小對照、上架提醒</span>
             <span class="ds-hint" id="dsHint"></span>
           </summary>
           <div class="ds-body">
@@ -448,184 +411,311 @@
               </div>
             </div>
 
+
+            <!-- 既有欄位：上架提醒事項 RemindText nvarchar(20)。
+                 前台 ItemDetail.cshtml:181 的條件是 ProductType == 0 && ProductSubType == 6，
+                 也就是「類別＝產地直送」且「快速到貨-類別＝不顯示」才會印出「預計 ○○ 採收」。
+                 真站這一欄被包在 id="ImgSideContext" 的 display:none !important 裡，後台改不到，
+                 這一版把它拿出來放進產地直送設定。要不要讓營運編輯由工程與營運決定。 -->
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label for="RemindText">上架提醒事項</label>
+                <span style="display: flex;">預計 <textarea class="form-control" style="width: 116px;" rows="1" cols="10" id="RemindText" name="RemindText"></textarea> 採收</span>
+              </div>
+            </div>
           </div>
         </details>
 
-        <div class="form-row">
-          <div class="form-group d-inline-flex flex-column col-6">
-            <label for="Specification">規格說明</label>
-            <textarea class="form-control mb-3" rows="4" cols="50" id="Specification" name="Specification">6A(18粒裝)-3.8～4.6兩/顆
+        <details class="ds ds-grp" open>
+          <summary>
+            <span class="ds-caret">&#9656;</span>
+            <span class="ds-title">檢驗報告</span>
+            <span class="ds-sub">第三方、無毒農，各自帶到期日</span>
+          </summary>
+          <div class="ds-body">
+            <div class="form-row">
+              <div class="form-group d-inline-flex col-6">
+                <div class="col-6 pr-0">
+                  <label for="TestReportsCreate">第三方檢驗報告</label>
+                  <br>
+                  <div class="report_banner"></div>
+                  <input class="form-control-file" accept="image/*" multiple="multiple" id="TestReportsCreate" name="TestReportsCreate" type="file">
+                  <button id="Remove-TextReport-Url" style="float:right; background-color:red;color:white" type="button">移除第三方檢驗報告</button>
+                  <br>
+                  <label for="TestReportExpiredTime">第三方檢驗到期日</label>
+                  <input class="date_search form-control" id="test_report_expired_time" name="TestReportExpiredTime" type="text" value="">
+                  <br>
+                </div>
+              </div>
+              <div class="form-group d-inline-flex flex-wrap align-content-start col-6">
+                <!-- 既有區塊：DEV-3977 無毒農檢驗報告。標籤三種狀態之一，這裡示意「前台顯示檢驗紀錄」 -->
+                <style>
+                  .self-report { --admin-success: #67c23a; --admin-primary: #409eff; --admin-danger: #f56c6c; --admin-text: #606266; --admin-text-muted: #909399; --admin-border: #dcdfe6; --admin-radius: 4px; }
+                  .self-report .srn-tag { display: inline-block; margin-left: 8px; padding: 0 8px; border: 1px solid; border-radius: var(--admin-radius); font-size: 13px; line-height: 22px; font-weight: 400; }
+                  .self-report .srn-tag.is-record { color: var(--admin-success); border-color: var(--admin-success); background: #f0f9eb; }
+                  .self-report .srn-tag.is-manual { color: var(--admin-primary); border-color: var(--admin-primary); background: #ecf5ff; }
+                  .self-report .srn-tag.is-off { color: var(--admin-text-muted); border-color: var(--admin-border); background: #f4f4f5; }
+                  .self-report .srn-why { margin-left: 8px; color: var(--admin-text-muted); font-size: 13px; font-weight: 400; }
+                  .self-report .srn-box { border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 12px; font-size: 14px; line-height: 1.7; color: var(--admin-text); }
+                  .self-report .srn-box-ttl { font-weight: 700; color: #212529; }
+                  .self-report .srn-box-line { margin-top: 4px; }
+                  .self-report .srn-box-item + .srn-box-item { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--admin-border); }
+                  .self-report .srn-box-item.is-expired { color: var(--admin-text-muted); }
+                  .self-report .srn-fail { color: var(--admin-danger); font-weight: 700; }
+                  .self-report .srn-box a { color: var(--admin-primary); margin-right: 12px; }
+                  .self-report .srn-hint { font-size: 13px; color: var(--admin-text-muted); margin-top: 4px; }
+                  .self-report .srn-readonly { background: #e9ecef; }
+                </style>
+                <div class="col-12 pr-0 self-report">
+                  <label for="SelfTestReportsCreate">無毒農檢驗報告</label><span id="self_report_note"><span class="srn-tag is-record">前台顯示檢驗紀錄</span></span>
+                </div>
+                <div class="col-6 pr-0 self-report">
+                  <div class="srn-box">
+                    <div class="srn-box-ttl">後台檢驗紀錄</div>
+                    <div class="srn-box-item">
+                      <div class="srn-box-line">檢驗紀錄 R2026110045</div>
+                      <div class="srn-box-line">檢驗 2026/11/05・有效至 2027/05/05</div>
+                    </div>
+                    <div class="srn-box-line">
+                      <a href="#" target="_blank">看前台報告</a><a href="#" target="_blank">到檢驗紀錄頁</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 pr-0 self-report" id="self_report_upload" data-state="record">
+                  <div class="report_banner_self"></div>
+                  <input class="form-control-file" accept="image/*" multiple="multiple" id="SelfTestReportsCreate" name="SelfTestReportsCreate" type="file">
+                  <button id="Remove-TextReportSelf-Url" style="float:right; background-color:red;color:white" type="button">移除無毒農檢驗報告</button>
+                  <br>
+                  <label for="SelfTestReportExpiredTime">無毒農檢驗到期日</label>
+                  <input type="text" class="form-control srn-readonly" id="self_test_report_expired_time" name="SelfTestReportExpiredTime" readonly value="2027/05/05">
+                  <div class="srn-hint" id="self_test_report_expired_hint">跟著檢驗紀錄的有效日期，上架時自動寫入</div>
+                  <br>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="ds ds-grp" open>
+          <summary>
+            <span class="ds-caret">&#9656;</span>
+            <span class="ds-title">商品文案</span>
+            <span class="ds-sub">規格說明、保存方法、置底商品標示、貼心叮嚀、多盒優惠、溫層配送、描述與關鍵字</span>
+          </summary>
+          <div class="ds-body">
+            <!-- 規格說明與保存方法是同一個資料欄位 Product.Remarks 的前後兩段，中間用字串 "split" 隔開。
+                 真站把它們分在左右兩欄、中間還隔了四五個欄位，營運看不出是一組，這一版並排。 -->
+            <div class="form-row">
+              <div class="form-group d-inline-flex flex-column col-6">
+                <label for="Specification">規格說明</label>
+                <textarea class="form-control mb-3" rows="4" cols="50" id="Specification" name="Specification">6A(18粒裝)-3.8～4.6兩/顆
 7A(15粒裝)-4.6～5.4兩/顆
 8A(15粒裝)-5.4～6.2兩/顆
 9A(12粒裝)-6.2～7兩/顆
 10A(12粒裝)-7～7.8兩/顆</textarea>
-
-            <label for="BottomProductLabeling">置底商品標示</label>
-            <textarea id="BottomProductLabeling" name="BottomProductLabeling" class="form-control mb-3" rows="4" cols="50" placeholder="商品品名：&#10;商品重(容)量： &#10;內容物名稱(成分)：&#10;食品添加物名稱：&#10;原產地(國)：&#10;製造廠商或國內負責廠商名稱：&#10;製造廠商或國內負責廠商地址：&#10;製造廠商或國內負責廠商電話：&#10;以消費者收受日算起，至少距有效日期前?日以上：&#10;食品業者登錄字號："></textarea>
-
-            <label for="ProductDelivery">溫層配送</label>
-            <textarea class="form-control mb-3" rows="1" cols="50" id="ProductDelivery" name="ProductDelivery"></textarea>
-
-            <label for="LargeDiscount">多盒優惠</label>
-            <textarea class="form-control mb-3" rows="1" cols="50" id="LargeDiscount" name="LargeDiscount">團購10組以上另有優惠，歡迎來電洽詢：02-27712900</textarea>
-
-            <div>
-              <input id="IsShipping" name="IsShipping" type="checkbox" value="true"><label for="IsShipping">含運費</label>
-              <input id="IsFakeTransform" name="IsFakeTransform" type="checkbox" value="true"><label for="IsFakeTransform">假單品</label>
-              <input id="NoTax" name="NoTax" type="checkbox" value="true"><label for="NoTax">免稅</label>
-              <input id="Hide" name="Hide" type="checkbox" value="true"><label for="Hide">前台隱藏(網頁、app)</label>
-              <input id="AppOnly" name="AppOnly" type="checkbox" value="true"><label for="AppOnly">只在app顯示</label>
-            </div>
-            <hr>
-            <!-- 既有區塊：購物車搶購。Razor 這裡只有一個空的掛載點 <div id="product-rush-buy-settings"></div>，
-                 真的畫面是 React 元件，工程要改的是那一支：
-                   react-component-export src/pages/productSetting/ProductRushBuySettings.tsx
-                   bundle product-rush-buy-settings.js（Edit18.cshtml:34 載入）
-                 元件用 antd（Checkbox / InputNumber / Select / Button / Popconfirm / Tooltip），
-                 這裡是照它的版面手刻的近似，不是 antd 本身。狀態是「未啟用」那一種。
-                 「數量加減」真站目前是 disabled（FB+1 專案後關掉，避免跟庫存比較時混淆）。 -->
-            <div id="product-rush-buy-settings" class="rb">
-              <div class="rb-row rb-head">
-                <label class="rb-ck"><input type="checkbox" name="EnableRushBuy"><span>購物車搶購</span></label>
-                <span class="rb-info" title="開啟此功能此產品會顯示於獨立的購物車搶購頁面">ⓘ</span>
               </div>
-              <div class="rb-row">
-                <div class="rb-grid">
-                  <div class="rb-cell"><span class="rb-label">實際購物車數量</span><span class="rb-val is-off">未啟用</span></div>
-                  <div class="rb-cell"><span class="rb-label">數量加減</span>
-                    <span class="rb-input">
-                      <select class="rb-sign" disabled><option>＋</option><option>－</option></select>
-                      <input type="text" placeholder="未啟用" disabled>
-                    </span>
+              <div class="form-group d-inline-flex flex-column col-6">
+                <label for="Remarks">保存方法</label>
+                <textarea class="form-control mb-3" rows="4" cols="50" id="Remarks" name="Remarks">本商品採常溫出貨，收到後建議立即冷藏，以維持最佳風味。常溫可保存約一週，冷藏則可保存約兩週。隨著保存時間拉長，蘋果口感可能逐漸變鬆，喜歡鮮脆口感的朋友，建議於收到後 3～5 天內享用，口感最佳！</textarea>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group d-inline-flex flex-column col-6">
+                <label for="BottomProductLabeling">置底商品標示</label>
+                <textarea id="BottomProductLabeling" name="BottomProductLabeling" class="form-control mb-3" rows="4" cols="50" placeholder="商品品名：&#10;商品重(容)量： &#10;內容物名稱(成分)：&#10;食品添加物名稱：&#10;原產地(國)：&#10;製造廠商或國內負責廠商名稱：&#10;製造廠商或國內負責廠商地址：&#10;製造廠商或國內負責廠商電話：&#10;以消費者收受日算起，至少距有效日期前?日以上：&#10;食品業者登錄字號："></textarea>
+              </div>
+              <div class="form-group d-inline-flex flex-column col-6">
+                <label for="Remind">貼心叮嚀</label>
+                <textarea class="form-control mb-3" rows="4" cols="50" id="Remind" name="Remind">["台灣蘋果不會上蠟，果皮不會像進口蘋果一般漂亮，看起來比較平實不鮮豔，但可以直接清洗後連皮食用","蜜腺的產生容易受氣候影響，無法保證蜜腺的多寡，蜜腺的多寡不影響蘋果本身的甜度與美味","蘋果切開後若有果核中心黑黑的狀況，是因開花期遇到下雨，授粉受到影響加上用藥較少所致，完全不影響果肉，切除後即可放心食用。","若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理。"]</textarea>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group d-inline-flex flex-column col-6">
+                <label for="ProductDelivery">溫層配送</label>
+                <textarea class="form-control mb-3" rows="1" cols="50" id="ProductDelivery" name="ProductDelivery"></textarea>
+
+                <label for="LargeDiscount">多盒優惠</label>
+                <textarea class="form-control mb-3" rows="1" cols="50" id="LargeDiscount" name="LargeDiscount">團購10組以上另有優惠，歡迎來電洽詢：02-27712900</textarea>
+              </div>
+              <div class="form-group d-inline-flex flex-column col-6">
+                <label for="ProductDescription">產品描述</label>
+                <input class="form-control mb-3" id="ProductDescription" name="ProductDescription" type="text" value="">
+
+                <span> <label for="ProductKeyWord">產品關鍵字</label> <b>(格式:半形逗號分隔)</b> </span>
+                <input class="form-control mb-3" id="ProductKeyWord" name="ProductKeyWord" type="text" value="蜜蘋果,梨山,高山蘋果">
+
+                <label for="ProductDetailMsg">產品部落格連結</label>
+                <input placeholder="https://greenbox/xx/xx/x" class="form-control mb-3" id="ProductDetailMsg" name="ProductDetailMsg" type="text" value="">
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="ds ds-grp" open>
+          <summary>
+            <span class="ds-caret">&#9656;</span>
+            <span class="ds-title">販售規則</span>
+            <span class="ds-sub">含運費、免稅、前台隱藏、限定購買規則、限購數量總和、購物車搶購</span>
+          </summary>
+          <div class="ds-body">
+            <div class="form-row">
+              <div class="form-group d-inline-flex flex-column col-6">
+                <div>
+                  <input id="IsShipping" name="IsShipping" type="checkbox" value="true"><label for="IsShipping">含運費</label>
+                  <input id="IsFakeTransform" name="IsFakeTransform" type="checkbox" value="true"><label for="IsFakeTransform">假單品</label>
+                  <input id="NoTax" name="NoTax" type="checkbox" value="true"><label for="NoTax">免稅</label>
+                  <input id="Hide" name="Hide" type="checkbox" value="true"><label for="Hide">前台隱藏(網頁、app)</label>
+                  <input id="AppOnly" name="AppOnly" type="checkbox" value="true"><label for="AppOnly">只在app顯示</label>
+                </div>
+                <hr>
+                <span class="font-weight-bold text-primary"><label for="ProductPurchaseRule">限定購買規則</label></span>
+                <div>
+                  <input id="none_radio" name="ProductPurchaseRule" type="radio" value="0" checked><label for="ProductPurchaseRule">無</label>
+                  <input id="vipLevel_radio" name="ProductPurchaseRule" type="radio" value="1"><label for="ProductPurchaseRule">VIP等級</label>
+                  <input id="firstBuy_radio" name="ProductPurchaseRule" type="radio" value="2"><label for="ProductPurchaseRule">首購</label>
+                </div>
+                <div id="vipLevel_constraint_block" class="mt-1 mb-1" style="display: none">
+                  <span class="font-weight-bold text-primary">限定會員可購買等級：</span>
+                  <br>
+                  <div class="editor-label mt-0 d-inline-block"><input type="checkbox" name="SpecificMemberLevelOnly" value="1"> 限銅</div>
+                  <div class="editor-label mt-0 d-inline-block"><input type="checkbox" name="SpecificMemberLevelOnly" value="2"> 限銀</div>
+                  <div class="editor-label mt-0 d-inline-block"><input type="checkbox" name="SpecificMemberLevelOnly" value="3"> 限金</div>
+                </div>
+              </div>
+              <div class="form-group d-inline-flex flex-column col-6">
+                <div class="fs-narrow">
+                  <label for="TotalLimit">限購數量總和</label>
+                  <input class="form-control mb-3" id="TotalLimit" name="TotalLimit" type="text" value="0">
+                </div>
+                <hr>
+                <!-- 既有區塊：購物車搶購。Razor 這裡只有一個空的掛載點 <div id="product-rush-buy-settings"></div>，
+                     真的畫面是 React 元件，工程要改的是那一支：
+                       react-component-export src/pages/productSetting/ProductRushBuySettings.tsx
+                       bundle product-rush-buy-settings.js（Edit18.cshtml:34 載入）
+                     元件用 antd（Checkbox / InputNumber / Select / Button / Popconfirm / Tooltip），
+                     這裡是照它的版面手刻的近似，不是 antd 本身。狀態是「未啟用」那一種。
+                     「數量加減」真站目前是 disabled（FB+1 專案後關掉，避免跟庫存比較時混淆）。 -->
+                <div id="product-rush-buy-settings" class="rb">
+                  <div class="rb-row rb-head">
+                    <label class="rb-ck"><input type="checkbox" name="EnableRushBuy"><span>購物車搶購</span></label>
+                    <span class="rb-info" title="開啟此功能此產品會顯示於獨立的購物車搶購頁面">ⓘ</span>
+                  </div>
+                  <div class="rb-row">
+                    <div class="rb-grid">
+                      <div class="rb-cell"><span class="rb-label">實際購物車數量</span><span class="rb-val is-off">未啟用</span></div>
+                      <div class="rb-cell"><span class="rb-label">數量加減</span>
+                        <span class="rb-input">
+                          <select class="rb-sign" disabled><option>＋</option><option>－</option></select>
+                          <input type="text" placeholder="未啟用" disabled>
+                        </span>
+                      </div>
+                    </div>
+                    <button type="button" class="rb-btn rb-btn-primary" disabled>⟳ 更新</button>
+                  </div>
+                  <div class="rb-row">
+                    <div class="rb-total"><span class="rb-label">前台顯示總數</span><span class="rb-val is-off">未啟用</span></div>
+                    <button type="button" class="rb-btn" disabled>🗑 清空</button>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="ds ds-grp" open>
+          <summary>
+            <span class="ds-caret">&#9656;</span>
+            <span class="ds-title">通知文案</span>
+            <span class="ds-sub">簡訊內容、延遲出貨簡訊</span>
+          </summary>
+          <div class="ds-body">
+            <div class="form-row">
+              <div class="form-group d-inline-flex flex-column col-12">
+                <label class="sms-wrap" for="SMS">簡訊內容</label>
+                <span class="sms-wrap">無毒農貴賓您好，XXX已寄出，預計1-2天送達，再請您留意或請管理室代收，收到後 <input class="form-control" id="SMS" name="SMS" type="text" value="">，若有問題歡迎來電，謝謝！</span>
+
+                <label class="sms-wrap" for="DelaySms">延遲出貨簡訊</label>
+                <span class="sms-wrap">您好，感謝您訂購無毒農XXX，由於近期氣候影響， <input class="form-control" id="DelaySms" name="DelaySms" type="text" value="">，造成您的困擾真的很抱歉，誠心感謝您的耐心與體諒。透過Line聯絡我們→ http://go.greenbox.tw/2prUwDv</span>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="ds ds-grp" open>
+          <summary>
+            <span class="ds-caret">&#9656;</span>
+            <span class="ds-title">物流與倉儲</span>
+            <span class="ds-sub">配送溫層、儲位、產品國際條碼</span>
+          </summary>
+          <div class="ds-body">
+            <!-- 這裡的「配送溫層」(TemperatureTypeId，下拉常溫／冷藏／冷凍) 跟商品文案那一組的
+                 「溫層配送」(ProductDelivery，自由文字) 是兩個不同欄位，名字只差字序。
+                 真站兩個離得遠又長得像，這一版拆到不同區塊。 -->
+            <div class="form-row">
+              <div class="form-group col-3">
+                <label for="TemperatureTypeId">配送溫層</label>
+                <div>
+                  <select id="TemperatureTypeId" name="TemperatureTypeId">
+                    <option value="1" selected>常溫</option>
+                    <option value="2">冷藏</option>
+                    <option value="3">冷凍</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group col-1">
+                <label for="StorageFreezer">儲位庫號</label>
+                <input class="form-control fix-h-34" id="StorageFreezer" name="StorageFreezer" type="text" value="">
+              </div>
+              <div class="form-group col-1">
+                <label for="StorageShelf">儲位架號</label>
+                <input class="form-control fix-h-34" id="StorageShelf" name="StorageShelf" type="text" value="">
+              </div>
+              <div class="form-group col-1">
+                <label for="StorageNumber">儲位編號</label>
+                <input class="form-control fix-h-34" id="StorageNumber" name="StorageNumber" type="text" value="">
+              </div>
+              <div class="form-group col-3">
+                <label for="ProductBarcode">產品國際條碼</label>
+                <input class="form-control fix-h-34" maxlength="13" inputmode="numeric" placeholder="13 碼數字，選填" id="ProductBarcode" name="ProductBarcode" type="text" value="">
+                <small class="text-muted">設定後，底下尚未設定條碼的規格會自動帶入此條碼</small>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="ds ds-grp" open>
+          <summary>
+            <span class="ds-caret">&#9656;</span>
+            <span class="ds-title">前台顯示</span>
+            <span class="ds-sub">標籤、產品圖標籤、產品基本銷售數</span>
+          </summary>
+          <div class="ds-body">
+            <div class="form-row">
+              <div class="form-group col-3">
+                <button id="TagBtn" type="button">標籤</button>
+                <div id="Tagform" style=" display: none;text-align: center">
+                  <div class="col-xs-12 ">拖曳至右標記</div>
+                  <div class="col-xs-12" style="border: groove;">
+                    <ul id="sortable1" class="connectedSortable">
+                      <li class="ui-state-default" value="1">當季</li>
+                      <li class="ui-state-default" value="2">熱銷</li>
+                    </ul>
+                    <ul id="sortable2" class="connectedSortable">
+                      <li class="ui-state-highlight" value="3">產地直送</li>
+                    </ul>
                   </div>
                 </div>
-                <button type="button" class="rb-btn rb-btn-primary" disabled>⟳ 更新</button>
               </div>
-              <div class="rb-row">
-                <div class="rb-total"><span class="rb-label">前台顯示總數</span><span class="rb-val is-off">未啟用</span></div>
-                <button type="button" class="rb-btn" disabled>🗑 清空</button>
+              <div class="form-group col-3" id="pd-icon" style="display:none">
+                <label for="ProductIcon">產品圖標籤</label>
+                <select class="form-control fix-h-34" id="ProductIcon" name="ProductIcon"><option value="">無</option></select>
               </div>
-            </div>
-            <hr>
-            <span class="font-weight-bold text-primary"><label for="ProductPurchaseRule">限定購買規則</label></span>
-            <div>
-              <input id="none_radio" name="ProductPurchaseRule" type="radio" value="0" checked><label for="ProductPurchaseRule">無</label>
-              <input id="vipLevel_radio" name="ProductPurchaseRule" type="radio" value="1"><label for="ProductPurchaseRule">VIP等級</label>
-              <input id="firstBuy_radio" name="ProductPurchaseRule" type="radio" value="2"><label for="ProductPurchaseRule">首購</label>
-            </div>
-            <div id="vipLevel_constraint_block" class="mt-1 mb-1" style="display: none">
-              <span class="font-weight-bold text-primary">限定會員可購買等級：</span>
-              <br>
-              <div class="editor-label mt-0 d-inline-block"><input type="checkbox" name="SpecificMemberLevelOnly" value="1"> 限銅</div>
-              <div class="editor-label mt-0 d-inline-block"><input type="checkbox" name="SpecificMemberLevelOnly" value="2"> 限銀</div>
-              <div class="editor-label mt-0 d-inline-block"><input type="checkbox" name="SpecificMemberLevelOnly" value="3"> 限金</div>
-            </div>
-            <label class="sms-wrap" for="SMS">簡訊內容</label>
-            <span class="sms-wrap">無毒農貴賓您好，XXX已寄出，預計1-2天送達，再請您留意或請管理室代收，收到後 <input class="form-control" id="SMS" name="SMS" type="text" value="">，若有問題歡迎來電，謝謝！</span>
-
-            <label class="sms-wrap" for="DelaySms">延遲出貨簡訊</label>
-            <span class="sms-wrap">您好，感謝您訂購無毒農XXX，由於近期氣候影響， <input class="form-control" id="DelaySms" name="DelaySms" type="text" value="">，造成您的困擾真的很抱歉，誠心感謝您的耐心與體諒。透過Line聯絡我們→ http://go.greenbox.tw/2prUwDv</span>
-          </div>
-
-          <div class="form-group d-inline-flex flex-column col-6">
-            <label for="Remarks">保存方法</label>
-            <textarea class="form-control mb-3" rows="4" cols="50" id="Remarks" name="Remarks">本商品採常溫出貨，收到後建議立即冷藏，以維持最佳風味。常溫可保存約一週，冷藏則可保存約兩週。隨著保存時間拉長，蘋果口感可能逐漸變鬆，喜歡鮮脆口感的朋友，建議於收到後 3～5 天內享用，口感最佳！</textarea>
-
-            <label for="Remind">貼心叮嚀</label>
-            <textarea class="form-control mb-3" rows="4" cols="50" id="Remind" name="Remind">["台灣蘋果不會上蠟，果皮不會像進口蘋果一般漂亮，看起來比較平實不鮮豔，但可以直接清洗後連皮食用","蜜腺的產生容易受氣候影響，無法保證蜜腺的多寡，蜜腺的多寡不影響蘋果本身的甜度與美味","蘋果切開後若有果核中心黑黑的狀況，是因開花期遇到下雨，授粉受到影響加上用藥較少所致，完全不影響果肉，切除後即可放心食用。","若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理。"]</textarea>
-
-            <label for="ProductDetailMsg">產品部落格連結</label>
-            <input placeholder="https://greenbox/xx/xx/x" class="form-control mb-3" id="ProductDetailMsg" name="ProductDetailMsg" type="text" value="">
-
-            <span> <label for="ProductKeyWord">產品關鍵字</label> <b>(格式:半形逗號分隔)</b> </span>
-            <input class="form-control mb-3" id="ProductKeyWord" name="ProductKeyWord" type="text" value="蜜蘋果,梨山,高山蘋果">
-
-            <label for="ProductDescription">產品描述</label>
-            <input class="form-control mb-3" id="ProductDescription" name="ProductDescription" type="text" value="">
-            <div class="col-xs-6">
-              <label for="OptimizeTestProductId">A/B Test副產品Id</label>
-              <input class="form-control fix-h-34" id="OptimizeTestProductId" name="OptimizeTestProductId" type="text" value="">
-            </div>
-          </div>
-
-          <div class="form-group d-inline-flex col-6" id="ImgSideContext" style="display:none !important;">
-            <div class="col-6 pl-0" style="display:none">
-              <label for="ImgSideContextWeb">電腦版圖側文字</label>
-              <textarea class="form-control" rows="1" cols="10" id="ImgSideContextWeb" name="ImgSideContextWeb"></textarea>
-            </div>
-            <div class="col-6 pl-0" style="display:none">
-              <label for="ImgSideContextMobile">手機版圖側文字</label>
-              <textarea class="form-control" rows="1" cols="10" id="ImgSideContextMobile" name="ImgSideContextMobile"></textarea>
-            </div>
-            <div class="col-6 pl-0">
-              <label for="RemindText">上架提醒事項</label>
-              <span style="display: flex;">預計 <textarea class="form-control" style="width: 116px;" rows="1" cols="10" id="RemindText" name="RemindText"></textarea> 採收</span>
-            </div>
-          </div>
-
-          <div class="form-group col-3" id="pd-icon" style="display:none">
-            <label for="ProductIcon">產品圖標籤</label>
-            <select class="form-control fix-h-34" id="ProductIcon" name="ProductIcon"><option value="">無</option></select>
-          </div>
-
-          <div class="form-group col-3">
-            <label for="ProductBaseSoldAmount">產品基本銷售數</label>
-            <textarea class="form-control" rows="1" cols="10" id="ProductBaseSoldAmount" name="ProductBaseSoldAmount">0</textarea>
-          </div>
-
-          <div class="form-group col-3">
-            <label for="TemperatureTypeId">配送溫層</label>
-            <div>
-              <select id="TemperatureTypeId" name="TemperatureTypeId">
-                <option value="1" selected>常溫</option>
-                <option value="2">冷藏</option>
-                <option value="3">冷凍</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group col-3">
-            <button id="TagBtn" type="button">標籤</button>
-            <div id="Tagform" style=" display: none;text-align: center">
-              <div class="col-xs-12 ">拖曳至右標記</div>
-              <div class="col-xs-12" style="border: groove;">
-                <ul id="sortable1" class="connectedSortable">
-                  <li class="ui-state-default" value="1">當季</li>
-                  <li class="ui-state-default" value="2">熱銷</li>
-                </ul>
-                <ul id="sortable2" class="connectedSortable">
-                  <li class="ui-state-highlight" value="3">產地直送</li>
-                </ul>
+              <div class="form-group col-3">
+                <label for="ProductBaseSoldAmount">產品基本銷售數</label>
+                <textarea class="form-control" rows="1" cols="10" id="ProductBaseSoldAmount" name="ProductBaseSoldAmount">0</textarea>
               </div>
             </div>
           </div>
-
-          <div class='form-group col-1'>
-            <label for="StorageFreezer">儲位庫號</label>
-            <input class="form-control fix-h-34" id="StorageFreezer" name="StorageFreezer" type="text" value="">
-          </div>
-
-          <div class='form-group col-1'>
-            <label for="StorageShelf">儲位架號</label>
-            <input class="form-control fix-h-34" id="StorageShelf" name="StorageShelf" type="text" value="">
-          </div>
-
-          <div class='form-group col-1'>
-            <label for="StorageNumber">儲位編號</label>
-            <input class="form-control fix-h-34" id="StorageNumber" name="StorageNumber" type="text" value="">
-          </div>
-
-          <div class='form-group col-2'>
-            <label for="ProductBarcode">產品國際條碼</label>
-            <input class="form-control fix-h-34" maxlength="13" inputmode="numeric" placeholder="13 碼數字，選填" id="ProductBarcode" name="ProductBarcode" type="text" value="">
-            <small class="text-muted">設定後，底下尚未設定條碼的規格會自動帶入此條碼</small>
-          </div>
-
-          <div class="form-group col-2">
-            <label for="TotalLimit">限購數量總和</label>
-            <input class="form-control mb-3" id="TotalLimit" name="TotalLimit" type="text" value="0">
-          </div>
-        </div>
+        </details>
 
         <!-- 新增：本次需求。前台重點區預覽，不是新欄位，讀上面的保存方法、貼心叮嚀、多盒優惠。
              跟「產地直送設定」一樣只在類別為產地直送時展開。放在這裡是因為它要讀的三個欄位在上面。 -->
