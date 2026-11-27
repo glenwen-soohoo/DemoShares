@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  DemoShares 交接對照 | 後台產品基本資訊・第一版（歸檔，不是開發依據）
+  全新頁面：正式站無對應（新建）
+  這次要動的檔：無——本頁是歸檔備份，不是開發依據。現行版見同資料夾 direct-product-edit(Edit18).html
+
+  歸檔原因（2026-11-27）：這一版的外殼、色票、字級沿用設計端的示意稿，不是真站的值。
+  實測差異：主綠真站 #4ba83b／本頁 #3f9d46、加入購物車真站 #d24c4c 5px 18px/400／本頁 #e44b4b 6px 16px/700、
+  商品名真站 28px/500/#333／本頁 22px/700、body 字型真站 Microsoft JhengHei 14px／本頁 Noto Sans TC 16px、
+  真站有 #fixed-top 固定頂欄與 #mainLayoutFooter，本頁沒有 footer。
+  需求說「維持原本樣式」的既有元件照這一版做會錯，所以重刻。
+
+  留著的理由：重點區四格、副標題、產季四層色條、大小對照與測試台九個情境的互動邏輯在這一版，
+  重刻的底完成後要把這些疊回去，可以回來抄。
+-->
+<title>產地直送商品頁改版・後台</title>
+<style>
+  :root {
+    /* 後台色票，取自 Admin/Component/_variables.scss */
+    --admin-green: #67c23a;
+    --admin-green-dark: #1da93b;
+    --admin-green-soft: #d7f4da;
+    --admin-blue: #409eff;
+    --admin-red: #f56c6c;
+    --admin-border: #dcdfe6;
+    --admin-border-light: #ebeef5;
+    --admin-text: #606266;
+    --admin-muted: #909399;
+    --admin-head: #28a745;      /* Bootstrap 4 .bg-success，card-header 既有的綠 */
+    --admin-radius: 4px;
+    --admin-space: 4px;
+    /* 產季四個等級，跟前台色條同一組 */
+    --s0: #dfe5e1; --s1: #d6ebd4; --s2: #9ccf9f; --s3: #3f9d46;
+    --lab: #2b3a44; --lab-line: #44586a; --lab-text: #dce5ec;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f0f2f5; color: #212529; font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; font-size: 16px; line-height: 1.5; }
+
+  /* ===== 測試台（不是正式畫面） ===== */
+  .lab { background: var(--lab); color: var(--lab-text); padding: 12px 0; font-size: 13px; }
+  .lab .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; display: grid; gap: 10px; }
+  .lab-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lab-row > .lab-k { flex: 0 0 72px; color: #9fb3c2; font-size: 12px; }
+  .lab-btn { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-text); cursor: pointer; }
+  .lab-btn:hover { border-color: #7f98aa; }
+  .lab-btn.on { background: #e8f0f5; border-color: #e8f0f5; color: var(--lab); font-weight: 700; }
+  .lab-note { font-size: 12px; color: #9fb3c2; }
+  .lab-note b { color: #f0c88a; }
+
+  /* ===== GoX 後台外觀 ===== */
+  .gox-head { background: #fff; border-bottom: 1px solid var(--admin-border); padding: 10px 0; }
+  .gox-head .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 16px; }
+  .gox-logo { font-weight: 700; color: var(--admin-green-dark); font-size: 18px; }
+  .gox-crumb { color: var(--admin-muted); font-size: 14px; }
+  .shell { max-width: 1200px; margin: 16px auto 48px; padding: 0 16px; }
+
+  /* Bootstrap 4 的 card / form 版面，就地寫成 CSS */
+  .card { background: #fff; border: 1px solid rgba(0,0,0,.125); border-radius: var(--admin-radius); margin-bottom: 16px; }
+  .card-header { background: var(--admin-head); color: #fff; padding: 12px 20px; font-size: 16px; border-radius: var(--admin-radius) var(--admin-radius) 0 0; }
+  .card-body { padding: 20px; }
+  .form-row { display: flex; flex-wrap: wrap; margin: 0 -8px; }
+  .form-group { padding: 0 8px; margin-bottom: 16px; min-width: 0; }
+  .col-12 { flex: 0 0 100%; max-width: 100%; }
+  .col-6 { flex: 0 0 50%; max-width: 50%; }
+  .col-3 { flex: 0 0 25%; max-width: 25%; }
+  .flex-col { display: flex; flex-direction: column; }
+  label { display: block; margin-bottom: 4px; font-size: 14px; color: #212529; }
+  .star { color: var(--admin-red); margin-right: 2px; }
+  .form-control { display: block; width: 100%; padding: 6px 12px; font: inherit; font-size: 14px; color: #495057; background: #fff; border: 1px solid #ced4da; border-radius: var(--admin-radius); }
+  .form-control:focus { outline: 0; border-color: #80bdff; box-shadow: 0 0 0 2px rgba(0,123,255,.15); }
+  textarea.form-control { resize: vertical; }
+  select.form-control { height: 34px; }
+  .mb-3 { margin-bottom: 16px; }
+  .hint { font-size: 12px; color: var(--admin-muted); margin-top: 4px; }
+
+  .btn { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--admin-border); border-radius: var(--admin-radius); background: #fff; color: var(--admin-text); cursor: pointer; }
+  .btn:hover { border-color: var(--admin-blue); color: var(--admin-blue); }
+  .btn-main { background: var(--admin-blue); border-color: var(--admin-blue); color: #fff; }
+  .btn-main:hover { background: #66b1ff; border-color: #66b1ff; color: #fff; }
+  .btn-danger { color: var(--admin-red); border-color: #fbc4c4; }
+  .btn-danger:hover { background: var(--admin-red); border-color: var(--admin-red); color: #fff; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+  .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; margin: 0; }
+  .chk input { width: 16px; height: 16px; margin: 0; cursor: pointer; }
+
+  /* 本次新增的區塊：綠虛線框是 demo 標記 */
+  .add-block { border: 1.5px dashed var(--admin-green); border-radius: 8px; padding: 12px 16px 4px; background: #fbfefa; }
+  .add-block > .blk-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .add-block > .blk-head > h3 { font-size: 15px; margin: 0; color: var(--admin-green-dark); }
+  .blk-side { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--admin-muted); }
+
+  /* 編輯區與預覽並排 */
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 20px; }
+  @media (max-width: 1024px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+  .pv { background: #f7f9f7; border: 1px solid var(--admin-border-light); border-radius: 8px; padding: 10px 12px; }
+  .pv-k { font-size: 11px; color: var(--admin-muted); margin-bottom: 6px; }
+
+  /* 副標題預覽 */
+  .pv-sub { display: flex; align-items: center; gap: 6px; color: #c62828; font-size: 16px; min-height: 24px; }
+  .pv-sub img { height: 20px; }
+  .pv-empty { color: var(--admin-muted); font-size: 13px; }
+
+  /* 產季 12 格 */
+  .mon-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; max-width: 620px; }
+  .mon { border: 1px solid var(--admin-border); border-radius: var(--admin-radius); background: #fff; padding: 0; cursor: pointer; font: inherit; overflow: hidden; }
+  .mon .m-n { font-size: 11px; color: var(--admin-muted); padding: 2px 0; }
+  .mon .m-bar { height: 22px; background: var(--s0); }
+  .mon[data-lv="1"] .m-bar { background: var(--s1); }
+  .mon[data-lv="2"] .m-bar { background: var(--s2); }
+  .mon[data-lv="3"] .m-bar { background: var(--s3); }
+  .mon:hover { border-color: var(--admin-green); }
+  .lv-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--admin-muted); margin-top: 8px; }
+  .lv-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; border: 1px solid rgba(0,0,0,.08); }
+
+  /* 產季前台預覽 */
+  .pv-season { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; margin-top: 6px; }
+  .pv-season .m { height: 10px; border-radius: 3px; background: var(--s0); }
+  .pv-season .m[data-lv="1"] { background: var(--s1); }
+  .pv-season .m[data-lv="2"] { background: var(--s2); }
+  .pv-season .m[data-lv="3"] { background: var(--s3); }
+  .pv-v { font-size: 15px; font-weight: 700; color: #263029; }
+
+  /* 大小對照表 */
+  .size-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .size-tbl th { text-align: left; font-weight: 500; color: var(--admin-muted); font-size: 12px; padding: 0 6px 4px; }
+  .size-tbl td { padding: 0 6px 8px; vertical-align: top; }
+  .size-tbl .c-del { width: 44px; }
+  .icon-pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .icon-opt { width: 40px; height: 40px; border: 1px solid var(--admin-border); border-radius: var(--admin-radius); background: #fff; cursor: pointer; display: grid; place-items: center; padding: 4px; }
+  .icon-opt.on { border-color: var(--admin-green); box-shadow: 0 0 0 2px var(--admin-green-soft); }
+  .icon-opt img { max-width: 100%; max-height: 100%; }
+  .pv-sizes { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; margin-top: 6px; }
+  .pv-size-item { flex: 1; min-width: 0; text-align: center; font-size: 11px; color: var(--admin-muted); background: #fff; border-radius: 8px; padding: 6px 2px; }
+  .pv-size-item img { display: block; margin: 0 auto 4px; object-fit: contain; }
+  .pv-size-item b { display: block; color: #263029; font-size: 13px; }
+
+  /* 重點區預覽（預設收合） */
+  .dash-pv { border: 1.5px dashed var(--admin-green); border-radius: 8px; background: #fbfefa; }
+  .dash-pv > summary { list-style: none; cursor: pointer; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .dash-pv > summary::-webkit-details-marker { display: none; }
+  .dash-pv > summary h3 { font-size: 15px; margin: 0; color: var(--admin-green-dark); }
+  .dash-pv .count { font-size: 13px; color: var(--admin-text); }
+  .dash-pv .count b { color: var(--admin-green-dark); }
+  .dash-pv .toggle { margin-left: auto; font-size: 13px; color: var(--admin-blue); }
+  .dash-pv[open] .toggle::after { content: '收合預覽'; }
+  .dash-pv:not([open]) .toggle::after { content: '展開預覽'; }
+  .dash-pv .body { padding: 0 16px 12px; }
+  .catch { border-top: 1px solid var(--admin-border-light); padding: 8px 0; display: grid; grid-template-columns: 20px 130px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 13px; }
+  .catch .ic { font-weight: 700; }
+  .catch.ok .ic { color: var(--admin-green-dark); }
+  .catch.no .ic { color: var(--admin-red); }
+  .catch .nm { color: var(--admin-muted); }
+  .catch .val { color: #263029; }
+  .catch.no .val { color: var(--admin-red); }
+  .catch .fix { color: var(--admin-muted); font-size: 12px; margin-top: 2px; }
+
+  @media (max-width: 760px) {
+    .col-6, .col-3 { flex: 0 0 100%; max-width: 100%; }
+    .mon-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .lab-row > .lab-k { flex: 0 0 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 測試台：切商品用，不屬於正式畫面 -->
+<div class="lab">
+  <div class="wrap">
+    <div class="lab-row"><span class="lab-k">商品</span><span id="labP"></span></div>
+    <div class="lab-note" id="labNote"></div>
+  </div>
+</div>
+
+<header class="gox-head">
+  <div class="wrap">
+    <span class="gox-logo">GoX 後台</span>
+    <span class="gox-crumb">產品管理 ／ 產地直送 ／ 編輯商品</span>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="card">
+    <div class="card-header">產品基本資訊</div>
+    <div class="card-body">
+
+      <!-- 既有區塊：品名／類別／快速到貨-類別，來自 Edit18.cshtml:110-124 -->
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label><span class="star">*</span>產品名稱</label>
+          <input class="form-control" id="fName" value="">
+        </div>
+        <div class="form-group col-3">
+          <label><span class="star">*</span>類別</label>
+          <select class="form-control" id="fType"><option value="0" selected>產地直送</option><option value="1">冷凍超市</option><option value="9">粥寶寶</option></select>
+        </div>
+        <div class="form-group col-3">
+          <label><span class="star">*</span>快速到貨-類別</label>
+          <select class="form-control"><option>不分類</option><option>水果</option><option>水產</option></select>
+        </div>
+      </div>
+
+      <!-- 新增：本次需求。副標題（Product.Subtitle） -->
+      <div class="form-row">
+        <div class="form-group col-12">
+          <div class="add-block">
+            <div class="blk-head">
+              <h3>副標題</h3>
+              <span class="blk-side"><span id="subCount">0 / 20</span></span>
+            </div>
+            <div class="pair">
+              <div>
+                <input class="form-control" id="fSubtitle" maxlength="20" placeholder="選填，沒填前台整行不出現">
+                <div class="hint">顯示在前台商品名稱下方，紅字一行，左邊有小芽圖示。</div>
+              </div>
+              <div class="pv">
+                <div class="pv-k">前台長這樣</div>
+                <div class="pv-sub" id="pvSub"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 既有區塊：產地／小農，來自 Edit18.cshtml:126-136 -->
+      <div class="form-row">
+        <div class="form-group col-3">
+          <label>產地</label>
+          <input class="form-control" id="fPlace" value="">
+        </div>
+        <div class="form-group col-3">
+          <label>小農</label>
+          <input class="form-control" id="fFarmer" value="">
+        </div>
+      </div>
+
+      <!-- 新增：本次需求。產季（Product.SeasonMonths、Product.SeasonHidden） -->
+      <div class="form-row">
+        <div class="form-group col-12">
+          <div class="add-block">
+            <div class="blk-head">
+              <h3>產季</h3>
+              <label class="chk"><input type="checkbox" id="fSeasonHidden"><span>前台不顯示產季</span></label>
+              <span class="blk-side">資料來源：<span id="seasonSrc">由銷售資料補入</span></span>
+            </div>
+            <div class="pair">
+              <div>
+                <div class="mon-grid" id="monGrid"></div>
+                <div class="lv-legend">
+                  <span><i style="background:var(--s3)"></i>盛產</span>
+                  <span><i style="background:var(--s2)"></i>產季</span>
+                  <span><i style="background:var(--s1)"></i>少量</span>
+                  <span><i style="background:var(--s0)"></i>沒有</span>
+                  <span>點一下月份切換等級</span>
+                </div>
+                <div class="btn-row">
+                  <button type="button" class="btn" id="btnCopySeason">從其他商品複製產季</button>
+                  <button type="button" class="btn btn-danger" id="btnClearSeason">全部清空</button>
+                </div>
+                <div class="hint">勾了不顯示，資料會保留。既有商品一次性補入時全部預設勾起來，採購確認一個就取消一個。</div>
+              </div>
+              <div class="pv">
+                <div class="pv-k">前台長這樣</div>
+                <div class="pv-v" id="pvSeasonV"></div>
+                <div class="pv-season" id="pvSeasonBar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新增：本次需求。大小對照（Product.SizeGuide） -->
+      <div class="form-row">
+        <div class="form-group col-12">
+          <div class="add-block">
+            <div class="blk-head">
+              <h3>大小對照</h3>
+              <label class="chk"><input type="checkbox" id="fSizeHidden"><span>前台不顯示大小</span></label>
+              <span class="blk-side"><span id="sizeCount">0 / 6 列</span></span>
+            </div>
+            <div class="pair">
+              <div>
+                <label>圖示</label>
+                <div class="icon-pick" id="iconPick"></div>
+                <div class="btn-row">
+                  <button type="button" class="btn" id="btnUploadIcon">上傳自訂圖示</button>
+                  <button type="button" class="btn" id="btnResetIcon">改回預設圖示</button>
+                </div>
+                <table class="size-tbl" style="margin-top:16px">
+                  <thead><tr><th style="width:22%">規格</th><th>說明 1</th><th>說明 2</th><th>說明 3</th><th class="c-del"></th></tr></thead>
+                  <tbody id="sizeBody"></tbody>
+                </table>
+                <div class="btn-row">
+                  <button type="button" class="btn btn-main" id="btnAddRow">＋ 新增一列</button>
+                  <button type="button" class="btn" id="btnDerive">從規格說明帶入</button>
+                  <button type="button" class="btn btn-danger" id="btnClearSize">全部刪除</button>
+                </div>
+                <div class="hint">規格沒填的列前台不顯示；所有說明都沒填時，前台只顯示規格。圖示由小到大依序放大。</div>
+              </div>
+              <div class="pv">
+                <div class="pv-k">前台長這樣</div>
+                <div class="pv-sizes" id="pvSizes"></div>
+                <div class="pv-empty" id="pvSizeEmpty" hidden>這一格前台不會出現</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 既有區塊：規格說明／置底商品標示／多盒優惠（左）、保存方法／貼心叮嚀（右），來自 Edit18.cshtml:289-352 -->
+      <div class="form-row">
+        <div class="form-group col-6 flex-col">
+          <label>規格說明</label>
+          <textarea class="form-control mb-3" rows="5" id="fSpec"></textarea>
+          <label>多盒優惠</label>
+          <textarea class="form-control mb-3" rows="2" id="fMulti"></textarea>
+        </div>
+        <div class="form-group col-6 flex-col">
+          <label>保存方法</label>
+          <textarea class="form-control mb-3" rows="5" id="fStorage"></textarea>
+          <label>貼心叮嚀</label>
+          <textarea class="form-control mb-3" rows="4" id="fRemind"></textarea>
+        </div>
+      </div>
+
+      <!-- 新增：本次需求。前台重點區預覽，不是新欄位，讀上面三個既有欄位 -->
+      <div class="form-row">
+        <div class="form-group col-12">
+          <details class="dash-pv" id="dashPv">
+            <summary>
+              <h3>前台重點區預覽</h3>
+              <span class="count">抓到 <b id="catchN">0</b> / 5 項</span>
+              <span class="toggle"></span>
+            </summary>
+            <div class="body" id="catchBody"></div>
+          </details>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:8px">
+        <button type="button" class="btn btn-main" id="btnSave">儲存</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/*DATA-START*/
+  /* 欄位對照見檔頭。文字取自站上商品頁（2026-11-17～11-24） */
+  const PRODUCTS = [
+    {
+      key: 'apple', label: '水果：梨山蜜蘋果',
+      name: '蘋果季【梨山蜜蘋果】雲頂果園', subtitle: '高山直送，沒蜜也一樣甜',
+      place: '台中和平（梨山）', farmer: '雲頂果園',
+      seasonMonths: '000000003332', seasonHidden: false, seasonSource: '由銷售資料補入', seasonItem: '蜜蘋果',
+      sizeIcon: 'round', sizeHidden: false,
+      sizeItems: [
+        { label: '6A', lines: ['3.8~4.6 兩/顆', '每盒 18 粒', '每顆約 $82'] },
+        { label: '7A', lines: ['4.6~5.4 兩/顆', '每盒 15 粒', '每顆約 $111'] },
+        { label: '8A', lines: ['5.4~6.2 兩/顆', '每盒 15 粒', '每顆約 $119'] },
+      ],
+      spec: '6A(18粒裝)-3.8～4.6兩/顆\n7A(15粒裝)-4.6～5.4兩/顆\n8A(15粒裝)-5.4～6.2兩/顆\n9A(12粒裝)-6.2～7兩/顆\n10A(12粒裝)-7～7.8兩/顆',
+      storage: '本商品採常溫出貨，收到後建議立即冷藏，以維持最佳風味。常溫可保存約一週，冷藏則可保存約兩週。隨著保存時間拉長，蘋果口感可能逐漸變鬆，喜歡鮮脆口感的朋友，建議於收到後 3～5 天內享用，口感最佳！',
+      remind: '台灣蘋果不會上蠟，果皮不會像進口蘋果一般漂亮，看起來比較平實不鮮豔，但可以直接清洗後連皮食用\n若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理。',
+      multi: '團購10組以上另有優惠，歡迎來電洽詢：02-27712900',
+      note: '五項抓字規則全中，重點區預覽顯示 5 / 5。',
+    },
+    {
+      key: 'crab', label: '水產：萬里蟹',
+      name: '免運《水產直送》龜吼漁港直送萬里蟹（花蟹）', subtitle: '',
+      place: '新北萬里', farmer: '龜吼漁港',
+      seasonMonths: '', seasonHidden: false, seasonSource: '', seasonItem: '',
+      sizeIcon: 'crab', sizeHidden: false,
+      sizeItems: [
+        { label: '小隻', lines: ['3.2~4 兩/隻', '每箱 7~10 隻', ''] },
+        { label: '中隻', lines: ['5.33~6.4 兩/隻', '每箱 5~6 隻', ''] },
+        { label: '大隻', lines: ['8~10.6 兩/隻', '每箱 3~4 隻', ''] },
+      ],
+      spec: '【小隻】每箱2斤約7-10隻，每隻約3.2-4兩\n【中隻】每箱2斤約5-6隻，每隻約5.33-6.4兩\n【大隻】每箱2斤約3-4隻，每隻約8-10.6兩\n公母隨機出貨，以足重（含繩重）為出貨原則，大小僅供參考',
+      storage: '收到後請於２日內食用完畢。\n收到貨後應馬上蒸煮並食用完畢。\n如果當天沒有馬上要吃，務必當天蒸熟螃蟹，用報紙包好後放冷凍保存',
+      remind: '依訂購順序新鮮冷凍宅配出貨，恕無法指定日期、配達及到貨時段\n捕撈運送過程中，螃蟹可能產生斷腳或缺腳，但不影響鮮度和品質，且保證足重出貨',
+      multi: '團購10箱以上另有優惠，歡迎來電洽詢：02-27712900',
+      note: '水產沒有產季資料，12 個月全是「沒有」，前台整格不出現。貼心叮嚀沒寫「N 小時內」與「N 張」，叮嚀重點抓不到。',
+    },
+    {
+      key: 'fig', label: '水果：無花果',
+      name: '【有機(轉)無花果】無毒農', subtitle: '',
+      place: '台灣在地', farmer: '無毒農',
+      seasonMonths: '000003332222', seasonHidden: false, seasonSource: '由銷售資料補入', seasonItem: '無花果',
+      sizeIcon: 'round', sizeHidden: true, sizeItems: [],
+      spec: '1斤裝(±5%)，約6-12粒\n出貨以足重為主，不以大小粒分級\n不指定農友出貨',
+      storage: '收到後務必立即開封檢查，請冷藏保存，並於3天內食用完畢。\n無花果熟成後，尾端輕微裂開是正常的，果實也會比較軟。\n無花果易受天氣影響，如遇降雨，會延緩出貨，少日照也會讓果皮色澤較淺',
+      remind: '無花果底部有裂口為正常現象，表示熟度足夠，若裂口處無異狀請安心食用\n若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至無毒農官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理',
+      multi: '團購10盒以上另有優惠，歡迎來電洽詢：02-27712900',
+      note: '保存方法三條規則全部抓不到，預覽會寫出要怎麼改。營運勾了不顯示大小。',
+    },
+    {
+      key: 'papaya', label: '水果：紅妃木瓜',
+      name: '【紅妃木瓜】許家農園', subtitle: '',
+      place: '苗栗頭份', farmer: '許家農園',
+      seasonMonths: '223222202332', seasonHidden: false, seasonSource: '由銷售資料補入', seasonItem: '木瓜',
+      sizeIcon: 'long', sizeHidden: false,
+      sizeItems: [
+        { label: '6斤裝', lines: ['秋冬約 3~4 顆', '夏季約 2~3 顆', ''] },
+        { label: '10斤裝', lines: ['秋冬約 5~7 顆', '夏季約 3~5 顆', ''] },
+      ],
+      spec: '夏季\n6斤裝±10%，約2-3顆\n10斤裝±10%，約3-5顆\n秋冬\n6斤裝±10%，約3-4顆\n10斤裝±10%，約5-7顆',
+      storage: '因物流配送果物會因溫度變化加速熟成，收到貨請盡快開封檢查。\n若果物已轉色請放冷藏保存',
+      remind: '紅妃木瓜比一般傳統木瓜大上一倍以上\n木瓜果肉柔軟易撞傷，若有輕微碰傷的果實要盡快食用',
+      multi: '團購10盒以上另有優惠，歡迎來電洽詢：02-27712900',
+      note: '規格說明分夏季與秋冬兩段。按「從規格說明帶入」會帶出 4 列，6斤裝與10斤裝各重複一次。<b>同一個規格出現兩次要怎麼合併，需求沒寫。</b>',
+    },
+  ];
+/*DATA-END*/
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const half = (t) => String(t).replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/～/g, '~');
+  const lines = (s) => String(s || '').split(/\r?\n/).map((t) => t.trim()).filter(Boolean);
+  const ZH = { 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+  const num = (t) => { const h = half(t); return /^\d+$/.test(h) ? +h : ZH[h] ?? h; };
+  const MAX_ROWS = 6;
+
+  const SIZE_ICONS = {
+    round: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDE0Yy0zLTMtMTItMy0xNSA0LTMgOCAxIDIwIDggMjMgMyAxIDUgMCA3LTEgMiAxIDQgMiA3IDEgNy0zIDExLTE1IDgtMjMtMy03LTEyLTctMTUtNHoiIGZpbGw9IiNlMDU3NGYiLz48cGF0aCBkPSJNMjQgMTRjLTMtMy0xMi0zLTE1IDQtMSAzLTEgNiAwIDkgMi04IDgtMTEgMTUtOXoiIGZpbGw9IiNmMDhhODAiIG9wYWNpdHk9Ii42Ii8+PHBhdGggZD0iTTI0IDE1YzAtNCAxLTcgMy05IiBzdHJva2U9IiM2YjRhMmIiIHN0cm9rZS13aWR0aD0iMi4yIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjcgOWMzLTMgOC0zIDEwLTEtMiAzLTcgNC0xMCAxeiIgZmlsbD0iIzVhYTg0NSIvPjwvc3ZnPgo=',
+    citrus: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGNpcmNsZSBjeD0iMjQiIGN5PSIyNyIgcj0iMTciIGZpbGw9IiNmMzlhMmIiLz48Y2lyY2xlIGN4PSIxOSIgY3k9IjIxIiByPSI2IiBmaWxsPSIjZjhiZDZiIiBvcGFjaXR5PSIuNTUiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiM2YjhmMmEiLz48cGF0aCBkPSJNMjUgMTBjMy00IDktNSAxMS0zLTIgNC04IDUtMTEgM3oiIGZpbGw9IiM1YWE4NDUiLz48ZyBmaWxsPSIjZDk3ZTE3IiBvcGFjaXR5PSIuNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMSIgcj0iMSIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iMzMiIHI9IjEiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjM4IiByPSIxIi8+PGNpcmNsZSBjeD0iMzUiIGN5PSIyNCIgcj0iMSIvPjwvZz48L3N2Zz4K',
+    long: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDljLTUgMC03IDUtOCAxMC0xIDQtNiA3LTYgMTQgMCA3IDYgMTEgMTQgMTFzMTQtNCAxNC0xMWMwLTctNS0xMC02LTE0LTEtNS0zLTEwLTgtMTB6IiBmaWxsPSIjOWNjYzRhIi8+PHBhdGggZD0iTTE4IDIyYy0yIDMtNCA2LTQgMTAgMCAzIDEgNSAzIDctMS03IDAtMTIgMS0xN3oiIGZpbGw9IiNjNGUyODQiIG9wYWNpdHk9Ii43Ii8+PHBhdGggZD0iTTI0IDlWNCIgc3Ryb2tlPSIjNmI0YTJiIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI1IDZjMy0zIDgtMiA5IDAtMyAzLTcgMy05IDB6IiBmaWxsPSIjNWFhODQ1Ii8+PC9zdmc+Cg==',
+    crab: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGcgc3Ryb2tlPSIjYzk0NzJmIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj48cGF0aCBkPSJNMTIgMzBsLTYgM00xMiAzNGwtNSA1TTM2IDMwbDYgM00zNiAzNGw1IDVNMTQgMjZsLTYtMU0zNCAyNmw2LTEiLz48cGF0aCBkPSJNMTUgMjJsLTQtOE0zMyAyMmw0LTgiLz48L2c+PHBhdGggZD0iTTcgMTJjMC00IDQtNiA2LTRsLTIgMyA0IDFjMCAzLTMgNS02IDQtMSAwLTItMi0yLTR6TTQxIDEyYzAtNC00LTYtNi00bDIgMy00IDFjMCAzIDMgNSA2IDQgMSAwIDItMiAyLTR6IiBmaWxsPSIjZTI2MDNmIi8+PGVsbGlwc2UgY3g9IjI0IiBjeT0iMjkiIHJ4PSIxMyIgcnk9IjEwIiBmaWxsPSIjZTI2MDNmIi8+PGVsbGlwc2UgY3g9IjIxIiBjeT0iMjYiIHJ4PSI2IiByeT0iMy41IiBmaWxsPSIjZjA4YTZhIiBvcGFjaXR5PSIuNiIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjIiIGZpbGw9IiMzMzMiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIwIiByPSIyIiBmaWxsPSIjMzMzIi8+PC9zdmc+Cg==',
+    fish: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTQgMjRjNi05IDE2LTEyIDI2LThsOC03djMwbC04LTdDMjAgMzYgMTAgMzMgNCAyNHoiIGZpbGw9IiM0ZjhmYzAiLz48cGF0aCBkPSJNOCAyNGM2LTYgMTMtOCAyMC02LTcgMC0xMyAyLTIwIDZ6IiBmaWxsPSIjOGJiYmUwIiBvcGFjaXR5PSIuOCIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMjIiIHI9IjIiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjIyIiByPSIxIiBmaWxsPSIjMjIzIi8+PHBhdGggZD0iTTIwIDE5YzIgMyAyIDcgMCAxMCIgc3Ryb2tlPSIjM2E3OGE4IiBzdHJva2Utd2lkdGg9IjEuNiIgZmlsbD0ibm9uZSIvPjwvc3ZnPgo=',
+    box: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTYgMTZsMTgtOCAxOCA4LTE4IDh6IiBmaWxsPSIjZTdjMDhhIi8+PHBhdGggZD0iTTYgMTZ2MjBsMTggOFYyNHoiIGZpbGw9IiNjOTlhNWIiLz48cGF0aCBkPSJNNDIgMTZ2MjBsLTE4IDhWMjR6IiBmaWxsPSIjYjU4NjRhIi8+PHBhdGggZD0iTTE1IDEybDE4IDh2NmwtNC0ydi00TDExIDE0eiIgZmlsbD0iI2YzZGNiNCIvPjwvc3ZnPgo=',
+  };
+  const ICON_LIST = [
+    { k: 'round', n: '圓形果' }, { k: 'citrus', n: '柑橘' }, { k: 'long', n: '長形果' },
+    { k: 'crab', n: '螃蟹' }, { k: 'fish', n: '魚' }, { k: 'box', n: '通用盒' },
+  ];
+  const SUB_ICON = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLnN0MCB7IGZpbGw6ICNhZDc2MmQ7IH0KICAgICAgLnN0MSB7IGZpbGw6ICM1N2ExMWI7IH0KICAgICAgLnN0MiB7IGZpbGw6ICM0MDk5MTE7IH0KICAgICAgLnN0MyB7IGZpbGw6ICM5MzVmMjc7IH0KICAgICAgLnN0NCB7IGZpbGw6ICNhMDY5Mjc7IH0KICAgICAgLnN0NSB7IGZpbGw6ICM2NmFkMjE7IH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxnPgogICAgPHBhdGggY2xhc3M9InN0MSIgZD0iTTc2LDExLjNjLS4yLS4zLS40LS43LS42LTEtNi44LS44LTE0LjEsMi4xLTE5LjIsOC40cy00LjksOC4xLTUuNSwxMmMtLjctMy45LTEuNS03LjgtNC43LTExLjUtOC4yLTkuNC0yMi41LTEwLjgtMjkuNi01LjItNyw1LjYtNS4xLDE2LjMsNC4zLDIzLjgsNS4yLDQuMiwxMy45LDUuOSwyMC41LDYuNSw3LjgtMS43LDE1LjUtNC41LDIyLjgtOSw4LTUsMTUtMTMsMTItMjRaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QyIiBkPSJNODUsMTRjLTIuNS0yLTUuOS0zLjMtOS42LTMuNy4yLjMuNC43LjYsMSwzLDExLTQsMTktMTIsMjQtNy4zLDQuNS0xNSw3LjMtMjIuOCw5LDIuMy4yLDQuMy4zLDUuOS40bC00LjQsNDcuMWgxNi4ybC00LjctNDcuMWM2LjEtLjIsMTkuNS0xLjIsMjYuNi02LjksOS40LTcuNSwxMS4zLTE4LjEsNC4zLTIzLjhaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNjYuNCw3NS45Yy01LTEuOC0xMC41LTIuOS0xNi40LTIuOS0xNC4zLDAtMjYuOCw2LjEtMzQsMTUuNC0uNS43LS44LDEuNC0uOCwyLjEsMTksLjgsMzguNS0zLjcsNTEuMi0xNC43WiIvPgogICAgPHBhdGggY2xhc3M9InN0NCIgZD0iTTc0LjksODAuMmMtMi42LTEuNy01LjUtMy4yLTguNi00LjMtMTIuNywxMS0zMi4xLDE1LjQtNTEuMiwxNC43LS4xLDIuNCwyLjEsNC42LDUuMyw0LjZoNDMuOGM0LjktNCw4LjktOC45LDEwLjctMTVaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNODQsODguNGMtMi40LTMuMS01LjUtNS45LTktOC4yLTEuOCw2LjEtNS45LDEwLjktMTAuNywxNWgxNS4zYzQuMiwwLDYuNy0zLjgsNC40LTYuN1oiLz4KICAgIDxlbGxpcHNlIGNsYXNzPSJzdDUiIGN4PSIyMyIgY3k9IjE2LjkiIHJ4PSI1LjIiIHJ5PSIzLjQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0zLjggNy4xKSByb3RhdGUoLTE2LjEpIi8+CiAgICA8ZWxsaXBzZSBjbGFzcz0ic3Q1IiBjeD0iMTcuNSIgY3k9IjIzLjQiIHJ4PSIxLjkiIHJ5PSIxLjgiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC01LjggNS44KSByb3RhdGUoLTE2LjEpIi8+CiAgPC9nPgo8L3N2Zz4=';
+
+  /* ===== 目前編輯中的這一筆 ===== */
+  let P = PRODUCTS[0];
+  let levels = [];        // 12 個月的等級
+  let sizeRows = [];      // 大小對照每一列
+  let sizeIcon = 'round';
+  let iconCustom = false;
+  let seasonSource = '';
+  const nowMonth = new Date(Date.now() + 8 * 3600000).getUTCMonth() + 1;
+
+  /* ===== 抓字規則，跟前台同一套 ===== */
+  function catches() {
+    const st = half(lines($('fStorage').value).join(''));
+    const rm = half(lines($('fRemind').value).join(''));
+    const mu = half($('fMulti').value);
+    const out = [];
+
+    const act = st.match(/收到(?:貨)?後[^，。]*?(冷藏|冷凍|蒸煮|蒸熟)/);
+    out.push({
+      nm: '保存：動作', ok: !!act,
+      val: act ? { 冷藏: '收到後立刻冷藏', 冷凍: '收到後立刻冷凍', 蒸煮: '收到後馬上蒸煮', 蒸熟: '收到後馬上蒸熟' }[act[1]] : '沒抓到',
+      fix: '保存方法要有「收到後…冷藏」這種寫法，而且「收到後」跟動作之間不能隔逗號或句號。',
+    });
+
+    const keep = [...st.matchAll(/(常溫|冷藏|冷凍)[則可保存約\s]*([一二兩三四五六七八九十\d]+)\s*(週|天|日)/g)]
+      .map((m) => `${m[1]}約 ${num(m[2])} ${m[3] === '週' ? '週' : '天'}`);
+    out.push({
+      nm: '保存：可放多久', ok: keep.length > 0,
+      val: keep.length ? keep.join('、') : '沒抓到',
+      fix: '保存方法要寫「常溫可保存約一週」「冷藏則可保存約兩週」這種句型。',
+    });
+
+    const best = st.match(/(\d+\s*[~-]\s*\d+|\d+)\s*天內享用/);
+    const within = st.match(/([一二兩三\d]+)\s*日內食用/);
+    out.push({
+      nm: '保存：吃完期限', ok: !!(best || within),
+      val: best ? `${best[1].replace(/\s/g, '')} 天內最好吃` : (within ? `${num(within[1])} 天內吃完` : '沒抓到'),
+      fix: '保存方法要寫「3～5 天內享用」或「2 日內食用」。寫成「3天內食用完畢」抓不到。',
+    });
+
+    const hrs = rm.match(/(\d+)\s*小時內/);
+    const pics = rm.match(/(\d+)\s*張/);
+    out.push({
+      nm: '叮嚀重點', ok: !!hrs,
+      val: hrs ? `收到有損傷：${hrs[1]} 小時內傳官方 LINE${pics ? `，附 ${pics[1]} 張照片` : ''}` : '沒抓到',
+      fix: '貼心叮嚀要有「24 小時內」跟「3 張」這兩個數字。',
+    });
+
+    const m = mu.match(/(\d+)\s*(組|箱|盒)以上/);
+    const tel = mu.match(/0\d[\d-]{7,}/);
+    out.push({
+      nm: '多盒重點', ok: !!m,
+      val: m ? `一次買 ${m[1]} ${m[2]}以上另有優惠${tel ? `（${tel[0]}）` : ''}` : '沒抓到',
+      fix: '多盒優惠要寫「10 組以上」這種句型，電話一起寫在同一欄。',
+    });
+    return out;
+  }
+
+  /* ===== 從規格說明帶入大小對照 =====
+     ⚠ 需求沒寫這條規則，這是一版可以跑的提案，要請需求端確認涵蓋到哪些寫法。
+     目前認得三種行首寫法：【小隻】…／6A(18粒裝)-…／6斤裝±10%，…
+     認不出來的行直接跳過（例如木瓜的「夏季」「秋冬」）。 */
+  function deriveSizes(specText) {
+    const out = [];
+    for (const raw of lines(specText)) {
+      const line = half(raw);
+      let label = '', rest = '', m;
+      if ((m = line.match(/^【(.+?)】(.*)$/))) { label = m[1]; rest = m[2]; }
+      else if ((m = line.match(/^([0-9]{1,2}[A-Za-z]{1,2})\((.+?)\)[-−－]?(.*)$/))) { label = m[1]; rest = m[2] + '，' + m[3]; }
+      else if ((m = line.match(/^(\d+\s*[斤台公兩克]{0,2}裝|\d+[A-Za-z]{1,2})(.*)$/))) { label = m[1].replace(/\s/g, ''); rest = m[2]; }
+      else continue;
+      const parts = rest.split(/[，,、]/)
+        .map((s) => s.replace(/[()（）]/g, '').replace(/^[-−－±\s]+/, '').trim())
+        .filter(Boolean).slice(0, 3);
+      if (!label) continue;
+      out.push({ label, lines: [parts[0] || '', parts[1] || '', parts[2] || ''] });
+      if (out.length >= MAX_ROWS) break;
+    }
+    return out;
+  }
+
+  /* ===== 畫面 ===== */
+  function renderSubtitle() {
+    const v = $('fSubtitle').value;
+    $('subCount').textContent = `${[...v].length} / 20`;
+    $('pvSub').innerHTML = v
+      ? `<img src="${SUB_ICON}" alt=""><span>${esc(v)}</span>`
+      : '<span class="pv-empty">沒填，前台整行不出現</span>';
+  }
+
+  function renderSeason() {
+    $('monGrid').innerHTML = levels.map((lv, i) =>
+      `<button type="button" class="mon" data-lv="${lv}" data-m="${i}"><div class="m-n">${i + 1}</div><div class="m-bar"></div></button>`
+    ).join('');
+    $('seasonSrc').textContent = seasonSource || '（還沒設定）';
+
+    const hidden = $('fSeasonHidden').checked;
+    const any = levels.some((v) => v > 0);
+    const pvBar = $('pvSeasonBar'), pvV = $('pvSeasonV');
+    if (hidden || !any) {
+      pvBar.innerHTML = '';
+      pvV.innerHTML = `<span class="pv-empty">${hidden ? '勾了不顯示，前台整格不出現' : '12 個月都是「沒有」，前台整格不出現'}</span>`;
+      return;
+    }
+    pvBar.innerHTML = levels.map((lv) => `<div class="m" data-lv="${lv}"></div>`).join('');
+    const ms = Array.from({ length: 12 }, (_, i) => i + 1);
+    const allYear = levels.every((v) => v >= 1);
+    if (allYear) {
+      const top = ms.filter((m) => levels[m - 1] === 3);
+      pvV.textContent = top.length ? `全年都有，${top.join('、')} 月量最多` : '全年都有';
+    } else {
+      const lv = levels[nowMonth - 1];
+      const state = lv === 3 ? '盛產中' : lv >= 1 ? '產季中' : '非產季';
+      const last = Math.max(0, ...ms.filter((m) => levels[m - 1] >= 1 && m >= nowMonth));
+      pvV.textContent = `${nowMonth} 月：${P.seasonItem || '本商品'}${state}${lv >= 1 && last ? `，產季到 ${last} 月` : ''}`;
+    }
+  }
+
+  function renderSizes() {
+    $('sizeBody').innerHTML = sizeRows.map((r, i) => `
+      <tr data-i="${i}">
+        <td><input class="form-control s-label" value="${esc(r.label)}" placeholder="例：6A"></td>
+        <td><input class="form-control s-l0" value="${esc(r.lines[0])}"></td>
+        <td><input class="form-control s-l1" value="${esc(r.lines[1])}"></td>
+        <td><input class="form-control s-l2" value="${esc(r.lines[2])}"></td>
+        <td class="c-del"><button type="button" class="btn btn-danger s-del" aria-label="刪除這一列">✕</button></td>
+      </tr>`).join('');
+    $('sizeCount').textContent = `${sizeRows.length} / ${MAX_ROWS} 列`;
+    $('btnAddRow').disabled = sizeRows.length >= MAX_ROWS;
+
+    $('iconPick').innerHTML = ICON_LIST.map((o) =>
+      `<button type="button" class="icon-opt ${!iconCustom && o.k === sizeIcon ? 'on' : ''}" data-icon="${o.k}" title="${o.n}"><img src="${SIZE_ICONS[o.k]}" alt="${o.n}"></button>`
+    ).join('') + (iconCustom ? '<span class="hint" style="margin:0 0 0 4px">使用自訂圖示</span>' : '');
+
+    const items = $('fSizeHidden').checked ? [] : sizeRows.filter((r) => r.label.trim());
+    $('pvSizes').hidden = items.length === 0;
+    $('pvSizeEmpty').hidden = items.length !== 0;
+    if (!items.length) {
+      $('pvSizeEmpty').textContent = $('fSizeHidden').checked ? '勾了不顯示，前台整格不出現' : '沒有填規格，前台整格不出現';
+      $('pvSizes').innerHTML = '';
+      return;
+    }
+    const icon = SIZE_ICONS[sizeIcon] || SIZE_ICONS.box;
+    const anyLine = items.some((it) => it.lines.some((l) => l.trim()));
+    $('pvSizes').innerHTML = items.map((it, i) => {
+      const px = items.length === 1 ? 32 : Math.round(20 + 16 * (i / (items.length - 1)));
+      const ls = anyLine ? it.lines.filter((l) => l.trim()).map((l) => esc(l)).join('<br>') : '';
+      return `<div class="pv-size-item"><img src="${icon}" alt="" style="width:${px}px;height:${px}px"><b>${esc(it.label)}</b>${ls}</div>`;
+    }).join('');
+  }
+
+  function renderCatches() {
+    const list = catches();
+    const n = list.filter((c) => c.ok).length;
+    $('catchN').textContent = n;
+    $('catchBody').innerHTML = list.map((c) => `
+      <div class="catch ${c.ok ? 'ok' : 'no'}">
+        <span class="ic">${c.ok ? '✓' : '✕'}</span>
+        <span class="nm">${c.nm}</span>
+        <span>
+          <span class="val">${esc(c.val)}</span>
+          ${c.ok ? '' : `<div class="fix">怎麼改：${esc(c.fix)}</div>`}
+        </span>
+      </div>`).join('');
+  }
+
+  function renderAll() { renderSubtitle(); renderSeason(); renderSizes(); renderCatches(); }
+
+  function load(p) {
+    P = p;
+    $('fName').value = p.name;
+    $('fSubtitle').value = p.subtitle;
+    $('fPlace').value = p.place;
+    $('fFarmer').value = p.farmer;
+    $('fSpec').value = p.spec;
+    $('fStorage').value = p.storage;
+    $('fRemind').value = p.remind;
+    $('fMulti').value = p.multi;
+    levels = (p.seasonMonths && p.seasonMonths.length === 12) ? p.seasonMonths.split('').map(Number) : Array(12).fill(0);
+    seasonSource = p.seasonSource;
+    $('fSeasonHidden').checked = !!p.seasonHidden;
+    $('fSizeHidden').checked = !!p.sizeHidden;
+    sizeIcon = p.sizeIcon; iconCustom = false;
+    sizeRows = p.sizeItems.map((it) => ({ label: it.label, lines: [...it.lines] }));
+    renderLab();
+    renderAll();
+  }
+
+  function renderLab() {
+    $('labP').innerHTML = PRODUCTS.map((p) =>
+      `<button type="button" class="lab-btn ${p.key === P.key ? 'on' : ''}" data-k="${p.key}">${esc(p.label)}</button>`
+    ).join('');
+    $('labNote').innerHTML = P.note || '';
+  }
+
+  function readSizeRows() {
+    sizeRows = [...$('sizeBody').querySelectorAll('tr')].map((tr) => ({
+      label: tr.querySelector('.s-label').value,
+      lines: [tr.querySelector('.s-l0').value, tr.querySelector('.s-l1').value, tr.querySelector('.s-l2').value],
+    }));
+  }
+
+  /* ===== 互動 ===== */
+  $('fSubtitle').addEventListener('input', renderSubtitle);
+  ['fStorage', 'fRemind', 'fMulti'].forEach((id) => $(id).addEventListener('input', renderCatches));
+  $('fSeasonHidden').addEventListener('change', renderSeason);
+  $('fSizeHidden').addEventListener('change', renderSizes);
+
+  $('monGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('.mon');
+    if (!b) return;
+    const i = +b.dataset.m;
+    levels[i] = (levels[i] + 1) % 4;
+    seasonSource = '營運手動設定';
+    renderSeason();
+  });
+  $('btnClearSeason').addEventListener('click', () => {
+    if (!confirm('把 12 個月全部設成「沒有」？')) return;
+    levels = Array(12).fill(0);
+    seasonSource = '營運手動設定';
+    renderSeason();
+  });
+  $('btnCopySeason').addEventListener('click', () => {
+    const names = PRODUCTS.filter((p) => p.key !== P.key && p.seasonMonths).map((p, i) => `${i + 1}. ${p.label}`).join('\n');
+    const pool = PRODUCTS.filter((p) => p.key !== P.key && p.seasonMonths);
+    const pick = prompt(`輸入商品名稱或編號，帶入它的產季：\n${names}`);
+    if (!pick) return;
+    const n = parseInt(pick, 10);
+    const found = (n >= 1 && n <= pool.length) ? pool[n - 1] : pool.find((p) => p.label.includes(pick.trim()) || p.name.includes(pick.trim()));
+    if (!found) { alert('找不到這個商品'); return; }
+    levels = found.seasonMonths.split('').map(Number);
+    seasonSource = '營運手動設定';
+    renderSeason();
+  });
+
+  $('sizeBody').addEventListener('input', () => { readSizeRows(); renderSizes(); });
+  $('sizeBody').addEventListener('click', (e) => {
+    if (!e.target.closest('.s-del')) return;
+    const tr = e.target.closest('tr');
+    readSizeRows();
+    sizeRows.splice(+tr.dataset.i, 1);
+    renderSizes();
+  });
+  $('btnAddRow').addEventListener('click', () => {
+    readSizeRows();
+    if (sizeRows.length >= MAX_ROWS) return;
+    sizeRows.push({ label: '', lines: ['', '', ''] });
+    renderSizes();
+  });
+  $('btnClearSize').addEventListener('click', () => {
+    if (!confirm('刪掉所有列？圖示與顯示設定會保留。')) return;
+    sizeRows = [];
+    renderSizes();
+  });
+  $('btnDerive').addEventListener('click', () => {
+    const got = deriveSizes($('fSpec').value);
+    if (!got.length) { alert('規格說明看不出規格，請按「＋ 新增一列」手動填。'); return; }
+    sizeRows = got;
+    renderSizes();
+  });
+  $('iconPick').addEventListener('click', (e) => {
+    const b = e.target.closest('.icon-opt');
+    if (!b) return;
+    sizeIcon = b.dataset.icon; iconCustom = false;
+    renderSizes();
+  });
+  $('btnUploadIcon').addEventListener('click', () => { iconCustom = true; renderSizes(); });
+  $('btnResetIcon').addEventListener('click', () => { iconCustom = false; renderSizes(); });
+  $('btnSave').addEventListener('click', () => {
+    readSizeRows();
+    alert('（示意）已儲存。這一頁不會真的寫進資料庫。');
+  });
+
+  document.querySelector('.lab').addEventListener('click', (e) => {
+    const b = e.target.closest('.lab-btn');
+    if (b && b.dataset.k) { const p = PRODUCTS.find((x) => x.key === b.dataset.k); if (p) load(p); }
+  });
+
+  load(PRODUCTS[0]);
+</script>
+</body>
+</html>

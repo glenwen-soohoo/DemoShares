@@ -1,0 +1,253 @@
+/* ───── GoX Admin / base.css ─────
+   後台殼共用 reset + 全域字型 + CSS 變數 token。
+   color / spacing / radius 集中在 :root，後續元件一律 var(--gox-*) 取用，
+   不要再回填 hex。 */
+
+*, *::before, *::after {box-sizing: border-box; }
+:root {/* ── 品牌綠 ── */
+  --gox-green:           #4ba83b;   /* 主操作 / hover */
+  --gox-green-hover:     #3d8c30;
+  --gox-header-bg:       #D7F4DA;   /* header 淺綠底 */
+  --gox-header-border:   #c2dfc4;
+
+  /* ── 側欄深灰 ── */
+  --gox-sider-bg:        #32323a;
+  --gox-sider-sub-bg:    #28282e;
+  --gox-sider-active-bg: #202025;
+  --gox-sider-text:      #fff;
+  --gox-sider-sub-text:  #cccccc;
+  --gox-sider-active-text: bisque;
+
+  /* ── 內容區 ── */
+  --gox-content-bg:      #f1f2f7;
+  --gox-card-bg:         #ffffff;
+  --gox-card-border:     #e6e6e6;
+
+  /* ── 文字 ── */
+  --gox-text:            #333333;
+  --gox-text-sub:        #666666;
+  --gox-text-muted:      #888888;
+
+  /* ── 語意色（補 antd primary #1677ff 之外）── */
+  --gox-danger:          #dc4e43;   /* 主危險（與前台一致） */
+  --gox-danger-soft:     #ff4d4f;   /* antd danger 替代值 */
+  --gox-warning:         #fbbf24;
+  --gox-info:            #2c98f0;
+  --gox-success:         #52c41a;
+
+  /* ── 元件尺寸 ── */
+  --gox-header-h:        49px;
+  --gox-sider-w:         160px;     /* Gift 170 + B2B 150 折衷 */
+  --gox-radius:          4px;
+  --gox-radius-lg:       6px;
+  --gox-space-unit:      4px;
+
+  /* ── 字型 / 字級 ── */
+  --gox-font-family:     'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體',
+                         -apple-system, BlinkMacSystemFont, sans-serif;
+  --gox-font-size-base:  14px;
+  --gox-font-size-sm:    13px;
+  --gox-font-size-xs:    12px; }
+body {margin: 0;
+  min-height: 100vh;
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base);
+  color: var(--gox-text);
+  background: var(--gox-content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; }
+/* 整個後台 wrapper（一定要包這層才能套色） */
+.gox-page {min-height: 100vh;
+  background: var(--gox-content-bg);
+  color: var(--gox-text);
+  font-family: var(--gox-font-family);
+  font-size: var(--gox-font-size-base); }
+/* ───── GoX Admin / header.css ─────
+   固定在頂端的淺綠 header：
+     左：無毒農 logo（小張）
+     中：breadcrumb（B2B管理 > 訂單管理）
+     右：使用者快捷區（登出、通知；可選） */
+
+.gox-header {position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--gox-header-h);
+  background: var(--gox-header-bg);
+  border-bottom: 1px solid var(--gox-header-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-family: var(--gox-font-family); }
+.gox-header .gox-logo {display: inline-flex;
+  align-items: center;
+  flex-shrink: 0; }
+.gox-header .gox-logo img {height: 28px;
+  width: auto;
+  max-width: 120px;
+  display: block; }
+/* ── breadcrumb ── */
+.gox-breadcrumb {display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gox-text-sub);
+  font-size: 15px;
+  flex: 1;
+  min-width: 0; }
+.gox-breadcrumb a {color: var(--gox-green);
+  text-decoration: none; }
+.gox-breadcrumb a:hover {text-decoration: underline; }
+.gox-breadcrumb .sep {color: var(--gox-text-muted);
+  font-size: 12px; }
+.gox-breadcrumb strong {color: #000;
+  font-weight: 700; }
+/* ── 右側使用者快捷區（可選）── */
+.gox-header-right {display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: var(--gox-font-size-sm); }
+.gox-header-right .gox-user {color: var(--gox-text); }
+.gox-header-right .gox-icon-btn {background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--gox-radius);
+  white-space: nowrap; }
+.gox-header-right .gox-user {white-space: nowrap; }
+.gox-header-right .gox-icon-btn:hover {background: rgba(0, 0, 0, .05);
+  color: var(--gox-text); }
+/* ───── GoX Admin / sidebar.css ─────
+   左側深灰固定側欄。支援：
+     - 一級項目（可帶 badge 紅點）
+     - 可摺疊群組（▶ / ▼）
+     - 二級項目（active 高亮）
+     - disabled 樣式 */
+
+.gox-sidebar {width: var(--gox-sider-w);
+  flex-shrink: 0;
+  background: var(--gox-sider-bg);
+  color: var(--gox-sider-text);
+  padding: 8px 0;
+  font-size: var(--gox-font-size-sm);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--gox-header-h);
+  height: calc(100vh - var(--gox-header-h));
+  font-family: var(--gox-font-family); }
+/* ── 一級項目 / 群組標題 ── */
+.gox-sidebar .gox-menu-item,
+.gox-sidebar .gox-menu-title {display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--gox-sider-text);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--gox-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  user-select: none; }
+.gox-sidebar .gox-menu-item:hover,
+.gox-sidebar .gox-menu-title:hover {background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text); }
+/* disabled（demo 未開放的入口） */
+.gox-sidebar .gox-menu-item.is-disabled {cursor: default;
+  color: #888; }
+.gox-sidebar .gox-menu-item.is-disabled:hover {background: transparent;
+  color: #888; }
+/* 一級項目 active（無子項目、可直接點的頁面，例如「獨立平台」）
+   字色用 !important 壓過腳本給一級項的 inline color:inherit，對齊二級 active 的 bisque */
+.gox-sidebar .gox-menu-item.is-active {background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text) !important;
+  font-weight: 600; }
+/* 箭頭（▶ / ▼） */
+.gox-sidebar .gox-arrow {display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  flex-shrink: 0;
+  transition: transform .15s; }
+/* badge 紅點 */
+.gox-sidebar .gox-badge {margin-left: auto;
+  background: var(--gox-danger);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px; }
+/* ── 摺疊群組 ── */
+.gox-sidebar .gox-menu-group.is-open .gox-menu-title {background: var(--gox-sider-sub-bg);
+  color: var(--gox-sider-active-text); }
+.gox-sidebar .gox-menu-children {background: var(--gox-sider-sub-bg); }
+/* 二級項目 */
+.gox-sidebar .gox-menu-child {display: block;
+  padding: 8px 14px 8px 32px;
+  color: var(--gox-sider-sub-text);
+  text-decoration: none;
+  font-size: var(--gox-font-size-sm); }
+.gox-sidebar .gox-menu-child:hover {background: #252530;
+  color: var(--gox-sider-active-text);
+  text-decoration: none; }
+.gox-sidebar .gox-menu-child.is-active {background: var(--gox-sider-active-bg);
+  color: var(--gox-sider-active-text);
+  font-weight: 600; }
+/* ───── GoX Admin / content.css ─────
+   內容區共用元件：
+     .gox-content / .gox-card / button / form / table / modal / tab / switch / icon-btn
+   全部用 :root 變數，不直接寫 hex。 */
+
+/* ── 主體佈局：header 下方的 sidebar + content ── */
+.gox-body {display: flex;
+  min-height: calc(100vh - var(--gox-header-h)); }
+.gox-content {flex: 1;
+  min-width: 0;          /* 讓子層 table overflow 正常 */
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--gox-content-bg); }
+/* ─────────────────────────────────────────────────
+   Icon button（鉛筆 / 確認 / 取消）
+   ───────────────────────────────────────────────── */
+.gox-icon-btn {display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gox-radius);
+  cursor: pointer;
+  color: var(--gox-text-sub);
+  font-size: 12px;
+  font-family: inherit;
+  transition: all .15s; }
+.gox-icon-btn:hover {background: #f0f4f8;
+  color: var(--gox-info);
+  border-color: #bcd4ea; }
+.gox-icon-btn.is-confirm {background: var(--gox-green); color: #fff; border-color: var(--gox-green); }
+.gox-icon-btn.is-confirm:hover {background: var(--gox-green-hover); border-color: var(--gox-green-hover); }
+.gox-icon-btn.is-cancel {background: #fff; color: #999; border-color: #ccc; }
+.gox-icon-btn.is-cancel:hover {background: #f5f5f5; color: var(--gox-danger); border-color: var(--gox-danger); }
+
+/* ── 產地直送這一頁補的：殼的 CSS 跟真站後台的 Bootstrap 同時存在，
+      這幾條把兩邊的邊界切開，讓卡片待在內容區裡、殼不被 Bootstrap 的 row/container 影響。 ── */
+body { margin: 0; }
+.gox-content > form { max-width: none; margin: 0; }
+.gox-content .row.product-info-wrap { margin-left: 0; margin-right: 0; }
+.gox-content .card { margin-bottom: 16px; }
+.gox-content .demo-placeholder {
+  border: 1px dashed #c0c4cc; border-radius: 4px; background: #fafafa;
+  color: #909399; font-size: 13px; padding: 12px 16px; margin: 0 0 16px;
+}

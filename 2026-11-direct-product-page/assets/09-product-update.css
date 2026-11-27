@@ -1,0 +1,151 @@
+﻿.hide-area {
+    display: none;
+}
+
+.f-basis-amt {
+    flex-basis: 90px !important;
+}
+
+.f-basis-price {
+    flex-basis: 120px !important;
+}
+
+.f-basis-date {
+    flex-basis: 160px !important;
+}
+
+.f-basis-delay {
+    flex-basis: 130px !important;
+}
+
+.star {
+    color: red;
+    margin-left: 10px;
+}
+
+.font-pink {
+    color: #f35d5d;
+}
+
+.font-gray {
+    font-size: 12px;
+    color: gray;
+    font-weight: normal;
+}
+
+.plr-5 {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.m-l-5 {
+    margin-left: 5px;
+}
+
+.constraint-wrap {
+    margin-left: 25px;
+}
+
+.constraint-title {
+    margin-top: 5px;
+    margin-bottom: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.check-wrap {
+    flex-basis: 10px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+select.fix-h-34 {
+    height: 34px !important;
+}
+
+#creat-form-btn {
+    padding: 8px 60px;
+    border: 0px;
+    border-radius: 5px;
+    font-size: 20px;
+    color: white;
+    background-color: #d44940;
+    margin-top: 10px;
+    font-weight: 900;
+}
+.add-spec-btn {
+    background-color: #D7F4DA;
+    padding: 2px 20px;
+    border: 1px solid #d7f4da;
+    border-radius: 2px;
+    color: #28a745;
+    box-shadow: 1px 1px 2px #c9bfbf;
+}
+
+.del-spec-btn {
+    color: #fff;
+    background-color: #fa3044;
+    border-color: #bd2130;
+    border: 1px solid;
+    border-radius: 2px;
+    padding: 0px 10px;
+}
+.spec-frame-bg {
+    background-color: #dbffec;
+    border: 1px solid #1ac314;
+    border-radius: 5px;
+    padding: 10px 20px;
+}
+.form-control {
+    font-size: 16px!important;
+}
+
+.preview-img-size {
+    width: 70px;
+    height: auto;
+}
+.width-40px {
+    width: 40px;
+}
+
+#p-pics-wrapper {
+    background-color: #dbffec;
+    border: 1px solid #1ac314;
+    padding-left: 10px;
+    padding-top: 10px;
+}
+
+.font-16 {
+    font-size: 16px;
+}
+
+.add-spec-btn {
+    background-color: #D7F4DA;
+    padding: 2px 20px;
+    border: 1px solid #d7f4da;
+    border-radius: 2px;
+    color: #28a745;
+    box-shadow: 1px 1px 2px #c9bfbf;
+}
+
+.del-spec-btn {
+    color: #fff;
+    background-color: #fa3044;
+    border-color: #bd2130;
+    border: 1px solid;
+    border-radius: 2px;
+    padding: 0px 10px;
+}
+
+
+
+
+.stock-text {
+    font-weight: 600;
+    line-height: 28px;
+}
+
+.sub-title-text {
+    color: #fbed55;
+    margin-left: 1rem;
+}

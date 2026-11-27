@@ -1,0 +1,2479 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="zh-Hant-TW" dir="ltr">
+<head>
+<!--
+  DemoShares 交接對照 | 產地直送商品頁・現況 1:1 還原
+  改的是既有介面：商品詳情頁（前台）  route /Products/ItemDetail/{id}
+  真相來源：線上 https://greenbox.tw/Products/ItemDetail/74987 的未登入版 markup（2026-11-27 擷取）
+           對應 repo：D:\GreenBox\fruit_web 分支 origin/dev（9dce60758）
+           HuashanCRM/Views/Products/ItemDetail.cshtml
+
+  這次要動的檔（改既有 1 支 ／ 只參考 3 支）：
+    [改既有] fruit_web HuashanCRM/Views/Products/ItemDetail.cshtml
+               這次需求的重點區、副標題、產季、大小對照都加在這一支
+    [只參考] fruit_web HuashanCRM/Views/Activity/PartialView/_PartialFeatureBox.cshtml:172
+               最後付款期限沿用 productDetail.EndTime，不用改
+    [只參考] Dist/Css/Product/ItemDeail-min.css、Content/Web/ItemDetail.css
+               樣式沿用真站，不用改
+    [只參考] fruit_web GreenBox.Service/Implementation/Product/DataService.cs:398
+               App 那條 Remarks 拆法，本次 App 不做，不要動
+
+  這一頁是什麼：**只有現況，沒有這次需求的新區塊。**
+  markup 與 class 逐字來自真站，CSS 直接連真站的 14 支樣式檔（絕對網址），
+  所以渲染出來跟線上同一套。要加新功能就在這個底上疊，不要另外自刻結構。
+
+  範圍：這一頁到「喝湯抽大獎」那張 banner（.adArea）為止。
+     真站接下來的商品描述（#Content.ckeditor，約 7800px 高）、同一張 banner 再放一次、
+     平台保證等區塊都不在這次需求範圍，沒有還原，頁面上該位置有註解說明。
+
+  已移除：真站全部 <script>（追蹤碼、購物車 API）。按鈕不會送出。
+     頁尾補了兩小段代打，工程不用抄：
+       一、商品主圖輪播：jQuery + slick，主圖 .img-slick 與縮圖 .img-nav-slick 用 asNavFor 連動
+       二、規格切換：點 .spec-btn 換下面對應的 .show-{ProductDetailId} 區塊
+
+  這一頁的真實欄位名：
+    規格說明／保存方法  Product.Remarks 一欄，用字串 split 隔前後段
+    貼心叮嚀            Product.Remind（JSON 陣列）
+    多盒優惠            Product.MultiBoxDiscount  ⚠ 後台 ViewModel 叫 LargeDiscount
+    溫層                Product.TemperatureTypeId（1 常溫 2 冷藏 3 冷凍）
+    剩餘數量            productDetail.StockAmt，DOM id stock_{ProductId}  ⚠ 不是原始庫存 OriginAmt
+    售價／原價          SellPrice ／ ReferencePrice
+    規格鈕              class spec-btn，id spec-pd-{ProductDetailId}，容器 .spec-frame
+  完整名稱對照見同資料夾 _交接對照.md
+-->
+
+    <meta charset="utf-8">
+    
+    <!-- Google Tag Manager -->
+    
+    <!-- End Google Tag Manager -->
+    <!-- Google reCAPTCHA -->
+    
+    
+    <!-- End Google reCAPTCHA-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="https://fruitbox.blob.core.windows.net/pagematerials/GreenBoxShortCutIcon.ico" rel="shortcut icon" type="image/x-icon"/>
+    <!-- for Facebook og-->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-itunes-app" content="app-id=1061895114, app-argument=https://app.greenbox.tw/Smart-App-Banner">
+    
+    <title>產地直送商品頁・現況</title>
+    <meta property="og:title" content="蘋果季【梨山蜜蘋果】雲頂果園｜無毒農" />
+    <meta name="description" content="&lt;p&gt;台中梨山、大禹嶺是台灣本土高山蘋果的故鄉，從秋天開始陪伴大家度過冬天，從秋香、金冠、青龍採收到最甜美的「蜜蘋果」。 蜜蘋果，源自於日本的高貴品種，日人賦予它美麗優雅的名字，又稱「惠」、「光榮」，果型飽滿，色澤鮮艷討喜，口感清脆，風味甜美，在台灣有一群忠實的朋友，每年就等這一味！&lt;/p&gt;" />
+    <link rel="canonical" href="https://greenbox.tw/Products/ItemDetail/74987" />
+    <meta property="og:description" content="&lt;p&gt;台中梨山、大禹嶺是台灣本土高山蘋果的故鄉，從秋天開始陪伴大家度過冬天，從秋香、金冠、青龍採收到最甜美的「蜜蘋果」。 蜜蘋果，源自於日本的高貴品種，日人賦予它美麗優雅的名字，又稱「惠」、「光榮」，果型飽滿，色澤鮮艷討喜，口感清脆，風味甜美，在台灣有一群忠實的朋友，每年就等這一味！&lt;/p&gt;" />
+    <meta property="og:url" content="https://greenbox.tw/Products/ItemDetail/74987" />
+    <meta property="og:image" content="https://greenboxcdn.azureedge.net/upload/Product_3033/202511180747401.jpg" />
+    <meta name="keywords" content="2026蜜蘋果,雲頂果園,蜜蘋果,蘋果,梨山,清脆,甜美,無毒,哪裡買,小農,無毒水果,無毒農,台灣蘋果,草生栽培,蘋果季" />
+        
+
+
+    <!--css-->
+    <link href="https://greenbox.tw/Dist/Css/layout-min.css?v=3.3.4.4" rel="stylesheet">
+    <link href="https://greenbox.tw/Dist/Css/Shared/layoutOpt-min.css?v=12" rel="stylesheet" />
+    <link href="https://greenbox.tw/Content/slick/slick-theme.css" rel="preload" as="style" />
+    <link href="https://greenbox.tw/Dist/Css/Activity/Carnaval-min.css?v=3.0" rel="stylesheet" media="print" />
+    <link href="https://greenbox.tw/Content/jQuery/jquery-ui.css" rel="stylesheet" media="print" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css" media="print">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/6.10.3/sweetalert2.css" media="print"/>
+    <link rel="preconnect" href="https://greenboxcdn.azureedge.net"/>
+
+    
+
+    
+
+
+    <noscript>
+        <img height="1" width="1" style="display: none"
+             src="https://www.facebook.com/tr?id=378211592357729&ev=PageView&noscript=1"/>
+    </noscript>
+
+    <noscript>
+        <img height="1" width="1" style="display:none"
+             src="https://www.facebook.com/tr?id=1567383533597023&ev=PageView&noscript=1"/>
+    </noscript>
+
+    <noscript>
+        <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=303900099395783&ev=PageView&noscript=1"/>
+    </noscript>
+
+    <!-- End Facebook Pixel Code -->
+    <link rel="manifest" href="https://greenbox.tw/manifest.json">
+    <!-- Google shopping Code -->
+    <meta name="google-site-verification" content="arCJv1vJcVxt70vzop6ZdSX4z15hZxTpfYeEmbdjEiA">
+    <meta name="google" value="notranslate">
+    <!-- Global site tag (gtag.js) - AdWords: 1007812345 -->
+    
+    
+    <!-- LINE Tag Base Code -->
+    <!-- Do Not Modify -->
+    
+    <noscript>
+        <img height="1" width="1" style="display:none"
+             src="https://tr.line.me/tag.gif?c_t=lap&t_id=f043812f-b850-4d93-84cd-1bc8fe6b47c8&e=pv&noscript=1"/>
+    </noscript>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+             src="https://tr.line.me/tag.gif?c_t=account&t_id=676bd1e0-6502-4657-aa23-f1fa6bef20c0&e=pv&noscript=1"/>
+    </noscript>
+    <!-- End LINE Tag Base Code -->
+    
+
+    
+
+
+    <noscript id="deferred-styles">
+        <link rel="stylesheet" type="text/css" href="https://greenbox.tw/Content/font-awesome/css/font-awesome.min.css" />
+    </noscript>
+    
+    
+    
+    <!--js-->
+    
+    
+    
+    
+    
+    
+
+    
+
+</head>
+<body>
+
+
+<style>
+    .coupon-dot { display: none; position: absolute; top: 2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: #e24b4a; border: 1.5px solid #fff; }
+    .coupon-bubble { position: fixed; z-index: 10001; background: #e24b4a; color: #fff; font-size: 13px; line-height: 1.4; padding: 7px 10px; border-radius: 8px; white-space: nowrap; box-shadow: 0 2px 10px rgba(0,0,0,.18); display: flex; align-items: center; gap: 8px; transition: opacity .4s; }
+    .coupon-bubble::after { content: ''; position: absolute; top: 50%; right: -6px; transform: translateY(-50%); border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 6px solid #e24b4a; }
+    .coupon-bubble-text { cursor: pointer; }
+    .coupon-bubble-x { cursor: pointer; opacity: .85; font-size: 15px; }
+    .m-gb-coupon-btn { display: none; }
+    @media (max-width: 768px) { .m-gb-coupon-btn { display: block !important; float: right !important; margin-right: 10px; } }
+    @media (min-width: 768px) {
+        .transitionFromFbToMobileMbHint {
+            display: none;
+        }
+    }
+
+    /* 主選單 / 購物車按鈕點擊後焦點殘留的 :focus outline 抑制（這幾個是 platform CDN React 元件，
+       outline 形狀會被內部 absolute dropdown 撐大、視覺礙眼，所以滑鼠 click 整個關掉）。
+       購物車按鈕在 _PartialLayoutHeader.cshtml 內依版型有三個 id：
+         #cartbtn（手機 m-gb-cart-btn）、#web-cart-btn（桌機）、#groupCartBtn（團購首頁）
+       #shopping-cart 是 cart/index.js React mount 點，用 descendant 一併覆蓋裡面 a/button。
+       詳見 D:\Obsidian\GreenBox\02_一般需求\202605_彈窗壓縮優化與首頁選單active殘留\首頁選單active殘留排查.md */
+    #navbar a:focus:not(:focus-visible),
+    #shopping-cart :focus:not(:focus-visible),
+    #cartbtn:focus:not(:focus-visible),
+    #web-cart-btn:focus:not(:focus-visible),
+    #groupCartBtn:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    /* 關閉瀏覽器在連結 / 按鈕 / 表單元素上的預設 focus 外框（含偶發黑框；常見於滑鼠點擊後被
+       :focus-visible 判定為「需顯示焦點」而冒出的黑色 outline，例如商品圖片連結 .example-image-link、
+       購買 <button>、slick 切換箭頭）。站上雖有 :focus{outline:0} reset，但部分元件因載入順序 / 外掛
+       腳本未被擋住，這條放在全站皆載入的 header <style>、特異性 (0,1,1) 高於 reset，可確實覆蓋。
+       下面會員中心兩處規則特異性更高 ((0,2,0)/(0,2,1))，仍保留品牌綠外框，不受這條影響。 */
+    a:focus,
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus,
+    [tabindex]:focus,
+    .example-image-link:focus {
+        outline: none;
+    }
+
+    /* focus outline 只保留在「會員中心入口」與「會員中心左側選單」兩處，使用品牌綠 #98cd90，
+       滑鼠 click + 鍵盤 Tab 都顯示，作為「點到了」的反饋。
+       其餘全站連結（商品卡、看更多等）的 focus outline 維持 styleNew.css reset 的關閉狀態
+       （:focus{outline:0} / a{outline:none}），避免滑鼠點擊後殘留綠框。
+       本組 selector 特異性（.member-wrap-link:focus = 0,2,0；.left_menu a:focus = 0,2,1）皆高於 reset，故能正確覆蓋。
+       border-radius 讓 outline 圓角；Chrome 94+ / Firefox 88+ / Safari 16.4+ 會跟著 outline 一起渲染圓角。 */
+    .member-wrap-link:focus,
+    .left_menu a:focus {
+        outline: 2px solid #98cd90;
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+</style>
+
+
+
+
+
+
+
+
+
+<style>
+    /* 2026-10 購物車結帳流程優化：右下浮動鈕直向堆疊，由上到下＝回頂端 → 小幫手（僅粥寶寶頁）→ 購物車。
+       桌機購物車／小幫手 52px 靠右 50、回頂端 40px 靠右 56；手機維持原本貼邊 5 / 11。圓心都對齊同一條線。
+       回頂端原本的位置樣式在 Dist/Css（不進版控），所以在這裡覆寫。 */
+    /* 桌機：購物車底 34（52 高 → 上緣 86），回頂端留 12px 間距 → 底 98 */
+    @media (min-width: 768px) {
+        #All-Page-BackTop { bottom: 98px !important; right: 56px !important; }
+    }
+    /* 手機：維持原本貼邊（購物車／小幫手 right 5），回頂端 right 11 讓圓心對齊、底 92 */
+    @media (max-width: 767px) {
+        #All-Page-BackTop { bottom: 92px !important; right: 11px !important; }
+    }
+</style>
+<div id="All-Page-BackTop">
+    <a href="javascript: void(0)">
+        <i class="fa fa-angle-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+<input id="IsLogin" name="IsLogin" type="hidden" value="False" />
+<input id="UserId" name="UserId" type="hidden" value="-1" />
+
+
+
+<header canvas="" id="fixed-top" class="sb-slide gb-head-h">
+    <div class="col-xs-12 p-0 originLayout">
+        <div id="menu">
+            <ul class="menu-bar navigation" style="padding-left: 5px; padding-top: 5px; height: 46px; margin-bottom: 0px; font-family: initial;">
+                <li id="sidebar" style="padding: 13px 10px;"></li>
+                <input id="replyCount" name="replyCount" type="hidden" value="0" />
+                <li class="greenbox-logo">
+                    <a href="https://greenbox.tw/" style="outline: none;">
+                        <img style="width: 8.8571em; outline: none; margin-left: 12px;" src="https://fruitbox.blob.core.windows.net/pagematerials/shared/2022_logo.svg" id="logo" class="img-hover" title="無毒農，友善環境的安心水果" alt="無毒農，友善環境的安心水果">
+                    </a>
+                </li>
+                <li id="search-web">
+                    <a href="javascript:void(0)">
+                        <i class="fa fa-search"></i>
+                    </a>
+                    <input id="search-input" type="text" placeholder="請輸入關鍵字" autocomplete="off">
+                </li>
+                <li class="menu-icon m-gb-cart-btn">
+                    <a id="cartbtn" class="next" style="text-align: right; display: inline-block;" href="#">
+                        <div class="cart-btn_icon-wrap" style="text-align: center;">
+                            <i style="font-size: 20px;" class="fa fa-shopping-basket" alt="無毒農菜籃"></i>
+                        </div>
+                        <div class="apppp ckkkk cart_no" style="display: none; font-size: 12px"></div>
+                        <div class="buy-pd"></div>
+                    </a>
+                </li>
+                <li id="header-top" class="webshowpart" style="display: none;">
+                    <div class="top_member-wrap" style="min-width:600px;text-align:right">
+                            <a class="next member-wrap-link" href="javascript:login()">
+                                &ensp;<i class="fa fa-user" aria-hidden="true"></i>&ensp;農粉登入 &ensp;| &ensp;
+                            </a>
+                            <a class="next member-wrap-link" href="https://greenbox.tw/Login/Register_2">加入會員</a>
+                    </div>
+                    &ensp;
+                    <a id="web-cart-btn" class="next web-cart-b-frame" href="#">
+                        <div class="cart-btn_icon-wrap cart-web-size" style="text-align: center">
+                            <i class="fa fa-shopping-basket" alt="無毒農菜籃"></i>
+                            <div class="apppp ckkkk cart_no cart_no_pos" style="display: none; font-size: 12px"></div>
+                        </div>
+                        <div class="buy-pd"></div>
+                    </a>
+                </li>
+            </ul>
+            <div id="navbar"></div>
+        </div>
+        <section id="search-plus" class="container" style="display:none;">
+            <div>
+                <a href="https://greenbox.tw/" style="outline: none;">
+                    <img style="width: 8.8571em; outline: none; margin-left: 12px;" src="https://fruitbox.blob.core.windows.net/pagematerials/shared/2022_logo.svg" id="logo" class="img-hover" title="無毒農，友善環境的安心水果" alt="無毒農，友善環境的安心水果">
+                </a>
+                <button type="button" class="search-close-web" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="search-input">
+                <a href="javascript:void(0)">
+                    <i class="fa fa-search"></i>
+                </a>
+                <input type="text" id="search-input-content" placeholder="請輸入關鍵字" />
+            </div>
+        </section>
+    </div>
+    <div style="display:none" id="cart-toggles"></div>
+    <div class="col-xs-12 groupLayout ">
+        <div class="col-xs-12 p-0" style="display:flex;flex-wrap:wrap">
+            <div class="col-xs-3 col-md-3" style="text-align: center">
+                <img id="groupLogo" />
+            </div>
+            <div class="col-xs-9 col-md-6 p-0" style="text-align: center; display: flex; justify-content: center; align-items: center;">
+                <a class="groupTitleLink" href="javascript:void(0)">
+                    <text id="groupTitle"></text>
+                </a>
+            </div>
+            <div id="featuresArea" class="col-xs-12 col-md-3" style="text-align: center; display: flex; justify-content: center; align-items: center;">
+                        <a class="next member-wrap-link" href="javascript:login()">
+                            &ensp;<i class="fa fa-user" aria-hidden="true"></i>&ensp;農粉登入 &ensp;| &ensp;
+                        </a>
+                        <a class="next member-wrap-link" href="https://greenbox.tw/Login/Register_2">加入會員</a>
+&ensp;
+                        <a id="groupCartBtn" class="next web-cart-b-frame" href="#" style="position:relative">
+                            <div class="cart-btn_icon-wrap cart-web-size" style="text-align: center">
+                                <i class="fa fa-shopping-basket" alt="無毒農菜籃"></i>
+                                <div class="apppp ckkkk cart_no cart_no_pos" style="display: none; font-size: 12px"></div>
+                            </div>
+                            <div class="buy-pd"></div>
+                        </a>
+            </div>
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-598MC4T"
+            height="0" width="0" style="display:none;visibility:hidden">
+    </iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+<div canvas="container" class="body-m-t sb-site-container">
+    <section id="search-mob">
+        <div class="search-area">
+            <input id="search-input-mob" placeholder="請輸入關鍵字" type="text" autocomplete="off"/>
+        </div>
+        <div>
+            <i class="fa fa-search"></i>
+        </div>
+    </section>
+    <div id="search-content">
+
+    </div>
+    <section id="RenderBody">
+        
+
+
+
+<!--lightbox套件-->
+
+<link href="https://greenbox.tw/Content/lightbox.css" rel="stylesheet">
+<link href="https://greenbox.tw/Content/Web/ItemDetail.css?v=1.0.8" rel="stylesheet">
+
+
+
+<!-- 下方水果箱其他商品輪播 start-->
+<link href="https://greenbox.tw/Content/slick/slick.css" rel="stylesheet" />
+<link href="https://greenbox.tw/Content/slick/slick-theme.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<style>
+    @import url(https://fonts.googleapis.com/css?family=Open+Sans:300,400);
+
+    .font-16px {
+        font-size: 16px;
+    }
+
+    .col-xs-1-cus-1 {
+        width: 4.333333%;
+        float: left;
+        font-size: 16px;
+    }
+
+    /* 商品狀態蓋圖（產地直送上下架呈現優化 DEV-4017）。
+       需求書指定用文字＋色塊，不強制出圖；比照既有「產季已結束」的做法。
+       pointer-events:none 讓它不擋住原本點圖放大的 lightbox。 */
+    .gb-status-stamp {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(26, 26, 26, .6);
+        color: #fff;
+        font-family: 'Noto Sans TC', sans-serif;
+        pointer-events: none;
+        box-sizing: border-box;
+    }
+
+    .gb-status-stamp .gb-status-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        max-width: 80%;
+        padding: 8px 12px;
+        border: 1px solid #fff;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: center;
+        transform: rotate(-8deg);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, .24);
+    }
+
+    .gb-status-stamp .gb-status-label span {
+        display: block;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    /* 產季未到才有的預計採收月份，字級與粗細都比主文案低一階 */
+    .gb-status-stamp .gb-status-season {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .col-xs-1-cus-2 {
+        width: 2.333333%;
+        float: left;
+        font-size: 16px;
+    }
+
+    /* 開賣通知（一般售完）：取代「已售完」，同高同字級、撐滿 */
+    .restock-soldout-area .restock-soldout-btn {
+        float: none;
+        left: 0;
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+        font-size: 18px;
+        line-height: normal;
+        border-radius: 5px;
+    }
+
+    .col-xs-11-cus-1 {
+        width: 97.666667%;
+        float: left;
+        font-size: 16px;
+    }
+
+    #sb-site2 {
+        background-color: #F2F2F0;
+    }
+
+    .item-title {
+        font-family: 'Microsoft JhengHei';
+        color: #333;
+        font-size: 16px;
+    }
+
+    .item-text {
+        color: #333;
+        display: block;
+        text-align: justify;
+        white-space: nowrap;
+        font-size: 20px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .slick-slide {
+        width: 222px;
+        /*height: 148px;*/
+        background-color: white;
+    }
+
+    .slide_item {
+        margin: 0 6px;
+    }
+
+    #Content img {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    ul.countdown {
+        list-style: none;
+        text-align: center;
+        width: 30%;
+        border-radius: 5px;
+        margin-bottom: 0px;
+    }
+
+        ul.countdown li {
+            vertical-align: middle;
+        }
+
+            ul.countdown li span {
+                font-size: 22px;
+                line-height: 0px;
+            }
+
+            ul.countdown li.seperator {
+                font-size: 22px;
+                vertical-align: middle;
+            }
+
+            ul.countdown li p {
+                color: #a7abb1;
+                font-size: 22px;
+            }
+
+    .countdown span {
+        color: white;
+        height: 100%;
+    }
+
+    .countdown > li {
+        color: white;
+        height: 100%;
+        display: inline-block;
+    }
+
+    .not-allowed:hover {
+        cursor: not-allowed;
+    }
+
+    .product-description-content {
+        font-size: 16px;
+        margin-left: 3%;
+    }
+
+    .bx-wrapper .bx-controls-direction a {
+        opacity: 1;
+        top: 66%;
+    }
+
+    @media (max-width: 625px) {
+        .col-xs-1-cus-2 {
+            width: 4.333333%;
+            float: left;
+        }
+
+        .col-xs-11-cus-1 {
+            width: 94.666667%;
+            float: left;
+        }
+    }
+
+    .buybutton {
+        height: auto;
+    }
+
+    .hide {
+        display: none !important;
+    }
+
+    .spec-frame .spec-btn {
+        border: 1px solid #ccc;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 2px;
+        color: #000;
+        width: 90%;
+        background-color: #fff;
+        padding: 5px 2px;
+        margin-bottom: 1.2rem;
+    }
+
+    .spec-frame .spec-btn-frozen {
+        border: 1px solid #ccc;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 2px;
+        color: #000;
+        width: 90%;
+        background-color: #fff;
+        padding: 5px 2px;
+        margin-bottom: 1.2rem;
+    }
+
+    .spec-btn.active {
+        color: #fff;
+        background-color: #4ba83b;
+    }
+
+    .spec-btn-frozen.active {
+        color: #fff;
+        background-color: #198FA7;
+    }
+
+    .spec-btn.is-soldout,
+    .spec-btn-frozen.is-soldout {
+        background-color: #e0e0e0;
+        color: #999;
+        cursor: not-allowed;
+        border-color: #ccc;
+    }
+
+    .spec-btn.is-soldout:hover,
+    .spec-btn-frozen.is-soldout:hover {
+        background-color: #e0e0e0;
+        color: #999;
+    }
+
+    .pd-frame {
+        color: #333;
+        font-size: 16px;
+        margin-bottom: 0px;
+    }
+
+    .f-14 {
+        font-size: 14px;
+    }
+
+    .slick-prev {
+        left: 25px;
+        z-index: 10;
+    }
+
+    .slick-next {
+        right: 25px;
+        z-index: 10;
+    }
+
+    .slick-prev:before {
+        font-size: 30px;
+    }
+
+    .slick-next:before {
+        font-size: 30px;
+    }
+
+    .image-below-product-description-container{
+        margin-bottom: 60px;
+    }
+
+    /* 加價購商品區塊（DEV-3993） */
+    .addon { clear: both; margin: 24px 0 0; border: 1px solid #e5e5e5; border-radius: 6px; overflow: hidden; }
+    .addon-head { background: linear-gradient(90deg,#4ba83b,#5bbd49); color: #fff; padding: 12px 16px; font-size: 17px; font-weight: 700; }
+    .addon-head .note { font-size: 13px; font-weight: 400; opacity: .92; margin-left: 6px; }
+    /* 搬到購買區、加入菜籃上方後固定單欄長條（grid gap 當分隔線） */
+    .addon-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; background: #f0f0f0; }
+    .addon-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin: 0; background: #fff; }
+    .addon-row.checked { background: #f5fbf3; }
+    .addon-ck { width: 18px; height: 18px; accent-color: #4ba83b; flex: 0 0 auto; cursor: pointer; }
+    .addon-thumb { width: 62px; height: 62px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e5e5; flex: 0 0 auto; }
+    .addon-temp { display: inline-block; background: #4e9854; color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    .addon-body { flex: 1; min-width: 0; }
+    .addon-name { font-size: 15px; color: #333; font-weight: 500; }
+    .addon-spec { font-size: 13px; color: #808080; margin-top: 2px; }
+    .addon-qty { padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; flex: 0 0 auto; }
+    .addon-price { flex: 0 0 auto; text-align: right; min-width: 78px; }
+    .addon-price .orig { display: block; text-decoration: line-through; color: #aaa; font-size: 13px; }
+    .addon-price .now { color: #dc4e43; font-size: 18px; font-weight: 700; }
+    /* 買不到的列：class 用 addon-out，避免跟站上的 .soldout 撞名變成灰 bar。
+       加購清單只會有買得到的，所以這組樣式目前走不到 */
+    .addon-row.addon-out { background: #f5f5f5; }
+    .addon-row.addon-out .addon-ck { cursor: not-allowed; }
+    .addon-row.addon-out .addon-thumb { filter: grayscale(1); opacity: .5; }
+    .addon-row.addon-out .addon-temp { background: #c6c6c6; }
+    .addon-row.addon-out .addon-name { color: #999; }
+    .addon-row.addon-out .addon-spec { color: #bbb; }
+    .addon-row.addon-out .addon-price .now { color: #aaa; }
+    .addon-row.addon-out .addon-price .orig { color: #c8c8c8; }
+    .addon-out-tag { flex: 0 0 auto; min-width: 52px; text-align: center; color: #999; font-size: 14px; }
+    .addon-more { display: block; width: 100%; text-align: center; padding: 11px; background: #fafafa; border: 0; border-top: 1px solid #f0f0f0; color: #4ba83b; font-size: 15px; cursor: pointer; font-family: inherit; }
+    .addon-row.extra[hidden] { display: none; }
+</style>
+
+<div id="restock-line-root" data-product-id="74987" data-name="蘋果季【梨山蜜蘋果】雲頂果園"
+     data-image="https://greenboxcdn.azureedge.net/upload/Product_3033/202511180747401.jpg" data-category-type="0"></div>
+
+<input id="ProductId" name="ProductId" type="hidden" value="74987" />
+<input id="AvaliblePdid" name="AvaliblePdid" type="hidden" value="180628" />
+<input id="ProductPicture" name="ProductPicture" type="hidden" value="/upload/Product_3033/202511180747401.jpg" />
+<input id="ProductName" name="ProductName" type="hidden" value="蘋果季【梨山蜜蘋果】雲頂果園" />
+<input id="pdid_74987" name="pdid_74987" type="hidden" value="0" />
+<input id="TestProductId" name="TestProductId" type="hidden" value="74987" />
+
+<h1 hidden>蘋果季【梨山蜜蘋果】雲頂果園</h1>
+<h2 hidden>6A(18粒裝)-3.8～4.6兩/顆&#xD;&#xA;7A(15粒裝)-4.6～5.4兩/顆&#xD;&#xA;8A(15粒裝)-5.4～6.2兩/顆&#xD;&#xA;9A(12粒裝)-6.2～7兩/顆&#xD;&#xA;10A(12粒裝)-7～7.8兩/顆split本商品採常溫出貨，收到後建議立即冷藏，以維持最佳風味。常溫可保存約一週，冷藏則可保存約兩週。隨著保存時間拉長，蘋果口感可能逐漸變鬆，喜歡鮮脆口感的朋友，建議於收到後 3～5 天內享用，口感最佳！</h2>
+<h3 hidden>蘋果季【梨山蜜蘋果】雲頂果園</h3>
+
+<input id="ProductType" name="ProductType" type="hidden" value="0" />
+
+<div class="container sb-site-container p-0" id="app">
+    <div class="col-xs-12 m-t-30 currentPosition" style="display:none">
+            <span><a href="https://greenbox.tw/Home/Index"> 首頁 </a></span> > 
+            <span><a id="categoryInfo" href="https://greenbox.tw/Products/ItemNew"> 產地直送 </a></span> > 
+            <span class="name">梨山蜜蘋果 </span>
+    </div>
+    <div class="col-xs-12 m-t-20 p-0">
+        <div class="row" style="padding:0 8px">
+            <div class="col-md-6 col-xs-12 m-b-15">
+
+                <div class="img-slick">
+
+                        <a class="fruit_item example-image-link" style="padding:1px;" href="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180743091.jpg" data-title="產品圖片" data-lightbox="example-1">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180743091.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180743091.jpg">
+                        </a>
+                        <a class="fruit_item example-image-link" style="padding:1px;" href="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg" data-title="產品圖片" data-lightbox="example-1">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg">
+                        </a>
+                        <a class="fruit_item example-image-link" style="padding:1px;" href="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180722481.jpg" data-title="產品圖片" data-lightbox="example-1">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180722481.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180722481.jpg">
+                        </a>
+                        <a class="fruit_item example-image-link" style="padding:1px;" href="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210308541.jpg" data-title="產品圖片" data-lightbox="example-1">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210308541.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210308541.jpg">
+                        </a>
+                        <a class="fruit_item example-image-link" style="padding:1px;" href="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511200117071.jpg" data-title="產品圖片" data-lightbox="example-1">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511200117071.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511200117071.jpg">
+                        </a>
+                </div>
+                <div class="img-nav-slick">
+                        <div class="fruit_item" style="padding:5px;">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180743091.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180743091.jpg">
+                        </div>
+                        <div class="fruit_item" style="padding:5px;">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg">
+                        </div>
+                        <div class="fruit_item" style="padding:5px;">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180722481.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511180722481.jpg">
+                        </div>
+                        <div class="fruit_item" style="padding:5px;">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210308541.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210308541.jpg">
+                        </div>
+                        <div class="fruit_item" style="padding:5px;">
+                            <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511200117071.jpg" / src="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511200117071.jpg">
+                        </div>
+                </div>
+                <div class="web-show">
+                    <div class="col-xs-12 sub-line">
+                        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+                        <span class="sub-title" style="color:#4ba83b">貼心叮嚀</span>
+                    </div>
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">台灣蘋果不會上蠟，果皮不會像進口蘋果一般漂亮，看起來比較平實不鮮豔，但可以直接清洗後連皮食用</span>
+                                <br />
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">蜜腺的產生容易受氣候影響，無法保證蜜腺的多寡，蜜腺的多寡不影響蘋果本身的甜度與美味</span>
+                                <br />
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">蘋果切開後若有果核中心黑黑的狀況，是因開花期遇到下雨，授粉受到影響加上用藥較少所致，完全不影響果肉，切除後即可放心食用。</span>
+                                <br />
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理。</span>
+                    <div class="col-xs-12">&nbsp;</div>
+
+                        <div class="col-xs-12 sub-line">
+                            <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+                            <span class="sub-title">多盒優惠</span>
+                        </div>
+                        <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                        <span class="col-xs-11 p-0 font-16px">團購10組以上另有優惠，歡迎來電洽詢：02-27712900</span>
+                        <div class="col-xs-12">&nbsp;</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xs-12 m-b-15">
+                <h2 class="itemtitle" style="margin-bottom: 0px !important;padding-bottom:0px !important">
+                    蘋果季【梨山蜜蘋果】雲頂果園
+                </h2>
+
+                <div class="col-xs-12 score-area" style="border-bottom:1px solid #b3b3b1;">
+                        <a href="javascript: callFeedbackModal(74987,0) ">
+                            <div class="col-xs-12 p-0">
+                                    <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                    <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                    <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                    <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                        <span class="star-icon"><i class="fa fa-star-half-full" aria-hidden="true"></i></span>
+                                <span class="score-text">4.87 / 5</span>
+                                <span class="comment-text">(52條評論)</span>
+                                <br class="visible-xs visible-sm" />
+                                <span class="comment-text" style="color:#4ba83b;margin-left:0">已售出 251 盒</span>
+                            </div>
+                        </a>
+                </div>
+
+                <div class="col-xs-12 p-0 m-b-10">
+                        <span style="font-size: 16px;float:left;color:#4ba83b;border-bottom:1px solid;padding-bottom:1px;">原產地：台中和平(梨山)</span>
+
+                        <a href="javascript:show_reports()" class="example-image-link"
+                           style="font-size: 16px;color: white;float: right;background-color: #4ba83b;padding: 1% 2%;border-radius: 4px;">
+                            <i class="fa fa-file-text-o" style="margin-right:4px"></i>檢驗報告
+                        </a>
+                </div>
+
+                <p class="itemcontent col-xs-12 p-0" style="color: #333;font-size:16px;margin-bottom:0px">
+                    <div class="col-xs-12 sub-line">
+                        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+                    <span class="sub-title" style="color:#4ba83b">
+                        商品規格
+                    </span>
+                    </div>
+                    <br />
+                                <div class="col-xs-12 p-0">
+                                    <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                                    <span class="col-xs-11 p-0 font-16px">6A(18粒裝)-3.8～4.6兩/顆</span>
+                                </div>
+                                <br />
+                                <div class="col-xs-12 p-0">
+                                    <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                                    <span class="col-xs-11 p-0 font-16px">7A(15粒裝)-4.6～5.4兩/顆</span>
+                                </div>
+                                <br />
+                                <div class="col-xs-12 p-0">
+                                    <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                                    <span class="col-xs-11 p-0 font-16px">8A(15粒裝)-5.4～6.2兩/顆</span>
+                                </div>
+                                <br />
+                                <div class="col-xs-12 p-0">
+                                    <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                                    <span class="col-xs-11 p-0 font-16px">9A(12粒裝)-6.2～7兩/顆</span>
+                                </div>
+                                <br />
+                                <div class="col-xs-12 p-0">
+                                    <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                                    <span class="col-xs-11 p-0 font-16px">10A(12粒裝)-7～7.8兩/顆</span>
+                                </div>
+                                <br />
+
+                    <div id="out-of-stock-notice" data-product-id="74987" style="clear: both; padding-top: 16px;"></div>
+
+                            <div class="col-xs-12 sub-line" style="margin-top: 22px;">
+                                <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+                                <span class="sub-title" style="color:#4ba83b">溫層配送</span>
+                            </div>
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">常溫</span>
+                            <div class="col-xs-12 sub-line" style="margin-top: 22px;">
+                                <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+                                <span class="sub-title" style="color:#4ba83b">保存方法</span>
+                            </div>
+                                        <div class="col-xs-12 p-0">
+                                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                                            <span class="col-xs-11 p-0 font-16px">本商品採常溫出貨，收到後建議立即冷藏，以維持最佳風味。常溫可保存約一週，冷藏則可保存約兩週。隨著保存時間拉長，蘋果口感可能逐漸變鬆，喜歡鮮脆口感的朋友，建議於收到後 3～5 天內享用，口感最佳！</span>
+                                        </div>
+                </p>
+
+                <div class="mobile-show">
+                    <div class="col-xs-12 sub-line" style="margin-top: 22px;">
+                        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+                        <span class="sub-title" style="color:#4ba83b">貼心叮嚀</span>
+                    </div>
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">台灣蘋果不會上蠟，果皮不會像進口蘋果一般漂亮，看起來比較平實不鮮豔，但可以直接清洗後連皮食用</span>
+                                <br />
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">蜜腺的產生容易受氣候影響，無法保證蜜腺的多寡，蜜腺的多寡不影響蘋果本身的甜度與美味</span>
+                                <br />
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">蘋果切開後若有果核中心黑黑的狀況，是因開花期遇到下雨，授粉受到影響加上用藥較少所致，完全不影響果肉，切除後即可放心食用。</span>
+                                <br />
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理。</span>
+                </div>
+
+                    <div class="mobile-show">
+                            <div class="col-xs-12 sub-line" style="margin-top: 22px;">
+                                <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+                                <span class="sub-title">多盒優惠</span>
+                            </div>
+                            <span class="col-xs-1-cus-1 p-0 font-16px">．</span>
+                            <span class="col-xs-11 p-0 font-16px">團購10組以上另有優惠，歡迎來電洽詢：02-27712900</span>
+                    </div>
+
+<div class="col-xs-12 p-0 m-t-20 pd-frame show-180628 ">
+    <div class="col-xs-12 sub-line">
+        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+        <span class="sub-title" style="color:#4ba83b">出貨日期</span>
+        <span class="fast-ship-tag">快速出貨規格</span>
+    </div>
+    <div class="col-xs-12 fast-ship-box">
+今天 <b>12:30 前</b>付款，最晚 <b>12/2（三）</b> 出貨；12:30 後付款，最晚 12/3（四） 出貨    </div>
+    <div class="col-xs-12 fast-ship-legend">付款後 4 個工作天內出貨；不適用 ATM 付款；出貨單號產生後無法修改收件地址；<b>未準時出貨送 20 紅利點數</b>。</div>
+
+    <div class="col-xs-12">&nbsp;</div>
+</div>
+<div class="col-xs-12 p-0 m-t-20 pd-frame show-180629 hide">
+    <div class="col-xs-12 sub-line">
+        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+        <span class="sub-title" style="color:#4ba83b">出貨日期</span>
+        <span class="fast-ship-tag">快速出貨規格</span>
+    </div>
+    <div class="col-xs-12 fast-ship-box">
+今天 <b>12:30 前</b>付款，最晚 <b>12/2（三）</b> 出貨；12:30 後付款，最晚 12/3（四） 出貨    </div>
+    <div class="col-xs-12 fast-ship-legend">付款後 4 個工作天內出貨；不適用 ATM 付款；出貨單號產生後無法修改收件地址；<b>未準時出貨送 20 紅利點數</b>。</div>
+
+    <div class="col-xs-12">&nbsp;</div>
+</div>
+<div class="col-xs-12 p-0 m-t-20 pd-frame show-180630 hide">
+    <div class="col-xs-12 sub-line">
+        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+        <span class="sub-title" style="color:#4ba83b">出貨日期</span>
+        <span class="fast-ship-tag">快速出貨規格</span>
+    </div>
+    <div class="col-xs-12 fast-ship-box">
+今天 <b>12:30 前</b>付款，最晚 <b>12/2（三）</b> 出貨；12:30 後付款，最晚 12/3（四） 出貨    </div>
+    <div class="col-xs-12 fast-ship-legend">付款後 4 個工作天內出貨；不適用 ATM 付款；出貨單號產生後無法修改收件地址；<b>未準時出貨送 20 紅利點數</b>。</div>
+
+    <div class="col-xs-12">&nbsp;</div>
+</div>
+<div class="col-xs-12 p-0 m-t-20 pd-frame show-180631 hide">
+    <div class="col-xs-12 sub-line">
+        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+        <span class="sub-title" style="color:#4ba83b">出貨日期</span>
+        <span class="fast-ship-tag">快速出貨規格</span>
+    </div>
+    <div class="col-xs-12 fast-ship-box">
+今天 <b>12:30 前</b>付款，最晚 <b>12/2（三）</b> 出貨；12:30 後付款，最晚 12/3（四） 出貨    </div>
+    <div class="col-xs-12 fast-ship-legend">付款後 4 個工作天內出貨；不適用 ATM 付款；出貨單號產生後無法修改收件地址；<b>未準時出貨送 20 紅利點數</b>。</div>
+
+    <div class="col-xs-12">&nbsp;</div>
+</div>
+<div class="col-xs-12 p-0 m-t-20 pd-frame show-180632 hide">
+    <div class="col-xs-12 sub-line">
+        <img class="sub-title-icon lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png" / src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/icon.png">
+        <span class="sub-title" style="color:#4ba83b">出貨日期</span>
+        <span class="fast-ship-tag">快速出貨規格</span>
+    </div>
+    <div class="col-xs-12 fast-ship-box">
+今天 <b>12:30 前</b>付款，最晚 <b>12/2（三）</b> 出貨；12:30 後付款，最晚 12/3（四） 出貨    </div>
+    <div class="col-xs-12 fast-ship-legend">付款後 4 個工作天內出貨；不適用 ATM 付款；出貨單號產生後無法修改收件地址；<b>未準時出貨送 20 紅利點數</b>。</div>
+
+    <div class="col-xs-12">&nbsp;</div>
+</div>
+
+                    <div class="spec-frame col-xs-12">
+                            <div class="col-xs-6 p-0">
+                                <button id="spec-pd-180628"
+                                        class="spec-btn active "
+                                        
+                                       >
+                                    1 盒
+(6A(18粒裝))                                        <span class="fast-ship-btn-tag">快速出貨</span>
+                                </button>
+                            </div>
+                            <div class="col-xs-6 p-0">
+                                <button id="spec-pd-180629"
+                                        class="spec-btn  "
+                                        
+                                       >
+                                    1 盒
+(7A(15粒裝))                                        <span class="fast-ship-btn-tag">快速出貨</span>
+                                </button>
+                            </div>
+                            <div class="col-xs-6 p-0">
+                                <button id="spec-pd-180630"
+                                        class="spec-btn  "
+                                        
+                                       >
+                                    1 盒
+(8A(15粒裝))                                        <span class="fast-ship-btn-tag">快速出貨</span>
+                                </button>
+                            </div>
+                            <div class="col-xs-6 p-0">
+                                <button id="spec-pd-180631"
+                                        class="spec-btn  "
+                                        
+                                       >
+                                    1 盒
+(9A(12粒裝))                                        <span class="fast-ship-btn-tag">快速出貨</span>
+                                </button>
+                            </div>
+                            <div class="col-xs-6 p-0">
+                                <button id="spec-pd-180632"
+                                        class="spec-btn  "
+                                        
+                                       >
+                                    1 盒
+(10A(12粒裝))                                        <span class="fast-ship-btn-tag">快速出貨</span>
+                                </button>
+                            </div>
+                    </div>
+                    <div class="itemdetail col-xs-12 p-0 m-t-30 pd-frame show-180628 ">
+                        <div class="col-xs-12 col-md-6 p-0 m-b-10">
+                            <span class="item-title" style="margin-right:2px">售價：</span>
+
+                                <span class="price price_74987" style="color:#d24c4c;font-size:22px;font-weight:bold">$1,479</span>
+                                <span class="price disc_price_74987" style="text-decoration:line-through;font-size:16px;margin-left:4px;color:#999">$2,000</span>
+
+                            <div class="item-title m-t-10" style="display:none">大小</div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 p-0 m-b-20">
+                                <span class="item-title" style="margin-right:2px">數量：</span>
+                                <select name="amount" id="amount_74987_180628" style="width:60px;height:30px;display: inline;border: 1px solid #ccc;border-radius: 4px;font-size:16px;padding-left: 16px;" >
+                                        <option value="1">1</option>
+                                </select>
+
+                            &emsp;&ensp;
+                            <label id="p_info">
+                                    <span id="left_color" style="color:#4ba83b;font-size:16px;font-weight:normal">剩餘 <span id="stock_74987">1</span> 盒</span>
+                            </label>
+                        </div>
+                        <div class="col-xs-12 m-t-10 p-0" data-pid="74987" data-pdid="180628" data-ordersTime="1127" data-variant="1盒" data-name="蘋果季【梨山蜜蘋果】雲頂果園" data-category="產地直送/特殊活動" data-pageview="產品內頁" data-price="1479">
+                                        <div class="col-xs-12 col-md-8 add_cart_btn-p  m-t-20">
+                                            <a href="javascript:(window.oosGuardedAddToCart||checkAndAddToCart)(74987,180628,'/upload/Product_3033/202511180747401.jpg', false);"
+                                               class="buybutton addcartbtn_74987 pdid_180628"
+                                               data-firstbuy="false">
+                                                <i class="fa fa-shopping-basket"></i> 加入購物車
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p m-t-20">
+                                            <a href="javascript: void(0)" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">
+                                            </a>
+                                            <a href="tel:0227712900" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-mobile" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">電話訂購
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p  m-t-20" style="float:right">
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png">
+                                            </a>
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png"> 加入LINE
+                                            </a>
+                                        </div>
+                        </div>
+
+                    </div>
+                    <div class="itemdetail col-xs-12 p-0 m-t-30 pd-frame show-180629 hide">
+                        <div class="col-xs-12 col-md-6 p-0 m-b-10">
+                            <span class="item-title" style="margin-right:2px">售價：</span>
+
+                                <span class="price price_74987" style="color:#d24c4c;font-size:22px;font-weight:bold">$1,659</span>
+                                <span class="price disc_price_74987" style="text-decoration:line-through;font-size:16px;margin-left:4px;color:#999">$2,200</span>
+
+                            <div class="item-title m-t-10" style="display:none">大小</div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 p-0 m-b-20">
+                                <span class="item-title" style="margin-right:2px">數量：</span>
+                                <select name="amount" id="amount_74987_180629" style="width:60px;height:30px;display: inline;border: 1px solid #ccc;border-radius: 4px;font-size:16px;padding-left: 16px;" >
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                </select>
+
+                            &emsp;&ensp;
+                            <label id="p_info">
+                                    <span id="left_color" style="color:#4ba83b;font-size:16px;font-weight:normal">剩餘 <span id="stock_74987">5</span> 盒</span>
+                            </label>
+                        </div>
+                        <div class="col-xs-12 m-t-10 p-0" data-pid="74987" data-pdid="180629" data-ordersTime="1127" data-variant="1盒" data-name="蘋果季【梨山蜜蘋果】雲頂果園" data-category="產地直送/特殊活動" data-pageview="產品內頁" data-price="1659">
+                                        <div class="col-xs-12 col-md-8 add_cart_btn-p  m-t-20">
+                                            <a href="javascript:(window.oosGuardedAddToCart||checkAndAddToCart)(74987,180629,'/upload/Product_3033/202511180747401.jpg', false);"
+                                               class="buybutton addcartbtn_74987 pdid_180629"
+                                               data-firstbuy="false">
+                                                <i class="fa fa-shopping-basket"></i> 加入購物車
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p m-t-20">
+                                            <a href="javascript: void(0)" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">
+                                            </a>
+                                            <a href="tel:0227712900" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-mobile" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">電話訂購
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p  m-t-20" style="float:right">
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png">
+                                            </a>
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png"> 加入LINE
+                                            </a>
+                                        </div>
+                        </div>
+
+                    </div>
+                    <div class="itemdetail col-xs-12 p-0 m-t-30 pd-frame show-180630 hide">
+                        <div class="col-xs-12 col-md-6 p-0 m-b-10">
+                            <span class="item-title" style="margin-right:2px">售價：</span>
+
+                                <span class="price price_74987" style="color:#d24c4c;font-size:22px;font-weight:bold">$1,779</span>
+                                <span class="price disc_price_74987" style="text-decoration:line-through;font-size:16px;margin-left:4px;color:#999">$2,300</span>
+
+                            <div class="item-title m-t-10" style="display:none">大小</div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 p-0 m-b-20">
+                                <span class="item-title" style="margin-right:2px">數量：</span>
+                                <select name="amount" id="amount_74987_180630" style="width:60px;height:30px;display: inline;border: 1px solid #ccc;border-radius: 4px;font-size:16px;padding-left: 16px;" >
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                </select>
+
+                            &emsp;&ensp;
+                            <label id="p_info">
+                                    <span id="left_color" style="color:#4ba83b;font-size:16px;font-weight:normal">剩餘 <span id="stock_74987">3</span> 盒</span>
+                            </label>
+                        </div>
+                        <div class="col-xs-12 m-t-10 p-0" data-pid="74987" data-pdid="180630" data-ordersTime="1127" data-variant="1盒" data-name="蘋果季【梨山蜜蘋果】雲頂果園" data-category="產地直送/特殊活動" data-pageview="產品內頁" data-price="1779">
+                                        <div class="col-xs-12 col-md-8 add_cart_btn-p  m-t-20">
+                                            <a href="javascript:(window.oosGuardedAddToCart||checkAndAddToCart)(74987,180630,'/upload/Product_3033/202511180747401.jpg', false);"
+                                               class="buybutton addcartbtn_74987 pdid_180630"
+                                               data-firstbuy="false">
+                                                <i class="fa fa-shopping-basket"></i> 加入購物車
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p m-t-20">
+                                            <a href="javascript: void(0)" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">
+                                            </a>
+                                            <a href="tel:0227712900" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-mobile" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">電話訂購
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p  m-t-20" style="float:right">
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png">
+                                            </a>
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png"> 加入LINE
+                                            </a>
+                                        </div>
+                        </div>
+
+                    </div>
+                    <div class="itemdetail col-xs-12 p-0 m-t-30 pd-frame show-180631 hide">
+                        <div class="col-xs-12 col-md-6 p-0 m-b-10">
+                            <span class="item-title" style="margin-right:2px">售價：</span>
+
+                                <span class="price price_74987" style="color:#d24c4c;font-size:22px;font-weight:bold">$1,889</span>
+                                <span class="price disc_price_74987" style="text-decoration:line-through;font-size:16px;margin-left:4px;color:#999">$2,400</span>
+
+                            <div class="item-title m-t-10" style="display:none">大小</div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 p-0 m-b-20">
+                                <span class="item-title" style="margin-right:2px">數量：</span>
+                                <select name="amount" id="amount_74987_180631" style="width:60px;height:30px;display: inline;border: 1px solid #ccc;border-radius: 4px;font-size:16px;padding-left: 16px;" >
+                                        <option value="1">1</option>
+                                </select>
+
+                            &emsp;&ensp;
+                            <label id="p_info">
+                                    <span id="left_color" style="color:#4ba83b;font-size:16px;font-weight:normal">剩餘 <span id="stock_74987">1</span> 盒</span>
+                            </label>
+                        </div>
+                        <div class="col-xs-12 m-t-10 p-0" data-pid="74987" data-pdid="180631" data-ordersTime="1127" data-variant="1盒" data-name="蘋果季【梨山蜜蘋果】雲頂果園" data-category="產地直送/特殊活動" data-pageview="產品內頁" data-price="1889">
+                                        <div class="col-xs-12 col-md-8 add_cart_btn-p  m-t-20">
+                                            <a href="javascript:(window.oosGuardedAddToCart||checkAndAddToCart)(74987,180631,'/upload/Product_3033/202511180747401.jpg', false);"
+                                               class="buybutton addcartbtn_74987 pdid_180631"
+                                               data-firstbuy="false">
+                                                <i class="fa fa-shopping-basket"></i> 加入購物車
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p m-t-20">
+                                            <a href="javascript: void(0)" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">
+                                            </a>
+                                            <a href="tel:0227712900" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-mobile" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">電話訂購
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p  m-t-20" style="float:right">
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png">
+                                            </a>
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png"> 加入LINE
+                                            </a>
+                                        </div>
+                        </div>
+
+                    </div>
+                    <div class="itemdetail col-xs-12 p-0 m-t-30 pd-frame show-180632 hide">
+                        <div class="col-xs-12 col-md-6 p-0 m-b-10">
+                            <span class="item-title" style="margin-right:2px">售價：</span>
+
+                                <span class="price price_74987" style="color:#d24c4c;font-size:22px;font-weight:bold">$1,989</span>
+                                <span class="price disc_price_74987" style="text-decoration:line-through;font-size:16px;margin-left:4px;color:#999">$2,500</span>
+
+                            <div class="item-title m-t-10" style="display:none">大小</div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 p-0 m-b-20">
+                                <span class="item-title" style="margin-right:2px">數量：</span>
+                                <select name="amount" id="amount_74987_180632" style="width:60px;height:30px;display: inline;border: 1px solid #ccc;border-radius: 4px;font-size:16px;padding-left: 16px;" >
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                </select>
+
+                            &emsp;&ensp;
+                            <label id="p_info">
+                                    <span id="left_color" style="color:#4ba83b;font-size:16px;font-weight:normal">剩餘 <span id="stock_74987">4</span> 盒</span>
+                            </label>
+                        </div>
+                        <div class="col-xs-12 m-t-10 p-0" data-pid="74987" data-pdid="180632" data-ordersTime="1127" data-variant="1盒" data-name="蘋果季【梨山蜜蘋果】雲頂果園" data-category="產地直送/特殊活動" data-pageview="產品內頁" data-price="1989">
+                                        <div class="col-xs-12 col-md-8 add_cart_btn-p  m-t-20">
+                                            <a href="javascript:(window.oosGuardedAddToCart||checkAndAddToCart)(74987,180632,'/upload/Product_3033/202511180747401.jpg', false);"
+                                               class="buybutton addcartbtn_74987 pdid_180632"
+                                               data-firstbuy="false">
+                                                <i class="fa fa-shopping-basket"></i> 加入購物車
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p m-t-20">
+                                            <a href="javascript: void(0)" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">
+                                            </a>
+                                            <a href="tel:0227712900" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-mobile" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-new/Phone_SmallIcon.png">電話訂購
+                                            </a>
+                                        </div>
+                                        <div class="col-xs-5 col-md-2 add_cart_btn-p  m-t-20" style="float:right">
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonWeb addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png">
+                                            </a>
+                                            <a target="_blank" href="https://line.me/ti/p/@fpv1746s" class="phonebuttonMobile addcartbtn">
+                                                <img id="phone-icon-web" class="lazyload" style="height: 22px;" data-src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/product/item-detail/line_icon.png"> 加入LINE
+                                            </a>
+                                        </div>
+                        </div>
+
+                    </div>
+                <input id="pid" type="hidden" value="74987">
+                <input id="ProductInfo_AddCartScript" name="ProductInfo.AddCartScript" type="hidden" value="" />
+            </div>
+        </div>
+
+
+        <div class="m-t-20" style="border-bottom:1px solid #b3b3b1"></div>
+
+
+            <div class="col-xs-12 m-t-40 adArea">
+                <a target="_self" href="https://greenbox.tw/Blog/BlogPostNew/8988">
+                    <img class="web-show lazyload" data-src="https://greenboxcdn.azureedge.net/upload/Banner/202611040321431.jpg" / src="https://greenboxcdn.azureedge.net/upload/Banner/202611040321431.jpg">
+                    <img class="mobile-show lazyload" data-src="https://greenboxcdn.azureedge.net/upload/BannerMobile/202611040321441.jpg" / src="https://greenboxcdn.azureedge.net/upload/BannerMobile/202611040321441.jpg">
+                </a>
+            </div>
+
+        <!-- ─────────────────────────────────────────────────────────────
+             這一頁到上面那張 banner（.adArea）為止。
+             真站接下來是商品描述（#Content.ckeditor，約 7800px 高）、同一張 banner 再放一次、
+             無毒農的平台保證等區塊，都不在這次需求範圍，所以沒有還原。
+             真站原始順序：商品主體 → 猜你喜歡 → banner → 商品描述 → … → banner → footer
+             ───────────────────────────────────────────────────────────── -->
+
+
+
+<style id="rp-style">
+    .rp-fit { overflow: hidden; }
+    .rp-manual img { display: block; width: 100%; margin-bottom: 12px; border: 1px solid #e5e5e5; }
+    .rp-doc { width: 794px; transform-origin: 0 0; display: flex; flex-direction: column; gap: 16px; }
+    .rp-paper { width: 794px; padding: 24px 32px 32px; background: #fff; color: #333; font-size: 14px; border: 1px solid #e5e5e5; position: relative; font-family: 'Noto Serif TC', serif; line-height: 1.5; text-align: left; }
+    .rp-page-no { text-align: center; font-size: 12px; color: #888; margin-top: 16px; }
+    .rp-photo-meta { font-size: 14px; margin-bottom: 16px; }
+    /* 樣品照片：一頁兩張、上下排，照原比例縮放不裁切、不補灰底。
+       最高 416px＝A4 頁（1123px）扣掉抬頭、標題、報告編號、頁碼與留白後的內容區（約 850px）的一半 */
+    .rp-photos { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .rp-photos img { display: block; max-width: 100%; max-height: 416px; width: auto; height: auto; }
+    .rp-head { display: flex; justify-content: space-between; align-items: flex-start; }
+    .rp-logo { height: 48px; }
+    .rp-org { text-align: right; color: #276749; font-size: 13px; line-height: 1.9; }
+    .rp-title { text-align: center; color: #276749; font-size: 20px; font-weight: 700; padding: 8px 0 12px; border-bottom: 2px solid #276749; margin-bottom: 20px; }
+    .rp-boxes { display: flex; gap: 16px; margin-bottom: 20px; }
+    /* 資訊框、表格外圍原本有粉紅框（規格書附件），已拿掉 */
+    .rp-box { flex: 1; padding: 4px 0; }
+    .rp-line { line-height: 2; }
+    .rp-subttl { color: #276749; font-weight: 700; }
+    .rp-table { width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 20px; }
+    .rp-table th { background: #d7ecdd; color: #276749; font-weight: 700; padding: 8px; border: 1px solid #d9dede; text-align: center; }
+    .rp-table td { padding: 8px; border: 1px solid #d9dede; }
+    .rp-table tbody tr:nth-child(even) td { background: #f6f8fa; }
+    .rp-table td.rp-fail { color: #dc4e43; font-weight: 700; }
+    .rp-note { font-size: 13px; margin-bottom: 12px; }
+    .rp-rules { font-size: 13px; line-height: 1.9; margin: 0 0 20px; padding-left: 20px; list-style: decimal; }
+    .rp-foot { position: relative; border-top: 2px solid #276749; padding-top: 12px; line-height: 2; min-height: 120px; }
+    .rp-sign { display: flex; align-items: flex-end; }
+    .rp-sign-line { display: inline-block; width: 160px; border-bottom: 1px solid #333; height: 48px; position: relative; }
+    .rp-sign-line img { position: absolute; left: 16px; bottom: 2px; height: 52px; }
+    .rp-stamp { position: absolute; right: 24px; top: 8px; width: 112px; opacity: .9; }
+</style>
+<style>
+    .rp-zoomable { cursor: zoom-in; }
+    .rp-zoom { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 2000; background: rgba(0, 0, 0, .8); overflow-y: auto; padding: 48px 16px 32px; -webkit-overflow-scrolling: touch; }
+    .rp-zoom-body { max-width: 794px; margin: 0 auto; }
+    .rp-zoom-close { position: fixed; top: 8px; right: 16px; width: 40px; height: 40px; border: 0; background: none; color: #fff; font-size: 32px; line-height: 40px; cursor: pointer; z-index: 2001; }
+</style>
+
+
+<style>
+    /* 讓 modal 垂直＋水平置中（Bootstrap show 時會加 .in class，用 flex 置中最可靠） */
+    #examine_modal { padding: 0 !important; }
+    #examine_modal.in { display: block !important; }
+    /* modal 靠 header 下方(margin-top 100 > 固定 header 底 90)、水平置中、固定大小；
+       不用 flex 垂直置中——會把 modal 鑽進 fixed header 後面被壓 */
+    /* 寬度維持 560：報告照 A4 寬排版再依彈窗寬度等比縮小。放寬到 840 試過太寬、要捲很多次，維持 560 */
+    #examine_modal .modal-dialog { margin: 100px auto 24px !important; width: auto; max-width: 560px; }
+    #examine_modal .modal-content { height: 680px; max-height: calc(100vh - 140px); display: flex; flex-direction: column; overflow: hidden; border-radius: 8px; }
+    #examine_modal .examine-head { padding: 14px 18px; font-size: 17px; font-weight: bold; border-bottom: 1px solid #eee; flex-shrink: 0; }
+    #examine_modal .examine-tabs { display: flex; border-bottom: 1px solid #eee; flex-shrink: 0; }
+    #examine_modal .examine-tab { flex: 1; min-width: 0; text-align: center; padding: 12px 4px; font-size: 15px; color: #999; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; white-space: nowrap; font-family: inherit; }
+    #examine_modal .examine-tab.active { color: #4ba83b; font-weight: 500; border-bottom-color: #4ba83b; }
+    #examine_modal .examine-tab.single { cursor: default; }
+    #examine_modal .examine-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+    /* pane 用 class 控制顯示，確保任何時候只有一個顯示（不用 flex/jQuery hide，避免與 slick 衝突、避免另一 pane 洩漏） */
+    #examine_modal .examine-pane { display: none; }
+    #examine_modal .examine-pane.active { display: block; }
+    #examine_modal .examine-badge { display: inline-block; font-size: 12px; background: #e8f5e3; color: #2f7d20; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
+    #examine_modal .examine-meta { width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 14px; }
+    #examine_modal .examine-meta td { padding: 5px 0; vertical-align: top; }
+    #examine_modal .examine-meta td:first-child { color: #888; width: 32%; }
+    #examine_modal .examine-sub { font-size: 13px; color: #888; margin-bottom: 6px; }
+    #examine_modal .examine-pest { width: 100%; font-size: 14px; border-collapse: collapse; }
+    #examine_modal .examine-pest th { text-align: left; font-weight: 400; font-size: 12px; color: #888; padding: 7px 0; border-bottom: 1px solid #ddd; }
+    #examine_modal .examine-pest th.r, #examine_modal .examine-pest td.r { text-align: right; }
+    #examine_modal .examine-pest td { padding: 9px 0; border-bottom: 1px solid #f0f0f0; }
+    #examine_modal .examine-pest .en { color: #aaa; font-size: 12px; }
+    #examine_modal .examine-pest tr.exceed td { color: #d23; }
+    #examine_modal .examine-pdf { margin-top: 16px; }
+    #examine_modal .examine-pdf a { display: inline-block; border: 1px solid #4ba83b; color: #4ba83b; padding: 9px 18px; border-radius: 6px; font-size: 14px; text-decoration: none; }
+    #examine_modal .examine-empty { text-align: center; color: #999; padding: 30px 10px; }
+    /* 自主把關報告分頁裡、報告上方右邊的「下載圖檔」（DEV-3977） */
+    #examine_modal .examine-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    #examine_modal .examine-hint { font-size: 12px; color: #888; }
+    #examine_modal .examine-dl { font-size: 14px; font-weight: 400; font-family: inherit; color: #4ba83b; background: #fff; border: 1px solid #4ba83b; border-radius: 4px; padding: 2px 12px; cursor: pointer; }
+    #examine_modal .examine-dl[disabled] { opacity: .5; cursor: default; }
+    /* 一個商品綁好幾個條碼時，每個條碼一份報告往下排 */
+    #examine_modal .rp-item + .rp-item { margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
+    #examine_modal .rp-item-head { font-size: 14px; color: #333; margin-bottom: 8px; }
+    /* 報告圖在 carousel 內水平置中（img 是 inline，需 block + auto；只作用於圖、不影響結構化表格） */
+    #examine_modal .report_banner { text-align: center; }
+    #examine_modal .report_banner img { display: block; margin: 0 auto; }
+    /* 質譜快速篩檢報告專用章：排在農藥表下方、靠右、上下留白、半透明 */
+    #examine_modal .examine-stamp { display: block; width: 130px; opacity: .55; margin: 18px 10px 16px auto; pointer-events: none; }
+    /* 手機版：modal 不滿版、左右上下都留間距 */
+    @media (max-width: 600px) {
+      /* 外層 overflow hidden：消除切 tab 時捲軸出沒造成 self/third 寬度不一致 */
+      #examine_modal { overflow: hidden !important; }
+      /* modal 寬度鎖死不超視窗（防 slick 撐寬）、固定高度（兩 tab 同大小）、不滑動 */
+      /* 手機：絕對定位釘死 modal（header 下方 110 到底部留 24，左右各 12），
+         位置完全固定 → self/third 同尺寸、不忽大忽小、四周都有間距、不靠不準的 100vh 計算 */
+      #examine_modal .modal-dialog { position: fixed !important; top: 110px !important; bottom: 24px !important; left: 12px !important; right: 12px !important; margin: 0 !important; width: auto !important; max-width: none !important; }
+      #examine_modal .modal-content { height: 100% !important; max-height: none !important; width: 100% !important; }
+      /* body 允許垂直捲動（自主把關報告農藥可多筆、章不被截），但隱藏捲軸 → 不佔寬度，self/third 寬度仍一致 */
+      #examine_modal .examine-body { overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch; scrollbar-width: none !important; }
+      #examine_modal .examine-body::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none !important; }
+      #examine_modal .examine-stamp { margin-bottom: 4px !important; }
+      #examine_modal .report_banner img { max-height: calc(100vh - 300px) !important; }
+      #examine_modal .examine-tab { font-size: 14px; padding: 11px 4px; }
+    }
+    /* slick：容器限寬+裁切顯示單張；track 絕不可限寬（否則 4 張無法橫排會垂直堆疊撐爆 modal） */
+    #examine_modal .report_banner, #examine_modal .slick-list { max-width: 100%; }
+    #examine_modal .slick-list { overflow: hidden; }
+    /* 左右箭頭往外移到圖片兩側留白區（圖置中、兩側各約 50px gutter），不疊在報告圖上 */
+    #examine_modal .slick-prev { left: 2px; }
+    #examine_modal .slick-next { right: 2px; }
+</style>
+<div class="modal" id="examine_modal" role="dialog" style="overflow: hidden">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <button type="button" class="close" data-dismiss="modal" style="position: absolute; top: 8px; right: 14px; z-index: 10;">&times;</button>
+            <div class="examine-head">檢驗報告</div>
+            <div class="examine-tabs"></div>
+            <div class="examine-body"></div>
+        </div>
+    </div>
+</div>
+
+<section id="tip3-modal" class="modal fade modal-style">
+    <div class="modal-dialog" role="document" style="color:black; display:flex; justify-content:center ;padding:13% 0% 0% 0%;">
+        <div id="notice-modal" class="modal-content ModalBody" style="background-color:white;width: 70%;padding: 0% 0% 3% 0%;">
+            <div class="modal-header" style="text-align:center;border-bottom:0px solid;">
+                <button type="button" class="circle-close" data-dismiss="modal" aria-label="Close">
+                    <span style="position: absolute;left: 50%;transform: translate(-50%,-50%);top: 50%;" aria-hidden="true">&times;</span>
+                    <br />
+                </button>
+            </div>
+            <div class="modal-body" style="text-align:center;font-size: 16px;padding: 0% 0% 0% 0%; font-weight: bold;">
+                <div class="col-xs-6">
+                    <img class="phone-pic lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/peanut-store/phone/Peanut_PhoneIcon.png" src="https://fruitbox.blob.core.windows.net/pagematerials/peanut-store/phone/Peanut_PhoneIcon.png">
+                    <div>
+                        訂購02-2771-2900
+                    </div>
+                </div>
+                <div class="col-xs-6">
+                    <img class="phone-pic lazyload" data-src="https://fruitbox.blob.core.windows.net/pagematerials/peanut-store/phone/Peanut_UrCode.png" src="https://fruitbox.blob.core.windows.net/pagematerials/peanut-store/phone/Peanut_UrCode.png">
+                    <div>
+                        加入LINE
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="remind-modal" class="modal fade modal-style">
+    <div class="modal-dialog" role="document" style="color:black">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="circle-close" data-dismiss="modal" aria-label="Close">
+                    <img style="position: absolute;left: 50%;transform: translate(-50%,-50%);top: 50%;" aria-hidden="true" src="https://fruitbox.blob.core.windows.net/images/btn-close.png" />
+                    <br />
+                </button>
+                <span>選擇提醒方式</span>
+            </div>
+            <div class="modal-body">
+
+                <a href="https://greenbox.tw/Volunteers/Change">
+                    修改寄送資訊請點我
+                </a>
+                <div class="select">
+                        <a href="https://greenbox.tw/Volunteers/Change">
+                            點我新增Email
+                        </a>
+
+                        <a href="https://greenbox.tw/Volunteers/Change">
+                            點我新增Email
+                        </a>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="feedbackModal" class="modal fade modal-style" style="overflow-y:hidden">
+    <div class="modal-dialog feedbackModal-dialog" role="document">
+        <div class="modal-content" style="float:left">
+            <div>
+                <button type="button" class="close modal-close-btn" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="col-xs-12 modal-body p-0">
+                <div class="col-xs-12">
+                    <div class="col-xs-12 p-0">
+                        <h2 class="itemtitle" style="margin-bottom: 0px !important;padding-bottom:0px !important">
+                            蘋果季【梨山蜜蘋果】雲頂果園
+                        </h2>
+                        <div class="col-xs-12 score-area" style="border-bottom:1px solid #b3b3b1 ;">
+                                <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                <span class="star-icon"><i class="fa fa-star" aria-hidden="true"></i></span>
+                                    <span class="star-icon"><i class="fa fa-star-half-full" aria-hidden="true"></i></span>
+                            <span class="score-text">4.87 / 5</span>
+                            <span class="comment-text">(52條評論)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12">
+                    <ul class="sync-pagination pagination-sm"></ul>
+                </div>
+
+                <div class="col-xs-12 comment-area content">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<link href="https://greenbox.tw/Dist/Css/Product/ItemDeail-min.css?v=1.0.9" rel="stylesheet" />
+
+<link href="https://greenbox.tw/Dist/Css/Home/Ckeditor-min.css" rel="stylesheet" />
+<style>
+    @media(min-width:551px) {
+        .eaglebabee-title {
+            height: 55px;
+            background-color: #f8c058;
+            box-shadow: inset 0px -3px 0 0 #daa34a;
+        }
+
+            .eaglebabee-title .web-show {
+                height: 100% !important;
+                width: auto !important;
+            }
+    }
+</style>
+
+<style>
+    .fast-ship-tag, .fast-ship-btn-tag, .fast-ship-cart-tag, .fast-ship-order-tag {
+        display: inline-block; padding: 0 7px 0 5px; border-radius: 10px; color: #fff; font-weight: 600; white-space: nowrap; vertical-align: middle;
+        background: linear-gradient(180deg, #FFA61B 0%, #FF7600 100%);
+    }
+    .fast-ship-tag::before, .fast-ship-btn-tag::before, .fast-ship-cart-tag::before, .fast-ship-order-tag::before {
+        content: ""; display: inline-block; width: 17px; height: 12px; margin-right: 3px; vertical-align: -1px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 16'%3E%3Cpath d='M1 5.5h4M0 8.5h3M1 11.5h4' stroke='%23fff' stroke-width='1.6' stroke-linecap='round'/%3E%3Crect x='6' y='2' width='10' height='9' rx='1.5' fill='%23FFD011'/%3E%3Cpath d='M16 5h3.3l2.7 3.2V11h-6V5z' fill='%23FFD011'/%3E%3Cpath d='M17.4 6.3h1.6l1.5 1.8h-3.1z' fill='%23fff'/%3E%3Ccircle cx='9.5' cy='12.2' r='2' fill='%23333'/%3E%3Ccircle cx='9.5' cy='12.2' r='.7' fill='%23fff'/%3E%3Ccircle cx='18' cy='12.2' r='2' fill='%23333'/%3E%3Ccircle cx='18' cy='12.2' r='.7' fill='%23fff'/%3E%3C/svg%3E") no-repeat center / contain;
+    }
+    .fast-ship-tag { margin-left: 8px; font-size: 13px; line-height: 22px; }
+    .fast-ship-btn-tag { margin-left: 4px; font-size: 12px; line-height: 18px; }
+    .fast-ship-cart-tag { margin-left: 4px; font-size: 12px; line-height: 20px; }
+    .fast-ship-order-tag { font-size: 12px; line-height: 20px; }
+
+    /* 說明框：淡橘底、橘框、深橘字；日期粗體用深一點的橘色讓字看得清楚 */
+    .fast-ship-box, .fast-ship-cart-notice, .fast-ship-cart-box {
+        border-radius: 6px; background: #FFF6EC; border: 1px solid #FFC78A; color: #8A3D00; line-height: 1.6;
+    }
+    .fast-ship-box b, .fast-ship-cart-notice b, .fast-ship-cart-box b { color: #D95F00; }
+    .fast-ship-box { margin: 6px 0 4px; padding: 10px 12px; font-size: 16px; }
+    .fast-ship-cart-notice { margin: 4px 0 8px; padding: 8px 10px; font-size: 12px; line-height: 1.5; }
+    .fast-ship-cart-box { margin: 6px 0; padding: 10px 12px; font-size: 14px; }
+    .fast-ship-cart-legend { color: #666; font-size: 13px; }
+
+    /* 結帳頁三句快速出貨提醒（收件人、付款方式、到貨日）：跟欄位標題一樣大、淡橘提示框，付款前一定看得到（UAT 新-03） */
+    .fast-ship-checkout-notice { display: block; padding: 8px 12px; border-radius: 6px; background: #FFF6EC; border: 1px solid #FFC78A; color: #8A3D00; font-size: 15px; line-height: 1.6; }
+    .fast-ship-checkout-notice b { color: #D95F00; }
+    .fast-ship-cart-date { color: #D95F00; font-weight: bold; }
+    .fast-ship-order { margin-top: 4px; line-height: 1.6; }
+    .fast-ship-order-date { display: block; color: #D95F00; font-weight: bold; font-size: 13px; white-space: nowrap; }
+</style>
+    <style>
+        .fast-ship-legend, .fast-ship-lead { color: #666; font-size: 14px; line-height: 1.6; }
+        .fast-ship-table { width: 100%; margin-top: 6px; border-collapse: collapse; font-size: 14px; text-align: center; }
+        .fast-ship-table th, .fast-ship-table td { border: 1px solid #e5e5e5; padding: 6px 4px; }
+        .fast-ship-table th { background: #fafafa; font-weight: 600; }
+        .fast-ship-notes { margin: 6px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.8; list-style: decimal outside; }
+        .fast-ship-notes li { list-style: decimal outside; }
+    </style>
+
+
+
+
+<style>
+    /* ===== 動態按鈕 .gb-acb（照樂農 animated-cart-button；陰影比照等家聖誕傳情） ===== */
+    .gb-acb {
+        position: relative; overflow: hidden; isolation: isolate;
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 0; height: 46px; padding: 0 20px; border: none; border-radius: 999px;
+        background: #e24b4a; color: #fff; font-size: 17px; font-weight: bold; letter-spacing: 1px;
+        box-shadow: 0 6px 18px -6px rgba(226, 75, 74, .6);
+        cursor: pointer; -webkit-tap-highlight-color: transparent; text-decoration: none;
+        transition: background-color .2s ease, box-shadow .2s ease, transform .08s ease;
+    }
+    .gb-acb:hover, .gb-acb:focus { color: #fff; text-decoration: none; }
+    .gb-acb:active:not(.is-adding):not(.is-success) { transform: scale(.97); }
+    .gb-acb.is-adding { background: #c73e3d; }
+    .gb-acb.is-success { background: #bdbdbd; box-shadow: 0 6px 18px -6px rgba(0, 0, 0, .35); }
+    .gb-acb.is-disabled { background: #bdbdbd; box-shadow: 0 6px 18px -6px rgba(0, 0, 0, .35); pointer-events: none; }
+    .gb-acb .acb-content { position: relative; display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; gap: 8px; }
+    .gb-acb .acb-scene { position: relative; display: grid; width: 24px; height: 24px; flex: 0 0 24px; place-items: center; z-index: 2; }
+    .gb-acb .acb-cart { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+    .gb-acb .acb-produce { position: absolute; top: -20px; left: 7px; width: 11px; height: 11px; border-radius: 50%; background: #f5a623; opacity: 0; transform: translateY(-12px) scale(.75); }
+    .gb-acb .acb-leaf { position: absolute; top: -4px; left: 5px; width: 7px; height: 5px; border-radius: 7px 1px; background: #4ba83b; transform: rotate(-24deg); }
+    .gb-acb .acb-label, .gb-acb .acb-success-label { display: inline-flex; }
+    .gb-acb .acb-char { display: inline-block; }
+    .gb-acb .acb-success { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0; transform: translateY(14px); }
+    .gb-acb .acb-check { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; stroke-dasharray: 24; stroke-dashoffset: 24; }
+    .gb-acb.is-adding .acb-label .acb-char { animation: acb-label-out .24s ease both; animation-delay: calc(var(--i) * 34ms); }
+    .gb-acb.is-adding .acb-scene { animation: acb-cart-run 1.02s cubic-bezier(.55, .05, .3, 1) both; }
+    .gb-acb.is-adding .acb-cart { animation: acb-cart-bounce .28s ease-in-out .38s 2; }
+    .gb-acb.is-adding .acb-produce { animation: acb-produce-drop .48s cubic-bezier(.55, .04, .8, .2) .2s both; }
+    .gb-acb.is-success .acb-scene, .gb-acb.is-success .acb-label { opacity: 0; }
+    .gb-acb.is-success .acb-success { animation: acb-success-in .36s cubic-bezier(.2, .85, .3, 1.15) both; }
+    .gb-acb.is-success .acb-check { animation: acb-check-draw .34s ease-out .08s both; }
+    .gb-acb.is-success .acb-success-label .acb-char { animation: acb-letter-in .28s cubic-bezier(.2, .8, .3, 1.2) both; animation-delay: calc(90ms + var(--i) * 55ms); }
+    @keyframes acb-label-out { to { opacity: 0; transform: translateY(-14px) rotate(-5deg); } }
+    @keyframes acb-produce-drop { 0% { opacity: 0; transform: translateY(-12px) scale(.75); } 18% { opacity: 1; } 72% { opacity: 1; transform: translateY(22px) scale(.9); } 100% { opacity: 0; transform: translateY(26px) scale(.5); } }
+    @keyframes acb-cart-run { 0%, 28% { transform: scale(1); opacity: 1; } 64% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(.4); opacity: 0; } }
+    @keyframes acb-cart-bounce { 50% { transform: translateY(-3px) rotate(-4deg); } }
+    @keyframes acb-success-in { 0% { opacity: 0; transform: translateY(14px) scale(.94); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes acb-check-draw { to { stroke-dashoffset: 0; } }
+    @keyframes acb-letter-in { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) {
+        .gb-acb, .gb-acb * { animation: none !important; transition: none !important; }
+        .gb-acb.is-adding .acb-label, .gb-acb.is-adding .acb-scene { opacity: 0; }
+        .gb-acb.is-success .acb-success { opacity: 1; transform: none; }
+        .gb-acb.is-success .acb-check { stroke-dashoffset: 0; }
+    }
+
+    /* ③ 頁面內「加入菜籃」：原 <a> 隱藏、動態鈕蓋上去（沿用原本 .buybutton 的版位） */
+    .buybutton.gb-acb-hidden { display: none !important; }
+    .gb-acb.gb-acb-inpage { width: 100%; max-width: 320px; height: 44px; border-radius: 6px; font-size: 16px; }
+    /* 手機：撐滿欄位，左右邊緣才會跟下方「電話訂購」「加入LINE」（col-xs-5 左右各一顆）對齊 */
+    @media (max-width: 767px) {
+        .gb-acb.gb-acb-inpage { max-width: none; }
+    }
+    /* 標籤帶商品頁加購件數（「…（含 N 項加購）」）時變長，縮字並拿掉字距：
+       規格選單送出鈕原本 19px 在 360 寬放不下（17px 放得下、359 寬以下要 15px）；頁面內鈕 16px 在 320 寬放不下 */
+    @media (max-width: 767px) {
+        #mobile-buy-sheet .gb-acb.acb-long { font-size: 17px; letter-spacing: 0; }
+    }
+    @media (max-width: 359px) {
+        #mobile-buy-sheet .gb-acb.acb-long { font-size: 15px; }
+    }
+    @media (max-width: 340px) {
+        .gb-acb.gb-acb-inpage.acb-long { font-size: 15px; letter-spacing: 0; }
+    }
+
+    /* ①② 手機版底部列與規格選單 */
+    #mobile-buy-bar, #mobile-buy-sheet { display: none; }
+    @media (max-width: 767px) {
+        body { padding-bottom: 72px; }
+        #mobile-buy-bar {
+            display: flex; align-items: center; gap: 10px;
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 10500;
+            padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,.12);
+        }
+        #mobile-buy-bar .gb-acb { flex: 1.35 1 0; padding: 0 10px; }
+        #mobile-buy-bar .mbb-checkout {
+            flex: 1 1 0; height: 46px; border-radius: 999px; background: #4ba83b; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; font-weight: bold; letter-spacing: 1px; text-decoration: none;
+            box-shadow: 0 6px 18px -6px rgba(75, 168, 59, .6);
+        }
+        /* 「去結帳」件數：比照上方菜籃角標，一律顯示；0 件時整顆變灰不可點 */
+        #mobile-buy-bar .mbb-count {
+            display: inline-block; min-width: 22px; height: 22px; line-height: 22px; margin-left: 6px; padding: 0 6px;
+            border-radius: 999px; background: #fff; color: #4ba83b; font-size: 14px; letter-spacing: 0;
+        }
+        #mobile-buy-bar .mbb-checkout.is-empty { background: #c8c8c8; box-shadow: none; pointer-events: none; cursor: default; }
+        #mobile-buy-bar .mbb-checkout.is-empty .mbb-count { color: #9a9a9a; }
+        #mobile-buy-sheet { display: block; position: fixed; inset: 0; z-index: 12500; pointer-events: none; }
+        #mobile-buy-sheet .mbs-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); opacity: 0; transition: opacity .25s ease; }
+        #mobile-buy-sheet .mbs-panel {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            background: #fff; border-radius: 20px 20px 0 0; padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+            transform: translateY(100%); transition: transform .3s ease; max-height: 85vh; overflow-y: auto;
+        }
+        #mobile-buy-sheet.is-open { pointer-events: auto; }
+        body.mbs-open #All-Page-BackTop { display: none !important; }
+        #mobile-buy-sheet.is-open .mbs-backdrop { opacity: 1; }
+        #mobile-buy-sheet.is-open .mbs-panel { transform: translateY(0); }
+        .mbs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .mbs-title { font-size: 20px; font-weight: bold; color: #333; }
+        .mbs-close { border: none; background: none; font-size: 28px; line-height: 1; color: #999; padding: 0 4px; }
+        .mbs-specs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+        .mbs-spec { border: 1px solid #ccc; background: #fff; color: #333; border-radius: 8px; padding: 9px 13px; font-size: 16px; line-height: 1.3; }
+        .mbs-spec.is-active { border-color: #4ba83b; color: #4ba83b; background: #f1ffee; font-weight: bold; }
+        .mbs-spec.is-soldout { color: #bbb; border-color: #e5e5e5; text-decoration: line-through; }
+        .mbs-stock { text-align: right; font-size: 15px; color: #999; margin-bottom: 10px; }
+        .mbs-price-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+        .mbs-price { color: #d24c4c; font-size: 28px; font-weight: bold; }
+        .mbs-price-origin { color: #999; font-size: 17px; text-decoration: line-through; }
+        .mbs-ship { font-size: 16px; color: #666; margin-bottom: 20px; }
+        .mbs-qty-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .mbs-qty-label { font-size: 17px; color: #333; }
+        .mbs-qty { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .mbs-qty button { width: 46px; height: 44px; border: none; background: #f5f5f5; font-size: 22px; color: #333; }
+        .mbs-qty button:disabled { color: #ccc; }
+        .mbs-qty span { min-width: 52px; text-align: center; font-size: 18px; }
+        #mobile-buy-sheet .gb-acb { width: 100%; height: 54px; font-size: 19px; }
+    }
+</style>
+<div id="mobile-buy-bar" data-restock-url="" data-restock-kind="soldout">
+    <button type="button" id="mobile-buy-btn" class="gb-acb" data-acb-label="加入購物車"></button>
+    <a id="mobile-checkout-btn" class="mbb-checkout" href="https://greenbox.tw/Orders/ConfirmOrder">去結帳<span class="mbb-count" style="display:none"></span></a>
+</div>
+<div id="mobile-buy-sheet" aria-hidden="true">
+    <div class="mbs-backdrop"></div>
+    <div class="mbs-panel" role="dialog" aria-label="商品規格">
+        <div class="mbs-head">
+            <span class="mbs-title">商品規格</span>
+            <button type="button" class="mbs-close" aria-label="關閉">×</button>
+        </div>
+        <div class="mbs-specs">
+                <button type="button"
+                        class="mbs-spec is-active "
+                        data-pdid="180628"
+                        data-price="1,479"
+                        data-origin="2,000"
+                        data-has-discount="1"
+                        data-stock="1"
+                        data-unit="盒"
+                        data-max="1"
+                        data-ship="快速出貨｜現在付款，最晚 12/2（三） 出貨；未準時出貨送 20 紅利點數"
+                        data-soldout="0"
+                        data-firstbuy="false">
+                    1 盒(6A(18粒裝))
+                        <span class="fast-ship-btn-tag">快速出貨</span>
+                </button>
+                <button type="button"
+                        class="mbs-spec  "
+                        data-pdid="180629"
+                        data-price="1,659"
+                        data-origin="2,200"
+                        data-has-discount="1"
+                        data-stock="5"
+                        data-unit="盒"
+                        data-max="5"
+                        data-ship="快速出貨｜現在付款，最晚 12/2（三） 出貨；未準時出貨送 20 紅利點數"
+                        data-soldout="0"
+                        data-firstbuy="false">
+                    1 盒(7A(15粒裝))
+                        <span class="fast-ship-btn-tag">快速出貨</span>
+                </button>
+                <button type="button"
+                        class="mbs-spec  "
+                        data-pdid="180630"
+                        data-price="1,779"
+                        data-origin="2,300"
+                        data-has-discount="1"
+                        data-stock="3"
+                        data-unit="盒"
+                        data-max="3"
+                        data-ship="快速出貨｜現在付款，最晚 12/2（三） 出貨；未準時出貨送 20 紅利點數"
+                        data-soldout="0"
+                        data-firstbuy="false">
+                    1 盒(8A(15粒裝))
+                        <span class="fast-ship-btn-tag">快速出貨</span>
+                </button>
+                <button type="button"
+                        class="mbs-spec  "
+                        data-pdid="180631"
+                        data-price="1,889"
+                        data-origin="2,400"
+                        data-has-discount="1"
+                        data-stock="1"
+                        data-unit="盒"
+                        data-max="1"
+                        data-ship="快速出貨｜現在付款，最晚 12/2（三） 出貨；未準時出貨送 20 紅利點數"
+                        data-soldout="0"
+                        data-firstbuy="false">
+                    1 盒(9A(12粒裝))
+                        <span class="fast-ship-btn-tag">快速出貨</span>
+                </button>
+                <button type="button"
+                        class="mbs-spec  "
+                        data-pdid="180632"
+                        data-price="1,989"
+                        data-origin="2,500"
+                        data-has-discount="1"
+                        data-stock="4"
+                        data-unit="盒"
+                        data-max="4"
+                        data-ship="快速出貨｜現在付款，最晚 12/2（三） 出貨；未準時出貨送 20 紅利點數"
+                        data-soldout="0"
+                        data-firstbuy="false">
+                    1 盒(10A(12粒裝))
+                        <span class="fast-ship-btn-tag">快速出貨</span>
+                </button>
+        </div>
+        <div class="mbs-stock">庫存 <span class="mbs-stock-num"></span> <span class="mbs-stock-unit"></span></div>
+        <div class="mbs-price-row">
+            <span class="mbs-price"></span>
+            <span class="mbs-price-origin"></span>
+        </div>
+        <div class="mbs-ship">出貨日期：<span class="mbs-ship-text"></span></div>
+        <div class="mbs-qty-row">
+            <span class="mbs-qty-label">數量</span>
+            <div class="mbs-qty">
+                <button type="button" class="mbs-qty-minus" aria-label="減少">−</button>
+                <span class="mbs-qty-num">1</span>
+                <button type="button" class="mbs-qty-plus" aria-label="增加">+</button>
+            </div>
+        </div>
+        <button type="button" class="gb-acb mbs-submit" data-acb-label="加入購物車"></button>
+    </div>
+</div>
+
+
+<style>
+/* ===== 猜你喜歡 (DEV-3999) =====
+   一排五個多一點點：切齊邊界看起來就是「只有這些」，露一角才看得出後面還有。
+   --peek＝一排看得到幾張（含那「一點點」），卡片寬度由它算出來 */
+/* 為你推薦（右欄）(DEV-3999)
+   這一欄是 col-sm-4：768 以上在右邊佔 1/3，768 以下 Bootstrap 把它攤成整行，
+   位置剛好接在商品敘述後面。標題底圖跟著換，不然窄圖拉到全寬會變形。 */
+.recommend-area .reco-title-col { display: block; width: 100%; }
+.recommend-area .reco-title-wide { display: none; width: 100%; }
+@media (max-width: 767px) {
+    .recommend-area .reco-title-col { display: none; }
+    .recommend-area .reco-title-wide { display: block; }
+}
+@media (max-width: 550px) {
+    .recommend-area .reco-title-wide { display: none; }
+}
+
+/* 551~767 這一段最麻煩：欄位已經是整行，但 slick 要 550 以下才會接手
+   （ProductsDetail.js 的 $(window).width() <= 550），中間這段就會變成
+   全寬的直式卡片，一張卡佔掉整個螢幕寬。這裡把它排成跟猜你喜歡一樣的橫向軌道 */
+@media (min-width: 551px) and (max-width: 767px) {
+    #recoList {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    #recoList::-webkit-scrollbar { display: none; }
+    #recoList .pitem {
+        flex: 0 0 calc((100% - 1.2 * 12px) / 2.2);
+        scroll-snap-align: start;
+        margin-bottom: 0;
+        padding: 0;
+    }
+}
+
+/* 猜你喜歡與瀏覽紀錄的標題底圖：跟著寬度換 (DEV-3999)
+   title3 是 1540x80 的長條，窄版會被壓成細線，所以分三段 */
+.gyl-title .gyl-t-wide { display: block; width: 100%; }
+.gyl-title .gyl-t-mid { display: none; width: 100%; }
+@media (max-width: 767px) {
+    .gyl-title .gyl-t-wide { display: none; }
+    .gyl-title .gyl-t-mid { display: block; }
+}
+@media (max-width: 550px) {
+    .gyl-title .gyl-t-mid { display: none; }
+}
+
+/* 左右要跟 #Content、購買區那些區塊對齊（站上是 23px），
+   不然這一塊會貼著視窗邊緣，標題圖也會因為比別人寬而比別人高 */
+.gyl { clear: both; margin: 32px 0 0; padding: 0 23px; --peek: 5.2; }
+.gyl-title { position: relative; margin-bottom: 20px; }
+/* 不要在這裡寫 display：站上的 .web-show / .mobile-show 是靠 display 在 550px 切換的，
+   `.gyl-title img` 的權重比它們高，寫了會讓桌機與手機兩張標題圖同時出現 */
+.gyl-title img { width: 100%; vertical-align: top; }
+.gyl-rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+    scroll-behavior: smooth; clear: both; padding-bottom: 2px;
+    scrollbar-width: none; -ms-overflow-style: none; }
+.gyl-rail::-webkit-scrollbar { display: none; }
+.gyl-card { flex: 0 0 calc((100% - (var(--peek) - 1) * 12px) / var(--peek));
+    scroll-snap-align: start; background: #fff; border: 1px solid #eee; border-radius: 4px;
+    overflow: hidden; display: flex; flex-direction: column; }
+.gyl-link { display: block; color: inherit; text-decoration: none; }
+.gyl-link:hover, .gyl-link:focus { color: inherit; text-decoration: none; }
+.gyl-nmwrap { padding: 8px 10px 0; }
+.gyl-imgwrap { position: relative; }
+.gyl-card .gyl-img, .gyl-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
+    display: block; background: #f0f1f3; }
+.gyl-tag { position: absolute; left: 6px; top: 6px; font-size: 12px; padding: 1px 8px;
+    border-radius: 4px; background: rgba(255,255,255,.92); color: #6b7585; }
+
+.gyl-name { font-size: 16px; line-height: 1.45; color: #333; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    min-height: calc(1.45em * 2); }
+/* 價格與加入菜籃同一列，貼齊卡片底部。這一列在連結外面：圖與品名點了去商品頁，按鈕各做各的 */
+.gyl-ft { margin-top: auto; padding: 6px 10px 10px; display: flex; align-items: center; gap: 8px; }
+.gyl-price { font-size: 16px; font-weight: 700; color: #dc4e43; white-space: nowrap; }
+.gyl-price small { font-size: 12px; font-weight: 400; }
+/* min-height 與 inline-flex 是給動態鈕用的（見下面 .gyl-add.gb-acb），但骨架與「已售完」也是 .gyl-add，
+   一起撐到同一個高度，推薦填進來時卡片才不會跳 */
+.gyl-add { margin-left: auto; box-sizing: border-box; min-height: 32px; display: inline-flex;
+    align-items: center; justify-content: center; border: 1px solid #dc4e43; background: #dc4e43;
+    color: #fff; border-radius: 4px; padding: 5px 10px; font-size: 13px; line-height: 1.4;
+    cursor: pointer; white-space: nowrap; text-decoration: none; font-family: inherit; }
+.gyl-add:hover, .gyl-add:focus { color: #fff; text-decoration: none; opacity: .9; }
+.gyl-add.is-spec { background: #fff; color: #dc4e43; }
+/* 現在買不到：長得像按鈕但不是按鈕，灰掉而且不給游標變手指，免得客人按了沒反應 */
+.gyl-add.is-off { background: #f2f3f5; border-color: #e5e7eb; color: #9aa3ae;
+    cursor: default; }
+
+/* 快速預覽彈窗開著時（guess-you-like-quick-view.js 在 body 加這個 class）收起手機版底部購買列：
+   它的 z-index（10500）比彈窗（10000）高，不收會浮在遮罩上面，畫面上出現兩顆「加入購物車」 */
+body.gyl-quick-view-open #mobile-buy-bar { display: none; }
+
+/* 卡片上的動態鈕：站上 .gb-acb 的小尺寸變體，驅動函式是商品頁那支 IIFE 掛在 window 的 gbAcb（同一套）。
+   .gb-acb 是 46px 高、17px 字的膠囊，塞不進一張卡片，所以這裡只改尺寸，動態四段（字飄走、果子掉進籃、
+   ✓ 畫出、「已加入」彈入）與配色（紅 → 深紅 → 灰）照舊。
+   靜止時只有文字，跟旁邊「選規格」「已售完」同一種樣子；購物車圖示平常不佔位，按下去才在中間出現。
+   選擇器多寫一個 .gyl-add 是為了壓過 .gb-acb 與 .gyl-add.is-spec，不靠載入順序 */
+.gyl-add.gb-acb { position: relative; overflow: hidden; height: auto; padding: 0 10px;
+    border: 1px solid #dc4e43; border-radius: 4px; background: #dc4e43; color: #fff;
+    font-size: 13px; font-weight: 400; letter-spacing: 0; box-shadow: none; }
+.gyl-add.gb-acb.is-spec { background: #fff; color: #dc4e43; }
+.gyl-add.gb-acb.is-adding { background: #c73e3d; border-color: #c73e3d; color: #fff; box-shadow: none; }
+.gyl-add.gb-acb.is-success { background: #bdbdbd; border-color: #bdbdbd; color: #fff; box-shadow: none; }
+.gyl-add.gb-acb .acb-scene { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
+    margin: -10px 0 0 -10px; opacity: 0; }
+.gyl-add.gb-acb .acb-cart { width: 18px; height: 18px; }
+.gyl-add.gb-acb .acb-produce { top: -15px; left: 6px; width: 8px; height: 8px; }
+.gyl-add.gb-acb .acb-leaf { top: -3px; left: 3px; width: 5px; height: 4px; }
+.gyl-add.gb-acb .acb-success { gap: 6px; }
+.gyl-add.gb-acb .acb-check { width: 15px; height: 15px; }
+.gyl-add.gb-acb.is-adding .acb-scene { animation: gyl-acb-run 1.02s cubic-bezier(.55, .05, .3, 1) both; }
+.gyl-add.gb-acb.is-adding .acb-produce { animation: gyl-acb-drop .48s cubic-bezier(.55, .04, .8, .2) .2s both; }
+@keyframes gyl-acb-run { 0% { opacity: 0; transform: scale(.7); } 22% { opacity: 1; transform: scale(1); }
+    64% { opacity: 1; transform: scale(1.08); } 100% { opacity: 0; transform: scale(.4); } }
+@keyframes gyl-acb-drop { 0% { opacity: 0; transform: translateY(-6px) scale(.75); } 18% { opacity: 1; }
+    72% { opacity: 1; transform: translateY(18px) scale(.9); } 100% { opacity: 0; transform: translateY(21px) scale(.5); } }
+@media (prefers-reduced-motion: reduce) {
+    .gyl-add.gb-acb.is-adding .acb-scene, .gyl-add.gb-acb.is-adding .acb-produce { animation: none; }
+}
+
+/* 選規格小窗。只放規格清單與加入菜籃，尺寸與配色照 demo 的 .sp-* */
+.gylsp-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 10005;
+    display: flex; align-items: center; justify-content: center; padding: 16px; }
+.gylsp-box { background: #fff; border-radius: 8px; width: 100%; max-width: 380px; overflow: hidden; }
+.gylsp-hd { padding: 14px 16px; border-bottom: 1px solid #e5e5e5; font-size: 16px;
+    font-weight: 700; color: #333; }
+.gylsp-pic { display: block; width: 100%; height: 160px; object-fit: cover;
+    background: #f0f1f3; }
+.gylsp-nm { padding: 10px 16px 0; font-size: 14px; color: #333; font-weight: 700; }
+.gylsp-list { padding: 10px 16px; display: flex; flex-direction: column; gap: 8px;
+    max-height: 50vh; overflow-y: auto; }
+.gylsp-opt { display: flex; align-items: center; gap: 10px; border: 1px solid #ccc;
+    border-radius: 4px; padding: 10px 12px; cursor: pointer; font-size: 15px; color: #333;
+    background: #fff; text-align: left; font-family: inherit; }
+.gylsp-opt.on { border-color: var(--gyl-accent, #4ba83b); background: #f3faf1; }
+.gylsp-opt .gylsp-pr { margin-left: auto; color: #dc4e43; font-weight: 700; }
+.gylsp-ft { padding: 12px 16px 16px; display: flex; gap: 8px; }
+.gylsp-ft button { flex: 1; height: 42px; border-radius: 4px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit; border: 1px solid #ccc; background: #fff; color: #333; }
+.gylsp-ft button.main { background: #dc4e43; border-color: #dc4e43; color: #fff; }
+/* 左右切換鈕：手機版才出現（站上的 slick 也是 550 以下才接手）。
+   樣式照站上 slick 的 .slick-prev / .slick-next：20x20、透明底、白色 0.75。
+   垂直位置改由 JS 對齊商品圖中線（slick 是寫死 top:50px，我們的卡片會隨斷點變高） */
+/* 要 clear：標題那個 .col-xs-12 是 Bootstrap 的 float:left，不 clear 的話
+   這個外框會從標題的上緣開始算，箭頭就會跑到標題那一條上面去 */
+.gyl-railwrap { position: relative; clear: both; }
+.gyl-arrow { display: none; position: absolute; top: 50px; width: 20px; height: 20px; padding: 0;
+    border: 0; background: transparent; font-size: 0; line-height: 0; z-index: 10; cursor: pointer;
+    /* 置中：← 與 → 在字型裡的左右留白不一樣，不置中的話兩邊看起來一邊寬一邊窄 */
+    align-items: center; justify-content: center; }
+/* 箭頭字符出自 slick 字型（slick-theme.css 的 @font-face），畫出來是圓圈箭頭，
+   跟為你推薦手機版那兩顆是同一個東西。用一般字型只會得到一個細細的 ← */
+/* 不透明度比站上的 slick（.75）高一點：這兩顆常常壓在淺色商品圖上，.75 會看不太到。
+   還是留一點透明，不然壓在圖上會太搶；滑過去才補滿 */
+.gyl-arrow::before { font-family: 'slick'; font-size: 30px; line-height: 1; color: #fff; opacity: .85;
+    -webkit-font-smoothing: antialiased; }
+.gyl-arrow.prev::before { content: '←'; }
+.gyl-arrow.next::before { content: '→'; }
+.gyl-arrow:hover::before { opacity: 1; }
+.gyl-arrow.prev { left: 12px; }
+.gyl-arrow.next { right: 12px; }
+/* 只有一頁的時候沒有東西可以切，JS 會把 is-on 拿掉 */
+.gyl-arrow.is-on { display: flex; }
+
+/* 分頁點點：跟左右鈕並存。目前在第幾組看得出來，也不用先找到按鈕在哪 */
+.gyl-dots { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
+.gyl-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 4px;
+    background: #d7dbe0; cursor: pointer; transition: width .15s, background .15s; }
+.gyl-dots button.on { width: 20px; background: var(--gyl-accent, #4ba83b); }
+/* 載入中的骨架：跟真卡片同一個結構，所以填完高度一樣、版面不會跳 */
+.gyl-skel { border-color: #f0f1f3; pointer-events: none; }
+/* 只把內容染灰，不另外給高度：高度交給真卡片那組規則算 */
+.gyl-skel .gyl-name, .gyl-skel .gyl-price, .gyl-skel .gyl-add {
+    color: transparent; background: #f0f1f3; border-color: #f0f1f3; border-radius: 4px; }
+.gyl.is-loading .gyl-dots { visibility: hidden; height: 8px; }
+.gyl-skel .gyl-img, .gyl-skel .gyl-name, .gyl-skel .gyl-price {
+    animation: gylSkel 1.2s ease-in-out infinite; }
+@keyframes gylSkel { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .gyl-skel * { animation: none; } }
+@media (max-width: 1199px) { .gyl { --peek: 4.2; } }
+@media (max-width: 991px) { .gyl { --peek: 3.2; } }
+@media (max-width: 680px) {
+    .gyl { --peek: 2.2; padding: 0 15px; }
+    .gyl-title { margin-bottom: 14px; }
+    .gyl-nmwrap { padding: 8px 8px 0; }
+    .gyl-ft { padding: 6px 8px 10px; }
+    .gyl-name { font-size: 15px; }
+    /* 卡片變窄之後價格與按鈕擠在同一列會換行，改成上下排 */
+    .gyl-ft { flex-direction: column; align-items: stretch; gap: 6px; }
+    /* 手機的卡片鈕撐滿整列，高度也拉到 36px，比較好按，按下去的動態也看得清楚 */
+    .gyl-add { margin-left: 0; text-align: center; min-height: 36px; }
+}
+</style>
+
+
+
+<div id="out-of-stock-gate"></div>
+
+    </section>
+
+</div>
+
+
+<div id="m-left-sidebar" off-canvas="left-menu-side left reveal ">
+    <ul class="menu">
+        <li>
+                <section class="member-frame">
+                    <div class="member_left-section">
+                        <div class="gb-join-wrap">
+                            <a href="https://greenbox.tw/Login/Register_2">
+                                <img class="member-login_pic" src="https://greenboxcdn.azureedge.net/images/Home/menber1.png">加入會員 |
+                            </a>
+                            <a class="gb-join-link" href="https://greenbox.tw/Login/Index">
+                                登入
+                            </a>
+                        </div>
+                    </div>
+                </section>
+        </li>
+        <li>
+            <div class="menu-title-wrap">
+                <a class="baby-ad" href="https://greenbox.tw/Baby/About">
+                    <img class="lazyload" data-src="https://greenboxcdn.azureedge.net/images/Shared/left-menu-bn.jpg?w=260" alt="等家寶寶" / src="https://greenboxcdn.azureedge.net/images/Shared/left-menu-bn.jpg?w=260">
+                </a>
+            </div>
+        </li>
+        <li>
+            <div class="menu-title-wrap slide_toggle2">
+                <a class="focus-item" href="javascript:void(0);">
+                    最新活動
+                </a>
+                <i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+            <ul class="sub-menu-title-wrap">
+                <li>
+                    <a class="sub-menu-item" href="https://suaogoods.greenbox.tw/">蘇澳好物</a>
+                </li>
+                <li>
+                    <a class="sub-menu-item" href="https://greenbox.tw/Activity/CompanyGift">企業送禮</a>
+                </li>
+                <li>
+                    <a class="sub-menu-item" href="https://greenbox.tw/Home/AboutVip">會員制度/紅利積點</a>
+                </li>
+            </ul>
+        </li>
+        <li style="display:none">
+            <div class="menu-title-wrap slide_toggle2">
+                <a class="focus-item" href="javascript:void(0);">
+                    最新活動
+                </a>
+                <i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+            <ul class="sub-menu-title-wrap">
+
+
+            </ul>
+        </li>
+        <li>
+            <div class="menu-title-wrap slide_toggle2">
+                <a href="javascript:void(0);">
+                    等家寶寶
+                </a>
+                <i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+
+            </div>
+            <ul class="sub-menu-title-wrap">
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Baby/About"><i>&nbsp;</i>關於等家寶寶</a></li>
+                <li><a style="color:red !important" class="sub-menu-item" href="https://greenbox.tw/Baby/Donate"><i>&nbsp;</i>我要贊助</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Products/ChristmasVolunteers2021"><i>&nbsp;</i>志工團招募</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Activity/CSRPromotion"><i>&nbsp;</i>CSR企業專區</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Baby/Dreamer"><i>&nbsp;</i>圓夢計畫</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Baby/ChristmasGift"><i>&nbsp;</i><span style="color:red !important">NEW!</span> 聖誕傳情</a></li>
+            </ul>
+        </li>
+        <li>
+            <div class="menu-title-wrap slide_toggle2">
+                <a href="https://greenbox.tw/BabyFood" target="_blank">小廚房粥寶寶</a><i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+        </li>
+        <li>
+            <div class="menu-title-wrap slide_toggle2">
+                <a href="javascript:void(0);">產地直送</a><i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+            <ul class="sub-menu-title-wrap">
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Products/ItemNew#Activity">人氣商品</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Products/ItemNew#DelivedFromSource"><i>&nbsp;</i>當季產物</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Products/ItemNew#pre-order-new">預購專區</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Products/ItemNew#seaFood_area">水產直送</a></li>
+            </ul>
+        </li>
+        <li>
+            <div class="menu-title-wrap slide_toggle2">
+                <a href="javascript:void(0);">快速到貨</a><i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+            <ul class="sub-menu-title-wrap">
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Products/SpecialNew"><i>&nbsp;</i>蔬果乾貨</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Products/FrozenFood"><i>&nbsp;</i>冷凍超市</a></li>
+            </ul>
+        </li>
+        <li>
+            <div class="menu-title-wrap slide_toggle2">
+                <a href="javascript:void(0);">週配水果箱</a><i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+            <ul class="sub-menu-title-wrap">
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/Box"><i>&nbsp;</i>水果箱介紹</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/Box#buybox"><i>&nbsp;</i>訂購水果箱</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/Box#boxqa"><i>&nbsp;</i>水果箱Q&A</a></li>
+            </ul>
+        </li>
+
+        <li>
+            <div class="menu-title-wrap slide_toggle2">
+                <a href="javascript:void(0);">關於無毒農</a><i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+            <ul class="sub-menu-title-wrap">
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/AboutNew"><i>&nbsp;</i>關於無毒農</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/AboutTeam"><i>&nbsp;</i>無毒農團隊</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/QuestionAndAnswer"><i>&nbsp;</i>常見問題</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/AboutPGS"><i>&nbsp;</i>什麼是PGS？</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Home/ReturnPolicy"><i>&nbsp;</i>退貨辦法</a></li>
+                <li><a class="sub-menu-item" href="https://greenbox.tw/Activity/RecommendFarmer"><i>&nbsp;</i>小農推薦計畫</a></li>
+            </ul>
+        </li>
+        <li>
+            <div class="menu-title-wrap">
+                <a href="https://greenbox.tw/Blog/BlogNew">部落格</a><i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+        </li>
+        <li>
+            <div class="menu-title-wrap">
+                <a href="https://greenbox.tw/Home/DailyReport">安心檢驗日報</a><i class="fa fa-angle-right menu-arrow-icon" aria-hidden="true"></i>
+            </div>
+        </li>
+        <li>
+            <div class="menu-title-wrap contact-icons">
+                <div>
+                    <a href="https://lin.ee/wO55fcI"><img src="https://greenboxcdn.azureedge.net/pagematerials/home/line_icon.png" /></a>
+                </div>
+                <div>
+                    <a href="tel:0227712900"><img src="https://greenboxcdn.azureedge.net/pagematerials/home/phone_icon_new.png" /></a>
+                </div>
+                <div>
+                    <a href="https://www.facebook.com/GreenBox.in.tw" target="_blank"><img src="https://greenboxcdn.azureedge.net/pagematerials/home/fb-icon.png" /></a>
+                </div>
+            </div>
+        </li>
+    </ul>
+</div>
+
+
+
+<div id="shopping-cart"></div>
+
+
+<div id="addCartSuccess" class="alert add_cart_popup_alert" style="opacity: 0;">
+    <label id="alert_text" style="font-weight: bolder; margin-bottom: 0;">您將一份健康放入了菜籃！</label>
+</div>
+
+
+
+
+<div id="mainLayoutFooter" canvas="" class="sb-slide">
+    <div class="container">
+        <div class="footer-top-area">
+            <div class="footer-link-container">
+                    <div class="footer-link-collection">
+                        <h3 style="font-size:14px;font-weight:bold">無毒農標準</h3>
+                        <div class="footer-links">
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/DailyReport" target="_self">安心檢驗日報</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/AboutPGS" target="_self">PGS參與式驗證</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Blog/BlogNew" target="_self">無毒農部落格</a>
+                                </div>
+                        </div>
+                    </div>
+                    <div class="footer-link-collection">
+                        <h3 style="font-size:14px;font-weight:bold">安心選購</h3>
+                        <div class="footer-links">
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/BabyFood" target="_blank">粥寶寶</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Eaglebabee" target="_blank">益菓保</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Products/ItemNew" target="_self">產地直送</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Products/FrozenFood" target="_self">冷凍超市</a>
+                                </div>
+                        </div>
+                    </div>
+                    <div class="footer-link-collection">
+                        <h3 style="font-size:14px;font-weight:bold">幫助/政策</h3>
+                        <div class="footer-links">
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/QuestionAndAnswer" target="_self">常見問題</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/Privacy" target="_self">隱私權政策</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/TermsConditions" target="_self">使用者條款</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/ReturnPolicy" target="_self">退貨辦法</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/AboutVip" target="_self">會員制度/紅利積點</a>
+                                </div>
+                        </div>
+                    </div>
+                    <div class="footer-link-collection">
+                        <h3 style="font-size:14px;font-weight:bold">認識無毒農</h3>
+                        <div class="footer-links">
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/AboutNew" target="_self">關於無毒農</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Home/AboutTeam" target="_self">團隊介紹</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://www.104.com.tw/company/1a2x6blzu5" target="_blank">人才招募</a>
+                                </div>
+                                <div class="footer-link">
+                                    <a style="font-size:13px;color:#fff;" href="https://greenbox.tw/Baby/About" target="_self">等家寶寶</a>
+                                </div>
+                        </div>
+                    </div>
+            </div>
+            <div class="footer-contact">
+                <div class="footer-community">
+                    <h3 style="font-size:14px;font-weight:bold;color:#fff;">追蹤我們</h3>
+                        <div class="footer-communities">
+                                <a href="https://www.facebook.com/GreenBox.in.tw" target="_blank">
+                                    <div class="footer-community-item">
+                                        <img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/footer_facebook_icon_green.svg" />
+                                    </div>
+                                </a>
+                                <a href="https://lin.ee/djMfdxH" target="_blank">
+                                    <div class="footer-community-item">
+                                        <img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/footer_line_icon_green.svg" />
+                                    </div>
+                                </a>
+                                <a href="https://www.instagram.com/greenbox_tw/" target="_blank">
+                                    <div class="footer-community-item">
+                                        <img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/footer_instagram_icon_green.svg" />
+                                    </div>
+                                </a>
+                                <a href="https://www.youtube.com/channel/UC1fp9pohpxLtAVtUkQKNLHQ" target="_blank">
+                                    <div class="footer-community-item">
+                                        <img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/footer_youtube_icon_green.svg" />
+                                    </div>
+                                </a>
+                        </div>
+                    <div class="footer-contactus">
+                            <a style="color:#fff;font-size:13px;font-weight:bold;" target="_blank" href="https://goo.gl/maps/4yPrLgGGkRhuGT9R7">總部地址：106臺北市大安區仁愛路四段2號11樓</a>
+                        <p style="color:#fff;font-size:13px;font-weight:bold;">電話：(02)2771-2900</p>
+                        <p style="color:#fff;font-size:13px;font-weight:bold;">客服時間：</p>
+                                <p style="color:#fff;font-size:13px;font-weight:bold;">週一至週五 09:00-18:00（不含國定假日）</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom-area">
+            <div class="footer-slogan">
+                    <img src="https://greenboxcdn.azureedge.net/pagematerials/Layout/Footer/logo_white_horizontal.svg" alt="無毒農logo" />
+                    <span style="font-size:14px;color:#fff;font-weight:bold;">用信任連結產地和餐桌</span>
+            </div>
+            <div class="footer-legal-info">
+                        <p style="font-size:12px;font-weight:bold;color:#fff;">舒果農企業有限公司/無毒農 統編：42829375</p>
+                        <p style="font-size:12px;font-weight:bold;color:#fff;">食品業者登錄字號：A-142829375-00000-8</p>
+                        <p style="font-size:12px;font-weight:bold;color:#fff;">&#xA9; 2023 無毒農 All Rights Reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    
+
+
+<section id="layout-notification-modal" class="modal fade modal-style layout-modal">
+    <div class="modal-dialog" role="document" style="color:black">
+        <div id="notice-modal-1" class="modal-content ModalBody">
+            <div class="modal-header" style="text-align:center;border-bottom:0px solid; height:0px; ">
+            </div>
+            <div class="modal-body" style="text-align:center;display: inline-block;">
+                <a class="visible-md visible-lg">
+                    <img class="lazyload" id="pop-web-img" style="border-radius:5px" data-src=""/ src="">
+                </a>
+                <a class="visible-xs visible-sm">
+                    <img class="lazyload" id="pop-mob-img" style="border-radius:5px" data-src=""/ src="">
+                </a>
+                <div class="notification-content" style="color: #7a1a39;font-size:1.3em;padding: 2% 0% 0% 0%;">
+                    <div class="visible-md visible-lg">
+                        <a class="pop-btn pop-save-cookie" href="javascript: void(0)">今日不再顯示</a>
+                        <a class="pop-btn close_modal" href="javascript: void(0)">關閉</a>
+                        <a id="btn-redirection-pc" class="pop-btn-cus" href="#">點擊進入</a>
+                        <a id="btn-redirection2-pc" class="pop-btn-cus" href="#">點擊進入</a>
+                    </div>
+                    <div class="visible-xs visible-sm">
+                        <div class="col-xs-12 p-0">
+                            <a id="btn-redirection-mobile" class="pop-btn-mob col-xs-12 pop-btn-cus" href="#">點擊進入</a>
+                        </div>
+                        <div class="col-xs-12 p-0">
+                            <a id="btn-redirection2-mobile" class="pop-btn2-mob col-xs-12 pop-btn-cus" href="#">點擊進入</a>
+                        </div>
+                        <div class="col-xs-8 p-0">
+                            <a class="pop-btn-mob pop-save-cookie" style="width: 96%;margin: 2% 4% 1% 0%;" href="javascript: void(0)">今日不再顯示</a>
+                        </div>
+                        <div class="col-xs-4 p-0">
+                            <a class="pop-btn-mob close_modal" style="margin: 5% 4% 1% 0%; padding: 1.5% 1%; width: 98%;" href="javascript: void(0)">關閉</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* 要蓋過：首頁／列表頁商品彈窗（antd 10000）、商品頁手機底部購買列（10500）與規格選單（12500） */
+    #modal_login { z-index: 13000; }
+    /* 這版 Bootstrap（3.3.0~3.3.4）的遮罩放在 .modal 裡、absolute＋開啟當下算好的高度，
+       內容變長（例如進到註冊步驟）或捲動時下半部就露出來 → 固定蓋滿視窗。遮罩在 .modal 裡，層級跟著 #modal_login 走 */
+    .modal-backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; height: auto !important; }
+    #modal_login .modal-dialog { width: auto; max-width: 400px; margin: 12px auto; padding: 0 12px; }
+    #modal_login .modal-content.gb-login { position: relative; border: none; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.18); overflow: hidden; }
+    #modal_login .gbl-body { padding: 22px 20px 18px; font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; }
+    #modal_login .gbl-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border: none; border-radius: 50%;
+        background: #f2f2f2; color: #666; font-size: 22px; line-height: 32px; text-align: center; padding: 0; z-index: 1; }
+    /* 手機版也保留後台設定的登入圖（Method.GetLoginPic）：左右撐滿不留白邊、高度依比例；
+       螢幕特別矮才限高 26vh 並上下裁一點（cover），讓「下一步／登入」不用捲就看得到。註冊步驟欄位多，先把圖收起來 */
+    #modal_login .gbl-banner { display: block; width: 100%; height: auto; max-height: 26vh; object-fit: cover; }
+    #modal_login.is-step-register .gbl-banner { display: none; }
+    #modal_login .gbl-title { margin: 0 0 14px; font-size: 22px; font-weight: bold; color: #333; text-align: center; letter-spacing: 1px; }
+    #modal_login .gbl-notice { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: #fff4e5;
+        color: #b4540a; font-size: 15px; line-height: 1.6; text-align: center; white-space: pre-line; }
+    #modal_login .gbl-notice.is-show { display: block; }
+    #modal_login .gbl-field { position: relative; margin-bottom: 12px; }
+    #modal_login .gbl-field input.form-control { height: 48px; font-size: 16px; border-radius: 10px; border: 1px solid #d6d6d6; box-shadow: none; padding: 0 14px; margin: 0; }
+    #modal_login .gbl-field input.form-control:focus { border-color: #4ba83b; box-shadow: 0 0 0 3px rgba(75,168,59,.15); }
+    #modal_login .gbl-field input.form-control[readonly] { background: #f5f5f5; color: #555; padding-right: 64px; }
+    #modal_login .gbl-field.is-error input.form-control { border-color: #d24c4c; }
+    #modal_login .gbl-field-err { display: none; margin-top: 4px; font-size: 13px; color: #d24c4c; text-align: left; }
+    #modal_login .gbl-field.is-error .gbl-field-err { display: block; }
+    #modal_login .gbl-inline-btn { position: absolute; top: 8px; right: 8px; height: 32px; padding: 0 12px; border: 1px solid #4ba83b; border-radius: 8px;
+        background: #fff; color: #4ba83b; font-size: 14px; }
+    #modal_login .gbl-inline-btn:disabled { border-color: #ccc; color: #aaa; }
+    #modal_login .gbl-field.has-inline input.form-control { padding-right: 104px; }
+    #modal_login .gbl-hint { margin: -2px 0 12px; font-size: 14px; color: #555; line-height: 1.5; }
+    #modal_login .gbl-code-note { display: none; margin: -6px 0 12px; font-size: 13px; color: #d24c4c; }
+    #modal_login .gbl-code-note.is-show { display: block; }
+    #modal_login .gbl-forgot { text-align: right; margin: -2px 0 16px; font-size: 14px; }
+    #modal_login .gbl-forgot a { color: #888; text-decoration: underline; }
+    #modal_login .gbl-agree { display: flex; align-items: flex-start; gap: 8px; margin: 2px 0 16px; font-size: 13px; font-weight: normal; color: #555; line-height: 1.5; }
+    #modal_login .gbl-agree input { margin: 3px 0 0; flex: 0 0 auto; }
+    #modal_login .gbl-agree a { color: #2a6ad6; text-decoration: underline; }
+    #modal_login .gbl-agree.is-error span { color: #d24c4c; }
+    #modal_login .gbl-btn { display: block; width: 100%; height: 48px; line-height: 46px; border-radius: 999px; font-size: 17px; font-weight: bold;
+        letter-spacing: 2px; text-align: center; text-decoration: none; padding: 0; margin: 0; }
+    #modal_login .gbl-btn-primary { border: 1px solid #4ba83b; background: #4ba83b; color: #fff; box-shadow: 0 6px 16px -8px rgba(75,168,59,.8); }
+    #modal_login .gbl-btn-primary:disabled { border-color: #bdbdbd; background: #bdbdbd; box-shadow: none; }
+    #modal_login .gbl-err { min-height: 18px; margin: 10px 0 0; font-size: 14px; color: #d24c4c; text-align: center; }
+    #modal_login .gbl-step { display: none; }
+    #modal_login .gbl-step.is-active { display: block; }
+    @media (min-width: 768px) {
+        #modal_login .modal-dialog { margin-top: 90px; }
+        #modal_login .gbl-body { padding: 28px 24px 22px; }
+        #modal_login .gbl-banner { width: 100%; max-height: 180px; object-fit: cover; }
+    }
+</style>
+<div class="modal fade" id="modal_login" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content gb-login">
+            <button type="button" class="gbl-close" data-dismiss="modal" aria-label="關閉">&times;</button>
+                <img class="gbl-banner" src="https://greenboxcdn.azureedge.net/upload/Banner/202611130649141.png" alt=""/>
+            <div class="gbl-body">
+                <h3 class="gbl-title">會員登入／註冊</h3>
+                <p class="gbl-notice" id="login-modal-notice"></p>
+
+                <form class="gbl-pane-mobile" id="ml-root" data-step="mobile">
+                    <div class="gbl-field" data-for="ml-mobile">
+                        <input type="tel" id="ml-mobile" class="form-control" maxlength="10" placeholder="手機號碼" autocomplete="username" inputmode="numeric">
+                        <button type="button" class="gbl-inline-btn" id="ml-edit" style="display:none">修改</button>
+                        <p class="gbl-field-err"></p>
+                    </div>
+
+                    <div class="gbl-step is-active" data-step="mobile">
+                        <button type="button" class="gbl-btn gbl-btn-primary" id="ml-next">下一步</button>
+                    </div>
+
+                    <div class="gbl-step" data-step="password">
+                        <p class="gbl-hint">這支手機已經是會員，請輸入密碼登入</p>
+                        <div class="gbl-field" data-for="ml-password">
+                            <input type="password" id="ml-password" class="form-control" placeholder="密碼" autocomplete="current-password">
+                            <p class="gbl-field-err"></p>
+                        </div>
+                        <div class="gbl-forgot"><a href="https://greenbox.tw/Login/PasswordForgot">忘記密碼？</a></div>
+                        <button type="button" class="gbl-btn gbl-btn-primary" id="ml-login">登入</button>
+                    </div>
+
+                    <div class="gbl-step" data-step="register">
+                        <p class="gbl-hint">第一次來，驗證碼已傳送到你的手機，輸入後完成註冊就直接登入</p>
+                        <div class="gbl-field has-inline" data-for="ml-code">
+                            <input type="text" id="ml-code" class="form-control" maxlength="6" placeholder="簡訊驗證碼" autocomplete="one-time-code" inputmode="numeric">
+                            <button type="button" class="gbl-inline-btn" id="ml-resend">重新發送</button>
+                            <p class="gbl-field-err"></p>
+                        </div>
+                        <p class="gbl-code-note" id="ml-code-note">您已擁有驗證碼，10分鐘內請勿再重新發送。</p>
+                        <div class="gbl-field" data-for="ml-reg-password">
+                            <input type="password" id="ml-reg-password" class="form-control" placeholder="設定密碼（至少 6 碼）" autocomplete="new-password">
+                            <p class="gbl-field-err"></p>
+                        </div>
+                        <div class="gbl-field" data-for="ml-reg-confirm">
+                            <input type="password" id="ml-reg-confirm" class="form-control" placeholder="再次輸入密碼" autocomplete="new-password">
+                            <p class="gbl-field-err"></p>
+                        </div>
+                        <label class="gbl-agree" data-for="ml-agree">
+                            <input type="checkbox" id="ml-agree">
+                            <span>我同意無毒農的 <a target="_blank" href="https://greenbox.tw/Home/Privacy">隱私權政策</a> 和 <a target="_blank" href="https://greenbox.tw/Home/TermsConditions">使用者條款</a></span>
+                        </label>
+                        <button type="button" class="gbl-btn gbl-btn-primary" id="ml-register">完成註冊並登入</button>
+                    </div>
+
+                    <p class="gbl-err" id="ml-err"></p>
+                </form>
+
+                <form id="login-form" style="display:none">
+                    <input name="__RequestVerificationToken" type="hidden" value="CfDJ8LkzrTnP1RxBuq-V04Yjs9ZDPY6AOQpEp_PhUCHGMKlzn_VBWvuFuQ9tRNuzWdA37FjMvq9S6WMFG6A1gxLIxoQ1zYWNZDqLA4D-5BcXkQxRLm0lvaa6oAT1m0bEcH-3UVjpAi3TSJ6j01dMz-v6l4U" />
+                    <input type="hidden" name="ReturnUrl" value="https://greenbox.tw/Products/ItemDetail/74987"/>
+                </form>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+<!-- 商品主圖輪播：真站用 slick，script 被移除後圖會直著疊，這裡接回來。
+     設定跟真站一樣是單張、左右箭頭、無 dots。工程端不用抄這段，真站本來就有。 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+<script>
+jQuery(function ($) {
+  /* 真站是兩個 slick 連動：.img-slick 是主圖、.img-nav-slick 是下面那排縮圖，
+     點縮圖會換主圖（asNavFor + focusOnSelect）。兩個都要 init，只做主圖的話
+     縮圖那排會變成一張張直著疊。 */
+  var $main = $('.img-slick');
+  var $nav = $('.img-nav-slick');
+  if ($main.length && !$main.hasClass('slick-initialized')) {
+    $main.slick({
+      slidesToShow: 1,
+      slidesToScroll: 1,
+      arrows: true,
+      dots: false,
+      infinite: true,
+      adaptiveHeight: false,
+      asNavFor: $nav.length ? '.img-nav-slick' : null
+    });
+  }
+  if ($nav.length && !$nav.hasClass('slick-initialized')) {
+    $nav.slick({
+      slidesToShow: 5,
+      slidesToScroll: 1,
+      asNavFor: '.img-slick',
+      focusOnSelect: true,
+      arrows: false,
+      dots: false,
+      infinite: true
+    });
+  }
+});
+</script>
+<style>
+  /* slick 的箭頭預設是白色字、在白底上看不到，真站的 ItemDeail-min.css 有蓋，
+     這裡補一組同樣效果的，免得 demo 上箭頭隱形。 */
+  .img-slick .slick-prev, .img-slick .slick-next { width: 36px; height: 36px; z-index: 2; }
+  .img-slick .slick-prev { left: 8px; }
+  .img-slick .slick-next { right: 8px; }
+  .img-slick .slick-prev:before, .img-slick .slick-next:before {
+    color: #4ba83b; font-size: 32px; opacity: .85; text-shadow: 0 0 3px #fff;
+  }
+  .img-slick .fruit_item { display: block; }
+  .img-slick img { width: 100%; height: auto; display: block; }
+  /* 縮圖那排：每張之間留點縫，選中的那張用品牌綠框標出來 */
+  .img-nav-slick { margin-top: 8px; }
+  .img-nav-slick .slick-slide { padding: 0 2px; cursor: pointer; }
+  .img-nav-slick img { width: 100%; height: auto; display: block; border: 2px solid transparent; }
+  .img-nav-slick .slick-current img { border-color: #4ba83b; }
+</style>
+
+<script>
+/* demo 專用：真站的規格切換在站上 JS 裡，這裡只補最小一段讓畫面切得動。
+   真站邏輯見 Content/Web/ItemDetail.js，工程不用抄這段。 */
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('.spec-btn');
+  if (!b || b.disabled) return;
+  var id = (b.id || '').replace('spec-pd-', '');
+  document.querySelectorAll('.spec-btn').forEach(function (x) { x.classList.remove('active'); });
+  b.classList.add('active');
+  document.querySelectorAll('[class*="show-"]').forEach(function (f) {
+    if (!/\bshow-\d+\b/.test(f.className)) return;
+    f.classList.toggle('hide', f.className.indexOf('show-' + id) === -1);
+  });
+});
+</script>
+</body>
+</html>

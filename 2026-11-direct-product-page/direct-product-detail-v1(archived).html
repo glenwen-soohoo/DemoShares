@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  DemoShares 交接對照 | 前台商品頁・第一版（歸檔，不是開發依據）
+  全新頁面：正式站無對應（新建）
+  這次要動的檔：無——本頁是歸檔備份，不是開發依據。現行版見同資料夾 direct-product-detail(ItemDetail).html
+
+  歸檔原因（2026-11-27）：這一版的外殼、色票、字級沿用設計端的示意稿，不是真站的值。
+  實測差異：主綠真站 #4ba83b／本頁 #3f9d46、加入購物車真站 #d24c4c 5px 18px/400／本頁 #e44b4b 6px 16px/700、
+  商品名真站 28px/500/#333／本頁 22px/700、body 字型真站 Microsoft JhengHei 14px／本頁 Noto Sans TC 16px、
+  真站有 #fixed-top 固定頂欄與 #mainLayoutFooter，本頁沒有 footer。
+  需求說「維持原本樣式」的既有元件照這一版做會錯，所以重刻。
+
+  留著的理由：重點區四格、副標題、產季四層色條、大小對照與測試台九個情境的互動邏輯在這一版，
+  重刻的底完成後要把這些疊回去，可以回來抄。
+-->
+<title>產地直送商品頁改版</title>
+<style>
+  :root {
+    --page: #f6f7f5; --bg: #ffffff; --text: #263029; --muted: #6f7a73; --line: #e3e8e4;
+    --green: #3f9d46; --green-dark: #2c7a33; --tile: #f7f9f7; --red: #c62828; --amber: #b45309;
+    --cold: #1f5f7a; --cold-bg: #eaf4fb; --tip: #fff8e6; --tip-line: #f1d48a;
+    --lab: #2b3a44; --lab-line: #44586a; --lab-text: #dce5ec;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text); font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; line-height: 1.55; }
+  a { color: var(--green-dark); }
+
+  /* ===== 測試台（不是正式畫面） ===== */
+  .lab { background: var(--lab); color: var(--lab-text); padding: 12px 0; font-size: 13px; }
+  .lab .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: grid; gap: 10px; }
+  .lab-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lab-row > .lab-k { flex: 0 0 72px; color: #9fb3c2; font-size: 12px; }
+  .lab-btn { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-text); cursor: pointer; }
+  .lab-btn:hover { border-color: #7f98aa; }
+  .lab-btn.on { background: #e8f0f5; border-color: #e8f0f5; color: var(--lab); font-weight: 700; }
+  .lab-btn.gap { border-color: #8a6a3a; color: #f0c88a; }
+  .lab-btn.gap.on { background: #f0c88a; border-color: #f0c88a; color: #4a3517; }
+  .lab-sel { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--lab-line); background: #1f2a32; color: var(--lab-text); }
+  .lab-note { font-size: 12px; color: #9fb3c2; }
+  .lab-note b { color: #f0c88a; }
+  .crash[hidden] { display: none; }
+  .crash { background: #4a1f1f; border: 1px solid #8a3a3a; border-radius: 6px; padding: 8px 12px; color: #f3c6c6; font-size: 12px; display: grid; gap: 3px; }
+  .crash b { color: #ffb3b3; }
+  .crash code { background: #2f1414; padding: 1px 5px; border-radius: 3px; }
+
+  /* ===== 正式畫面 ===== */
+  .site-head { max-width: 1120px; margin: 12px auto 0; background: #fff; border: 1px solid var(--line); border-bottom: 0; border-radius: 12px 12px 0 0; padding: 12px 16px 0; }
+  .site-head .row { display: flex; align-items: center; gap: 16px; }
+  .logo { font-weight: 800; color: var(--green); font-size: 22px; }
+  .search { border: 1px solid #bbb; border-radius: 4px; padding: 4px 8px; font-size: 13px; color: #999; width: 160px; }
+  .cart-ico { margin-left: auto; position: relative; width: 34px; height: 34px; border-radius: 50%; background: var(--green); color: #fff; display: grid; place-items: center; font-size: 16px; }
+  .cart-ico b { position: absolute; top: -6px; right: -6px; background: #e53935; color: #fff; font-size: 11px; border-radius: 999px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 4px; }
+  .nav { display: flex; flex-wrap: wrap; gap: 4px 28px; padding: 10px 0; font-size: 14px; color: var(--green-dark); border-bottom: 1px solid var(--line); }
+
+  .page { max-width: 1120px; margin: 0 auto 40px; background: var(--bg); padding: 24px 16px 32px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; }
+  .top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; }
+  .col { display: grid; gap: 18px; align-content: start; min-width: 0; }
+  .photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; display: block; background: #eef1ef; }
+  .photo img[hidden], .photo-alt[hidden] { display: none; }
+  .photo-alt { width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; background: #eef1ef; border: 1px dashed #c8d2cc; display: grid; place-items: center; text-align: center; padding: 0 24px; color: var(--muted); font-size: 15px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .rating { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .stars { color: #f2a93b; letter-spacing: 1px; }
+  .sold { color: var(--green); }
+  .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 14px; }
+  .btn-report { background: var(--green); color: #fff; border-radius: 6px; padding: 6px 12px; font-size: 13px; text-decoration: none; }
+
+  .sec h3 { font-size: 16px; color: var(--green-dark); margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .sec ul { margin: 0; padding-left: 18px; font-size: 14px; color: #444; display: grid; gap: 3px; }
+  .box { border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; font-size: 14px; }
+  .box ul { padding-left: 18px; }
+  .plain { padding: 0; }
+  .specbox { background: var(--tip); border: 1px solid var(--tip-line); }
+  .hint-title { font-weight: 700; font-size: 14px; }
+  .box .sub-line { font-size: 13px; color: var(--muted); }
+  .store-text { margin: 8px 0 0; padding: 8px 0 0 18px; border-top: 1px dashed #b9d6e6; font-size: 13px; color: #3d5560; display: grid; gap: 2px; }
+
+  .dash { border: 1.5px solid var(--green); border-radius: 12px; padding: 14px; background: #fff; display: grid; gap: 10px; }
+  .subtitle { margin: 4px 0 6px; font-size: 16px; font-weight: 400; color: var(--red); display: flex; align-items: center; gap: 6px; }
+  .subtitle[hidden] { display: none; }
+  .subtitle img { height: 22px; width: auto; flex: none; }
+  .dash h2 { font-size: 16px; margin: 0 0 6px; color: var(--green-dark); }
+  .tile { background: var(--tile); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  .tile .k { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+  .tile .v { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .src { font-size: 10px; color: var(--muted); }
+  .store { background: var(--cold-bg); border: 1.5px solid #b9d6e6; }
+  .store .v { color: var(--cold); font-size: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font-size: 13px; background: #fff; border: 1px solid #c9dfea; color: var(--cold); border-radius: 999px; padding: 1px 10px; white-space: nowrap; }
+  .chip.must { background: var(--cold); border-color: var(--cold); color: #fff; font-weight: 700; }
+  .season { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; margin-top: 8px; }
+  .season .m { height: 10px; border-radius: 3px; background: #dfe5e1; }
+  .season .m.lv1 { background: #d6ebd4; }
+  .season .m.lv2 { background: #9ccf9f; }
+  .season .m.lv3 { background: var(--green); }
+  .season .m.now { outline: 2px solid var(--text); outline-offset: 1px; }
+  .months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; font-size: 10px; color: var(--muted); text-align: center; margin-top: 3px; }
+  .months .now { color: var(--text); font-weight: 700; }
+  .season-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .season-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 3px; }
+  .harvest { margin-top: 8px; font-size: 13px; color: var(--amber); }
+  .sizes { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; margin-top: 8px; }
+  .size-item { flex: 1; min-width: 0; text-align: center; font-size: 11px; color: var(--muted); background: #fff; border-radius: 8px; padding: 6px 2px; }
+  .size-item img { display: block; margin: 0 auto 4px; object-fit: contain; }
+  .size-item b { display: block; color: var(--text); font-size: 13px; }
+
+  .ship-card { background: var(--tip); border: 1px solid var(--tip-line); border-radius: 8px; padding: 10px 12px; color: #8a5a00; font-size: 14px; }
+  .ship-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .spec-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .spec-btn { font: inherit; font-size: 15px; min-width: 210px; text-align: center; padding: 6px 14px; border: 1px solid #cfd6d1; border-radius: 2px; background: #fff; cursor: pointer; color: var(--text); }
+  .spec-btn.on { background: #4caf50; border-color: #4caf50; color: #fff; }
+  .spec-btn:disabled { color: #9aa3a0; background: #f2f4f3; cursor: not-allowed; }
+  .buy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; margin: 18px 0 40px; font-size: 15px; }
+  .price { font-size: 24px; font-weight: 700; color: #c62828; margin-left: 4px; }
+  .orig { color: var(--muted); text-decoration: line-through; margin-left: 6px; }
+  .qty-sel { font: inherit; padding: 4px 8px; border: 1px solid #cfd6d1; border-radius: 4px; min-width: 60px; margin-left: 4px; }
+  .left-txt { color: #4caf50; }
+  .actions { display: flex; align-items: center; gap: 30px; }
+  .actions .add { font: inherit; font-size: 16px; font-weight: 700; flex: 0 1 300px; padding: 11px 16px; border: 0; border-radius: 6px; background: #e44b4b; color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 6px rgba(228, 75, 75, 0.3); }
+  .icon-btn { width: 54px; height: 46px; border: 0; border-radius: 6px; background: #b9d77f; color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .icon-btn .line { font-size: 10px; font-weight: 800; background: #fff; color: #b9d77f; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; }
+  .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: rgba(30, 40, 33, 0.92); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 760px) {
+    .top { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .top > .col { display: contents; }
+    .sec.after { order: 1; }
+    .buy { order: 2; }
+    .actions { gap: 14px; }
+    .actions .add { flex: 1; }
+    .nav { gap: 4px 16px; }
+    .lab-row > .lab-k { flex: 0 0 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 測試台：切情境用，不屬於正式畫面 -->
+<div class="lab">
+  <div class="wrap">
+    <div class="lab-row"><span class="lab-k">商品</span><span id="labReal"></span></div>
+    <div class="lab-row"><span class="lab-k">缺口情境</span><span id="labGap"></span></div>
+    <div class="lab-row">
+      <span class="lab-k">拆法</span><span id="labSplit"></span>
+      <span class="lab-k" style="flex:0 0 auto;margin-left:16px">現在月份</span>
+      <select class="lab-sel" id="labMonth"></select>
+    </div>
+    <div class="lab-note" id="labNote"></div>
+    <div class="crash" id="labCrash" hidden></div>
+  </div>
+</div>
+
+<header class="site-head">
+  <div class="row">
+    <span class="logo">無毒農</span>
+    <span class="search">🔍 請輸入關鍵字</span>
+    <span class="cart-ico" aria-label="購物車">🧺<b id="cartCount">9</b></span>
+  </div>
+  <nav class="nav"><span>關於無毒農</span><span>粥寶寶</span><span>益菓保</span><span>綠時光</span><span>產地直送(免運)</span><span>冷凍超市</span><span>等家寶寶</span><span>部落格</span></nav>
+</header>
+
+<div class="page">
+  <div class="top">
+    <div class="col">
+      <div class="photo"><img id="photo" src="" alt=""><div class="photo-alt" id="photoAlt" hidden></div></div>
+      <!-- 既有區塊：貼心叮嚀，來自 ItemDetail.cshtml:724。改動＝不加框＋第一行擷取重點 -->
+      <div class="sec after">
+        <h3>貼心叮嚀</h3>
+        <div class="box plain">
+          <div class="hint-title" id="remindHint" hidden></div>
+          <ul id="remindList"></ul>
+        </div>
+      </div>
+      <!-- 既有區塊：多盒優惠，來自 ItemDetail.cshtml:750。改動＝抓得到就只留一句重點＋電話 -->
+      <div class="sec after">
+        <h3>多盒優惠</h3>
+        <div class="box plain" id="multiBox"></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div>
+        <h1 id="name"></h1>
+        <!-- 新增：本次需求，Product.Subtitle -->
+        <p class="subtitle" id="subtitle" hidden></p>
+        <div class="rating"><span class="stars">★★★★★</span><b id="score"></b><span style="color:var(--muted)" id="reviews"></span><span class="sold" id="soldTotal"></span></div>
+        <div class="meta"><a href="#" id="place"></a><a class="btn-report" href="#">檢驗報告</a></div>
+      </div>
+
+      <!-- 新增：本次需求，重點區。出貨日期是既有區塊整塊移進來 -->
+      <section class="dash" aria-label="出貨日期與重點">
+        <div class="ship-top">
+          <h2>🚚 出貨日期</h2>
+          <div class="ship-card" id="shipCard"></div>
+          <div class="ship-note" id="shipNote"></div>
+        </div>
+        <div class="tile store" id="storeTile">
+          <div class="k"><span>🧊 收到後怎麼保存</span><span class="src">溫層＋保存方法文字</span></div>
+          <div class="v" id="storeV"></div>
+          <div class="chips" id="storeChips"></div>
+          <ul class="store-text" id="storeList"></ul>
+        </div>
+        <div class="tile" id="seasonTile" hidden>
+          <div class="k"><span>🍎 產季</span><span class="src" id="seasonSrc"></span></div>
+          <div class="v" id="seasonV"></div>
+          <div class="season" id="seasonBar" aria-hidden="true"></div>
+          <div class="months" id="seasonMonths" aria-hidden="true"></div>
+          <div class="season-legend"><span><i style="background:var(--green)"></i>盛產</span><span><i style="background:#9ccf9f"></i>產季</span><span><i style="background:#d6ebd4"></i>少量</span><span><i style="background:#dfe5e1"></i>沒有</span></div>
+        </div>
+        <div class="tile" id="sizeTile" hidden>
+          <div class="k"><span>📏 大小</span><span class="src">後台大小對照</span></div>
+          <div class="sizes" id="sizeRow"></div>
+        </div>
+      </section>
+
+      <div class="sec">
+        <h3>商品規格</h3>
+        <div class="box specbox"><ul id="specList"></ul></div>
+      </div>
+      <div class="sec" id="deadSec" hidden>
+        <h3>最後付款期限</h3>
+        <div class="box plain"><ul><li id="deadline"></li></ul></div>
+      </div>
+
+      <div class="buy">
+        <div class="spec-btns" id="specBtns"></div>
+        <div class="buy-row">
+          <span>售價：<span class="price" id="price"></span><span class="orig" id="orig"></span></span>
+          <label>數量：<select class="qty-sel" id="qty" aria-label="數量"></select></label>
+          <span class="left-txt" id="left"></span>
+        </div>
+        <div class="actions">
+          <button type="button" class="add" id="addCart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.5L21 8H6"/></svg>加入購物車</button>
+          <button type="button" class="icon-btn" id="callBtn" aria-label="電話洽詢"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></button>
+          <button type="button" class="icon-btn" id="lineBtn" aria-label="LINE 洽詢"><span class="line">LINE</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/*DATA-START*/
+  /* 資料欄位對照 Product 表：
+       remarks        = Product.Remarks，「規格說明 split 保存方法」黏成一串，由這一頁自己拆
+       temp           = Product.TemperatureTypeId（1 常溫 2 冷藏 3 冷凍）
+       subtitle       = Product.Subtitle（新）
+       seasonMonths   = Product.SeasonMonths（新）12 碼，1 月到 12 月各一碼：0 沒有 1 少量 2 產季 3 盛產
+       seasonHidden   = Product.SeasonHidden（新）營運勾「前台不顯示產季」
+       seasonSource   = 顯示「由銷售資料補入」或「營運手動設定」
+       sizeGuide      = Product.SizeGuide（新）
+       type2 / remindText = Product.Type2、Product.RemindText，產季未到時前台現有的「預計 X 採收」
+     文字取自站上商品頁（2026-11-17～11-24）；售價庫存取自正式庫唯讀副本（2026-11-19）
+  */
+  const PRODUCTS = [
+    {
+      key: 'apple', group: 'real', label: '水果：梨山蜜蘋果',
+      orig: 'https://greenbox.tw/Products/ItemDetail/74987',
+      note: '完整的一頁：四格都有東西，抓字規則四條全中。',
+      name: '蘋果季【梨山蜜蘋果】雲頂果園', subtitle: '高山直送，沒蜜也一樣甜',
+      photo: 'https://greenboxcdn.azureedge.net/upload/Product_3033/202511180747401.jpg',
+      score: '4.88 / 5', reviews: '(49 條評論)', sold: '已售出 226 盒', place: '台中和平（梨山）', temp: 1, unit: '盒',
+      remarks: '6A(18粒裝)-3.8～4.6兩/顆\r\n7A(15粒裝)-4.6～5.4兩/顆\r\n8A(15粒裝)-5.4～6.2兩/顆\r\n9A(12粒裝)-6.2～7兩/顆\r\n10A(12粒裝)-7～7.8兩/顆split本商品採常溫出貨，收到後建議立即冷藏，以維持最佳風味。常溫可保存約一週，冷藏則可保存約兩週。隨著保存時間拉長，蘋果口感可能逐漸變鬆，喜歡鮮脆口感的朋友，建議於收到後 3～5 天內享用，口感最佳！',
+      seasonItem: '蜜蘋果', seasonMonths: '000000003332', seasonHidden: false, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: true, icon: 'round', iconUrl: '', items: [
+        { label: '6A', lines: ['3.8–4.6 兩/顆', '每盒 18 粒', '每顆約 $82'] },
+        { label: '7A', lines: ['4.6–5.4 兩/顆', '每盒 15 粒', '每顆約 $111'] },
+        { label: '8A', lines: ['5.4–6.2 兩/顆', '每盒 15 粒', '每顆約 $119'] },
+        { label: '9A', lines: ['6.2–7 兩/顆', '每盒 12 粒', '每顆約 $157'] },
+        { label: '10A', lines: ['7–7.8 兩/顆', '每盒 12 粒', '每顆約 $166'] },
+      ] },
+      ship: { card: '現在付款，最晚 11/27（五）出貨', note: '付款後 4 個工作天內出貨；不適用 ATM 付款；出貨單號產生後無法修改收件地址；未準時出貨送 20 紅利點數。' },
+      remind: [
+        '台灣蘋果不會上蠟，果皮不會像進口蘋果一般漂亮，看起來比較平實不鮮豔，但可以直接清洗後連皮食用',
+        '蜜腺的產生容易受氣候影響，無法保證蜜腺的多寡，蜜腺的多寡不影響蘋果本身的甜度與美味',
+        '蘋果切開後若有果核中心黑黑的狀況，是因開花期遇到下雨，授粉受到影響加上用藥較少所致，完全不影響果肉，切除後即可放心食用。',
+        '若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理。',
+      ],
+      multi: ['團購10組以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [
+        { label: '6A(18粒裝)', price: 1479, orig: 2000, left: 4 },
+        { label: '7A(15粒裝)', price: 1659, orig: 2200, left: 6 },
+        { label: '8A(15粒裝)', price: 1779, orig: 2300, left: 5 },
+        { label: '9A(12粒裝)', price: 1889, orig: 2400, left: 9 },
+        { label: '10A(12粒裝)', price: 1989, orig: 2500, left: 5 },
+      ],
+    },
+    {
+      key: 'crab', group: 'real', label: '水產：萬里蟹',
+      orig: 'https://greenbox.tw/Products/ItemDetail/56244',
+      note: '水產沒有產季資料，產季那一格整格不出現。保存抓到的是「蒸煮」。',
+      name: '免運《水產直送》龜吼漁港直送萬里蟹（花蟹）', subtitle: '',
+      photo: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202309120638391.jpg',
+      score: '4.69 / 5', reviews: '(314 條評論)', sold: '已售出 2146 箱', place: '新北萬里', temp: 3, unit: '箱',
+      remarks: '【小隻】每箱2斤約7-10隻，每隻約3.2-4兩\r\n【中隻】每箱2斤約5-6隻，每隻約5.33-6.4兩\r\n【大隻】每箱2斤約3-4隻，每隻約8-10.6兩\r\n公母隨機出貨，以足重（含繩重）為出貨原則，大小僅供參考split收到後請於２日內食用完畢。\r\n收到貨後應馬上蒸煮並食用完畢。\r\n如果當天沒有馬上要吃，務必當天蒸熟螃蟹，用報紙包好後放冷凍保存',
+      seasonItem: '', seasonMonths: '', seasonHidden: false, seasonSource: '',
+      sizeGuide: { show: true, icon: 'crab', iconUrl: '', items: [
+        { label: '小隻', lines: ['3.2–4 兩/隻', '每箱 7–10 隻', ''] },
+        { label: '中隻', lines: ['5.33–6.4 兩/隻', '每箱 5–6 隻', ''] },
+        { label: '大隻', lines: ['8–10.6 兩/隻', '每箱 3–4 隻', ''] },
+      ] },
+      ship: { card: '11/23（一）～12/04（五）出貨', deadline: '11/22（日）12:30', note: '恕無法指定特定日期到貨，請備註無法收貨的日期；依付款順序排單，好的產品值得您耐心等候；假日不可以收貨者請先備註。' },
+      remind: [
+        '依訂購順序新鮮冷凍宅配出貨，恕無法指定日期、配達及到貨時段',
+        '此商品為產地直送免運費，無法與其他冷凍商品合併運送',
+        '捕撈運送過程中，螃蟹可能產生斷腳或缺腳，但不影響鮮度和品質，且保證足重出貨',
+      ],
+      multi: ['團購10箱以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [
+        { label: '小隻2斤裝', price: 1699, orig: 1899, left: 5 },
+        { label: '中隻2斤裝', price: 1999, orig: 2199, left: 3 },
+        { label: '大隻2斤裝', price: 2499, orig: 2699, left: 0 },
+      ],
+    },
+    {
+      key: 'papaya', group: 'real', label: '水果：紅妃木瓜',
+      orig: 'https://greenbox.tw/Products/ItemDetail/56310',
+      note: '原文沒照建議句型寫：保存抓不到動作，大字退成替代寫法。8 月沒有銷售，所以不算「全年都有」。',
+      name: '【紅妃木瓜】許家農園', subtitle: '',
+      photo: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202609080718261.jpg',
+      score: '5.00 / 5', reviews: '(31 條評論)', sold: '已售出 135 箱', place: '苗栗頭份', temp: 1, unit: '箱',
+      remarks: '夏季\r\n6斤裝±10%，約2-3顆\r\n10斤裝±10%，約3-5顆\r\n秋冬\r\n6斤裝±10%，約3-4顆\r\n10斤裝±10%，約5-7顆split因物流配送果物會因溫度變化加速熟成，收到貨請盡快開封檢查。\r\n若果物已轉色請放冷藏保存',
+      seasonItem: '木瓜', seasonMonths: '223222202332', seasonHidden: false, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: true, icon: 'long', iconUrl: '', items: [
+        { label: '6斤裝', lines: ['秋冬約 3–4 顆', '夏季約 2–3 顆', ''] },
+        { label: '10斤裝', lines: ['秋冬約 5–7 顆', '夏季約 3–5 顆', ''] },
+      ] },
+      ship: { card: '11/26（四）～12/10（四）出貨', deadline: '11/24（二）12:30', note: '假日不可以收貨者請先備註；恕無法指定特定日期到貨，請備註無法收貨的日期；依付款順序排單，好的產品值得您耐心等候。' },
+      remind: [
+        '紅妃木瓜比一般傳統木瓜大上一倍以上',
+        '許家農園的木瓜通常在樹上約7～8分熟採摘，不會放電土後熟',
+        '木瓜果肉柔軟易撞傷，若有輕微碰傷的果實要盡快食用',
+      ],
+      multi: ['團購10盒以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [
+        { label: '6斤裝(約3-4顆)', price: 599, orig: 799, left: 3 },
+        { label: '10斤裝(約5-7顆)', price: 929, orig: 1199, left: 2 },
+      ],
+    },
+    {
+      key: 'fig', group: 'real', label: '水果：無花果', gapTag: '缺口 8',
+      orig: 'https://greenbox.tw/Products/ItemDetail/60181',
+      note: '需求點名的「並於3天內食用完畢」抓不到。第一句「收到後務必立即開封檢查，請冷藏保存」也抓不到，因為規則不跨逗號，所以保存格的大字也退成替代寫法。營運勾了不顯示大小。',
+      name: '【有機(轉)無花果】無毒農', subtitle: '',
+      photo: 'https://greenboxcdn.azureedge.net/upload/Album_3035/File/202202240430311.jpg',
+      score: '4.72 / 5', reviews: '(2048 條評論)', sold: '已售出 12196 盒', place: '台灣在地', temp: 2, unit: '盒',
+      remarks: '1斤裝(±5%)，約6-12粒\r\n出貨以足重為主，不以大小粒分級\r\n不指定農友出貨split收到後務必立即開封檢查，請冷藏保存，並於3天內食用完畢。\r\n無花果熟成後，尾端輕微裂開是正常的，果實也會比較軟。如果不要太熟軟的無花果，可以在備註時說明，會請農友出貨熟度較低的無花果，但甜度和香氣就沒有那麼濃郁！\r\n無花果易受天氣影響，如遇降雨，會延緩出貨，少日照也會讓果皮色澤較淺',
+      seasonItem: '無花果', seasonMonths: '000003332222', seasonHidden: false, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: false, icon: 'round', iconUrl: '', items: [] },
+      ship: { card: '11/26（四）～12/10（四）出貨', deadline: '11/24（二）12:30', note: '假日不可以收貨者請先備註；恕無法指定特定日期到貨，請備註無法收貨的日期；依付款順序排單，好的產品值得您耐心等候。' },
+      remind: [
+        '無花果底部有裂口為正常現象，表示熟度足夠，若裂口處無異狀請安心食用',
+        '網頁商品為示意圖片，果物依季節而略有差異',
+        '因採有機方式種植，果皮表面有些許瑕疵屬正常現象，但不影響內部果肉品質，請安心食用',
+        '若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至無毒農官方LINE，並拍下3張清楚的水果損傷處，將由專員為您處理',
+      ],
+      multi: ['團購10盒以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [
+        { label: '一斤裝', price: 750, orig: 950, left: 6 },
+      ],
+    },
+
+    /* ===== 以下是為了把缺口切出來做的情境，資料是改過的 ===== */
+    {
+      key: 'nosplit', group: 'gap', label: '缺口 1：規格說明沒有 split',
+      note: '這筆的規格說明沒有 split 分隔符。拆法切成「需求字面」，保存格就只剩溫層那一行，標籤與原文全部消失；切回「前台現行」才看得到保存說明。',
+      name: '【蜜棗】測試：規格說明沒有 split 分隔', subtitle: '',
+      photo: '', score: '4.50 / 5', reviews: '(12 條評論)', sold: '已售出 48 箱', place: '高雄燕巢', temp: 2, unit: '箱',
+      remarks: '2斤裝，約 8-10 顆\r\n收到後請冷藏保存，冷藏可保存約兩週，建議於收到後 3～5 天內享用。',
+      seasonItem: '蜜棗', seasonMonths: '330000000023', seasonHidden: false, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: false, icon: 'round', iconUrl: '', items: [] },
+      ship: { card: '現在付款，最晚 11/28（六）出貨', note: '付款後 4 個工作天內出貨。' },
+      remind: ['若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處。'],
+      multi: ['團購10箱以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [{ label: '2斤裝', price: 580, orig: 700, left: 7 }],
+    },
+    {
+      key: 'nostorage', group: 'gap', label: '缺口 5：保存方法整個空白',
+      note: '保存方法是空的。示意檔的 renderStorage 會去讀 P.storage[0].split()，整段 JS 停在這裡，後面的產季、大小、貼心叮嚀、多盒優惠全部不會畫出來，畫面上也不會有錯誤訊息。',
+      name: '【桶柑】測試：保存方法沒填', subtitle: '當季現採',
+      photo: '', score: '4.60 / 5', reviews: '(9 條評論)', sold: '已售出 30 箱', place: '新竹新埔', temp: 1, unit: '箱',
+      remarks: '5斤裝，約 20-25 顆\r\n10斤裝，約 40-50 顆split',
+      seasonItem: '桶柑', seasonMonths: '332000000013', seasonHidden: false, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: true, icon: 'citrus', iconUrl: '', items: [
+        { label: '5斤裝', lines: ['約 20–25 顆', '', ''] },
+        { label: '10斤裝', lines: ['約 40–50 顆', '', ''] },
+      ] },
+      ship: { card: '現在付款，最晚 11/28（六）出貨', note: '付款後 4 個工作天內出貨。' },
+      remind: ['若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處。'],
+      multi: ['團購10箱以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [{ label: '5斤裝', price: 480, orig: 600, left: 8 }, { label: '10斤裝', price: 880, orig: 1100, left: 5 }],
+    },
+    {
+      key: 'crossyear', group: 'gap', label: '缺口 6：跨年產季',
+      note: '茂谷柑的產季是 11、12、1、2 月。把「現在月份」切到 1 月，文案會寫「產季到 12 月」，因為算法只取大於等於當月的月份。切到 11 月也少算了隔年 1、2 月。',
+      name: '【茂谷柑】測試：產季跨年', subtitle: '',
+      photo: '', score: '4.80 / 5', reviews: '(88 條評論)', sold: '已售出 420 箱', place: '台中東勢', temp: 1, unit: '箱',
+      remarks: '5斤裝，約 18-22 顆\r\n10斤裝，約 36-44 顆split本商品採常溫出貨，收到後建議立即冷藏。常溫可保存約一週，冷藏則可保存約三週。',
+      seasonItem: '茂谷柑', seasonMonths: '320000000023', seasonHidden: false, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: true, icon: 'citrus', iconUrl: '', items: [
+        { label: '5斤裝', lines: ['約 18–22 顆', '每顆約 $32', ''] },
+        { label: '10斤裝', lines: ['約 36–44 顆', '每顆約 $29', ''] },
+      ] },
+      ship: { card: '現在付款，最晚 11/28（六）出貨', note: '付款後 4 個工作天內出貨。' },
+      remind: ['若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處。'],
+      multi: ['團購10箱以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [{ label: '5斤裝', price: 700, orig: 900, left: 12 }, { label: '10斤裝', price: 1280, orig: 1600, left: 6 }],
+    },
+    {
+      key: 'notyet', group: 'gap', label: '缺口 7：產季未到',
+      note: 'Type2=6、RemindText 有填的商品，前台現在已經會顯示「預計 3 月採收」。新版的產季色條只看 Type=0，所以兩套資訊會同時出現在同一格裡。需求說兩者不合併，沒說碰頭時長怎樣。',
+      name: '【黑葉荔枝】測試：產季未到', subtitle: '',
+      photo: '', score: '4.90 / 5', reviews: '(156 條評論)', sold: '已售出 890 箱', place: '高雄大樹', temp: 2, unit: '箱',
+      type2: 6, remindText: '3月',
+      remarks: '3斤裝，約 60-70 顆split收到後請冷藏保存，冷藏可保存約 5 天，建議於收到後 2～3 天內享用。',
+      seasonItem: '荔枝', seasonMonths: '000003320000', seasonHidden: false, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: false, icon: 'round', iconUrl: '', items: [] },
+      ship: { card: '現在付款，最晚 11/28（六）出貨', note: '付款後 4 個工作天內出貨。' },
+      remind: ['若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處。'],
+      multi: ['團購10箱以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [{ label: '3斤裝', price: 650, orig: 850, left: 4 }],
+    },
+    {
+      key: 'fourlevel', group: 'gap', label: '缺口 2＋3：少量那層與全年都有',
+      note: '12 個月都至少是「少量」。色條要畫出四層深淺（示意檔只畫得出三層），文案也要切到第二種寫法「全年都有，X、Y、Z 月量最多」。',
+      name: '【香蕉】測試：全年都有、含少量月份', subtitle: '無毒栽種，自然熟成',
+      photo: '', score: '4.75 / 5', reviews: '(530 條評論)', sold: '已售出 3280 箱', place: '屏東高樹', temp: 1, unit: '箱',
+      remarks: '3斤裝，約 10-12 根\r\n6斤裝，約 20-24 根split本商品採常溫出貨，收到後請置於陰涼處。常溫可保存約 5 天，轉黃後請於 3 天內享用。',
+      seasonItem: '香蕉', seasonMonths: '112223332211', seasonHidden: false, seasonSource: '營運手動設定',
+      sizeGuide: { show: true, icon: 'long', iconUrl: '', items: [
+        { label: '3斤裝', lines: ['約 10–12 根', '', ''] },
+        { label: '6斤裝', lines: ['約 20–24 根', '', ''] },
+      ] },
+      ship: { card: '現在付款，最晚 11/28（六）出貨', note: '付款後 4 個工作天內出貨。' },
+      remind: ['若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處。'],
+      multi: ['團購10箱以上另有優惠，歡迎來電洽詢：02-27712900'],
+      specs: [{ label: '3斤裝', price: 320, orig: 420, left: 20 }, { label: '6斤裝', price: 580, orig: 760, left: 14 }],
+    },
+    {
+      key: 'hidden', group: 'gap', label: '產季勾不顯示',
+      note: '營運勾了「前台不顯示產季」，資料還在但整格不出現。既有商品一次性補產季時全部預設勾起來，採購確認一個才取消一個。',
+      name: '【柳丁】測試：營運勾了不顯示產季', subtitle: '',
+      photo: '', score: '4.55 / 5', reviews: '(74 條評論)', sold: '已售出 260 箱', place: '雲林古坑', temp: 1, unit: '箱',
+      remarks: '10斤裝，約 40-50 顆split本商品採常溫出貨，收到後建議立即冷藏。常溫可保存約一週，冷藏則可保存約兩週。',
+      seasonItem: '柳丁', seasonMonths: '200000000233', seasonHidden: true, seasonSource: '由銷售資料補入',
+      sizeGuide: { show: true, icon: 'citrus', iconUrl: '', items: [
+        { label: '10斤裝', lines: ['約 40–50 顆', '', ''] },
+      ] },
+      ship: { card: '現在付款，最晚 11/28（六）出貨', note: '付款後 4 個工作天內出貨。' },
+      remind: ['若收到的商品有嚴重損傷，煩請於收到商品24小時內傳訊息至官方LINE，並拍下3張清楚的水果損傷處。'],
+      multi: ['一次買 10 箱以上請來電 02-27712900'],
+      specs: [{ label: '10斤裝', price: 560, orig: 700, left: 9 }],
+    },
+  ];
+/*DATA-END*/
+
+  const TEMP = { 1: '常溫', 2: '冷藏', 3: '冷凍' };
+  const ZH = { 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => '$' + n.toLocaleString('en-US');
+  const half = (t) => t.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/～/g, '~');
+  const num = (t) => { const h = half(t); return /^\d+$/.test(h) ? +h : ZH[h] ?? h; };
+  const li = (arr) => arr.map((l) => `<li>${esc(l)}</li>`).join('');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const SIZE_ICONS = {
+    round: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDE0Yy0zLTMtMTItMy0xNSA0LTMgOCAxIDIwIDggMjMgMyAxIDUgMCA3LTEgMiAxIDQgMiA3IDEgNy0zIDExLTE1IDgtMjMtMy03LTEyLTctMTUtNHoiIGZpbGw9IiNlMDU3NGYiLz48cGF0aCBkPSJNMjQgMTRjLTMtMy0xMi0zLTE1IDQtMSAzLTEgNiAwIDkgMi04IDgtMTEgMTUtOXoiIGZpbGw9IiNmMDhhODAiIG9wYWNpdHk9Ii42Ii8+PHBhdGggZD0iTTI0IDE1YzAtNCAxLTcgMy05IiBzdHJva2U9IiM2YjRhMmIiIHN0cm9rZS13aWR0aD0iMi4yIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjcgOWMzLTMgOC0zIDEwLTEtMiAzLTcgNC0xMCAxeiIgZmlsbD0iIzVhYTg0NSIvPjwvc3ZnPgo=',
+    citrus: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGNpcmNsZSBjeD0iMjQiIGN5PSIyNyIgcj0iMTciIGZpbGw9IiNmMzlhMmIiLz48Y2lyY2xlIGN4PSIxOSIgY3k9IjIxIiByPSI2IiBmaWxsPSIjZjhiZDZiIiBvcGFjaXR5PSIuNTUiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiM2YjhmMmEiLz48cGF0aCBkPSJNMjUgMTBjMy00IDktNSAxMS0zLTIgNC04IDUtMTEgM3oiIGZpbGw9IiM1YWE4NDUiLz48ZyBmaWxsPSIjZDk3ZTE3IiBvcGFjaXR5PSIuNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMSIgcj0iMSIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iMzMiIHI9IjEiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjM4IiByPSIxIi8+PGNpcmNsZSBjeD0iMzUiIGN5PSIyNCIgcj0iMSIvPjwvZz48L3N2Zz4K',
+    long: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDljLTUgMC03IDUtOCAxMC0xIDQtNiA3LTYgMTQgMCA3IDYgMTEgMTQgMTFzMTQtNCAxNC0xMWMwLTctNS0xMC02LTE0LTEtNS0zLTEwLTgtMTB6IiBmaWxsPSIjOWNjYzRhIi8+PHBhdGggZD0iTTE4IDIyYy0yIDMtNCA2LTQgMTAgMCAzIDEgNSAzIDctMS03IDAtMTIgMS0xN3oiIGZpbGw9IiNjNGUyODQiIG9wYWNpdHk9Ii43Ii8+PHBhdGggZD0iTTI0IDlWNCIgc3Ryb2tlPSIjNmI0YTJiIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI1IDZjMy0zIDgtMiA5IDAtMyAzLTcgMy05IDB6IiBmaWxsPSIjNWFhODQ1Ii8+PC9zdmc+Cg==',
+    crab: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGcgc3Ryb2tlPSIjYzk0NzJmIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj48cGF0aCBkPSJNMTIgMzBsLTYgM00xMiAzNGwtNSA1TTM2IDMwbDYgM00zNiAzNGw1IDVNMTQgMjZsLTYtMU0zNCAyNmw2LTEiLz48cGF0aCBkPSJNMTUgMjJsLTQtOE0zMyAyMmw0LTgiLz48L2c+PHBhdGggZD0iTTcgMTJjMC00IDQtNiA2LTRsLTIgMyA0IDFjMCAzLTMgNS02IDQtMSAwLTItMi0yLTR6TTQxIDEyYzAtNC00LTYtNi00bDIgMy00IDFjMCAzIDMgNSA2IDQgMSAwIDItMiAyLTR6IiBmaWxsPSIjZTI2MDNmIi8+PGVsbGlwc2UgY3g9IjI0IiBjeT0iMjkiIHJ4PSIxMyIgcnk9IjEwIiBmaWxsPSIjZTI2MDNmIi8+PGVsbGlwc2UgY3g9IjIxIiBjeT0iMjYiIHJ4PSI2IiByeT0iMy41IiBmaWxsPSIjZjA4YTZhIiBvcGFjaXR5PSIuNiIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjIiIGZpbGw9IiMzMzMiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIwIiByPSIyIiBmaWxsPSIjMzMzIi8+PC9zdmc+Cg==',
+    fish: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTQgMjRjNi05IDE2LTEyIDI2LThsOC03djMwbC04LTdDMjAgMzYgMTAgMzMgNCAyNHoiIGZpbGw9IiM0ZjhmYzAiLz48cGF0aCBkPSJNOCAyNGM2LTYgMTMtOCAyMC02LTcgMC0xMyAyLTIwIDZ6IiBmaWxsPSIjOGJiYmUwIiBvcGFjaXR5PSIuOCIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMjIiIHI9IjIiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjIyIiByPSIxIiBmaWxsPSIjMjIzIi8+PHBhdGggZD0iTTIwIDE5YzIgMyAyIDcgMCAxMCIgc3Ryb2tlPSIjM2E3OGE4IiBzdHJva2Utd2lkdGg9IjEuNiIgZmlsbD0ibm9uZSIvPjwvc3ZnPgo=',
+    box: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTYgMTZsMTgtOCAxOCA4LTE4IDh6IiBmaWxsPSIjZTdjMDhhIi8+PHBhdGggZD0iTTYgMTZ2MjBsMTggOFYyNHoiIGZpbGw9IiNjOTlhNWIiLz48cGF0aCBkPSJNNDIgMTZ2MjBsLTE4IDhWMjR6IiBmaWxsPSIjYjU4NjRhIi8+PHBhdGggZD0iTTE1IDEybDE4IDh2NmwtNC0ydi00TDExIDE0eiIgZmlsbD0iI2YzZGNiNCIvPjwvc3ZnPgo=',
+  };
+  const SUB_ICON = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLnN0MCB7IGZpbGw6ICNhZDc2MmQ7IH0KICAgICAgLnN0MSB7IGZpbGw6ICM1N2ExMWI7IH0KICAgICAgLnN0MiB7IGZpbGw6ICM0MDk5MTE7IH0KICAgICAgLnN0MyB7IGZpbGw6ICM5MzVmMjc7IH0KICAgICAgLnN0NCB7IGZpbGw6ICNhMDY5Mjc7IH0KICAgICAgLnN0NSB7IGZpbGw6ICM2NmFkMjE7IH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxnPgogICAgPHBhdGggY2xhc3M9InN0MSIgZD0iTTc2LDExLjNjLS4yLS4zLS40LS43LS42LTEtNi44LS44LTE0LjEsMi4xLTE5LjIsOC40cy00LjksOC4xLTUuNSwxMmMtLjctMy45LTEuNS03LjgtNC43LTExLjUtOC4yLTkuNC0yMi41LTEwLjgtMjkuNi01LjItNyw1LjYtNS4xLDE2LjMsNC4zLDIzLjgsNS4yLDQuMiwxMy45LDUuOSwyMC41LDYuNSw3LjgtMS43LDE1LjUtNC41LDIyLjgtOSw4LTUsMTUtMTMsMTItMjRaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QyIiBkPSJNODUsMTRjLTIuNS0yLTUuOS0zLjMtOS42LTMuNy4yLjMuNC43LjYsMSwzLDExLTQsMTktMTIsMjQtNy4zLDQuNS0xNSw3LjMtMjIuOCw5LDIuMy4yLDQuMy4zLDUuOS40bC00LjQsNDcuMWgxNi4ybC00LjctNDcuMWM2LjEtLjIsMTkuNS0xLjIsMjYuNi02LjksOS40LTcuNSwxMS4zLTE4LjEsNC4zLTIzLjhaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNjYuNCw3NS45Yy01LTEuOC0xMC41LTIuOS0xNi40LTIuOS0xNC4zLDAtMjYuOCw2LjEtMzQsMTUuNC0uNS43LS44LDEuNC0uOCwyLjEsMTksLjgsMzguNS0zLjcsNTEuMi0xNC43WiIvPgogICAgPHBhdGggY2xhc3M9InN0NCIgZD0iTTc0LjksODAuMmMtMi42LTEuNy01LjUtMy4yLTguNi00LjMtMTIuNywxMS0zMi4xLDE1LjQtNTEuMiwxNC43LS4xLDIuNCwyLjEsNC42LDUuMyw0LjZoNDMuOGM0LjktNCw4LjktOC45LDEwLjctMTVaIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNODQsODguNGMtMi40LTMuMS01LjUtNS45LTktOC4yLTEuOCw2LjEtNS45LDEwLjktMTAuNywxNWgxNS4zYzQuMiwwLDYuNy0zLjgsNC40LTYuN1oiLz4KICAgIDxlbGxpcHNlIGNsYXNzPSJzdDUiIGN4PSIyMyIgY3k9IjE2LjkiIHJ4PSI1LjIiIHJ5PSIzLjQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0zLjggNy4xKSByb3RhdGUoLTE2LjEpIi8+CiAgICA8ZWxsaXBzZSBjbGFzcz0ic3Q1IiBjeD0iMTcuNSIgY3k9IjIzLjQiIHJ4PSIxLjkiIHJ5PSIxLjgiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC01LjggNS44KSByb3RhdGUoLTE2LjEpIi8+CiAgPC9nPgo8L3N2Zz4=';
+
+  /* ===== 測試台狀態 ===== */
+  let P = PRODUCTS[0];
+  let splitMode = 'current';   // current＝前台現行拆法、literal＝需求字面「取 split 之後那段」
+  let nowMonth = new Date(Date.now() + 8 * 3600000).getUTCMonth() + 1;
+  let cur = 0;
+  let cart = 9;
+
+  /* ===== 規格說明與保存方法：兩套拆法 =====
+     current：照 ItemDetail.cshtml:30-47 與 GoX/Models/ProductModel.cs 約 580 行
+              有 split 用 split，沒有就退而用第一個 \r\n，再沒有整段當規格
+     literal：照需求文件字面「取 Remarks 的 split 之後那段」
+              跟 DataService.cs:398 給 App 的那條一樣，沒有 split 就沒有保存方法
+  */
+  function splitRemarks(remarks, mode) {
+    const r = remarks || '';
+    if (mode === 'literal') {
+      const i = r.indexOf('split');
+      if (i === -1) return { spec: r, storage: '' };
+      return { spec: r.slice(0, i), storage: r.slice(i + 5) };
+    }
+    const i = r.indexOf('split');
+    if (i !== -1) return { spec: r.slice(0, i), storage: r.slice(i + 5) };
+    const j = r.indexOf('\r\n');
+    if (j !== -1) return { spec: r.slice(0, j), storage: r.slice(j + 2) };
+    return { spec: r, storage: '' };
+  }
+  const lines = (s) => (s || '').split(/\r?\n/).map((t) => t.trim()).filter(Boolean);
+
+  /* ===== 保存：從保存方法文字擷取 ===== */
+  function storageFacts(arr) {
+    const text = half(arr.join(''));
+    const f = { action: null, keep: [], best: null, within: null };
+    const act = text.match(/收到(?:貨)?後[^，。]*?(冷藏|冷凍|蒸煮|蒸熟)/);
+    if (act) f.action = act[1];
+    for (const m of text.matchAll(/(常溫|冷藏|冷凍)[則可保存約\s]*([一二兩三四五六七八九十\d]+)\s*(週|天|日)/g)) f.keep.push(`${m[1]}約 ${num(m[2])} ${m[3] === '週' ? '週' : '天'}`);
+    const best = text.match(/(\d+\s*[~-]\s*\d+|\d+)\s*天內享用/);
+    if (best) f.best = best[1].replace(/\s/g, '');
+    const within = text.match(/([一二兩三\d]+)\s*日內食用/);
+    if (within) f.within = num(within[1]);
+    return f;
+  }
+  function renderStorage(storageLines) {
+    const f = storageFacts(storageLines);
+    const act = { 冷藏: '收到後立刻冷藏', 冷凍: '收到後立刻冷凍', 蒸煮: '收到後馬上蒸煮', 蒸熟: '收到後馬上蒸熟' }[f.action];
+    // 示意檔原樣：抓不到動作時直接讀第一行。保存方法是空的就會在這裡丟錯，後面全部不執行
+    $('storeV').textContent = act ? `${TEMP[P.temp]}配送 → ${act}` : `${TEMP[P.temp]}配送・${storageLines[0].split(/[。！]/)[0]}`;
+    const chips = [];
+    if (f.within) chips.push(`<span class="chip must">${f.within} 天內吃完</span>`);
+    if (f.best) chips.push(`<span class="chip must">${f.best} 天內最好吃</span>`);
+    f.keep.forEach((k) => chips.push(`<span class="chip">${esc(k)}</span>`));
+    $('storeChips').innerHTML = chips.join('');
+    $('storeList').innerHTML = li(storageLines);
+  }
+
+  /* ===== 產季：12 碼字串，0 沒有 1 少量 2 產季 3 盛產 ===== */
+  function renderSeason() {
+    const code = P.seasonMonths || '';
+    const levels = code.length === 12 ? code.split('').map(Number) : [];
+    const show = levels.length === 12 && !P.seasonHidden && levels.some((v) => v > 0);
+    $('seasonTile').hidden = !show;
+    if (!show) return;
+    $('seasonSrc').textContent = P.seasonSource || '';
+    const ms = Array.from({ length: 12 }, (_, i) => i + 1);
+    $('seasonBar').innerHTML = ms.map((m) => `<div class="m lv${levels[m - 1]}${m === nowMonth ? ' now' : ''}"></div>`).join('');
+    $('seasonMonths').innerHTML = ms.map((m) => `<span class="${m === nowMonth ? 'now' : ''}">${m}</span>`).join('');
+
+    const lv = levels[nowMonth - 1];
+    const allYear = levels.every((v) => v >= 1);
+    if (allYear) {
+      const top = ms.filter((m) => levels[m - 1] === 3);
+      $('seasonV').textContent = top.length ? `全年都有，${top.join('、')} 月量最多` : '全年都有';
+    } else {
+      const state = lv === 3 ? '盛產中' : lv >= 1 ? '產季中' : '非產季';
+      // 示意檔原樣：只看大於等於當月的月份，跨年產季會算錯
+      const last = Math.max(0, ...ms.filter((m) => levels[m - 1] >= 1 && m >= nowMonth));
+      $('seasonV').textContent = `${nowMonth} 月：${P.seasonItem}${state}${lv >= 1 && last ? `，產季到 ${last} 月` : ''}`;
+    }
+    // 前台現有的「預計 X 採收」（Type2=6 且 RemindText 有填），本次不合併
+    const old = $('seasonTile').querySelector('.harvest');
+    if (old) old.remove();
+    if (P.type2 === 6 && P.remindText) {
+      const d = document.createElement('div');
+      d.className = 'harvest';
+      d.textContent = `預計 ${P.remindText} 採收`;
+      $('seasonTile').appendChild(d);
+    }
+  }
+
+  /* ===== 大小：讀後台存好的對照，點了不連動選規格 ===== */
+  function renderSizes() {
+    const z = P.sizeGuide;
+    const items = z && z.show ? z.items.filter((it) => it.label.trim()) : [];
+    $('sizeTile').hidden = items.length === 0;
+    if (!items.length) { $('sizeRow').innerHTML = ''; return; }
+    const icon = z.iconUrl || SIZE_ICONS[z.icon] || SIZE_ICONS.box;
+    const anyLine = items.some((it) => it.lines.some((l) => l.trim()));
+    $('sizeRow').innerHTML = items.map((it, i) => {
+      const px = items.length === 1 ? 36 : Math.round(24 + 20 * (i / (items.length - 1)));
+      const ls = anyLine ? it.lines.filter((l) => l.trim()).map((l) => esc(l)).join('<br>') : '';
+      return `<div class="size-item"><img src="${icon}" alt="" style="width:${px}px;height:${px}px"><b>${esc(it.label)}</b>${ls}</div>`;
+    }).join('');
+  }
+
+  /* ===== 貼心叮嚀、多盒優惠：從原文抓重點 ===== */
+  function renderHints() {
+    const all = half(P.remind.join(''));
+    const hrs = all.match(/(\d+)\s*小時內/);
+    const pics = all.match(/(\d+)\s*張/);
+    $('remindHint').hidden = !hrs;
+    $('remindHint').textContent = hrs ? `📷 收到有損傷：${hrs[1]} 小時內傳官方 LINE${pics ? `，附 ${pics[1]} 張照片` : ''}` : '';
+    $('remindList').innerHTML = li(P.remind);
+    const m = half(P.multi.join('')).match(/(\d+)\s*(組|箱|盒)以上/);
+    const tel = half(P.multi.join('')).match(/0\d[\d-]{7,}/);
+    $('multiBox').innerHTML = m
+      ? `<div class="hint-title">📦 一次買 ${m[1]} ${m[2]}以上另有優惠</div>${tel ? `<div class="sub-line">來電洽詢 ${tel[0]}</div>` : ''}`
+      : `<ul>${li(P.multi)}</ul>`;
+  }
+
+  /* ===== 整頁 ===== */
+  function clearDash() {
+    ['storeV', 'storeChips', 'storeList', 'seasonV', 'seasonBar', 'seasonMonths', 'sizeRow', 'remindHint', 'remindList', 'multiBox'].forEach((id) => { $(id).innerHTML = ''; });
+    $('seasonTile').hidden = true; $('sizeTile').hidden = true; $('remindHint').hidden = true;
+    const old = $('seasonTile').querySelector('.harvest'); if (old) old.remove();
+  }
+
+  function render() {
+    const cut = splitRemarks(P.remarks, splitMode);
+    const specLines = lines(cut.spec);
+    const storageLines = lines(cut.storage);
+
+    // 新造的情境沒有真實商品照，用灰底佔位，不要拿圖示拉大充數
+    if (P.photo) {
+      $('photo').src = P.photo; $('photo').alt = P.name;
+      $('photo').hidden = false; $('photoAlt').hidden = true;
+    } else {
+      $('photo').removeAttribute('src'); $('photo').hidden = true;
+      $('photoAlt').hidden = false; $('photoAlt').textContent = P.name;
+    }
+    $('name').textContent = P.name;
+    $('score').textContent = P.score; $('reviews').textContent = P.reviews; $('soldTotal').textContent = P.sold;
+    $('place').textContent = '原產地：' + P.place;
+    $('specList').innerHTML = li(specLines);
+    $('shipCard').textContent = P.ship.card;
+    $('shipNote').textContent = P.ship.note;
+    $('subtitle').hidden = !P.subtitle;
+    $('subtitle').innerHTML = P.subtitle ? `<img src="${SUB_ICON}" alt=""><span>${esc(P.subtitle)}</span>` : '';
+    $('deadSec').hidden = !P.ship.deadline;
+    $('deadline').textContent = P.ship.deadline || '';
+
+    clearDash();
+    $('labCrash').hidden = true;
+    // 照正式站的順序一路畫下去。中間丟錯就停住，後面的區塊都不會出現
+    try {
+      renderStorage(storageLines);
+      renderSeason();
+      renderSizes();
+      renderHints();
+    } catch (e) {
+      $('labCrash').hidden = false;
+      $('labCrash').innerHTML = `<div><b>重點區在這裡停住了</b>　<code>${esc(e.message)}</code></div>`
+        + '<div>保存格以下的產季、大小、貼心叮嚀、多盒優惠都沒有畫出來。正式站不會顯示這段紅字，客人看到的就是一塊空的重點區。</div>';
+    }
+
+    const avail = P.specs.map((s, i) => [s, i]).filter(([s]) => s.left > 0);
+    $('specBtns').innerHTML = P.specs.map((s, i) => `<button type="button" class="spec-btn" data-i="${i}" ${s.left <= 0 ? 'disabled' : ''}>1 ${P.unit} (${esc(s.label)})${s.left <= 0 ? '・售完' : ''}</button>`).join('');
+    select(avail.length ? avail[0][1] : 0);
+    renderLab();
+  }
+
+  function select(i) {
+    const s = P.specs[i];
+    if (!s || s.left <= 0) return;
+    cur = i;
+    document.querySelectorAll('.spec-btn').forEach((b) => b.classList.toggle('on', +b.dataset.i === i));
+    $('price').textContent = fmt(s.price);
+    $('orig').textContent = fmt(s.orig);
+    $('qty').innerHTML = Array.from({ length: s.left }, (_, k) => `<option>${k + 1}</option>`).join('');
+    $('left').textContent = `剩餘 ${s.left} ${P.unit}`;
+  }
+
+  /* ===== 測試台 ===== */
+  function btns(list, activeKey, onPick, cls) {
+    return list.map((p) => `<button type="button" class="lab-btn ${cls || ''} ${p.key === activeKey ? 'on' : ''}" data-k="${p.key}">${esc(p.label)}</button>`).join('');
+  }
+  function renderLab() {
+    $('labReal').innerHTML = btns(PRODUCTS.filter((p) => p.group === 'real'), P.key);
+    $('labGap').innerHTML = btns(PRODUCTS.filter((p) => p.group === 'gap'), P.key, null, 'gap');
+    $('labSplit').innerHTML = [
+      { key: 'current', label: '前台現行（沒有 split 就用第一個換行）' },
+      { key: 'literal', label: '需求字面（只取 split 之後）' },
+    ].map((o) => `<button type="button" class="lab-btn ${o.key === splitMode ? 'on' : ''}" data-split="${o.key}">${o.label}</button>`).join('');
+    const cut = splitRemarks(P.remarks, splitMode);
+    const hasSplit = (P.remarks || '').indexOf('split') !== -1;
+    const storageEmpty = lines(cut.storage).length === 0;
+    let note = P.note || '';
+    if (!hasSplit) {
+      note += splitMode === 'literal'
+        ? ' 　<b>現在這筆沒有 split，需求字面拆法讓保存方法變成空的。</b>'
+        : ' 　<b>現在這筆沒有 split，前台現行拆法還是拆得出保存方法。</b>';
+    }
+    if (storageEmpty && hasSplit) note += ' 　<b>保存方法是空的。</b>';
+    if (P.orig) note += ` 　<a href="${P.orig}" target="_blank" rel="noopener" style="color:#9fd8ff">開原本商品頁 ↗</a>`;
+    $('labNote').innerHTML = note;
+  }
+
+  function pick(key) {
+    const p = PRODUCTS.find((x) => x.key === key);
+    if (p) { P = p; render(); }
+  }
+
+  function toast(msg) {
+    $('toast').textContent = msg; $('toast').classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('show'), 1800);
+  }
+  function addCart() {
+    const s = P.specs[cur]; const q = parseInt($('qty').value, 10) || 1;
+    if (!s) return;
+    cart += q; $('cartCount').textContent = cart;
+    toast(`已加入購物車：${s.label} × ${q}（示意）`);
+  }
+
+  $('labMonth').innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${i + 1 === nowMonth ? 'selected' : ''}>${i + 1} 月</option>`).join('');
+  $('labMonth').addEventListener('change', (e) => { nowMonth = +e.target.value; render(); });
+  document.querySelector('.lab').addEventListener('click', (e) => {
+    const b = e.target.closest('.lab-btn');
+    if (!b) return;
+    if (b.dataset.split) { splitMode = b.dataset.split; render(); return; }
+    if (b.dataset.k) pick(b.dataset.k);
+  });
+  $('specBtns').addEventListener('click', (e) => { const b = e.target.closest('.spec-btn'); if (b) select(+b.dataset.i); });
+  $('addCart').addEventListener('click', addCart);
+  $('callBtn').addEventListener('click', () => toast('（示意）撥打客服電話'));
+  $('lineBtn').addEventListener('click', () => toast('（示意）開啟官方 LINE'));
+  render();
+</script>
+</body>
+</html>
