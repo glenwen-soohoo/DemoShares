@@ -35,8 +35,14 @@
 
   外殼（header、左側選單）沿用加購品 demo 那一套：2026-09-product-addon/backend/，
      樣式在 assets/11-gox-shell.css。選單項目與麵包屑換成這一頁的位置。
-     「食品標示卡選擇器」（_FoodCardPicker）與「產品標籤」（_ProductTagBlock）兩個 partial
-     不在這張卡的需求範圍，標成佔位。
+     「產品標籤・上下架果況紀錄」（_ProductTagBlock）標成佔位，不在這張卡的需求範圍。
+
+  這張卡裡兩個另外還原的區塊：
+    食農卡片      _FoodCardPicker.cshtml 逐字還原，選卡顯示縮圖、加一張、移除都接了
+    購物車搶購    Razor 只有空的掛載點，畫面是 React：
+                  react-component-export src/pages/productSetting/ProductRushBuySettings.tsx
+                  demo 照它的版面手刻近似（antd 沒有載），狀態是「未啟用」那一種。
+                  ⚠「數量加減」真站目前是 disabled，FB+1 專案之後關掉的，不是 demo 做壞
 
   這一頁的真實欄位名（ViewModel ↔ 資料表，兩邊名字不一樣）：
     Specification   ↔ Remarks 前段      規格說明
@@ -61,6 +67,26 @@
 <link rel="stylesheet" href="assets/10-admin-content.css">
 <!-- GoX 外殼：沿用加購品 demo 那一套（2026-09-product-addon），header 與左側選單同一份 -->
 <link rel="stylesheet" href="assets/11-gox-shell.css">
+<style>
+  /* 購物車搶購：真站是 antd 元件（ProductRushBuySettings.tsx），這裡照它的版面手刻近似，
+     沒有載 antd。工程要改的是那一支 React 元件，不用抄這段。 */
+  .rb { font-size: 16px; color: rgba(0,0,0,.88); }
+  .rb-row { display: flex; align-items: stretch; gap: 20px; margin-bottom: 12px; }
+  .rb-head { align-items: center; gap: 4px; }
+  .rb-ck { display: inline-flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; font-weight: 400; }
+  .rb-ck input { width: 16px; height: 16px; margin: 0; }
+  .rb-info { color: rgba(0,0,0,.45); cursor: help; }
+  .rb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); flex: 1 1 auto; gap: 8px 20px; }
+  .rb-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .rb-label { white-space: nowrap; }
+  .rb-val { flex: 1 1 auto; text-align: center; font-size: 18px; font-weight: 800; }
+  .rb-val.is-off { color: #bfbfbf; font-weight: 400; }
+  .rb-input { display: inline-flex; flex: 1 1 auto; min-width: 0; }
+  .rb-input .rb-sign { width: 60px; border: 1px solid #d9d9d9; border-right: 0; border-radius: 6px 0 0 6px; background: rgba(0,0,0,.02); padding: 4px 8px; font: inherit; font-size: 14px; color: rgba(0,0,0,.25); }
+  .rb-input input { flex: 1 1 auto; min-width: 0; border: 1px solid #d9d9d9; border-radius: 0 6px 6px 0; padding: 4px 11px; font: inherit; font-size: 14px; background: rgba(0,0,0,.04); color: rgba(0,0,0,.25); }
+  .rb-total { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 10%; background: #f5f5f5; padding: 8px 16px; }
+  .rb-btn { font: inherit; font-size: 14px; padding: 5px 16px; border: 1px solid #d9d9d9; border-radius: 6px; background: rgba(0,0,0,.04); color: rgba(0,0,0,.25); cursor: not-allowed; white-space: nowrap; }
+</style>
 </head>
 <body>
 
@@ -208,7 +234,31 @@
           </div>
         </div>
 
-        <div class="demo-placeholder">食品標示卡選擇器（_FoodCardPicker.cshtml）— 不在這次需求範圍，未還原</div>
+        <!-- 既有區塊：食農卡片，來自 Areas/GoX/Views/Product/_FoodCardPicker.cshtml（新增頁、編輯頁共用）
+             一個商品可綁多張卡；選卡後顯示縮圖，點縮圖開原圖，「平台 ↗」直達食農卡片平台的編輯頁。
+             存檔由 ProductModel.SaveProductFoodCards 比對 OriginalFoodCardIds 與 FoodCardIds，只增刪差異。 -->
+        <div class="form-row" id="foodcard-picker" data-edit-base="https://enzo-gb.net/FoodCard/Edit/">
+          <div class="form-group col-12">
+            <label class="mb-1">食農卡片</label>
+            <a href="javascript:void(0)" class="ml-3 js-foodcard-add">＋加一張</a>
+            <a href="https://enzo-gb.net/FoodCard" target="_blank" rel="noopener noreferrer" class="ml-3">到食農卡片平台查看 ↗</a>
+            <input type="hidden" name="OriginalFoodCardIds" value="">
+            <div class="d-flex flex-wrap js-foodcard-slots">
+              <div class="d-flex align-items-center mr-4 mb-2 js-foodcard-slot">
+                <select name="FoodCardIds" class="form-control fix-h-34 js-foodcard-select" style="width: 260px;">
+                  <option value="" selected>不綁定</option>
+                  <option value="101" data-img="https://greenboxcdn.azureedge.net/upload/Product_3033/202511180747401.jpg">梨山蜜蘋果・雲頂果園</option>
+                  <option value="102" data-img="https://greenboxcdn.azureedge.net/upload/Album_3035/File/202511210309331.jpg">高山水蜜桃・武陵</option>
+                </select>
+                <a class="ml-2 js-foodcard-thumb" target="_blank" rel="noopener" style="display: none;">
+                  <img alt="食農卡片縮圖" style="height: 80px; width: auto;">
+                </a>
+                <a class="ml-2 js-foodcard-edit" target="_blank" rel="noopener noreferrer" style="display: none;">平台 ↗</a>
+                <button type="button" class="ml-2 btn btn-sm btn-outline-secondary js-foodcard-remove" title="移除這張">×</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div class="form-row">
           <div class="form-group d-inline-flex flex-column col-6">
@@ -236,7 +286,35 @@
               <input id="AppOnly" name="AppOnly" type="checkbox" value="true"><label for="AppOnly">只在app顯示</label>
             </div>
             <hr>
-            <div id="product-rush-buy-settings"></div>
+            <!-- 既有區塊：購物車搶購。Razor 這裡只有一個空的掛載點 <div id="product-rush-buy-settings"></div>，
+                 真的畫面是 React 元件，工程要改的是那一支：
+                   react-component-export src/pages/productSetting/ProductRushBuySettings.tsx
+                   bundle product-rush-buy-settings.js（Edit18.cshtml:34 載入）
+                 元件用 antd（Checkbox / InputNumber / Select / Button / Popconfirm / Tooltip），
+                 這裡是照它的版面手刻的近似，不是 antd 本身。狀態是「未啟用」那一種。
+                 「數量加減」真站目前是 disabled（FB+1 專案後關掉，避免跟庫存比較時混淆）。 -->
+            <div id="product-rush-buy-settings" class="rb">
+              <div class="rb-row rb-head">
+                <label class="rb-ck"><input type="checkbox" name="EnableRushBuy"><span>購物車搶購</span></label>
+                <span class="rb-info" title="開啟此功能此產品會顯示於獨立的購物車搶購頁面">ⓘ</span>
+              </div>
+              <div class="rb-row">
+                <div class="rb-grid">
+                  <div class="rb-cell"><span class="rb-label">實際購物車數量</span><span class="rb-val is-off">未啟用</span></div>
+                  <div class="rb-cell"><span class="rb-label">數量加減</span>
+                    <span class="rb-input">
+                      <select class="rb-sign" disabled><option>＋</option><option>－</option></select>
+                      <input type="text" placeholder="未啟用" disabled>
+                    </span>
+                  </div>
+                </div>
+                <button type="button" class="rb-btn rb-btn-primary" disabled>⟳ 更新</button>
+              </div>
+              <div class="rb-row">
+                <div class="rb-total"><span class="rb-label">前台顯示總數</span><span class="rb-val is-off">未啟用</span></div>
+                <button type="button" class="rb-btn" disabled>🗑 清空</button>
+              </div>
+            </div>
             <hr>
             <span class="font-weight-bold text-primary"><label for="ProductPurchaseRule">限定購買規則</label></span>
             <div>
@@ -386,6 +464,58 @@ document.getElementById('none_radio').addEventListener('change', function () {
 document.getElementById('firstBuy_radio').addEventListener('change', function () {
   document.getElementById('vipLevel_constraint_block').style.display = 'none';
 });
+
+/* 食農卡片：照 _FoodCardPicker.cshtml 裡那段 script 的行為。
+   選到卡片就顯示縮圖與「平台 ↗」，選「不綁定」就兩個都藏起來；
+   ＋加一張複製一格、× 移除該格（只剩一格時清成不綁定不刪格）。 */
+(function () {
+  var picker = document.getElementById('foodcard-picker');
+  if (!picker) return;
+  var slots = picker.querySelector('.js-foodcard-slots');
+  var editBase = picker.getAttribute('data-edit-base');
+
+  function refresh(slot) {
+    var select = slot.querySelector('.js-foodcard-select');
+    var thumb = slot.querySelector('.js-foodcard-thumb');
+    var edit = slot.querySelector('.js-foodcard-edit');
+    if (!select.value) {
+      thumb.style.display = 'none';
+      edit.style.display = 'none';
+      return;
+    }
+    var img = select.options[select.selectedIndex].getAttribute('data-img') || '';
+    thumb.href = img;
+    thumb.querySelector('img').src = img;
+    thumb.style.display = img ? '' : 'none';
+    edit.href = editBase + select.value;
+    edit.style.display = '';
+  }
+
+  slots.addEventListener('change', function (e) {
+    if (e.target.classList.contains('js-foodcard-select')) {
+      refresh(e.target.closest('.js-foodcard-slot'));
+    }
+  });
+  slots.addEventListener('click', function (e) {
+    var rm = e.target.closest('.js-foodcard-remove');
+    if (!rm) return;
+    var slot = rm.closest('.js-foodcard-slot');
+    if (slots.querySelectorAll('.js-foodcard-slot').length > 1) {
+      slot.remove();
+    } else {
+      slot.querySelector('.js-foodcard-select').value = '';
+      refresh(slot);
+    }
+  });
+  picker.querySelector('.js-foodcard-add').addEventListener('click', function () {
+    var first = slots.querySelector('.js-foodcard-slot');
+    var copy = first.cloneNode(true);
+    copy.querySelector('.js-foodcard-select').value = '';
+    slots.appendChild(copy);
+    refresh(copy);
+  });
+  slots.querySelectorAll('.js-foodcard-slot').forEach(refresh);
+})();
 </script>
 </body>
 </html>
